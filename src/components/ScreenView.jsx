@@ -68,10 +68,10 @@ export default function ScreenView() {
       )}
 
       {/* ============================================================== */}
-      {/* 1. TOPO CENTRALIZADO: QUEREMOS TE CONHECER MELHOR (200% MAIOR) */}
+      {/* 1. TOPO CENTRALIZADO: QUEREMOS TE CONHECER MELHOR (REDUZIDO 40%) */}
       {/* ============================================================== */}
       <header className="w-full text-center pt-2 md:pt-4 z-10">
-        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black uppercase tracking-wide text-sky-400 drop-shadow-md">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black uppercase tracking-wider text-sky-400 drop-shadow-md">
           QUEREMOS TE CONHECER MELHOR
         </h1>
       </header>
@@ -104,7 +104,7 @@ export default function ScreenView() {
           </div>
 
           {/* LINK 200% MAIOR, FUNDO VERDE ESCURO, BORDA E LETRA BRANCA */}
-          <div className="mt-6 px-6 py-3 rounded-2xl bg-emerald-950 border-2 border-emerald-400 text-white font-black text-lg md:text-xl lg:text-2xl shadow-xl tracking-wide max-w-full break-all text-center">
+          <div className="mt-6 px-6 py-3 rounded-2xl bg-emerald-950 border-2 border-emerald-400 text-white font-black text-base md:text-lg lg:text-xl shadow-xl tracking-wide max-w-full text-center select-all">
             {qrUrl}
           </div>
         </div>
