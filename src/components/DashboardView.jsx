@@ -19,7 +19,10 @@ import {
   FileText,
   Edit3,
   Save,
-  X
+  X,
+  Copy,
+  Check,
+  ExternalLink
 } from 'lucide-react';
 import { 
   escutarPresencas, 
@@ -37,6 +40,18 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
   const [inputTitulo, setInputTitulo] = useState('');
   const [filtroData, setFiltroData] = useState('hoje');
   const [dataPersonalizada, setDataPersonalizada] = useState(new Date().toISOString().slice(0, 10));
+  const [copiedLink, setCopiedLink] = useState('');
+
+  const copyToClipboard = (text, label) => {
+    navigator.clipboard.writeText(text);
+    setCopiedLink(label);
+    setTimeout(() => setCopiedLink(''), 2500);
+  };
+
+  const originUrl = window.location.origin;
+  const linkMobile = `${originUrl}/`;
+  const linkTelao = `${originUrl}/?view=telao`;
+  const linkAdmin = `${originUrl}/?view=admin`;
 
   useEffect(() => {
     const unsubPresencas = escutarPresencas((dados) => {
@@ -263,6 +278,93 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
             <Settings className="w-4 h-4" />
             <span>{isFirebaseReady() ? 'Firebase Ativo' : 'Conectar Firebase'}</span>
           </button>
+        </div>
+      </div>
+
+      {/* ============================================================== */}
+      {/* CARD: LINKS RÁPIDOS PARA COPIAR (FÁCEIS DE DIGITAR)            */}
+      {/* ============================================================== */}
+      <div className="print:hidden bg-slate-900/95 border border-slate-800 rounded-2xl p-4 md:p-5 shadow-lg space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Smartphone className="w-4 h-4 text-emerald-400" />
+            <h3 className="text-sm font-bold text-white">Links Rápidos para Acesso e Digitação</h3>
+          </div>
+          <span className="text-[11px] text-slate-400">Clique para copiar o link com 1 toque</span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {/* 1. Link do Celular (Público da Cantata - Fácil de digitar) */}
+          <div className="p-3 bg-slate-950 rounded-xl border border-emerald-900/40 flex flex-col justify-between gap-2.5">
+            <div>
+              <div className="flex items-center justify-between text-xs font-bold text-emerald-400 mb-1">
+                <span>📱 Celular (Fácil de Digitar)</span>
+                {copiedLink === 'mobile' && (
+                  <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full flex items-center gap-1 font-bold">
+                    <Check className="w-3 h-3" /> Copiado!
+                  </span>
+                )}
+              </div>
+              <p className="text-xs font-mono text-slate-200 select-all truncate bg-slate-900/80 p-2 rounded-lg border border-slate-800">
+                {linkMobile.replace(/^https?:\/\//i, '').replace(/\/$/, '')}
+              </p>
+            </div>
+            <button
+              onClick={() => copyToClipboard(linkMobile, 'mobile')}
+              className="w-full py-2 px-3 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold text-xs rounded-lg transition flex items-center justify-center gap-1.5 shadow"
+            >
+              <Copy className="w-3.5 h-3.5" />
+              <span>{copiedLink === 'mobile' ? 'Link Copiado!' : 'Copiar Link do Celular'}</span>
+            </button>
+          </div>
+
+          {/* 2. Link do Telão */}
+          <div className="p-3 bg-slate-950 rounded-xl border border-sky-900/40 flex flex-col justify-between gap-2.5">
+            <div>
+              <div className="flex items-center justify-between text-xs font-bold text-sky-400 mb-1">
+                <span>📺 Telão da Igreja</span>
+                {copiedLink === 'telao' && (
+                  <span className="text-[10px] bg-sky-500/20 text-sky-300 px-2 py-0.5 rounded-full flex items-center gap-1 font-bold">
+                    <Check className="w-3 h-3" /> Copiado!
+                  </span>
+                )}
+              </div>
+              <p className="text-xs font-mono text-slate-200 select-all truncate bg-slate-900/80 p-2 rounded-lg border border-slate-800">
+                {linkTelao}
+              </p>
+            </div>
+            <button
+              onClick={() => copyToClipboard(linkTelao, 'telao')}
+              className="w-full py-2 px-3 bg-sky-600 hover:bg-sky-500 active:scale-95 text-white font-bold text-xs rounded-lg transition flex items-center justify-center gap-1.5 shadow"
+            >
+              <Copy className="w-3.5 h-3.5" />
+              <span>{copiedLink === 'telao' ? 'Link Copiado!' : 'Copiar Link do Telão'}</span>
+            </button>
+          </div>
+
+          {/* 3. Link do Painel Admin */}
+          <div className="p-3 bg-slate-950 rounded-xl border border-indigo-900/40 flex flex-col justify-between gap-2.5">
+            <div>
+              <div className="flex items-center justify-between text-xs font-bold text-indigo-400 mb-1">
+                <span>📊 Painel de Relatórios</span>
+                {copiedLink === 'admin' && (
+                  <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full flex items-center gap-1 font-bold">
+                    <Check className="w-3 h-3" /> Copiado!
+                  </span>
+                )}
+              </div>
+              <p className="text-xs font-mono text-slate-200 select-all truncate bg-slate-900/80 p-2 rounded-lg border border-slate-800">
+                {linkAdmin}
+              </p>
+            </div>
+            <button
+              onClick={() => copyToClipboard(linkAdmin, 'admin')}
+              className="w-full py-2 px-3 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-bold text-xs rounded-lg transition flex items-center justify-center gap-1.5 shadow"
+            >
+              <Copy className="w-3.5 h-3.5" />
+              <span>{copiedLink === 'admin' ? 'Link Copiado!' : 'Copiar Link Admin'}</span>
+            </button>
+          </div>
         </div>
       </div>
 

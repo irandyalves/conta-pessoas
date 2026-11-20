@@ -11,9 +11,15 @@ export default function ScreenView() {
   const [customUrl, setCustomUrl] = useState('');
   const [editUrl, setEditUrl] = useState(false);
 
-  // Link do QR Code aponta direto para o formulário no celular
-  const defaultUrl = `${window.location.origin}${window.location.pathname}?view=form`;
+  // Link do QR Code aponta para a raiz (que abre o formulário direto)
+  const defaultUrl = `${window.location.origin}/`;
   const qrUrl = customUrl || defaultUrl;
+
+  // Texto amigável e limpo para digitar no celular: conta-pessoas-iasd.web.app
+  const displayUrl = (customUrl || defaultUrl)
+    .replace(/^https?:\/\//i, '')
+    .replace(/\/$/, '')
+    .replace(/\/?\?view=form$/i, '');
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -103,9 +109,9 @@ export default function ScreenView() {
             />
           </div>
 
-          {/* LINK: BADGE ELEGANTE, PROPORCIONAL E COM ESPAÇAMENTO PERFEITO */}
-          <div className="mt-8 inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-emerald-950/90 border border-emerald-500/60 shadow-[0_0_25px_rgba(16,185,129,0.2)] text-white font-bold text-sm sm:text-base md:text-lg tracking-wide text-center">
-            <span>{qrUrl}</span>
+          {/* LINK SUPER LIMPO E FÁCIL DE DIGITAR (EX: conta-pessoas-iasd.web.app) */}
+          <div className="mt-8 inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-emerald-950/90 border border-emerald-500/60 shadow-[0_0_25px_rgba(16,185,129,0.2)] text-white font-bold text-base sm:text-lg md:text-xl tracking-wide text-center">
+            <span>{displayUrl}</span>
           </div>
         </div>
       </main>
