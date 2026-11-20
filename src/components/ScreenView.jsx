@@ -1,10 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { 
-  Smartphone, 
   Maximize2, 
   Minimize2, 
-  Sparkles,
   Settings
 } from 'lucide-react';
 
@@ -26,13 +24,13 @@ export default function ScreenView() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col justify-between p-8 md:p-14 relative overflow-hidden select-none">
-      {/* Luzes decorativas sutis de fundo */}
-      <div className="absolute -top-40 -left-40 w-[500px] h-[500px] bg-sky-600/15 rounded-full blur-[140px] pointer-events-none" />
-      <div className="absolute -bottom-40 -right-40 w-[500px] h-[500px] bg-amber-600/15 rounded-full blur-[140px] pointer-events-none" />
+    <div className="min-h-screen bg-slate-950 text-white flex flex-col justify-between p-6 md:p-12 relative overflow-hidden select-none">
+      {/* Luzes decorativas de fundo */}
+      <div className="absolute -top-40 -left-40 w-[550px] h-[550px] bg-sky-600/15 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute -bottom-40 -right-40 w-[550px] h-[550px] bg-emerald-600/15 rounded-full blur-[140px] pointer-events-none" />
 
-      {/* Botões discretos de controle no canto superior direito (ocultos ou sutis) */}
-      <div className="absolute top-6 right-6 z-20 flex items-center gap-2 opacity-30 hover:opacity-100 transition-opacity">
+      {/* Botões discretos de controle no canto superior direito */}
+      <div className="absolute top-6 right-6 z-20 flex items-center gap-2 opacity-25 hover:opacity-100 transition-opacity">
         <button
           onClick={() => setEditUrl(!editUrl)}
           title="Alterar link do QR Code"
@@ -50,7 +48,7 @@ export default function ScreenView() {
         </button>
       </div>
 
-      {/* Editor do link se o operador quiser mudar */}
+      {/* Editor de link do operador */}
       {editUrl && (
         <div className="absolute top-20 right-6 z-30 p-3 bg-slate-900 border border-slate-700 rounded-xl flex items-center gap-2 shadow-2xl">
           <input
@@ -70,18 +68,20 @@ export default function ScreenView() {
       )}
 
       {/* ============================================================== */}
-      {/* ÁREA CENTRAL LIMPA: TEXTO GIGANTE + QR CODE                   */}
+      {/* 1. TOPO CENTRALIZADO: QUEREMOS TE CONHECER MELHOR (200% MAIOR) */}
       {/* ============================================================== */}
-      <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center justify-center my-auto relative z-10 max-w-7xl mx-auto w-full">
-        {/* LADO ESQUERDO: APENAS AS DUAS FRASES SOLICITADAS */}
-        <div className="lg:col-span-7 space-y-6 text-left">
-          {/* QUEREMOS TE CONHECER MELHOR (200% MAIOR) */}
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black uppercase tracking-wider text-sky-400 flex items-center gap-3">
-            <Sparkles className="w-8 h-8 sm:w-10 sm:h-10 text-sky-400 shrink-0" />
-            <span>QUEREMOS TE CONHECER MELHOR</span>
-          </h1>
+      <header className="w-full text-center pt-2 md:pt-4 z-10">
+        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black uppercase tracking-wide text-sky-400 drop-shadow-md">
+          QUEREMOS TE CONHECER MELHOR
+        </h1>
+      </header>
 
-          {/* APONTE A CÂMERA DO SEU CELULAR */}
+      {/* ============================================================== */}
+      {/* 2. ÁREA CENTRAL: APONTE A CÂMERA ALINHADO COM O QR CODE       */}
+      {/* ============================================================== */}
+      <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-14 items-center justify-center my-auto relative z-10 max-w-7xl mx-auto w-full">
+        {/* LADO ESQUERDO: APONTE A CÂMERA DO SEU CELULAR */}
+        <div className="lg:col-span-7 flex flex-col justify-center text-left">
           <h2 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-white leading-tight tracking-tight">
             Aponte a câmera <br />
             <span className="bg-gradient-to-r from-sky-400 via-blue-300 to-indigo-300 bg-clip-text text-transparent">
@@ -90,29 +90,28 @@ export default function ScreenView() {
           </h2>
         </div>
 
-        {/* LADO DIREITO: O QR CODE GIGANTE */}
+        {/* LADO DIREITO: QR CODE LIMPO (SEM "ESCANEIE AQUI") + LINK 200% MAIOR EM VERDE ESCURO */}
         <div className="lg:col-span-5 flex flex-col items-center justify-center">
+          {/* Card Branco com o QR Code */}
           <div className="bg-white p-7 sm:p-9 md:p-10 rounded-3xl shadow-2xl qr-glow flex flex-col items-center border-4 border-sky-400/90">
             <QRCodeSVG 
               value={qrUrl} 
-              size={300} 
+              size={320} 
               level="H" 
               includeMargin={false}
               className="rounded-xl"
             />
-            <div className="mt-5 flex items-center gap-2.5 text-slate-900 font-black text-base sm:text-lg tracking-wider">
-              <Smartphone className="w-6 h-6 text-sky-600 animate-bounce" />
-              <span>ESCANEIE AQUI</span>
-            </div>
           </div>
-          <p className="text-xs text-slate-500 mt-3 text-center max-w-xs truncate">
+
+          {/* LINK 200% MAIOR, FUNDO VERDE ESCURO, BORDA E LETRA BRANCA */}
+          <div className="mt-6 px-6 py-3 rounded-2xl bg-emerald-950 border-2 border-emerald-400 text-white font-black text-lg md:text-xl lg:text-2xl shadow-xl tracking-wide max-w-full break-all text-center">
             {qrUrl}
-          </p>
+          </div>
         </div>
       </main>
 
-      {/* Rodapé completamente limpo */}
-      <footer className="w-full" />
+      {/* Espaçador inferior limpo */}
+      <footer className="w-full pb-2" />
     </div>
   );
 }
