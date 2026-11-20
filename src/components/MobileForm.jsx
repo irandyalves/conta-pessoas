@@ -203,11 +203,12 @@ export default function MobileForm() {
           </div>
         )}
 
-        {/* PERGUNTA 2 */}
+        {/* PERGUNTA 2: DUAS LINHAS SOLICITADAS */}
         {step === 2 && (
           <div className="mt-3 pt-3 border-t border-slate-800/60">
             <h2 className="text-xl sm:text-2xl font-black text-white leading-tight">
-              Você está só ou tem mais pessoas te acompanhando?
+              Você está só ou tem mais <br />
+              <span className="text-slate-100">pessoas te acompanhando?</span>
             </h2>
           </div>
         )}
@@ -251,29 +252,29 @@ export default function MobileForm() {
           </div>
         )}
 
-        {/* TELA 2: ACOMPANHANTES */}
+        {/* TELA 2: ACOMPANHANTES (EFEITO 3D E NÚMEROS +20%) */}
         {step === 2 && (
           <div className="space-y-4 fade-in">
-            {/* Opção em Destaque: SÓ EU (+25% ALTURA) */}
+            {/* Opção em Destaque: SÓ EU (BOTÃO 3D TÁTIL) */}
             <button
               onClick={() => handleSelectQtd(1)}
-              className="w-full p-5 sm:p-6 min-h-[88px] rounded-2xl border border-emerald-900/60 bg-gradient-to-r from-emerald-950/40 via-slate-900 to-slate-900 hover:border-emerald-600/50 active:scale-[0.98] transition-all flex items-center justify-between shadow-lg"
+              className="w-full p-5 sm:p-6 min-h-[96px] rounded-3xl border border-emerald-500/30 border-b-[6px] border-b-emerald-950 bg-gradient-to-b from-emerald-600 via-emerald-700 to-emerald-800 active:translate-y-1.5 active:border-b-2 active:shadow-md transition-all flex items-center justify-between shadow-xl shadow-emerald-950/60"
             >
               <div className="flex items-center gap-4">
-                <div className="w-13 h-13 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-300 p-2.5">
-                  <User className="w-7 h-7" />
+                <div className="w-14 h-14 rounded-2xl bg-emerald-900/60 border border-emerald-400/40 flex items-center justify-center text-emerald-200 p-2.5 shadow-inner">
+                  <User className="w-8 h-8 drop-shadow" />
                 </div>
                 <div className="text-left">
-                  <span className="inline-block text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 mb-0.5">
+                  <span className="inline-block text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-emerald-950/60 text-emerald-300 mb-1 border border-emerald-400/20">
                     Individual
                   </span>
-                  <h3 className="font-black text-xl text-white">
+                  <h3 className="font-black text-2xl text-white drop-shadow-md">
                     SÓ EU
                   </h3>
-                  <p className="text-xs text-slate-400">Vim sozinho(a)</p>
+                  <p className="text-xs text-emerald-100/90 font-medium">Vim sozinho(a)</p>
                 </div>
               </div>
-              <div className="w-10 h-10 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-300 font-black text-base">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-950/70 border-2 border-emerald-400/50 flex items-center justify-center text-emerald-300 font-black text-2xl shadow-inner">
                 1
               </div>
             </button>
@@ -287,17 +288,19 @@ export default function MobileForm() {
               <div className="flex-grow border-t border-slate-800"></div>
             </div>
 
-            {/* Grid dos Botões 2 a +10 (+25% ALTURA) */}
-            <div className="grid grid-cols-3 gap-3">
+            {/* Grid dos Botões 2 a +10 (BOTÕES 3D COM NÚMEROS +20%) */}
+            <div className="grid grid-cols-3 gap-3.5">
               {opcoesQuantidade.map((op) => (
                 <button
                   key={op.valor}
                   onClick={() => handleSelectQtd(op.valor)}
-                  className="py-4 sm:py-5 px-2 rounded-2xl border border-slate-800 bg-slate-900/90 hover:bg-slate-800 active:scale-95 transition-all text-slate-200 flex flex-col items-center justify-center shadow-sm"
+                  className="py-4 sm:py-5 px-2 rounded-2xl border border-slate-700/80 border-b-[6px] border-b-slate-950 bg-gradient-to-b from-slate-800 via-slate-850 to-slate-900 active:translate-y-1.5 active:border-b-2 active:shadow-md transition-all text-slate-100 flex flex-col items-center justify-center shadow-lg shadow-black/50 group"
                 >
-                  <span className="text-2xl sm:text-3xl font-black tracking-tight">{op.label}</span>
-                  <span className="text-[11px] font-semibold text-slate-400 mt-0.5">
-                    {op.valor === 10 ? 'Pessoas ou +' : 'Pessoas'}
+                  <span className="text-3xl sm:text-4xl font-black tracking-tight text-white drop-shadow-md group-hover:text-amber-300 transition-colors">
+                    {op.label}
+                  </span>
+                  <span className="text-[11px] font-bold text-sky-400/90 group-hover:text-amber-400 transition-colors mt-1">
+                    {op.valor === 10 ? 'Pessoas +' : 'Pessoas'}
                   </span>
                 </button>
               ))}
