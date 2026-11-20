@@ -7,13 +7,15 @@ import {
   query, 
   orderBy, 
   serverTimestamp,
-  deleteDoc,
   doc,
-  getDocs
+  setDoc,
+  getDoc
 } from 'firebase/firestore';
 
 const STORAGE_KEY = 'church_firebase_config';
 const LOCAL_DATA_KEY = 'church_local_attendance_data';
+const EVENT_STORAGE_KEY = 'church_event_title';
+export const DEFAULT_EVENT_TITLE = 'CANTATA DE NATAL 2026';
 
 // Configuração padrão do Firebase conectada ao projeto oficial
 const DEFAULT_FIREBASE_CONFIG = {
@@ -34,7 +36,6 @@ export function getSavedFirebaseConfig() {
     console.error('Erro ao ler config do Firebase do localStorage', e);
   }
 
-  // Verifica variáveis de ambiente ou usa a configuração padrão oficial
   if (import.meta.env.VITE_FIREBASE_API_KEY) {
     return {
       apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -76,6 +77,68 @@ export function isFirebaseReady() {
   return db !== null;
 }
 
+// ==========================================
+// CONFIGURAÇÃO DO EVENTO (TÍTULO CONFIGURÁVEL)
+// ==========================================
+export function getSavedEventTitle() {
+  try {
+    return localStorage.getItem(EVENT_STORAGE_KEY) || DEFAULT_EVENT_TITLE;
+  } catch (e) {
+    return DEFAULT_EVENT_TITLE;
+  }
+}
+
+export async function saveEventTitle(title) {
+  const cleanTitle = (title || DEFAULT_EVENT_TITLE).trim();
+  localStorage.setItem(EVENT_STORAGE_KEY, cleanTitle);
+  window.dispatchEvent(new CustomEvent('church_event_title_changed', { detail: cleanTitle }));
+
+  if (isFirebaseReady()) {
+    try {
+      await setDoc(doc(db, 'configuracoes', 'evento'), {
+        titulo: cleanTitle,
+        atualizadoEm: serverTimestamp()
+      }, { merge: true });
+    } catch (e) {
+      console.warn('Erro ao salvar título no Firestore:', e);
+    }
+  }
+}
+
+export function escutarTituloEvento(callback) {
+  // Callback inicial com local
+  callback(getSavedEventTitle());
+
+  // Listener local
+  const localHandler = (e) => callback(e.detail || getSavedEventTitle());
+  window.addEventListener('church_event_title_changed', localHandler);
+
+  if (isFirebaseReady()) {
+    try {
+      const unsub = onSnapshot(doc(db, 'configuracoes', 'evento'), (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.data();
+          if (data && data.titulo) {
+            localStorage.setItem(EVENT_STORAGE_KEY, data.titulo);
+            callback(data.titulo);
+          }
+        }
+      });
+      return () => {
+        unsub();
+        window.removeEventListener('church_event_title_changed', localHandler);
+      };
+    } catch (e) {
+      console.warn('Erro no listener de título do Firestore:', e);
+    }
+  }
+
+  return () => window.removeEventListener('church_event_title_changed', localHandler);
+}
+
+// ==========================================
+// REGISTRO DE PRESENÇAS
+// ==========================================
 function getLocalData() {
   try {
     const data = localStorage.getItem(LOCAL_DATA_KEY);
@@ -94,11 +157,12 @@ function saveLocalData(items) {
   }
 }
 
-export async function registrarPresenca({ comoChegou, qtdPessoas, observacao = '' }) {
+export async function registrarPresenca({ comoChegou, qtdPessoas, evento = '' }) {
+  const nomeEvento = evento || getSavedEventTitle();
   const payload = {
     comoChegou,
     qtdPessoas: Number(qtdPessoas) || 1,
-    observacao,
+    evento: nomeEvento,
     criadoEm: new Date().toISOString(),
     dataCulto: new Date().toLocaleDateString('pt-BR'),
     hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
