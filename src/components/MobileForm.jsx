@@ -180,25 +180,26 @@ export default function MobileForm() {
       {/* CABEÇALHO DO EVENTO                                            */}
       {/* ============================================================== */}
       <header className="w-full pt-4 pb-2 text-center">
-        {/* TÍTULO CONFIGURÁVEL DO ADMIN: CANTATA DE NATAL 2026 */}
-        <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-amber-300 uppercase">
-          {eventoTitulo}
-        </h1>
-
-        <p className="text-sm font-semibold text-slate-300 mt-1">
+        {/* 1. SEJA MUITO BEM-VINDO ACIMA DA CANTATA (+50% EM VERDE) */}
+        <p className="text-xl sm:text-2xl font-black text-emerald-400 tracking-wide drop-shadow">
           Seja muito bem-vindo!
         </p>
 
-        {/* PERGUNTA 1: 150% MAIOR NO CABEÇALHO APÓS O SEJA MUITO BEM-VINDO */}
+        {/* 2. TÍTULO DO EVENTO (REDUZIDO 25%) */}
+        <h1 className="text-base sm:text-lg font-bold tracking-wider text-amber-300 uppercase mt-0.5">
+          {eventoTitulo}
+        </h1>
+
+        {/* 3. PERGUNTA 1: Como você chegou aqui? */}
         {step === 1 && (
           <div className="mt-4 pt-3 border-t border-slate-800/60">
             <h2 className="text-xl sm:text-2xl font-black text-white leading-tight">
-              Como você chegou na Cantata de Natal?
+              Como você chegou aqui?
             </h2>
           </div>
         )}
 
-        {/* PERGUNTA 2: 150% MAIOR */}
+        {/* PERGUNTA 2 */}
         {step === 2 && (
           <div className="mt-4 pt-3 border-t border-slate-800/60">
             <h2 className="text-xl sm:text-2xl font-black text-white leading-tight">
