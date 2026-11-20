@@ -211,22 +211,24 @@ export default function MobileForm() {
           <div className="absolute -bottom-20 -left-20 w-44 h-44 bg-sky-500/15 rounded-full blur-3xl pointer-events-none" />
 
           {/* PARTE 1: MUITO OBRIGADO + EVENTO */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-snug">
               MUITO OBRIGADO PELA SUA PRESENÇA.
             </h1>
 
-            <div className="text-xl sm:text-2xl font-black tracking-wide leading-tight">
-              <span className="block bg-gradient-to-r from-amber-300 via-orange-300 to-amber-400 bg-clip-text text-transparent">
+            <div className="space-y-1">
+              {/* Frase do evento reduzida em 15% */}
+              <span className="block text-[17px] sm:text-[20px] font-black bg-gradient-to-r from-amber-300 via-orange-300 to-amber-400 bg-clip-text text-transparent uppercase tracking-wide leading-tight">
                 A {eventoTitulo}
               </span>
-              <span className="block text-amber-400 mt-1">
+              {/* 2ª frase reduzida em 10% */}
+              <span className="block text-[16px] sm:text-[18px] font-extrabold text-amber-400 tracking-wide leading-tight">
                 será espetacular!
               </span>
             </div>
           </div>
 
-          {/* PARTE 2: REGISTRO CONCLUÍDO + ORIENTAÇÃO */}
+          {/* PARTE 2: REGISTRO CONCLUÍDO + PODE GUARDAR SEU CELULAR */}
           <div className="pt-5 border-t border-slate-800/80 space-y-3">
             {!finalizado && (
               <div className="w-full bg-slate-800/60 rounded-full h-1.5 overflow-hidden mb-3">
@@ -241,14 +243,8 @@ export default function MobileForm() {
               <p className="text-base sm:text-lg font-black text-emerald-400 uppercase tracking-wide">
                 registro concluído!
               </p>
-              <p className="text-sm font-semibold text-slate-300">
+              <p className="text-sm sm:text-base font-bold text-slate-300">
                 pode guardar seu celular
-              </p>
-              <p className="text-xs text-slate-400 pt-1">
-                e aprecie a
-              </p>
-              <p className="text-base sm:text-lg font-black text-amber-300 uppercase tracking-wider">
-                {eventoTitulo}
               </p>
             </div>
           </div>
