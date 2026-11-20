@@ -12,9 +12,15 @@ import {
   TreePine
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { registrarPresenca, escutarTituloEvento, DEFAULT_EVENT_TITLE } from '../firebase';
+import { 
+  registrarPresenca, 
+  escutarTituloEvento, 
+  escutarResetGlobal,
+  DEFAULT_EVENT_TITLE 
+} from '../firebase';
 
 const CHECKIN_LOCK_KEY = 'presenca_finalizada_cantata_2026';
+const CHECKIN_TIME_KEY = 'presenca_hora_registro';
 
 export default function MobileForm() {
   const [eventoTitulo, setEventoTitulo] = useState(DEFAULT_EVENT_TITLE);
@@ -23,11 +29,15 @@ export default function MobileForm() {
   const [countdown, setCountdown] = useState(10);
   const [finalizado, setFinalizado] = useState(false);
 
-  // 1. BLOQUEIO DEFINITIVO: Se o aparelho já registrou, impede de voltar ou tentar de novo!
+  // 1. BLOQUEIO DEFINITIVO: Se o aparelho já registrou, impede de votar novamente
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('novo') === '1') {
+    if (params.get('novo') === '1' || params.get('reset') === '1') {
       localStorage.removeItem(CHECKIN_LOCK_KEY);
+      localStorage.removeItem(CHECKIN_TIME_KEY);
+      setStep(1);
+      setFinalizado(false);
+      setCountdown(10);
       return;
     }
 
@@ -39,7 +49,22 @@ export default function MobileForm() {
     }
   }, []);
 
-  // 2. BLOQUEIO DO BOTÃO "VOLTAR" DO NAVEGADOR / CELULAR
+  // 2. ESCUTA O BOTÃO "ZERAR TUDO" DO ADMIN: Destrava o celular na hora!
+  useEffect(() => {
+    const unsub = escutarResetGlobal((resetEm) => {
+      const horaRegistro = localStorage.getItem(CHECKIN_TIME_KEY);
+      if (resetEm && (!horaRegistro || new Date(resetEm) > new Date(horaRegistro))) {
+        localStorage.removeItem(CHECKIN_LOCK_KEY);
+        localStorage.removeItem(CHECKIN_TIME_KEY);
+        setStep(1);
+        setFinalizado(false);
+        setCountdown(10);
+      }
+    });
+    return () => unsub && unsub();
+  }, []);
+
+  // 3. BLOQUEIO DO BOTÃO "VOLTAR" DO NAVEGADOR / CELULAR
   useEffect(() => {
     if (step === 3) {
       const handlePop = (e) => {
@@ -142,8 +167,9 @@ export default function MobileForm() {
   const handleSelectQtd = (qtd) => {
     if (step === 3) return; // Impede duplo clique
 
-    // 1. Grava a trava definitiva neste aparelho no navegador
+    // 1. Grava a trava definitiva e o horário neste aparelho
     localStorage.setItem(CHECKIN_LOCK_KEY, 'true');
+    localStorage.setItem(CHECKIN_TIME_KEY, new Date().toISOString());
 
     // 2. Trava o botão Voltar do Android/iPhone
     try {
@@ -174,8 +200,7 @@ export default function MobileForm() {
   };
 
   // ==============================================================
-  // TELA 3: TELA FINAL (MUITO OBRIGADO PELA SUA PRESENÇA. A CANTATA SERÁ ESPETACULAR!!)
-  // 10SEG FECHA TUDO
+  // TELA 3: TELA FINAL (MUITO OBRIGADO PELA SUA PRESENÇA. A CANTATA...)
   // ==============================================================
   if (step === 3) {
     return (
@@ -185,35 +210,47 @@ export default function MobileForm() {
           <div className="absolute -top-20 -right-20 w-44 h-44 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute -bottom-20 -left-20 w-44 h-44 bg-sky-500/15 rounded-full blur-3xl pointer-events-none" />
 
+          {/* PARTE 1: MUITO OBRIGADO + EVENTO */}
           <div className="space-y-4">
             <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-snug">
               MUITO OBRIGADO PELA SUA PRESENÇA.
             </h1>
 
-            <p className="text-xl sm:text-2xl font-black bg-gradient-to-r from-amber-300 via-orange-300 to-amber-400 bg-clip-text text-transparent tracking-wide">
-              A CANTATA SERÁ ESPETACULAR!!
-            </p>
+            <div className="text-xl sm:text-2xl font-black tracking-wide leading-tight">
+              <span className="block bg-gradient-to-r from-amber-300 via-orange-300 to-amber-400 bg-clip-text text-transparent">
+                A {eventoTitulo}
+              </span>
+              <span className="block text-amber-400 mt-1">
+                será espetacular!
+              </span>
+            </div>
           </div>
 
-          {/* Contador de 10s e fechamento */}
-          <div className="pt-4 border-t border-slate-800/80">
-            {!finalizado ? (
-              <div className="space-y-1">
-                <div className="w-full bg-slate-800/60 rounded-full h-1 overflow-hidden mb-2">
-                  <div 
-                    className="bg-amber-400 h-full transition-all duration-1000 ease-linear"
-                    style={{ width: `${(countdown / 10) * 100}%` }}
-                  />
-                </div>
-                <p className="text-[11px] text-slate-400 font-medium">
-                  Fechando em {countdown}s... Você já pode aproveitar o momento!
-                </p>
+          {/* PARTE 2: REGISTRO CONCLUÍDO + ORIENTAÇÃO */}
+          <div className="pt-5 border-t border-slate-800/80 space-y-3">
+            {!finalizado && (
+              <div className="w-full bg-slate-800/60 rounded-full h-1.5 overflow-hidden mb-3">
+                <div 
+                  className="bg-amber-400 h-full transition-all duration-1000 ease-linear"
+                  style={{ width: `${(countdown / 10) * 100}%` }}
+                />
               </div>
-            ) : (
-              <p className="text-xs text-emerald-400 font-bold">
-                ✓ Registro concluído. Guarde seu celular e tenha uma excelente Cantata!
-              </p>
             )}
+
+            <div className="space-y-1.5 text-slate-200">
+              <p className="text-base sm:text-lg font-black text-emerald-400 uppercase tracking-wide">
+                registro concluído!
+              </p>
+              <p className="text-sm font-semibold text-slate-300">
+                pode guardar seu celular
+              </p>
+              <p className="text-xs text-slate-400 pt-1">
+                e aprecie a
+              </p>
+              <p className="text-base sm:text-lg font-black text-amber-300 uppercase tracking-wider">
+                {eventoTitulo}
+              </p>
+            </div>
           </div>
         </div>
       </div>

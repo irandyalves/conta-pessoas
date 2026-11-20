@@ -9,7 +9,8 @@ import {
   serverTimestamp,
   doc,
   setDoc,
-  getDoc
+  getDocs,
+  deleteDoc
 } from 'firebase/firestore';
 
 const STORAGE_KEY = 'church_firebase_config';
@@ -106,10 +107,8 @@ export async function saveEventTitle(title) {
 }
 
 export function escutarTituloEvento(callback) {
-  // Callback inicial com local
   callback(getSavedEventTitle());
 
-  // Listener local
   const localHandler = (e) => callback(e.detail || getSavedEventTitle());
   window.addEventListener('church_event_title_changed', localHandler);
 
@@ -134,6 +133,27 @@ export function escutarTituloEvento(callback) {
   }
 
   return () => window.removeEventListener('church_event_title_changed', localHandler);
+}
+
+// ==========================================
+// RESET GLOBAL PARA DESTRAVAR APARELHOS
+// ==========================================
+export function escutarResetGlobal(callback) {
+  if (isFirebaseReady()) {
+    try {
+      return onSnapshot(doc(db, 'configuracoes', 'reset'), (snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data && data.resetEm) {
+            callback(data.resetEm);
+          }
+        }
+      });
+    } catch (e) {
+      console.warn('Erro ao escutar reset:', e);
+    }
+  }
+  return () => {};
 }
 
 // ==========================================
@@ -232,4 +252,29 @@ export function escutarPresencas(callback) {
 export function limparDadosLocais() {
   localStorage.removeItem(LOCAL_DATA_KEY);
   window.dispatchEvent(new Event('church_local_data_changed'));
+}
+
+// ZERA TUDO NO FIRESTORE E NOTIFICA TODOS OS APARELHOS
+export async function zerarTudo() {
+  limparDadosLocais();
+  localStorage.removeItem('presenca_finalizada_cantata_2026');
+  localStorage.removeItem('presenca_hora_registro');
+
+  if (isFirebaseReady()) {
+    try {
+      const snap = await getDocs(collection(db, 'presencas'));
+      const promises = [];
+      snap.forEach((d) => {
+        promises.push(deleteDoc(doc(db, 'presencas', d.id)));
+      });
+      await Promise.all(promises);
+
+      // Marca o reset global no Firestore
+      await setDoc(doc(db, 'configuracoes', 'reset'), {
+        resetEm: new Date().toISOString()
+      }, { merge: true });
+    } catch (e) {
+      console.error('Erro ao zerar banco Firestore:', e);
+    }
+  }
 }

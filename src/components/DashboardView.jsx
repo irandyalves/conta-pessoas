@@ -27,6 +27,7 @@ import {
 import { 
   escutarPresencas, 
   limparDadosLocais, 
+  zerarTudo,
   isFirebaseReady,
   escutarTituloEvento,
   saveEventTitle,
@@ -42,6 +43,7 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
   const [filtroData, setFiltroData] = useState('hoje');
   const [dataPersonalizada, setDataPersonalizada] = useState(new Date().toISOString().slice(0, 10));
   const [copiedLink, setCopiedLink] = useState('');
+  const [zerando, setZerando] = useState(false);
 
   const copyToClipboard = (text, label) => {
     navigator.clipboard.writeText(text);
@@ -76,6 +78,27 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
     setEditandoTitulo(false);
     setSalvoFeedback(true);
     setTimeout(() => setSalvoFeedback(false), 3000);
+  };
+
+  const handleZerarTudo = async () => {
+    const confirmacao = window.confirm(
+      "⚠️ ATENÇÃO: Deseja realmente ZERAR TODAS as presenças?\n\n" +
+      "1. Todos os registros de presenças serão apagados do banco de dados.\n" +
+      "2. Os contadores voltarão a zero.\n" +
+      "3. Todos os celulares que votaram serão DESTRAVADOS imediatamente e poderão votar novamente!\n\n" +
+      "Deseja prosseguir?"
+    );
+    if (!confirmacao) return;
+
+    setZerando(true);
+    try {
+      await zerarTudo();
+      alert("✅ Banco de dados zerado com sucesso! Todos os celulares foram destravados.");
+    } catch (e) {
+      alert("Erro ao zerar: " + (e?.message || e));
+    } finally {
+      setZerando(false);
+    }
   };
 
   const hoje = new Date().toLocaleDateString('pt-BR');
@@ -246,6 +269,17 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
 
         {/* Ações Rápidas */}
         <div className="flex flex-wrap items-center gap-2">
+          {/* BOTÃO ZERAR TUDO COM DESTRAVAMENTO AUTOMÁTICO DE APARELHOS */}
+          <button
+            onClick={handleZerarTudo}
+            disabled={zerando}
+            title="Zera todas as presenças do banco e destrava todos os celulares"
+            className="px-3.5 py-2 text-xs font-black rounded-xl bg-red-600/90 hover:bg-red-500 text-white flex items-center gap-1.5 transition active:scale-95 shadow-lg shadow-red-600/25 border border-red-500/50 disabled:opacity-50"
+          >
+            <Trash2 className="w-4 h-4 text-red-100" />
+            <span>{zerando ? 'Zerando...' : 'ZERAR TUDO'}</span>
+          </button>
+
           <button
             onClick={handlePrint}
             className="px-3.5 py-2 text-xs font-bold rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-700 text-sky-300 flex items-center gap-1.5 transition active:scale-95 shadow"
