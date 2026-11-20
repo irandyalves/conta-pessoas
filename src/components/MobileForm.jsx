@@ -310,13 +310,11 @@ export default function MobileForm() {
                   <User className="w-8 h-8 drop-shadow" />
                 </div>
                 <div className="text-left">
-                  <span className="inline-block text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-emerald-950/60 text-emerald-300 mb-1 border border-emerald-400/20">
-                    Individual
-                  </span>
-                  <h3 className="font-black text-2xl text-white drop-shadow-md">
-                    SÓ EU
+                  {/* SÓ EU EM AMARELO COM ", vim sozinho" EM LETRA MENOR */}
+                  <h3 className="font-black text-2xl text-amber-300 drop-shadow-md flex items-baseline gap-1 flex-wrap">
+                    <span>SÓ EU</span>
+                    <span className="text-sm sm:text-base font-semibold text-white">, vim sozinho</span>
                   </h3>
-                  <p className="text-xs text-emerald-100/90 font-medium">Vim sozinho(a)</p>
                 </div>
               </div>
               <div className="w-12 h-12 rounded-2xl bg-emerald-950/70 border-2 border-emerald-400/50 flex items-center justify-center text-emerald-300 font-black text-2xl shadow-inner">
@@ -324,11 +322,11 @@ export default function MobileForm() {
               </div>
             </button>
 
-            {/* Divisor */}
+            {/* Divisor: OU COM MAIS PESSOAS. QUANTAS? */}
             <div className="relative flex py-1 items-center">
               <div className="flex-grow border-t border-slate-800"></div>
-              <span className="flex-shrink mx-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                OU COM MAIS PESSOAS
+              <span className="flex-shrink mx-3 text-[11px] sm:text-xs font-black text-slate-300 uppercase tracking-wider">
+                OU COM MAIS PESSOAS. QUANTAS?
               </span>
               <div className="flex-grow border-t border-slate-800"></div>
             </div>
