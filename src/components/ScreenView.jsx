@@ -74,16 +74,7 @@ export default function ScreenView() {
       )}
 
       {/* ============================================================== */}
-      {/* 1. TOPO CENTRALIZADO: QUEREMOS TE CONHECER MELHOR (REDUZIDO 40%) */}
-      {/* ============================================================== */}
-      <header className="w-full text-center pt-2 md:pt-4 z-10">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black uppercase tracking-wider text-sky-400 drop-shadow-md">
-          QUEREMOS TE CONHECER MELHOR
-        </h1>
-      </header>
-
-      {/* ============================================================== */}
-      {/* 2. ÁREA CENTRAL: APONTE A CÂMERA ALINHADO COM O QR CODE       */}
+      {/* ÁREA CENTRAL: APONTE A CÂMERA ALINHADO COM O QR CODE         */}
       {/* ============================================================== */}
       <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-14 items-center justify-center my-auto relative z-10 max-w-7xl mx-auto w-full">
         {/* LADO ESQUERDO: APONTE A CÂMERA DO SEU CELULAR */}
