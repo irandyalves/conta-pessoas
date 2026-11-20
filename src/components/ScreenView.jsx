@@ -90,21 +90,21 @@ export default function ScreenView() {
           </h2>
         </div>
 
-        {/* LADO DIREITO: QR CODE LIMPO (SEM "ESCANEIE AQUI") + LINK 200% MAIOR EM VERDE ESCURO */}
+        {/* LADO DIREITO: QR CODE LIMPO (+20% MAIOR) + LINK MAIS LARGO (+15%) E MAIS BAIXO */}
         <div className="lg:col-span-5 flex flex-col items-center justify-center">
-          {/* Card Branco com o QR Code */}
+          {/* Card Branco com o QR Code (+20% de tamanho: 385px) */}
           <div className="bg-white p-7 sm:p-9 md:p-10 rounded-3xl shadow-2xl qr-glow flex flex-col items-center border-4 border-sky-400/90">
             <QRCodeSVG 
               value={qrUrl} 
-              size={320} 
+              size={385} 
               level="H" 
               includeMargin={false}
               className="rounded-xl"
             />
           </div>
 
-          {/* LINK 200% MAIOR, FUNDO VERDE ESCURO, BORDA E LETRA BRANCA */}
-          <div className="mt-6 px-6 py-3 rounded-2xl bg-emerald-950 border-2 border-emerald-400 text-white font-black text-base md:text-lg lg:text-xl shadow-xl tracking-wide max-w-full text-center select-all">
+          {/* LINK: MAIS BAIXO (mt-10) E LARGURA AUMENTADA EM 15% (min-w-[440px]) */}
+          <div className="mt-10 px-8 py-4 rounded-2xl bg-emerald-950 border-2 border-emerald-400 text-white font-black text-base sm:text-lg md:text-xl shadow-2xl tracking-wide w-full max-w-md sm:max-w-lg text-center select-all whitespace-nowrap">
             {qrUrl}
           </div>
         </div>
