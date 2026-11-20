@@ -103,9 +103,9 @@ export default function ScreenView() {
             />
           </div>
 
-          {/* LINK: MAIS BAIXO (mt-10) E LARGURA AUMENTADA EM 15% (min-w-[440px]) */}
-          <div className="mt-10 px-8 py-4 rounded-2xl bg-emerald-950 border-2 border-emerald-400 text-white font-black text-base sm:text-lg md:text-xl shadow-2xl tracking-wide w-full max-w-md sm:max-w-lg text-center select-all whitespace-nowrap">
-            {qrUrl}
+          {/* LINK: BADGE ELEGANTE, PROPORCIONAL E COM ESPAÇAMENTO PERFEITO */}
+          <div className="mt-8 inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-emerald-950/90 border border-emerald-500/60 shadow-[0_0_25px_rgba(16,185,129,0.2)] text-white font-bold text-sm sm:text-base md:text-lg tracking-wide text-center">
+            <span>{qrUrl}</span>
           </div>
         </div>
       </main>
