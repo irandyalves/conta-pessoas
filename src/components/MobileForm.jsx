@@ -8,7 +8,8 @@ import {
   Share2, 
   Compass,
   ChevronRight,
-  Sparkles
+  Sparkles,
+  TreePine
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { registrarPresenca, escutarTituloEvento, DEFAULT_EVENT_TITLE } from '../firebase';
@@ -180,19 +181,22 @@ export default function MobileForm() {
       {/* CABEÇALHO DO EVENTO                                            */}
       {/* ============================================================== */}
       <header className="w-full pt-4 pb-2 text-center">
-        {/* 1. SEJA MUITO BEM-VINDO ACIMA DA CANTATA (+50% EM VERDE) */}
-        <p className="text-xl sm:text-2xl font-black text-emerald-400 tracking-wide drop-shadow">
+        {/* 1. SEJA MUITO BEM-VINDO (+25% NA FONTE) */}
+        <p className="text-2xl sm:text-3xl font-black text-emerald-400 tracking-wide drop-shadow-md">
           Seja muito bem-vindo!
         </p>
 
-        {/* 2. TÍTULO DO EVENTO (REDUZIDO 25%) */}
-        <h1 className="text-base sm:text-lg font-bold tracking-wider text-amber-300 uppercase mt-0.5">
-          {eventoTitulo}
-        </h1>
+        {/* 2. ÍCONE DE NATAL À ESQ E SEPARADO DA CANTATA DE NATAL 2026 */}
+        <div className="inline-flex items-center justify-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/90 border border-slate-800 text-amber-300 mt-3 mb-2 shadow-inner">
+          <TreePine className="w-4 h-4 text-emerald-400 shrink-0" />
+          <h1 className="text-sm sm:text-base font-extrabold tracking-wider uppercase text-amber-300">
+            {eventoTitulo}
+          </h1>
+        </div>
 
         {/* 3. PERGUNTA 1: Como você chegou aqui? */}
         {step === 1 && (
-          <div className="mt-4 pt-3 border-t border-slate-800/60">
+          <div className="mt-3 pt-3 border-t border-slate-800/60">
             <h2 className="text-xl sm:text-2xl font-black text-white leading-tight">
               Como você chegou aqui?
             </h2>
@@ -201,7 +205,7 @@ export default function MobileForm() {
 
         {/* PERGUNTA 2 */}
         {step === 2 && (
-          <div className="mt-4 pt-3 border-t border-slate-800/60">
+          <div className="mt-3 pt-3 border-t border-slate-800/60">
             <h2 className="text-xl sm:text-2xl font-black text-white leading-tight">
               Você está só ou tem mais pessoas te acompanhando?
             </h2>
@@ -213,31 +217,32 @@ export default function MobileForm() {
       {/* CONTEÚDO PRINCIPAL (TELAS 1 E 2)                               */}
       {/* ============================================================== */}
       <main className="w-full flex-1 my-auto py-2">
-        {/* TELA 1: COMO CHEGOU */}
+        {/* TELA 1: COMO CHEGOU (CARDS +25% ALTURA E +20% FONTE) */}
         {step === 1 && (
-          <div className="space-y-2.5 fade-in">
+          <div className="space-y-3 fade-in">
             {opcoesChegada.map((opcao) => {
               const Icon = opcao.icone;
               return (
                 <button
                   key={opcao.id}
                   onClick={() => handleSelectComoChegou(opcao)}
-                  className="w-full text-left p-3.5 sm:p-4 rounded-2xl border border-slate-800 bg-slate-900/85 hover:bg-slate-800/90 active:scale-[0.98] transition-all flex items-center justify-between group"
+                  className="w-full text-left p-5 sm:p-5.5 min-h-[82px] rounded-2xl border border-slate-800 bg-slate-900/85 hover:bg-slate-800/90 active:scale-[0.98] transition-all flex items-center justify-between group shadow-sm"
                 >
-                  <div className="flex items-center gap-3.5 pr-2">
-                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border ${opcao.iconeCor}`}>
-                      <Icon className="w-5 h-5" />
+                  <div className="flex items-center gap-4 pr-2">
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border shadow-sm ${opcao.iconeCor}`}>
+                      <Icon className="w-6 h-6" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-sm text-white group-hover:text-amber-300 transition">
+                      {/* FONTE DOS CARDS +20% */}
+                      <h3 className="font-bold text-base sm:text-lg text-white group-hover:text-amber-300 transition leading-snug">
                         {opcao.titulo}
                       </h3>
-                      <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-1">
+                      <p className="text-xs sm:text-[13px] text-slate-400 mt-1 line-clamp-1">
                         {opcao.subtitulo}
                       </p>
                     </div>
                   </div>
-                  <div className="w-6 h-6 rounded-full bg-slate-800/80 border border-slate-700/80 flex items-center justify-center shrink-0 text-slate-400 group-hover:text-amber-300">
+                  <div className="w-7 h-7 rounded-full bg-slate-800/80 border border-slate-700/80 flex items-center justify-center shrink-0 text-slate-400 group-hover:text-amber-300">
                     <ChevronRight className="w-4 h-4" />
                   </div>
                 </button>
@@ -249,26 +254,26 @@ export default function MobileForm() {
         {/* TELA 2: ACOMPANHANTES */}
         {step === 2 && (
           <div className="space-y-4 fade-in">
-            {/* Opção em Destaque: SÓ EU */}
+            {/* Opção em Destaque: SÓ EU (+25% ALTURA) */}
             <button
               onClick={() => handleSelectQtd(1)}
-              className="w-full p-4 rounded-2xl border border-emerald-900/60 bg-gradient-to-r from-emerald-950/40 via-slate-900 to-slate-900 hover:border-emerald-600/50 active:scale-[0.98] transition-all flex items-center justify-between shadow-lg"
+              className="w-full p-5 sm:p-6 min-h-[88px] rounded-2xl border border-emerald-900/60 bg-gradient-to-r from-emerald-950/40 via-slate-900 to-slate-900 hover:border-emerald-600/50 active:scale-[0.98] transition-all flex items-center justify-between shadow-lg"
             >
-              <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-300">
-                  <User className="w-6 h-6" />
+              <div className="flex items-center gap-4">
+                <div className="w-13 h-13 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-300 p-2.5">
+                  <User className="w-7 h-7" />
                 </div>
                 <div className="text-left">
                   <span className="inline-block text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 mb-0.5">
                     Individual
                   </span>
-                  <h3 className="font-black text-lg text-white">
+                  <h3 className="font-black text-xl text-white">
                     SÓ EU
                   </h3>
                   <p className="text-xs text-slate-400">Vim sozinho(a)</p>
                 </div>
               </div>
-              <div className="w-9 h-9 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-300 font-black text-sm">
+              <div className="w-10 h-10 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-300 font-black text-base">
                 1
               </div>
             </button>
@@ -282,16 +287,16 @@ export default function MobileForm() {
               <div className="flex-grow border-t border-slate-800"></div>
             </div>
 
-            {/* Grid dos Botões 2 a +10 */}
-            <div className="grid grid-cols-3 gap-2.5">
+            {/* Grid dos Botões 2 a +10 (+25% ALTURA) */}
+            <div className="grid grid-cols-3 gap-3">
               {opcoesQuantidade.map((op) => (
                 <button
                   key={op.valor}
                   onClick={() => handleSelectQtd(op.valor)}
-                  className="py-3.5 px-2 rounded-2xl border border-slate-800 bg-slate-900/90 hover:bg-slate-800 active:scale-95 transition-all text-slate-200 flex flex-col items-center justify-center shadow-sm"
+                  className="py-4 sm:py-5 px-2 rounded-2xl border border-slate-800 bg-slate-900/90 hover:bg-slate-800 active:scale-95 transition-all text-slate-200 flex flex-col items-center justify-center shadow-sm"
                 >
-                  <span className="text-2xl font-black tracking-tight">{op.label}</span>
-                  <span className="text-[10px] font-semibold text-slate-400 mt-0.5">
+                  <span className="text-2xl sm:text-3xl font-black tracking-tight">{op.label}</span>
+                  <span className="text-[11px] font-semibold text-slate-400 mt-0.5">
                     {op.valor === 10 ? 'Pessoas ou +' : 'Pessoas'}
                   </span>
                 </button>
