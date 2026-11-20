@@ -1,0 +1,11 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Permite que os visitantes registrem sua presença e o painel leia os dados
+    match /presencas/{document=**} {
+      allow read, create: if true;
+      allow update, delete: if true;
+    }
+  }
+}
