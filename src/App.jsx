@@ -58,21 +58,7 @@ export default function App() {
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans select-none">
       {/* Telas */}
       <div className="flex-1">
-        {view === 'form' && (
-          <div className="relative">
-            <MobileForm />
-            {/* Acesso discreto da liderança no rodapé */}
-            <div className="text-center pb-3">
-              <button
-                onClick={() => setShowPinModal(true)}
-                className="text-[10px] text-slate-700 hover:text-slate-500 inline-flex items-center gap-1 transition"
-                title="Acesso da Liderança"
-              >
-                <Lock className="w-3 h-3" /> Acesso da Liderança
-              </button>
-            </div>
-          </div>
-        )}
+        {view === 'form' && <MobileForm />}
 
         {view === 'telao' && <ScreenView />}
 

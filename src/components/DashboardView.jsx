@@ -38,6 +38,7 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
   const [eventoTitulo, setEventoTitulo] = useState(DEFAULT_EVENT_TITLE);
   const [editandoTitulo, setEditandoTitulo] = useState(false);
   const [inputTitulo, setInputTitulo] = useState('');
+  const [salvoFeedback, setSalvoFeedback] = useState(false);
   const [filtroData, setFiltroData] = useState('hoje');
   const [dataPersonalizada, setDataPersonalizada] = useState(new Date().toISOString().slice(0, 10));
   const [copiedLink, setCopiedLink] = useState('');
@@ -73,6 +74,8 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
     if (!inputTitulo.trim()) return;
     await saveEventTitle(inputTitulo.trim());
     setEditandoTitulo(false);
+    setSalvoFeedback(true);
+    setTimeout(() => setSalvoFeedback(false), 3000);
   };
 
   const hoje = new Date().toLocaleDateString('pt-BR');
@@ -277,6 +280,44 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
           >
             <Settings className="w-4 h-4" />
             <span>{isFirebaseReady() ? 'Firebase Ativo' : 'Conectar Firebase'}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* ============================================================== */}
+      {/* CAMPO PERMANENTE PARA DIGITAR O NOME DO EVENTO                 */}
+      {/* ============================================================== */}
+      <div className="print:hidden bg-slate-900/95 border border-amber-500/30 rounded-2xl p-4 md:p-5 shadow-lg space-y-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <span className="text-xs font-bold text-amber-400 uppercase tracking-wider block">
+              Nome do Evento / Culto (Aparece no Celular e Relatórios)
+            </span>
+            <p className="text-xs text-slate-400">
+              Digite o nome que você quiser (ex: CANTATA DE NATAL 2026, CULTO DE JOVENS, etc.) e clique em Salvar:
+            </p>
+          </div>
+          {salvoFeedback && (
+            <span className="text-xs bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 px-3 py-1 rounded-full font-bold flex items-center gap-1 shrink-0">
+              <Check className="w-3.5 h-3.5" /> Nome salvo com sucesso!
+            </span>
+          )}
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-center gap-2 pt-1">
+          <input
+            type="text"
+            value={inputTitulo}
+            onChange={(e) => setInputTitulo(e.target.value)}
+            placeholder="Digite o nome do evento"
+            className="flex-1 bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-4 py-2.5 text-base font-bold text-white tracking-wide w-full"
+          />
+          <button
+            onClick={handleSalvarTitulo}
+            className="w-full sm:w-auto px-5 py-2.5 bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-black text-sm rounded-xl transition flex items-center justify-center gap-2 shrink-0 shadow-lg shadow-amber-500/20"
+          >
+            <Save className="w-4 h-4" />
+            <span>Salvar Nome do Evento</span>
           </button>
         </div>
       </div>

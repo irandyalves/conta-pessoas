@@ -225,16 +225,16 @@ export default function MobileForm() {
       {/* ============================================================== */}
       {/* CABEÇALHO DO EVENTO                                            */}
       {/* ============================================================== */}
-      <header className="w-full pt-4 pb-2 text-center">
-        {/* 1. SEJA MUITO BEM-VINDO (+25% NA FONTE) */}
-        <p className="text-2xl sm:text-3xl font-black text-emerald-400 tracking-wide drop-shadow-md">
+      <header className="w-full pt-3 pb-2 text-center">
+        {/* 1. SEJA MUITO BEM-VINDO (REDUZIDO EM 20%) */}
+        <p className="text-lg sm:text-xl font-extrabold text-emerald-400 tracking-wide drop-shadow-sm">
           Seja muito bem-vindo!
         </p>
 
-        {/* 2. ÍCONE DE NATAL À ESQ E SEPARADO DA CANTATA DE NATAL 2026 */}
-        <div className="inline-flex items-center justify-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/90 border border-slate-800 text-amber-300 mt-3 mb-2 shadow-inner">
-          <TreePine className="w-4 h-4 text-emerald-400 shrink-0" />
-          <h1 className="text-sm sm:text-base font-extrabold tracking-wider uppercase text-amber-300">
+        {/* 2. TÍTULO DO EVENTO AUMENTADO (CONFIGURÁVEL NO ADMIN) */}
+        <div className="inline-flex items-center justify-center gap-2.5 px-5 py-2 rounded-2xl bg-slate-900/95 border-2 border-amber-500/40 text-amber-300 mt-2 mb-2 shadow-lg">
+          <TreePine className="w-5 h-5 text-emerald-400 shrink-0" />
+          <h1 className="text-base sm:text-lg md:text-xl font-black tracking-wider uppercase text-amber-300 drop-shadow">
             {eventoTitulo}
           </h1>
         </div>
