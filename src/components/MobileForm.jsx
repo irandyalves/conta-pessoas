@@ -322,17 +322,17 @@ export default function MobileForm() {
               </div>
             </button>
 
-            {/* Divisor: OU COM MAIS PESSOAS. QUANTAS? */}
-            <div className="relative flex py-1 items-center">
-              <div className="flex-grow border-t border-slate-800"></div>
-              <span className="flex-shrink mx-3 text-[11px] sm:text-xs font-black text-slate-300 uppercase tracking-wider">
-                OU COM MAIS PESSOAS. QUANTAS?
+            {/* Divisor com o DOBRO DE ESPAÇO empurrando os números para baixo */}
+            <div className="relative flex py-6 my-2 items-center">
+              <div className="flex-grow border-t border-slate-800/80"></div>
+              <span className="flex-shrink mx-3 text-xs sm:text-sm font-black text-amber-300 uppercase tracking-wider text-center">
+                Quantas pessoas vieram com você?
               </span>
-              <div className="flex-grow border-t border-slate-800"></div>
+              <div className="flex-grow border-t border-slate-800/80"></div>
             </div>
 
-            {/* Grid dos Botões 2 a +10 (BOTÕES 3D COM NÚMEROS +20%) */}
-            <div className="grid grid-cols-3 gap-3.5">
+            {/* Grid dos Botões 2 a +10 (BOTÕES 3D EMPURRADOS PARA BAIXO) */}
+            <div className="grid grid-cols-3 gap-3.5 pt-1">
               {opcoesQuantidade.map((op) => (
                 <button
                   key={op.valor}
