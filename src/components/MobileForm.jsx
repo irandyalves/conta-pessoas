@@ -14,12 +14,43 @@ import {
 import confetti from 'canvas-confetti';
 import { registrarPresenca, escutarTituloEvento, DEFAULT_EVENT_TITLE } from '../firebase';
 
+const CHECKIN_LOCK_KEY = 'presenca_finalizada_cantata_2026';
+
 export default function MobileForm() {
   const [eventoTitulo, setEventoTitulo] = useState(DEFAULT_EVENT_TITLE);
   const [step, setStep] = useState(1);
   const [comoChegou, setComoChegou] = useState('');
   const [countdown, setCountdown] = useState(10);
   const [finalizado, setFinalizado] = useState(false);
+
+  // 1. BLOQUEIO DEFINITIVO: Se o aparelho já registrou, impede de voltar ou tentar de novo!
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('novo') === '1') {
+      localStorage.removeItem(CHECKIN_LOCK_KEY);
+      return;
+    }
+
+    const jaRegistrou = localStorage.getItem(CHECKIN_LOCK_KEY);
+    if (jaRegistrou) {
+      setStep(3);
+      setFinalizado(true);
+      setCountdown(0);
+    }
+  }, []);
+
+  // 2. BLOQUEIO DO BOTÃO "VOLTAR" DO NAVEGADOR / CELULAR
+  useEffect(() => {
+    if (step === 3) {
+      const handlePop = (e) => {
+        e.preventDefault();
+        window.history.pushState(null, '', window.location.href);
+      };
+      window.history.pushState(null, '', window.location.href);
+      window.addEventListener('popstate', handlePop);
+      return () => window.removeEventListener('popstate', handlePop);
+    }
+  }, [step]);
 
   // Escuta título do evento configurável pelo Admin
   useEffect(() => {
@@ -29,7 +60,7 @@ export default function MobileForm() {
     return () => unsub && unsub();
   }, []);
 
-  // Timer de 10 segundos na tela final
+  // Timer de 10 segundos na tela final para fechar
   useEffect(() => {
     let timer;
     if (step === 3 && countdown > 0) {
@@ -39,9 +70,10 @@ export default function MobileForm() {
     } else if (step === 3 && countdown === 0) {
       setFinalizado(true);
       try {
+        window.open('', '_self', '');
         window.close();
       } catch (e) {
-        // Alguns navegadores móveis bloqueiam window.close() se não foi aberto por script
+        // Bloqueio de segurança nativo de navegadores móveis para scripts
       }
     }
     return () => clearInterval(timer);
@@ -106,16 +138,29 @@ export default function MobileForm() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Ao escolher uma opção na pergunta 2, registra e abre IMEDIATAMENTE a tela final
+  // Ao escolher uma opção na pergunta 2, registra e TRAVA IMEDIATAMENTE este aparelho
   const handleSelectQtd = (qtd) => {
-    // 1. Registra automaticamente no banco para o relatório
+    if (step === 3) return; // Impede duplo clique
+
+    // 1. Grava a trava definitiva neste aparelho no navegador
+    localStorage.setItem(CHECKIN_LOCK_KEY, 'true');
+
+    // 2. Trava o botão Voltar do Android/iPhone
+    try {
+      window.history.pushState(null, '', window.location.href);
+      window.onpopstate = function() {
+        window.history.pushState(null, '', window.location.href);
+      };
+    } catch (e) {}
+
+    // 3. Registra automaticamente no banco para o relatório
     registrarPresenca({
       comoChegou,
       qtdPessoas: qtd,
       evento: eventoTitulo
     });
 
-    // 2. Dispara confetes
+    // 4. Dispara confetes
     try {
       confetti({
         particleCount: 80,
@@ -124,7 +169,7 @@ export default function MobileForm() {
       });
     } catch (e) {}
 
-    // 3. Abre imediatamente a tela final
+    // 5. Abre imediatamente a tela final
     setStep(3);
   };
 
