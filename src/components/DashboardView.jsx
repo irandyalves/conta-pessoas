@@ -172,7 +172,7 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-slate-950 text-slate-100 p-3 md:p-6 max-w-7xl mx-auto space-y-3">
       
       {/* ============================================================== */}
       {/* CABEÇALHO DO RELATÓRIO OFICIAL (SÓ APARECE NA IMPRESSÃO/PDF)  */}
@@ -212,34 +212,34 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
       {/* ============================================================== */}
       {/* CABEÇALHO EM TELA (NÃO IMPRIME NO PDF)                         */}
       {/* ============================================================== */}
-      <div className="print:hidden flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-800">
+      <div className="print:hidden flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-slate-800">
         <div>
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-600 p-0.5 shadow-lg shadow-amber-500/20">
-              <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center text-amber-400">
-                <Church className="w-6 h-6" />
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-600 p-0.5 shadow-md shadow-amber-500/20">
+              <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center text-amber-400">
+                <Church className="w-5 h-5" />
               </div>
             </div>
             <div>
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-bold tracking-wide uppercase">
+              <div className="inline-flex items-center gap-1.5 px-2 py-0.2 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[9px] font-bold tracking-wide uppercase">
                 Área Administrativa
               </div>
               
               {/* CONFIGURAÇÃO DO TÍTULO DO EVENTO (EX: CANTATA DE NATAL 2026) */}
               {editandoTitulo ? (
-                <div className="flex items-center gap-2 mt-1">
+                <div className="flex items-center gap-2 mt-0.5">
                   <input
                     type="text"
                     value={inputTitulo}
                     onChange={(e) => setInputTitulo(e.target.value)}
                     placeholder="Nome do Evento"
-                    className="bg-slate-900 border border-amber-500 rounded-lg px-2.5 py-1 text-base font-bold text-white focus:outline-none"
+                    className="bg-slate-900 border border-amber-500 rounded-lg px-2.5 py-0.5 text-sm font-bold text-white focus:outline-none"
                   />
                   <button
                     onClick={handleSalvarTitulo}
-                    className="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold rounded-lg flex items-center gap-1"
+                    className="px-2 py-0.5 bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold rounded-md flex items-center gap-1"
                   >
-                    <Save className="w-3.5 h-3.5" /> Salvar
+                    <Save className="w-3 h-3" /> Salvar
                   </button>
                   <button
                     onClick={() => {
@@ -248,18 +248,18 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
                     }}
                     className="p-1 text-slate-400 hover:text-white"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
               ) : (
-                <div className="flex items-center gap-2 mt-0.5">
-                  <h1 className="text-2xl font-black text-white">{eventoTitulo}</h1>
+                <div className="flex items-center gap-1.5 mt-0.2">
+                  <h1 className="text-xl font-black text-white">{eventoTitulo}</h1>
                   <button
                     onClick={() => setEditandoTitulo(true)}
                     title="Editar nome do evento que aparece no celular"
                     className="p-1 text-slate-400 hover:text-amber-400 transition"
                   >
-                    <Edit3 className="w-4 h-4" />
+                    <Edit3 className="w-3.5 h-3.5" />
                   </button>
                 </div>
               )}
@@ -268,195 +268,159 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
         </div>
 
         {/* Ações Rápidas */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
           {/* BOTÃO ZERAR TUDO COM DESTRAVAMENTO AUTOMÁTICO DE APARELHOS */}
           <button
             onClick={handleZerarTudo}
             disabled={zerando}
             title="Zera todas as presenças do banco e destrava todos os celulares"
-            className="px-3.5 py-2 text-xs font-black rounded-xl bg-red-600/90 hover:bg-red-500 text-white flex items-center gap-1.5 transition active:scale-95 shadow-lg shadow-red-600/25 border border-red-500/50 disabled:opacity-50"
+            className="px-3 py-1.5 text-xs font-black rounded-lg bg-red-600/90 hover:bg-red-500 text-white flex items-center gap-1.5 transition active:scale-95 shadow-md shadow-red-600/25 border border-red-500/50 disabled:opacity-50"
           >
-            <Trash2 className="w-4 h-4 text-red-100" />
+            <Trash2 className="w-3.5 h-3.5 text-red-100" />
             <span>{zerando ? 'Zerando...' : 'ZERAR TUDO'}</span>
           </button>
 
           <button
             onClick={handlePrint}
-            className="px-3.5 py-2 text-xs font-bold rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-700 text-sky-300 flex items-center gap-1.5 transition active:scale-95 shadow"
+            className="px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-900 hover:bg-slate-850 border border-slate-700 text-sky-300 flex items-center gap-1.5 transition active:scale-95 shadow"
           >
-            <Printer className="w-4 h-4" />
+            <Printer className="w-3.5 h-3.5" />
             <span>Imprimir / PDF</span>
           </button>
 
           <button
             onClick={handleExportCSV}
-            className="px-3.5 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 transition active:scale-95 shadow-lg shadow-emerald-600/20"
+            className="px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 transition active:scale-95 shadow-md shadow-emerald-600/20"
           >
-            <FileSpreadsheet className="w-4 h-4" />
-            <span>Exportar Excel (CSV)</span>
+            <FileSpreadsheet className="w-3.5 h-3.5" />
+            <span>Exportar Excel</span>
           </button>
 
           <button
             onClick={() => onChangeView('telao')}
-            className="px-3.5 py-2 text-xs font-bold rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 flex items-center gap-1.5 transition"
+            className="px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 flex items-center gap-1.5 transition"
           >
-            <Tv className="w-4 h-4" />
+            <Tv className="w-3.5 h-3.5" />
             <span>Telão</span>
           </button>
 
           <button
             onClick={onOpenConfig}
-            className={`px-3.5 py-2 text-xs font-bold rounded-xl border flex items-center gap-1.5 transition ${
+            className={`px-3 py-1.5 text-xs font-bold rounded-lg border flex items-center gap-1.5 transition ${
               isFirebaseReady()
                 ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20'
                 : 'bg-amber-500/10 border-amber-500/30 text-amber-300 hover:bg-amber-500/20'
             }`}
           >
-            <Settings className="w-4 h-4" />
+            <Settings className="w-3.5 h-3.5" />
             <span>{isFirebaseReady() ? 'Firebase Ativo' : 'Conectar Firebase'}</span>
           </button>
         </div>
       </div>
 
       {/* ============================================================== */}
-      {/* CAMPO PERMANENTE PARA DIGITAR O NOME DO EVENTO                 */}
+      {/* BARRA UNIFICADA COMPACTA: NOME DO EVENTO + LINKS RÁPIDOS       */}
       {/* ============================================================== */}
-      <div className="print:hidden bg-slate-900/95 border border-amber-500/30 rounded-2xl p-4 md:p-5 shadow-lg space-y-2">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div>
-            <span className="text-xs font-bold text-amber-400 uppercase tracking-wider block">
-              Nome do Evento / Culto (Aparece no Celular e Relatórios)
+      <div className="print:hidden grid grid-cols-1 lg:grid-cols-12 gap-2.5 items-stretch">
+        {/* LADO ESQUERDO: NOME DO EVENTO (COMPACTO) */}
+        <div className="lg:col-span-5 bg-slate-900/90 border border-amber-500/30 rounded-xl px-3 py-2 flex flex-col justify-between gap-1.5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wide flex items-center gap-1.5">
+              <Edit3 className="w-3.5 h-3.5" /> Nome do Evento (Celular / Telão)
             </span>
-            <p className="text-xs text-slate-400">
-              Digite o nome que você quiser (ex: CANTATA DE NATAL 2026, CULTO DE JOVENS, etc.) e clique em Salvar:
-            </p>
+            {salvoFeedback && (
+              <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.2 rounded-full font-bold flex items-center gap-1">
+                <Check className="w-3 h-3" /> Salvo!
+              </span>
+            )}
           </div>
-          {salvoFeedback && (
-            <span className="text-xs bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 px-3 py-1 rounded-full font-bold flex items-center gap-1 shrink-0">
-              <Check className="w-3.5 h-3.5" /> Nome salvo com sucesso!
-            </span>
-          )}
-        </div>
-
-        <div className="flex flex-col sm:flex-row items-center gap-2 pt-1">
-          <input
-            type="text"
-            value={inputTitulo}
-            onChange={(e) => setInputTitulo(e.target.value)}
-            placeholder="Digite o nome do evento"
-            className="flex-1 bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-4 py-2.5 text-base font-bold text-white tracking-wide w-full"
-          />
-          <button
-            onClick={handleSalvarTitulo}
-            className="w-full sm:w-auto px-5 py-2.5 bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-black text-sm rounded-xl transition flex items-center justify-center gap-2 shrink-0 shadow-lg shadow-amber-500/20"
-          >
-            <Save className="w-4 h-4" />
-            <span>Salvar Nome do Evento</span>
-          </button>
-        </div>
-      </div>
-
-      {/* ============================================================== */}
-      {/* CARD: LINKS RÁPIDOS PARA COPIAR (FÁCEIS DE DIGITAR)            */}
-      {/* ============================================================== */}
-      <div className="print:hidden bg-slate-900/95 border border-slate-800 rounded-2xl p-4 md:p-5 shadow-lg space-y-3">
-        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Smartphone className="w-4 h-4 text-emerald-400" />
-            <h3 className="text-sm font-bold text-white">Links Rápidos para Acesso e Digitação</h3>
+            <input
+              type="text"
+              value={inputTitulo}
+              onChange={(e) => setInputTitulo(e.target.value)}
+              placeholder="Ex: CANTATA DE NATAL 2026"
+              className="flex-1 min-w-0 bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1 text-xs font-bold text-white tracking-wide"
+            />
+            <button
+              onClick={handleSalvarTitulo}
+              className="px-3 py-1 bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-black text-xs rounded-lg transition flex items-center gap-1 shrink-0 shadow"
+            >
+              <Save className="w-3.5 h-3.5" />
+              <span>Salvar</span>
+            </button>
           </div>
-          <span className="text-[11px] text-slate-400">Clique para copiar o link com 1 toque</span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {/* 1. Link do Celular (Público da Cantata - Fácil de digitar) */}
-          <div className="p-3 bg-slate-950 rounded-xl border border-emerald-900/40 flex flex-col justify-between gap-2.5">
-            <div>
-              <div className="flex items-center justify-between text-xs font-bold text-emerald-400 mb-1">
-                <span>📱 Celular (Fácil de Digitar)</span>
-                {copiedLink === 'mobile' && (
-                  <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full flex items-center gap-1 font-bold">
-                    <Check className="w-3 h-3" /> Copiado!
-                  </span>
-                )}
-              </div>
-              <p className="text-xs font-mono text-slate-200 select-all truncate bg-slate-900/80 p-2 rounded-lg border border-slate-800">
-                {linkMobile.replace(/^https?:\/\//i, '').replace(/\/$/, '')}
-              </p>
-            </div>
-            <button
-              onClick={() => copyToClipboard(linkMobile, 'mobile')}
-              className="w-full py-2 px-3 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold text-xs rounded-lg transition flex items-center justify-center gap-1.5 shadow"
-            >
-              <Copy className="w-3.5 h-3.5" />
-              <span>{copiedLink === 'mobile' ? 'Link Copiado!' : 'Copiar Link do Celular'}</span>
-            </button>
+        {/* LADO DIREITO: LINKS RÁPIDOS COMPACTOS */}
+        <div className="lg:col-span-7 bg-slate-900/90 border border-slate-800 rounded-xl px-3 py-2 flex flex-col justify-between gap-1.5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wide flex items-center gap-1.5">
+              <Smartphone className="w-3.5 h-3.5 text-emerald-400" /> Links Rápidos (1 Toque para Copiar)
+            </span>
+            <span className="text-[10px] text-slate-400 hidden sm:inline">Toque para copiar</span>
           </div>
 
-          {/* 2. Link do Telão */}
-          <div className="p-3 bg-slate-950 rounded-xl border border-sky-900/40 flex flex-col justify-between gap-2.5">
-            <div>
-              <div className="flex items-center justify-between text-xs font-bold text-sky-400 mb-1">
-                <span>📺 Telão da Igreja</span>
-                {copiedLink === 'telao' && (
-                  <span className="text-[10px] bg-sky-500/20 text-sky-300 px-2 py-0.5 rounded-full flex items-center gap-1 font-bold">
-                    <Check className="w-3 h-3" /> Copiado!
-                  </span>
-                )}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            {/* Celular */}
+            <div className="bg-slate-950 border border-emerald-900/50 rounded-lg px-2.5 py-1 flex items-center justify-between gap-1.5">
+              <div className="min-w-0">
+                <span className="text-[10px] font-bold text-emerald-400 block truncate">📱 Celular</span>
+                <span className="text-[9px] font-mono text-slate-400 block truncate">...web.app</span>
               </div>
-              <p className="text-xs font-mono text-slate-200 select-all truncate bg-slate-900/80 p-2 rounded-lg border border-slate-800">
-                {linkTelao}
-              </p>
+              <button
+                onClick={() => copyToClipboard(linkMobile, 'mobile')}
+                className="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white rounded text-[10px] font-bold shrink-0 transition"
+              >
+                {copiedLink === 'mobile' ? '✓ Copiado' : 'Copiar'}
+              </button>
             </div>
-            <button
-              onClick={() => copyToClipboard(linkTelao, 'telao')}
-              className="w-full py-2 px-3 bg-sky-600 hover:bg-sky-500 active:scale-95 text-white font-bold text-xs rounded-lg transition flex items-center justify-center gap-1.5 shadow"
-            >
-              <Copy className="w-3.5 h-3.5" />
-              <span>{copiedLink === 'telao' ? 'Link Copiado!' : 'Copiar Link do Telão'}</span>
-            </button>
-          </div>
 
-          {/* 3. Link do Painel Admin */}
-          <div className="p-3 bg-slate-950 rounded-xl border border-indigo-900/40 flex flex-col justify-between gap-2.5">
-            <div>
-              <div className="flex items-center justify-between text-xs font-bold text-indigo-400 mb-1">
-                <span>📊 Painel de Relatórios</span>
-                {copiedLink === 'admin' && (
-                  <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full flex items-center gap-1 font-bold">
-                    <Check className="w-3 h-3" /> Copiado!
-                  </span>
-                )}
+            {/* Telão */}
+            <div className="bg-slate-950 border border-sky-900/50 rounded-lg px-2.5 py-1 flex items-center justify-between gap-1.5">
+              <div className="min-w-0">
+                <span className="text-[10px] font-bold text-sky-400 block truncate">📺 Telão</span>
+                <span className="text-[9px] font-mono text-slate-400 block truncate">?view=telao</span>
               </div>
-              <p className="text-xs font-mono text-slate-200 select-all truncate bg-slate-900/80 p-2 rounded-lg border border-slate-800">
-                {linkAdmin}
-              </p>
+              <button
+                onClick={() => copyToClipboard(linkTelao, 'telao')}
+                className="px-2 py-0.5 bg-sky-600 hover:bg-sky-500 active:scale-95 text-white rounded text-[10px] font-bold shrink-0 transition"
+              >
+                {copiedLink === 'telao' ? '✓ Copiado' : 'Copiar'}
+              </button>
             </div>
-            <button
-              onClick={() => copyToClipboard(linkAdmin, 'admin')}
-              className="w-full py-2 px-3 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-bold text-xs rounded-lg transition flex items-center justify-center gap-1.5 shadow"
-            >
-              <Copy className="w-3.5 h-3.5" />
-              <span>{copiedLink === 'admin' ? 'Link Copiado!' : 'Copiar Link Admin'}</span>
-            </button>
+
+            {/* Admin */}
+            <div className="bg-slate-950 border border-indigo-900/50 rounded-lg px-2.5 py-1 flex items-center justify-between gap-1.5">
+              <div className="min-w-0">
+                <span className="text-[10px] font-bold text-indigo-400 block truncate">📊 Admin</span>
+                <span className="text-[9px] font-mono text-slate-400 block truncate">?view=admin</span>
+              </div>
+              <button
+                onClick={() => copyToClipboard(linkAdmin, 'admin')}
+                className="px-2 py-0.5 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white rounded text-[10px] font-bold shrink-0 transition"
+              >
+                {copiedLink === 'admin' ? '✓ Copiado' : 'Copiar'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* ============================================================== */}
-      {/* FILTROS DE DATA                                                */}
+      {/* FILTROS DE DATA (COMPACTO)                                     */}
       {/* ============================================================== */}
-      <div className="print:hidden flex flex-wrap items-center justify-between gap-3 bg-slate-900/80 border border-slate-800 p-3 rounded-2xl">
-        <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-amber-400" />
+      <div className="print:hidden flex flex-wrap items-center justify-between gap-2 bg-slate-900/80 border border-slate-800 px-3 py-1.5 rounded-xl">
+        <div className="flex items-center gap-1.5">
+          <Filter className="w-3.5 h-3.5 text-amber-400" />
           <span className="text-xs font-bold text-slate-300">Filtrar período:</span>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-medium">
+          <div className="flex bg-slate-950 p-0.5 rounded-lg border border-slate-800 text-xs font-medium">
             <button
               onClick={() => setFiltroData('hoje')}
-              className={`px-3 py-1 rounded-lg transition ${
+              className={`px-2.5 py-0.5 rounded-md transition ${
                 filtroData === 'hoje' ? 'bg-amber-500 text-black font-bold' : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -464,7 +428,7 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
             </button>
             <button
               onClick={() => setFiltroData('todos')}
-              className={`px-3 py-1 rounded-lg transition ${
+              className={`px-2.5 py-0.5 rounded-md transition ${
                 filtroData === 'todos' ? 'bg-amber-500 text-black font-bold' : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -472,7 +436,7 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
             </button>
             <button
               onClick={() => setFiltroData('personalizado')}
-              className={`px-3 py-1 rounded-lg transition ${
+              className={`px-2.5 py-0.5 rounded-md transition ${
                 filtroData === 'personalizado' ? 'bg-amber-500 text-black font-bold' : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -485,75 +449,75 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
               type="date"
               value={dataPersonalizada}
               onChange={(e) => setDataPersonalizada(e.target.value)}
-              className="bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1 text-xs text-slate-200"
+              className="bg-slate-950 border border-slate-700 rounded-lg px-2 py-0.5 text-xs text-slate-200"
             />
           )}
         </div>
       </div>
 
       {/* ============================================================== */}
-      {/* CARDS DE RESUMO                                                */}
+      {/* CARDS DE RESUMO (ALTURA REDUZIDA EM 40%)                       */}
       {/* ============================================================== */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 print:hidden">
-        <div className="bg-slate-900/90 border border-slate-800 p-5 rounded-2xl relative overflow-hidden">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total de Pessoas</span>
-            <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
-              <Users className="w-5 h-5" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 print:hidden">
+        <div className="bg-slate-900/90 border border-slate-800 p-3 rounded-xl relative overflow-hidden">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total de Pessoas</span>
+            <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
+              <Users className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-3xl font-black text-white">{totalPessoas}</div>
-          <p className="text-xs text-slate-400 mt-1">Soma de todos os acompanhantes</p>
+          <div className="text-2xl font-black text-white">{totalPessoas}</div>
+          <p className="text-[11px] text-slate-400 mt-0.5">Soma de todos os acompanhantes</p>
         </div>
 
-        <div className="bg-slate-900/90 border border-slate-800 p-5 rounded-2xl relative overflow-hidden">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Aparelhos / Respostas</span>
-            <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center">
-              <UserCheck className="w-5 h-5" />
+        <div className="bg-slate-900/90 border border-slate-800 p-3 rounded-xl relative overflow-hidden">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Aparelhos / Respostas</span>
+            <div className="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center">
+              <UserCheck className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-3xl font-black text-white">{totalCheckins}</div>
-          <p className="text-xs text-slate-400 mt-1">Média de {mediaPorGrupo} pessoas/grupo</p>
+          <div className="text-2xl font-black text-white">{totalCheckins}</div>
+          <p className="text-[11px] text-slate-400 mt-0.5">Média de {mediaPorGrupo} pessoas/grupo</p>
         </div>
 
-        <div className="bg-slate-900/90 border border-slate-800 p-5 rounded-2xl relative overflow-hidden">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">Pela Faixa</span>
-            <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
-              <Tag className="w-5 h-5" />
+        <div className="bg-slate-900/90 border border-slate-800 p-3 rounded-xl relative overflow-hidden">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider">Pela Faixa</span>
+            <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
+              <Tag className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-3xl font-black text-amber-300">{faixaQtd}</div>
-          <p className="text-xs text-slate-400 mt-1">
+          <div className="text-2xl font-black text-amber-300">{faixaQtd}</div>
+          <p className="text-[11px] text-slate-400 mt-0.5">
             {totalPessoas > 0 ? `${Math.round((faixaQtd / totalPessoas) * 100)}% do público` : '0%'}
           </p>
         </div>
 
-        <div className="bg-slate-900/90 border border-slate-800 p-5 rounded-2xl relative overflow-hidden">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">Convidados</span>
-            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
-              <HeartHandshake className="w-5 h-5" />
+        <div className="bg-slate-900/90 border border-slate-800 p-3 rounded-xl relative overflow-hidden">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">Convidados</span>
+            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+              <HeartHandshake className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-3xl font-black text-emerald-300">{convidadoQtd}</div>
-          <p className="text-xs text-slate-400 mt-1">
+          <div className="text-2xl font-black text-emerald-300">{convidadoQtd}</div>
+          <p className="text-[11px] text-slate-400 mt-0.5">
             {totalPessoas > 0 ? `${Math.round((convidadoQtd / totalPessoas) * 100)}% do público` : '0%'}
           </p>
         </div>
       </div>
 
       {/* ============================================================== */}
-      {/* BARRAS DE PROPORÇÃO                                            */}
+      {/* BARRAS DE PROPORÇÃO (COMPACTAS)                                */}
       {/* ============================================================== */}
-      <div className="bg-slate-900/90 border border-slate-800 p-5 rounded-2xl space-y-3 print:hidden">
-        <h3 className="text-sm font-bold text-white flex items-center gap-2">
-          <BarChart2 className="w-4 h-4 text-amber-400" />
+      <div className="bg-slate-900/90 border border-slate-800 p-3 rounded-xl space-y-2 print:hidden">
+        <h3 className="text-xs font-bold text-white flex items-center gap-2">
+          <BarChart2 className="w-3.5 h-3.5 text-amber-400" />
           <span>Distribuição: Como chegaram</span>
         </h3>
 
-        <div className="space-y-3 pt-1">
+        <div className="space-y-2 pt-0.5">
           <div>
             <div className="flex justify-between text-xs font-semibold mb-1">
               <span className="text-amber-300 flex items-center gap-1.5">
