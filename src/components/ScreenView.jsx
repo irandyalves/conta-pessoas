@@ -4,15 +4,28 @@ import {
   Maximize2, 
   Minimize2, 
   Settings,
-  Sparkles
+  Sparkles,
+  ArrowLeft
 } from 'lucide-react';
 import { escutarStatusSessao } from '../firebase';
 
-export default function ScreenView() {
+export default function ScreenView({ adminAuthed, onReturnToAdmin }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [customUrl, setCustomUrl] = useState('');
   const [editUrl, setEditUrl] = useState(false);
   const [sessaoAtiva, setSessaoAtiva] = useState(false);
+
+  // SOMENTE PARA O ADMIN: Escuta tecla Esc para voltar ao painel admin
+  useEffect(() => {
+    if (!adminAuthed || !onReturnToAdmin) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' || e.key === 'Esc') {
+        onReturnToAdmin();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [adminAuthed, onReturnToAdmin]);
 
   useEffect(() => {
     const unsub = escutarStatusSessao((ativa) => {
@@ -44,6 +57,19 @@ export default function ScreenView() {
       {/* Luzes decorativas de fundo */}
       <div className="absolute -top-40 -left-40 w-[550px] h-[550px] bg-sky-600/15 rounded-full blur-[140px] pointer-events-none" />
       <div className="absolute -bottom-40 -right-40 w-[550px] h-[550px] bg-emerald-600/15 rounded-full blur-[140px] pointer-events-none" />
+
+      {/* Botão de Voltar ao Admin (EXCLUSIVO PARA ADMIN AUTENTICADO) */}
+      {adminAuthed && onReturnToAdmin && (
+        <button
+          onClick={onReturnToAdmin}
+          className="absolute top-6 left-6 z-20 px-3.5 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 text-white text-xs font-bold flex items-center gap-2 shadow-xl backdrop-blur-md transition active:scale-95 group opacity-40 hover:opacity-100"
+          title="Voltar ao Painel Administrativo (ou pressione Esc)"
+        >
+          <ArrowLeft className="w-4 h-4 text-amber-400 group-hover:-translate-x-0.5 transition-transform" />
+          <span>Voltar ao Admin</span>
+          <kbd className="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-slate-400 font-mono border border-slate-700">Esc</kbd>
+        </button>
+      )}
 
       {/* Botões discretos de controle no canto superior direito */}
       <div className="absolute top-6 right-6 z-20 flex items-center gap-2 opacity-25 hover:opacity-100 transition-opacity">

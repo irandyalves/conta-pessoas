@@ -311,17 +311,6 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
 
         {/* Ações Rápidas */}
         <div className="flex flex-wrap items-center gap-1.5">
-          {/* BOTÃO ZERAR TUDO COM DESTRAVAMENTO AUTOMÁTICO DE APARELHOS */}
-          <button
-            onClick={() => setShowModalZerar(true)}
-            disabled={zerando}
-            title="Zera todas as presenças do banco e destrava todos os celulares"
-            className="px-3 py-1.5 text-xs font-black rounded-lg bg-red-600/90 hover:bg-red-500 text-white flex items-center gap-1.5 transition active:scale-95 shadow-md shadow-red-600/25 border border-red-500/50 disabled:opacity-50"
-          >
-            <Trash2 className="w-3.5 h-3.5 text-red-100" />
-            <span>{zerando ? 'Zerando...' : 'ZERAR TUDO'}</span>
-          </button>
-
           <button
             onClick={handlePrint}
             className="px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-900 hover:bg-slate-850 border border-slate-700 text-sky-300 flex items-center gap-1.5 transition active:scale-95 shadow"
@@ -355,9 +344,11 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
             <span>Configurar Perguntas</span>
           </button>
 
+          {/* BOTÃO CONFIG FIREBASE NO CANTO DIREITO */}
           <button
             onClick={onOpenConfig}
-            className={`px-3 py-1.5 text-xs font-bold rounded-lg border flex items-center gap-1.5 transition ${
+            title="Configurações e status da conexão Firebase"
+            className={`px-3 py-1.5 text-xs font-bold rounded-lg border flex items-center gap-1.5 transition ml-auto sm:ml-1 ${
               isFirebaseReady()
                 ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20'
                 : 'bg-amber-500/10 border-amber-500/30 text-amber-300 hover:bg-amber-500/20'
@@ -370,7 +361,7 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
       </div>
 
       {/* ============================================================== */}
-      {/* BANNER DE CONTROLE DO START DA PESQUISA PELO ADMIN (DESTAQUE)  */}
+      {/* BANNER DE CONTROLE: PESQUISA EM ESPERA / AO VIVO COM ZERAR TUDO */}
       {/* ============================================================== */}
       <div className={`print:hidden p-3.5 sm:p-4 rounded-2xl border transition-all shadow-xl flex flex-col sm:flex-row items-center justify-between gap-3.5 ${
         sessaoAtiva 
@@ -404,27 +395,28 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto justify-end shrink-0">
+        <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto justify-end shrink-0">
+          {/* BOTÃO DAR START (QUANDO EM ESPERA) */}
+          {!sessaoAtiva && (
+            <button
+              onClick={handleToggleSessao}
+              disabled={alternandoSessao}
+              className="px-5 py-2.5 rounded-xl font-black text-xs sm:text-sm bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 shadow-emerald-500/30 shadow-xl active:scale-95 transition flex items-center justify-center gap-2"
+            >
+              <Play className="w-4 h-4 fill-slate-950" />
+              <span>{alternandoSessao ? 'Iniciando...' : 'DAR START / LIBERAR PERGUNTAS'}</span>
+            </button>
+          )}
+
+          {/* BOTÃO ZERAR TUDO NO LUGAR DO BOTÃO PAUSE */}
           <button
-            onClick={handleToggleSessao}
-            disabled={alternandoSessao}
-            className={`w-full sm:w-auto px-5 py-2.5 rounded-xl font-black text-xs sm:text-sm shadow-xl active:scale-95 transition flex items-center justify-center gap-2 ${
-              sessaoAtiva
-                ? 'bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white shadow-rose-600/30 border border-rose-500/50'
-                : 'bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 shadow-emerald-500/30'
-            }`}
+            onClick={() => setShowModalZerar(true)}
+            disabled={zerando}
+            title="Zera todas as presenças do banco e destrava todos os celulares"
+            className="px-4 py-2.5 rounded-xl font-black text-xs sm:text-sm bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white flex items-center justify-center gap-2 transition active:scale-95 shadow-lg shadow-red-600/30 border border-red-500/50 disabled:opacity-50"
           >
-            {sessaoAtiva ? (
-              <>
-                <Pause className="w-4 h-4 fill-white" />
-                <span>{alternandoSessao ? 'Pausando...' : 'PAUSAR PESQUISA'}</span>
-              </>
-            ) : (
-              <>
-                <Play className="w-4 h-4 fill-slate-950" />
-                <span>{alternandoSessao ? 'Iniciando...' : 'DAR START / LIBERAR PERGUNTAS'}</span>
-              </>
-            )}
+            <Trash2 className="w-4 h-4 text-red-100" />
+            <span>{zerando ? 'Zerando...' : 'ZERAR TUDO'}</span>
           </button>
         </div>
       </div>

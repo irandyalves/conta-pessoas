@@ -8,7 +8,13 @@ import { Lock } from 'lucide-react';
 export default function App() {
   const [view, setView] = useState('form');
   const [configOpen, setConfigOpen] = useState(false);
-  const [adminAuthed, setAdminAuthed] = useState(false);
+  const [adminAuthed, setAdminAuthed] = useState(() => {
+    try {
+      return sessionStorage.getItem('church_admin_auth') === 'true';
+    } catch (e) {
+      return false;
+    }
+  });
   const [pinInput, setPinInput] = useState('');
   const [showPinModal, setShowPinModal] = useState(false);
 
@@ -57,6 +63,9 @@ export default function App() {
     e.preventDefault();
     if (pinInput.trim() === ADMIN_PIN) {
       setAdminAuthed(true);
+      try {
+        sessionStorage.setItem('church_admin_auth', 'true');
+      } catch (err) {}
       setShowPinModal(false);
       setPinInput('');
       setView('admin');
@@ -75,7 +84,12 @@ export default function App() {
       <div className="flex-1">
         {view === 'form' && <MobileForm />}
 
-        {view === 'telao' && <ScreenView />}
+        {view === 'telao' && (
+          <ScreenView 
+            adminAuthed={adminAuthed}
+            onReturnToAdmin={() => handleChangeView('admin')}
+          />
+        )}
 
         {view === 'admin' && (
           <DashboardView 
