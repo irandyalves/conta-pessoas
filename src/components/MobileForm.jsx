@@ -31,7 +31,7 @@ import {
   DEFAULT_EVENT_TITLE 
 } from '../firebase';
 
-const CHECKIN_LOCK_KEY = 'presenca_finalizada_cantata_2026';
+const VOTO_SESSAO_KEY = 'presenca_votou_sessao_id';
 const CHECKIN_TIME_KEY = 'presenca_hora_registro';
 
 // Dicionário de ícones dinâmicos
@@ -64,6 +64,7 @@ export default function MobileForm() {
   const [eventoTitulo, setEventoTitulo] = useState(DEFAULT_EVENT_TITLE);
   const [questionsConfig, setQuestionsConfig] = useState(DEFAULT_QUESTIONS_CONFIG);
   const [sessaoAtiva, setSessaoAtiva] = useState(false);
+  const [currentSessaoId, setCurrentSessaoId] = useState('');
   
   // Etapas de navegação:
   // 'p1': Pergunta 1 (com slider/paginação de cards)
@@ -77,11 +78,16 @@ export default function MobileForm() {
   const [countdown, setCountdown] = useState(10);
   const [finalizado, setFinalizado] = useState(false);
 
-  // 1. VERIFICAÇÃO INICIAL DE BLOQUEIO DE APARELHO
+  // 1. VERIFICAÇÃO INICIAL, LIMPEZA DE CHAVES LEGADAS E DESTRAVA POR URL
   useEffect(() => {
+    // Remove qualquer chave legada que possa prender o celular indevidamente
+    try {
+      localStorage.removeItem('presenca_finalizada_cantata_2026');
+    } catch (e) {}
+
     const params = new URLSearchParams(window.location.search);
     if (params.get('novo') === '1' || params.get('reset') === '1') {
-      localStorage.removeItem(CHECKIN_LOCK_KEY);
+      localStorage.removeItem(VOTO_SESSAO_KEY);
       localStorage.removeItem(CHECKIN_TIME_KEY);
       setCurrentStep('p1');
       setFinalizado(false);
@@ -93,9 +99,8 @@ export default function MobileForm() {
   // 2. ESCUTA O BOTÃO "ZERAR TUDO" DO ADMIN: Destrava o celular na hora
   useEffect(() => {
     const unsub = escutarResetGlobal((resetEm) => {
-      const horaRegistro = localStorage.getItem(CHECKIN_TIME_KEY);
-      if (resetEm && (!horaRegistro || new Date(resetEm) > new Date(horaRegistro))) {
-        localStorage.removeItem(CHECKIN_LOCK_KEY);
+      if (resetEm) {
+        localStorage.removeItem(VOTO_SESSAO_KEY);
         localStorage.removeItem(CHECKIN_TIME_KEY);
         setCurrentStep('p1');
         setP1SlideIndex(0);
@@ -113,29 +118,34 @@ export default function MobileForm() {
     const unsub = escutarStatusSessao((ativa, data) => {
       setSessaoAtiva(ativa);
 
+      const sessaoId = data?.sessaoId || 'sessao_ativa';
+      setCurrentSessaoId(sessaoId);
+
       if (ativa) {
         // Se o admin deu START:
-        // Verifica se o voto deste aparelho é antigo (de uma rodada anterior ao início desta sessão)
-        const horaRegistro = localStorage.getItem(CHECKIN_TIME_KEY);
-        const iniciadoEm = data?.iniciadoEm || localStorage.getItem('church_session_started_at');
+        // Verifica se este aparelho já votou ESPECIFICAMENTE nesta sessão ativa (sessaoId)
+        const votouNestaSessao = localStorage.getItem(VOTO_SESSAO_KEY) === sessaoId;
 
-        if (iniciadoEm && horaRegistro && new Date(iniciadoEm) > new Date(horaRegistro)) {
-          // Sessão nova iniciada após o último registro -> Destrava na hora!
-          localStorage.removeItem(CHECKIN_LOCK_KEY);
-          localStorage.removeItem(CHECKIN_TIME_KEY);
+        if (votouNestaSessao) {
+          // Já votou nesta rodada ativa -> mostra tela final
+          setCurrentStep('final');
+        } else {
+          // NÃO votou nesta rodada -> abre as perguntas (p1) imediatamente!
           setCurrentStep('p1');
           setP1SlideIndex(0);
           setComoChegou('');
           setRespostasExtras({});
           setFinalizado(false);
           setCountdown(10);
-        } else if (!localStorage.getItem(CHECKIN_LOCK_KEY)) {
-          // Se não votou ainda nesta sessão, abre a 1ª pergunta automaticamente!
-          setCurrentStep('p1');
-        } else {
-          // Se já votou nesta sessão ativa, mostra a tela final
-          setCurrentStep('final');
         }
+      } else {
+        // Sessão pausada: reseta o formulário para quando for liberado
+        setCurrentStep('p1');
+        setP1SlideIndex(0);
+        setComoChegou('');
+        setRespostasExtras({});
+        setFinalizado(false);
+        setCountdown(10);
       }
     });
     return () => unsub && unsub();
@@ -230,11 +240,13 @@ export default function MobileForm() {
     }
   };
 
-  // Ao escolher quantidade de acompanhantes: registra e trava
+  // Ao escolher quantidade de acompanhantes: registra e trava apenas nesta sessão
   const handleSelectQtd = (qtd) => {
     if (currentStep === 'final') return;
 
-    localStorage.setItem(CHECKIN_LOCK_KEY, 'true');
+    // Registra que este aparelho votou nesta sessão específica
+    const sessaoGravada = currentSessaoId || localStorage.getItem('church_session_id') || 'sessao_votada';
+    localStorage.setItem(VOTO_SESSAO_KEY, sessaoGravada);
     localStorage.setItem(CHECKIN_TIME_KEY, new Date().toISOString());
 
     try {

@@ -262,22 +262,31 @@ export function getSavedSessionStatus() {
 export async function saveSessionStatus(started) {
   const isStarted = Boolean(started);
   const now = new Date().toISOString();
+  // Quando o admin ativa (START), gera um sessaoId novo para identificar a rodada de votação
+  const sessaoId = isStarted ? `sessao_${Date.now()}` : null;
   localStorage.setItem(SESSION_STORAGE_KEY, String(isStarted));
   if (isStarted) {
     localStorage.setItem('church_session_started_at', now);
+    localStorage.setItem('church_session_id', sessaoId);
   }
+  
+  const payload = {
+    ativa: isStarted,
+    sessaoId: isStarted ? sessaoId : null,
+    iniciadoEm: isStarted ? now : null
+  };
+
   window.dispatchEvent(new CustomEvent('church_session_status_changed', { 
-    detail: { ativa: isStarted, iniciadoEm: isStarted ? now : null } 
+    detail: payload 
   }));
 
   if (isFirebaseReady()) {
     try {
       await setDoc(doc(db, 'configuracoes', 'sessao'), {
-        ativa: isStarted,
-        iniciadoEm: isStarted ? now : null,
+        ...payload,
         atualizadoEm: serverTimestamp()
       }, { merge: true });
-      console.log('✅ Sessão salva no Firestore com status:', isStarted);
+      console.log('✅ Sessão salva no Firestore com status:', isStarted, 'sessaoId:', sessaoId);
     } catch (e) {
       console.error('❌ Erro ao salvar status da sessao no Firestore:', e);
       throw e;
@@ -288,7 +297,8 @@ export async function saveSessionStatus(started) {
 export function escutarStatusSessao(callback) {
   const localAtiva = getSavedSessionStatus();
   const localIniciadoEm = localStorage.getItem('church_session_started_at') || null;
-  callback(localAtiva, { ativa: localAtiva, iniciadoEm: localIniciadoEm });
+  const localSessaoId = localStorage.getItem('church_session_id') || null;
+  callback(localAtiva, { ativa: localAtiva, iniciadoEm: localIniciadoEm, sessaoId: localSessaoId });
 
   const localHandler = (e) => {
     const detail = e.detail;
@@ -309,15 +319,19 @@ export function escutarStatusSessao(callback) {
             const data = snap.data();
             const ativa = Boolean(data?.ativa);
             const iniciadoEm = data?.iniciadoEm || null;
+            const sessaoId = data?.sessaoId || (ativa ? 'sessao_ativa' : null);
             localStorage.setItem(SESSION_STORAGE_KEY, String(ativa));
             if (iniciadoEm) {
               localStorage.setItem('church_session_started_at', iniciadoEm);
             }
-            console.log('📡 [Realtime Firestore] Sessão ativa:', ativa);
-            callback(ativa, { ativa, iniciadoEm });
+            if (sessaoId) {
+              localStorage.setItem('church_session_id', sessaoId);
+            }
+            console.log('📡 [Realtime Firestore] Sessão ativa:', ativa, 'sessaoId:', sessaoId);
+            callback(ativa, { ativa, iniciadoEm, sessaoId });
           } else {
             console.log('📡 [Realtime Firestore] Doc de sessão inexistente, padrão: false');
-            callback(false, { ativa: false, iniciadoEm: null });
+            callback(false, { ativa: false, iniciadoEm: null, sessaoId: null });
           }
         },
         (error) => {
@@ -587,6 +601,7 @@ export async function zerarTudo() {
   limparDadosLocais();
   localStorage.removeItem('presenca_finalizada_cantata_2026');
   localStorage.removeItem('presenca_hora_registro');
+  localStorage.removeItem('presenca_votou_sessao_id');
 
   if (isFirebaseReady()) {
     try {
@@ -597,9 +612,19 @@ export async function zerarTudo() {
       });
       await Promise.all(promises);
 
+      const resetEm = new Date().toISOString();
+      const resetId = `reset_${Date.now()}`;
       // Marca o reset global no Firestore
       await setDoc(doc(db, 'configuracoes', 'reset'), {
-        resetEm: new Date().toISOString()
+        resetEm,
+        resetId
+      }, { merge: true });
+
+      // Atualiza também a sessão com novo sessaoId para destravar imediatamente qualquer celular conectado
+      const novaSessaoId = `sessao_${Date.now()}`;
+      await setDoc(doc(db, 'configuracoes', 'sessao'), {
+        sessaoId: novaSessaoId,
+        iniciadoEm: resetEm
       }, { merge: true });
     } catch (e) {
       console.error('Erro ao zerar banco Firestore:', e);
