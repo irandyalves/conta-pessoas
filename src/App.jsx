@@ -12,7 +12,7 @@ export default function App() {
   const [pinInput, setPinInput] = useState('');
   const [showPinModal, setShowPinModal] = useState(false);
 
-  const ADMIN_PIN = '1234';
+  const ADMIN_PIN = 'a34156162';
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -55,7 +55,7 @@ export default function App() {
 
   const handleVerifyPin = (e) => {
     e.preventDefault();
-    if (pinInput === ADMIN_PIN || pinInput === 'admin') {
+    if (pinInput.trim() === ADMIN_PIN) {
       setAdminAuthed(true);
       setShowPinModal(false);
       setPinInput('');
@@ -64,7 +64,7 @@ export default function App() {
       url.searchParams.set('view', 'admin');
       window.history.pushState({}, '', url);
     } else {
-      alert('PIN incorreto!');
+      alert('Senha incorreta!');
       setPinInput('');
     }
   };
@@ -93,17 +93,17 @@ export default function App() {
               <Lock className="w-6 h-6" />
             </div>
             <h3 className="font-black text-white text-base">Acesso Administrativo</h3>
-            <p className="text-xs text-slate-400 mt-1 mb-4">Digite o PIN para acessar os relatórios:</p>
+            <p className="text-xs text-slate-400 mt-1 mb-4">Digite a senha para acessar os relatórios:</p>
 
             <form onSubmit={handleVerifyPin} className="space-y-3">
               <input
                 type="password"
-                maxLength={8}
+                maxLength={30}
                 value={pinInput}
                 onChange={(e) => setPinInput(e.target.value)}
-                placeholder="Digite o PIN"
+                placeholder="Digite a senha"
                 autoFocus
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-center text-lg font-mono text-white tracking-widest focus:outline-none focus:border-indigo-500"
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-center text-base font-mono text-white tracking-widest focus:outline-none focus:border-indigo-500"
               />
               <div className="flex gap-2">
                 <button
