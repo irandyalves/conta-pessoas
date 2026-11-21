@@ -24,7 +24,12 @@ import {
   Check,
   ExternalLink,
   AlertTriangle,
-  HelpCircle
+  HelpCircle,
+  Play,
+  Pause,
+  Sliders,
+  Layers,
+  Sparkles
 } from 'lucide-react';
 import QuestionsConfigModal from './QuestionsConfigModal';
 import { 
@@ -34,7 +39,10 @@ import {
   isFirebaseReady,
   escutarTituloEvento,
   saveEventTitle,
-  DEFAULT_EVENT_TITLE
+  DEFAULT_EVENT_TITLE,
+  escutarStatusSessao,
+  saveSessionStatus,
+  escutarConfigPerguntas
 } from '../firebase';
 
 export default function DashboardView({ onOpenConfig, onChangeView }) {
@@ -50,6 +58,9 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
   const [showModalZerar, setShowModalZerar] = useState(false);
   const [feedbackZerar, setFeedbackZerar] = useState(false);
   const [modalPerguntasOpen, setModalPerguntasOpen] = useState(false);
+  const [sessaoAtiva, setSessaoAtiva] = useState(false);
+  const [alternandoSessao, setAlternandoSessao] = useState(false);
+  const [questionsConfig, setQuestionsConfig] = useState(null);
 
   const copyToClipboard = (text, label) => {
     navigator.clipboard.writeText(text);
@@ -72,11 +83,30 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
         setInputTitulo(titulo);
       }
     });
+    const unsubSessao = escutarStatusSessao((ativa) => {
+      setSessaoAtiva(ativa);
+    });
+    const unsubConfig = escutarConfigPerguntas((cfg) => {
+      setQuestionsConfig(cfg);
+    });
     return () => {
       unsubPresencas && unsubPresencas();
       unsubTitulo && unsubTitulo();
+      unsubSessao && unsubSessao();
+      unsubConfig && unsubConfig();
     };
   }, []);
+
+  const handleToggleSessao = async () => {
+    setAlternandoSessao(true);
+    try {
+      await saveSessionStatus(!sessaoAtiva);
+    } catch (e) {
+      alert('Erro ao alterar status da sessão: ' + (e?.message || e));
+    } finally {
+      setAlternandoSessao(false);
+    }
+  };
 
   const handleSalvarTitulo = async () => {
     if (!inputTitulo.trim()) return;
@@ -127,10 +157,23 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
     return acc;
   }, {});
 
-  const membrosQtd = contagemCategorias['Sou membro da igreja'] || contagemCategorias['Sou membro'] || 0;
-  const faixaQtd = contagemCategorias['Vi a faixa na frente da igreja'] || 0;
-  const convidadoQtd = contagemCategorias['Fui convidado(a)'] || contagemCategorias['Convidado'] || 0;
-  const outrosQtd = totalPessoas - (membrosQtd + faixaQtd + convidadoQtd);
+  // Lista dinâmica de categorias unindo o que está cadastrado e o que recebeu votos
+  const listaOpcoesConfig = questionsConfig?.opcoesChegada || [];
+  const categoriasUnicas = Array.from(new Set([
+    ...listaOpcoesConfig.filter(o => o.ativo !== false).map(o => o.titulo),
+    ...Object.keys(contagemCategorias)
+  ])).filter(Boolean);
+
+  const paletteColors = [
+    'bg-amber-500 text-amber-300',
+    'bg-sky-500 text-sky-300',
+    'bg-emerald-500 text-emerald-300',
+    'bg-purple-500 text-purple-300',
+    'bg-rose-500 text-rose-300',
+    'bg-teal-500 text-teal-300',
+    'bg-indigo-500 text-indigo-300',
+    'bg-orange-500 text-orange-300'
+  ];
 
   // 1. Exportar para CSV / Excel com UTF-8
   const handleExportCSV = () => {
@@ -194,16 +237,16 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
             <span className="text-2xl font-black text-slate-900">{totalPessoas}</span>
           </div>
           <div>
-            <span className="text-xs text-slate-600 block">Viram a Faixa</span>
-            <span className="text-2xl font-black text-slate-900">{faixaQtd}</span>
+            <span className="text-xs text-slate-600 block">Total de Grupos/Aparelhos</span>
+            <span className="text-2xl font-black text-slate-900">{totalCheckins}</span>
           </div>
           <div>
-            <span className="text-xs text-slate-600 block">Convidados</span>
-            <span className="text-2xl font-black text-slate-900">{convidadoQtd}</span>
+            <span className="text-xs text-slate-600 block">Média por Grupo</span>
+            <span className="text-2xl font-black text-slate-900">{mediaPorGrupo}</span>
           </div>
           <div>
-            <span className="text-xs text-slate-600 block">Membros</span>
-            <span className="text-2xl font-black text-slate-900">{membrosQtd}</span>
+            <span className="text-xs text-slate-600 block">Status da Sessão</span>
+            <span className="text-2xl font-black text-slate-900">{sessaoAtiva ? 'Aberta' : 'Aguardando'}</span>
           </div>
         </div>
       </div>
@@ -322,6 +365,66 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
           >
             <Settings className="w-3.5 h-3.5" />
             <span>{isFirebaseReady() ? 'Firebase Ativo' : 'Conectar Firebase'}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* ============================================================== */}
+      {/* BANNER DE CONTROLE DO START DA PESQUISA PELO ADMIN (DESTAQUE)  */}
+      {/* ============================================================== */}
+      <div className={`print:hidden p-3.5 sm:p-4 rounded-2xl border transition-all shadow-xl flex flex-col sm:flex-row items-center justify-between gap-3.5 ${
+        sessaoAtiva 
+          ? 'bg-gradient-to-r from-emerald-950/90 via-slate-900 to-emerald-950/90 border-emerald-500/50 shadow-emerald-950/40' 
+          : 'bg-gradient-to-r from-amber-950/90 via-slate-900 to-amber-950/90 border-amber-500/50 shadow-amber-950/40'
+      }`}>
+        <div className="flex items-center gap-3 text-left w-full sm:w-auto">
+          <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border shadow-md ${
+            sessaoAtiva 
+              ? 'bg-emerald-500/20 border-emerald-400/50 text-emerald-400' 
+              : 'bg-amber-500/20 border-amber-400/50 text-amber-400'
+          }`}>
+            {sessaoAtiva ? <Play className="w-5 h-5 fill-emerald-400" /> : <Pause className="w-5 h-5 fill-amber-400" />}
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black uppercase tracking-wider ${
+                sessaoAtiva 
+                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' 
+                  : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+              }`}>
+                <span className={`w-2 h-2 rounded-full ${sessaoAtiva ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'}`}></span>
+                {sessaoAtiva ? 'PESQUISA AO VIVO • CELULARES LIBERADOS' : 'PESQUISA EM ESPERA • AGUARDANDO SEU START'}
+              </span>
+            </div>
+            <p className="text-xs text-slate-300 mt-1">
+              {sessaoAtiva 
+                ? 'Os celulares já podem responder e avançar pelas telas. O QR Code está totalmente ativo.' 
+                : 'O QR Code é fixo, mas os celulares ficam na tela de espera até você clicar em Dar Start.'}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-end shrink-0">
+          <button
+            onClick={handleToggleSessao}
+            disabled={alternandoSessao}
+            className={`w-full sm:w-auto px-5 py-2.5 rounded-xl font-black text-xs sm:text-sm shadow-xl active:scale-95 transition flex items-center justify-center gap-2 ${
+              sessaoAtiva
+                ? 'bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white shadow-rose-600/30 border border-rose-500/50'
+                : 'bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 shadow-emerald-500/30'
+            }`}
+          >
+            {sessaoAtiva ? (
+              <>
+                <Pause className="w-4 h-4 fill-white" />
+                <span>{alternandoSessao ? 'Pausando...' : 'PAUSAR PESQUISA'}</span>
+              </>
+            ) : (
+              <>
+                <Play className="w-4 h-4 fill-slate-950" />
+                <span>{alternandoSessao ? 'Iniciando...' : 'DAR START / LIBERAR PERGUNTAS'}</span>
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -491,107 +594,89 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
 
         <div className="bg-slate-900/90 border border-slate-800 p-3 rounded-xl relative overflow-hidden">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider">Pela Faixa</span>
-            <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
-              <Tag className="w-4 h-4" />
+            <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">Cards Ativos</span>
+            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+              <Sliders className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-black text-amber-300">{faixaQtd}</div>
+          <div className="text-2xl font-black text-emerald-300">
+            {listaOpcoesConfig.filter(c => c.ativo !== false).length}
+          </div>
           <p className="text-[11px] text-slate-400 mt-0.5">
-            {totalPessoas > 0 ? `${Math.round((faixaQtd / totalPessoas) * 100)}% do público` : '0%'}
+            Limite: {questionsConfig?.cardsPorTela || 4} cards/tela
           </p>
         </div>
 
-        <div className="bg-slate-900/90 border border-slate-800 p-3 rounded-xl relative overflow-hidden">
+        <div className={`p-3 rounded-xl border relative overflow-hidden transition-all ${
+          sessaoAtiva 
+            ? 'bg-emerald-950/40 border-emerald-500/40' 
+            : 'bg-amber-950/40 border-amber-500/40'
+        }`}>
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">Convidados</span>
-            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
-              <HeartHandshake className="w-4 h-4" />
+            <span className={`text-[11px] font-bold uppercase tracking-wider ${
+              sessaoAtiva ? 'text-emerald-400' : 'text-amber-400'
+            }`}>
+              Status da Pesquisa
+            </span>
+            <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${
+              sessaoAtiva ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
+            }`}>
+              {sessaoAtiva ? <Play className="w-3.5 h-3.5 fill-emerald-400" /> : <Pause className="w-3.5 h-3.5 fill-amber-400" />}
             </div>
           </div>
-          <div className="text-2xl font-black text-emerald-300">{convidadoQtd}</div>
-          <p className="text-[11px] text-slate-400 mt-0.5">
-            {totalPessoas > 0 ? `${Math.round((convidadoQtd / totalPessoas) * 100)}% do público` : '0%'}
+          <div className={`text-xl font-black tracking-tight ${sessaoAtiva ? 'text-emerald-300' : 'text-amber-300'}`}>
+            {sessaoAtiva ? 'AO VIVO' : 'EM ESPERA'}
+          </div>
+          <p className="text-[11px] text-slate-300 mt-0.5">
+            {sessaoAtiva ? 'Celulares respondendo' : 'Aguardando Start do Admin'}
           </p>
         </div>
       </div>
 
       {/* ============================================================== */}
-      {/* BARRAS DE PROPORÇÃO (COMPACTAS)                                */}
+      {/* BARRAS DE PROPORÇÃO (DINÂMICAS COM TODOS OS CARDS)             */}
       {/* ============================================================== */}
-      <div className="bg-slate-900/90 border border-slate-800 p-3 rounded-xl space-y-2 print:hidden">
-        <h3 className="text-xs font-bold text-white flex items-center gap-2">
-          <BarChart2 className="w-3.5 h-3.5 text-amber-400" />
-          <span>Distribuição: Como chegaram</span>
-        </h3>
+      <div className="bg-slate-900/90 border border-slate-800 p-3.5 rounded-xl space-y-2.5 print:hidden">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-bold text-white flex items-center gap-2">
+            <BarChart2 className="w-3.5 h-3.5 text-amber-400" />
+            <span>Distribuição das Respostas: Como Chegaram</span>
+          </h3>
+          <span className="text-[11px] text-slate-400">
+            {categoriasUnicas.length} {categoriasUnicas.length === 1 ? 'opção cadastrada/votada' : 'opções cadastradas/votadas'}
+          </span>
+        </div>
 
-        <div className="space-y-2 pt-0.5">
-          <div>
-            <div className="flex justify-between text-xs font-semibold mb-1">
-              <span className="text-amber-300 flex items-center gap-1.5">
-                <Tag className="w-3.5 h-3.5" /> Vi a faixa na frente da igreja
-              </span>
-              <span className="text-slate-300">
-                {faixaQtd} pessoas ({totalPessoas > 0 ? Math.round((faixaQtd / totalPessoas) * 100) : 0}%)
-              </span>
-            </div>
-            <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-              <div 
-                className="bg-amber-500 h-full rounded-full transition-all duration-500"
-                style={{ width: `${totalPessoas > 0 ? (faixaQtd / totalPessoas) * 100 : 0}%` }}
-              />
-            </div>
-          </div>
+        <div className="space-y-2.5 pt-1">
+          {categoriasUnicas.length === 0 ? (
+            <p className="text-xs text-slate-400 py-3 text-center">Nenhum card cadastrado ou votado ainda.</p>
+          ) : (
+            categoriasUnicas.map((catNome, idx) => {
+              const qtd = contagemCategorias[catNome] || 0;
+              const pct = totalPessoas > 0 ? Math.round((qtd / totalPessoas) * 100) : 0;
+              const corEstilo = paletteColors[idx % paletteColors.length];
+              const corBg = corEstilo.split(' ')[0];
+              const corTexto = corEstilo.split(' ')[1];
 
-          <div>
-            <div className="flex justify-between text-xs font-semibold mb-1">
-              <span className="text-sky-300 flex items-center gap-1.5">
-                <Church className="w-3.5 h-3.5" /> Membros da igreja
-              </span>
-              <span className="text-slate-300">
-                {membrosQtd} pessoas ({totalPessoas > 0 ? Math.round((membrosQtd / totalPessoas) * 100) : 0}%)
-              </span>
-            </div>
-            <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-              <div 
-                className="bg-sky-500 h-full rounded-full transition-all duration-500"
-                style={{ width: `${totalPessoas > 0 ? (membrosQtd / totalPessoas) * 100 : 0}%` }}
-              />
-            </div>
-          </div>
-
-          <div>
-            <div className="flex justify-between text-xs font-semibold mb-1">
-              <span className="text-emerald-300 flex items-center gap-1.5">
-                <HeartHandshake className="w-3.5 h-3.5" /> Convidados
-              </span>
-              <span className="text-slate-300">
-                {convidadoQtd} pessoas ({totalPessoas > 0 ? Math.round((convidadoQtd / totalPessoas) * 100) : 0}%)
-              </span>
-            </div>
-            <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-              <div 
-                className="bg-emerald-500 h-full rounded-full transition-all duration-500"
-                style={{ width: `${totalPessoas > 0 ? (convidadoQtd / totalPessoas) * 100 : 0}%` }}
-              />
-            </div>
-          </div>
-
-          {outrosQtd > 0 && (
-            <div>
-              <div className="flex justify-between text-xs font-semibold mb-1">
-                <span className="text-purple-300">Redes Sociais / Outros</span>
-                <span className="text-slate-300">
-                  {outrosQtd} pessoas ({totalPessoas > 0 ? Math.round((outrosQtd / totalPessoas) * 100) : 0}%)
-                </span>
-              </div>
-              <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                <div 
-                  className="bg-purple-500 h-full rounded-full transition-all duration-500"
-                  style={{ width: `${totalPessoas > 0 ? (outrosQtd / totalPessoas) * 100 : 0}%` }}
-                />
-              </div>
-            </div>
+              return (
+                <div key={catNome} className="space-y-1">
+                  <div className="flex justify-between text-xs font-semibold">
+                    <span className={`flex items-center gap-1.5 ${corTexto}`}>
+                      <Tag className="w-3.5 h-3.5" /> {catNome}
+                    </span>
+                    <span className="text-slate-300 font-mono">
+                      {qtd} {qtd === 1 ? 'pessoa' : 'pessoas'} ({pct}%)
+                    </span>
+                  </div>
+                  <div className="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden">
+                    <div 
+                      className={`${corBg} h-full rounded-full transition-all duration-500`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })
           )}
         </div>
       </div>

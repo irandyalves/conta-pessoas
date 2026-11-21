@@ -16,36 +16,89 @@ import {
 const STORAGE_KEY = 'church_firebase_config';
 const LOCAL_DATA_KEY = 'church_local_attendance_data';
 const EVENT_STORAGE_KEY = 'church_event_title';
+const SESSION_STORAGE_KEY = 'church_session_started';
 export const DEFAULT_EVENT_TITLE = 'CANTATA DE NATAL 2026';
 
 export const DEFAULT_QUESTIONS_CONFIG = {
   pergunta1Titulo: 'Como você chegou aqui?',
   pergunta1Subtitulo: '',
+  cardsPorTela: 4, // Slider: quantidade de cards exibidos por tela/slide no celular (2 a 6)
   opcoesChegada: [
     {
       id: 'faixa',
       titulo: 'Vi a faixa na frente da igreja',
       subtitulo: 'Passei e vi o anúncio na fachada',
+      ativo: true,
+      icone: 'Tag',
+      cor: 'amber'
     },
     {
       id: 'membro',
       titulo: 'Sou membro da igreja',
       subtitulo: 'Já congrego nesta comunidade',
+      ativo: true,
+      icone: 'Church',
+      cor: 'sky'
     },
     {
       id: 'convidado',
       titulo: 'Fui convidado(a)',
       subtitulo: 'Vim por convite de amigo, irmão ou familiar',
+      ativo: true,
+      icone: 'HeartHandshake',
+      cor: 'emerald'
     },
     {
       id: 'redes',
       titulo: 'Redes Sociais / Internet',
       subtitulo: 'Instagram, YouTube, Google ou WhatsApp',
+      ativo: true,
+      icone: 'Share2',
+      cor: 'purple'
     },
     {
       id: 'outro',
       titulo: 'Passando em frente / Outro motivo',
       subtitulo: 'Curiosidade, visita espontânea ou retorno',
+      ativo: true,
+      icone: 'Compass',
+      cor: 'indigo'
+    }
+  ],
+  // Telas Adicionais Configuráveis (permite compor 3, 4 e 5 telas no fluxo do celular)
+  telasExtras: [
+    {
+      id: 'extra_1',
+      ativa: false,
+      titulo: 'É a sua primeira vez conosco?',
+      subtitulo: 'Queremos te dar as boas-vindas com muito carinho',
+      cardsPorTela: 3,
+      opcoes: [
+        {
+          id: 'primeira_vez',
+          titulo: 'Sim, é minha primeira vez!',
+          subtitulo: 'Vim conhecer e prestigiar a programação',
+          ativo: true,
+          icone: 'Sparkles',
+          cor: 'emerald'
+        },
+        {
+          id: 'ja_visitei',
+          titulo: 'Já visitei em outras ocasiões',
+          subtitulo: 'Venho de vez em quando aos cultos e eventos',
+          ativo: true,
+          icone: 'Smile',
+          cor: 'sky'
+        },
+        {
+          id: 'frequento',
+          titulo: 'Já frequento regularmente',
+          subtitulo: 'Sou da casa ou congrego frequentemente',
+          ativo: true,
+          icone: 'Church',
+          cor: 'indigo'
+        }
+      ]
     }
   ],
   pergunta2Titulo: 'Você está só ou tem mais pessoas te acompanhando?',
@@ -175,13 +228,105 @@ export function escutarTituloEvento(callback) {
 }
 
 // ==========================================
+// CONTROLE DE SESSÃO / START DO ADMIN
+// ==========================================
+export function getSavedSessionStatus() {
+  try {
+    const val = localStorage.getItem(SESSION_STORAGE_KEY);
+    // Por padrão no primeiro carregamento: se não definido, false (aguardando o admin dar start)
+    return val === 'true';
+  } catch (e) {
+    return false;
+  }
+}
+
+export async function saveSessionStatus(started) {
+  const isStarted = Boolean(started);
+  localStorage.setItem(SESSION_STORAGE_KEY, String(isStarted));
+  window.dispatchEvent(new CustomEvent('church_session_status_changed', { detail: isStarted }));
+
+  if (isFirebaseReady()) {
+    try {
+      await setDoc(doc(db, 'configuracoes', 'sessao'), {
+        ativa: isStarted,
+        atualizadoEm: serverTimestamp()
+      }, { merge: true });
+    } catch (e) {
+      console.warn('Erro ao salvar status da sessao no Firestore:', e);
+    }
+  }
+}
+
+export function escutarStatusSessao(callback) {
+  callback(getSavedSessionStatus());
+
+  const localHandler = (e) => callback(Boolean(e.detail));
+  window.addEventListener('church_session_status_changed', localHandler);
+
+  if (isFirebaseReady()) {
+    try {
+      const unsub = onSnapshot(doc(db, 'configuracoes', 'sessao'), (snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          const ativa = Boolean(data?.ativa);
+          localStorage.setItem(SESSION_STORAGE_KEY, String(ativa));
+          callback(ativa);
+        }
+      });
+      return () => {
+        unsub();
+        window.removeEventListener('church_session_status_changed', localHandler);
+      };
+    } catch (e) {
+      console.warn('Erro ao escutar sessao no Firestore:', e);
+    }
+  }
+
+  return () => window.removeEventListener('church_session_status_changed', localHandler);
+}
+
+// ==========================================
+// NORMALIZAÇÃO DE CONFIGURAÇÕES DE PERGUNTAS
+// ==========================================
+function normalizeQuestionsConfig(config) {
+  if (!config) return DEFAULT_QUESTIONS_CONFIG;
+  const merged = { ...DEFAULT_QUESTIONS_CONFIG, ...config };
+  
+  // Garantir que cardsPorTela seja um número válido entre 2 e 6
+  merged.cardsPorTela = Number(merged.cardsPorTela) || 4;
+  if (merged.cardsPorTela < 2) merged.cardsPorTela = 2;
+  if (merged.cardsPorTela > 8) merged.cardsPorTela = 8;
+
+  // Garantir que cada opção tenha o campo 'ativo' e 'id'
+  if (Array.isArray(merged.opcoesChegada)) {
+    merged.opcoesChegada = merged.opcoesChegada.map((op, idx) => ({
+      id: op.id || `card_${idx + 1}`,
+      titulo: op.titulo || '',
+      subtitulo: op.subtitulo || '',
+      ativo: op.ativo !== false,
+      icone: op.icone || 'Tag',
+      cor: op.cor || 'amber'
+    }));
+  } else {
+    merged.opcoesChegada = DEFAULT_QUESTIONS_CONFIG.opcoesChegada;
+  }
+
+  // Garantir telas extras
+  if (!Array.isArray(merged.telasExtras)) {
+    merged.telasExtras = DEFAULT_QUESTIONS_CONFIG.telasExtras || [];
+  }
+
+  return merged;
+}
+
+// ==========================================
 // CONFIGURAÇÃO DAS PERGUNTAS E SUBTÍTULOS
 // ==========================================
 export function getSavedQuestionsConfig() {
   try {
     const raw = localStorage.getItem(QUESTIONS_STORAGE_KEY);
     if (raw) {
-      return { ...DEFAULT_QUESTIONS_CONFIG, ...JSON.parse(raw) };
+      return normalizeQuestionsConfig(JSON.parse(raw));
     }
   } catch (e) {
     console.error('Erro ao ler perguntas do localStorage:', e);
@@ -190,14 +335,14 @@ export function getSavedQuestionsConfig() {
 }
 
 export async function saveQuestionsConfig(config) {
-  const merged = { ...DEFAULT_QUESTIONS_CONFIG, ...(config || {}) };
-  localStorage.setItem(QUESTIONS_STORAGE_KEY, JSON.stringify(merged));
-  window.dispatchEvent(new CustomEvent('church_questions_changed', { detail: merged }));
+  const normalized = normalizeQuestionsConfig(config);
+  localStorage.setItem(QUESTIONS_STORAGE_KEY, JSON.stringify(normalized));
+  window.dispatchEvent(new CustomEvent('church_questions_changed', { detail: normalized }));
 
   if (isFirebaseReady()) {
     try {
       await setDoc(doc(db, 'configuracoes', 'perguntas'), {
-        ...merged,
+        ...normalized,
         atualizadoEm: serverTimestamp()
       }, { merge: true });
     } catch (e) {
@@ -209,7 +354,7 @@ export async function saveQuestionsConfig(config) {
 export function escutarConfigPerguntas(callback) {
   callback(getSavedQuestionsConfig());
 
-  const localHandler = (e) => callback(e.detail || getSavedQuestionsConfig());
+  const localHandler = (e) => callback(normalizeQuestionsConfig(e.detail));
   window.addEventListener('church_questions_changed', localHandler);
 
   if (isFirebaseReady()) {
@@ -218,9 +363,9 @@ export function escutarConfigPerguntas(callback) {
         if (snapshot.exists()) {
           const data = snapshot.data();
           if (data) {
-            const merged = { ...DEFAULT_QUESTIONS_CONFIG, ...data };
-            localStorage.setItem(QUESTIONS_STORAGE_KEY, JSON.stringify(merged));
-            callback(merged);
+            const normalized = normalizeQuestionsConfig(data);
+            localStorage.setItem(QUESTIONS_STORAGE_KEY, JSON.stringify(normalized));
+            callback(normalized);
           }
         }
       });
@@ -278,12 +423,13 @@ function saveLocalData(items) {
   }
 }
 
-export async function registrarPresenca({ comoChegou, qtdPessoas, evento = '' }) {
+export async function registrarPresenca({ comoChegou, qtdPessoas, evento = '', respostasExtras = {} }) {
   const nomeEvento = evento || getSavedEventTitle();
   const payload = {
     comoChegou,
     qtdPessoas: Number(qtdPessoas) || 1,
     evento: nomeEvento,
+    respostasExtras: respostasExtras || {},
     criadoEm: new Date().toISOString(),
     dataCulto: new Date().toLocaleDateString('pt-BR'),
     hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),

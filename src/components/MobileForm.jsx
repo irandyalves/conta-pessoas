@@ -8,8 +8,17 @@ import {
   Share2, 
   Compass,
   ChevronRight,
+  ChevronLeft,
   Sparkles,
-  TreePine
+  TreePine,
+  Clock,
+  Star,
+  Smile,
+  MapPin,
+  MessageCircle,
+  HelpCircle,
+  Radio,
+  CheckCircle2
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { 
@@ -17,6 +26,7 @@ import {
   escutarTituloEvento, 
   escutarResetGlobal,
   escutarConfigPerguntas,
+  escutarStatusSessao,
   DEFAULT_QUESTIONS_CONFIG,
   DEFAULT_EVENT_TITLE 
 } from '../firebase';
@@ -24,21 +34,56 @@ import {
 const CHECKIN_LOCK_KEY = 'presenca_finalizada_cantata_2026';
 const CHECKIN_TIME_KEY = 'presenca_hora_registro';
 
+// Dicionário de ícones dinâmicos
+const ICON_COMPONENTS = {
+  Tag,
+  Church,
+  HeartHandshake,
+  Share2,
+  Compass,
+  Sparkles,
+  Star,
+  Smile,
+  MapPin,
+  MessageCircle,
+  Users,
+  User,
+  HelpCircle
+};
+
+const COR_CLASSES = {
+  amber: 'text-amber-400 bg-amber-500/15 border-amber-500/30 group-hover:border-amber-400',
+  emerald: 'text-emerald-400 bg-emerald-500/15 border-emerald-500/30 group-hover:border-emerald-400',
+  sky: 'text-sky-400 bg-sky-500/15 border-sky-500/30 group-hover:border-sky-400',
+  purple: 'text-purple-400 bg-purple-500/15 border-purple-500/30 group-hover:border-purple-400',
+  indigo: 'text-indigo-400 bg-indigo-500/15 border-indigo-500/30 group-hover:border-indigo-400',
+  rose: 'text-rose-400 bg-rose-500/15 border-rose-500/30 group-hover:border-rose-400',
+};
+
 export default function MobileForm() {
   const [eventoTitulo, setEventoTitulo] = useState(DEFAULT_EVENT_TITLE);
   const [questionsConfig, setQuestionsConfig] = useState(DEFAULT_QUESTIONS_CONFIG);
-  const [step, setStep] = useState(1);
+  const [sessaoAtiva, setSessaoAtiva] = useState(false);
+  
+  // Etapas de navegação:
+  // 'p1': Pergunta 1 (com slider/paginação de cards)
+  // 'extra_X': Telas adicionais configuradas pelo admin
+  // 'acompanhantes': Pergunta 2 (quantas pessoas vieram)
+  // 'final': Tela de agradecimento
+  const [currentStep, setCurrentStep] = useState('p1');
+  const [p1SlideIndex, setP1SlideIndex] = useState(0);
   const [comoChegou, setComoChegou] = useState('');
+  const [respostasExtras, setRespostasExtras] = useState({});
   const [countdown, setCountdown] = useState(10);
   const [finalizado, setFinalizado] = useState(false);
 
-  // 1. BLOQUEIO DEFINITIVO: Se o aparelho já registrou, impede de votar novamente
+  // 1. BLOQUEIO DEFINITIVO: Se o aparelho já registrou, vai direto para tela final
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('novo') === '1' || params.get('reset') === '1') {
       localStorage.removeItem(CHECKIN_LOCK_KEY);
       localStorage.removeItem(CHECKIN_TIME_KEY);
-      setStep(1);
+      setCurrentStep('p1');
       setFinalizado(false);
       setCountdown(10);
       return;
@@ -46,20 +91,23 @@ export default function MobileForm() {
 
     const jaRegistrou = localStorage.getItem(CHECKIN_LOCK_KEY);
     if (jaRegistrou) {
-      setStep(3);
+      setCurrentStep('final');
       setFinalizado(true);
       setCountdown(0);
     }
   }, []);
 
-  // 2. ESCUTA O BOTÃO "ZERAR TUDO" DO ADMIN: Destrava o celular na hora!
+  // 2. ESCUTA O BOTÃO "ZERAR TUDO" DO ADMIN: Destrava o celular na hora
   useEffect(() => {
     const unsub = escutarResetGlobal((resetEm) => {
       const horaRegistro = localStorage.getItem(CHECKIN_TIME_KEY);
       if (resetEm && (!horaRegistro || new Date(resetEm) > new Date(horaRegistro))) {
         localStorage.removeItem(CHECKIN_LOCK_KEY);
         localStorage.removeItem(CHECKIN_TIME_KEY);
-        setStep(1);
+        setCurrentStep('p1');
+        setP1SlideIndex(0);
+        setComoChegou('');
+        setRespostasExtras({});
         setFinalizado(false);
         setCountdown(10);
       }
@@ -67,9 +115,17 @@ export default function MobileForm() {
     return () => unsub && unsub();
   }, []);
 
-  // 3. BLOQUEIO DO BOTÃO "VOLTAR" DO NAVEGADOR / CELULAR
+  // 3. ESCUTA O STATUS DA SESSÃO (START DO ADMIN)
   useEffect(() => {
-    if (step === 3) {
+    const unsub = escutarStatusSessao((ativa) => {
+      setSessaoAtiva(ativa);
+    });
+    return () => unsub && unsub();
+  }, []);
+
+  // 4. BLOQUEIO DO BOTÃO "VOLTAR" DO NAVEGADOR
+  useEffect(() => {
+    if (currentStep === 'final') {
       const handlePop = (e) => {
         e.preventDefault();
         window.history.pushState(null, '', window.location.href);
@@ -78,7 +134,7 @@ export default function MobileForm() {
       window.addEventListener('popstate', handlePop);
       return () => window.removeEventListener('popstate', handlePop);
     }
-  }, [step]);
+  }, [currentStep]);
 
   // Escuta título do evento configurável pelo Admin
   useEffect(() => {
@@ -96,77 +152,73 @@ export default function MobileForm() {
     return () => unsub && unsub();
   }, []);
 
-  // Timer de 10 segundos na tela final para fechar
+  // Timer de 10 segundos na tela final
   useEffect(() => {
     let timer;
-    if (step === 3 && countdown > 0) {
+    if (currentStep === 'final' && countdown > 0) {
       timer = setInterval(() => {
         setCountdown((prev) => prev - 1);
       }, 1000);
-    } else if (step === 3 && countdown === 0) {
+    } else if (currentStep === 'final' && countdown === 0) {
       setFinalizado(true);
       try {
         window.open('', '_self', '');
         window.close();
-      } catch (e) {
-        // Bloqueio de segurança nativo de navegadores móveis para scripts
-      }
+      } catch (e) {}
     }
     return () => clearInterval(timer);
-  }, [step, countdown]);
+  }, [currentStep, countdown]);
 
-  // Ícones padrão associados por ID
-  const iconesChegadaMap = {
-    faixa: { icone: Tag, iconeCor: 'text-amber-400 bg-amber-500/15 border-amber-500/30' },
-    membro: { icone: Church, iconeCor: 'text-sky-400 bg-sky-500/15 border-sky-500/30' },
-    convidado: { icone: HeartHandshake, iconeCor: 'text-emerald-400 bg-emerald-500/15 border-emerald-500/30' },
-    redes: { icone: Share2, iconeCor: 'text-purple-400 bg-purple-500/15 border-purple-500/30' },
-    outro: { icone: Compass, iconeCor: 'text-indigo-400 bg-indigo-500/15 border-indigo-500/30' }
-  };
+  // Lista de cards ativos da Pergunta 1
+  const todosCardsP1 = questionsConfig?.opcoesChegada || DEFAULT_QUESTIONS_CONFIG.opcoesChegada;
+  const cardsAtivosP1 = todosCardsP1.filter((c) => c.ativo !== false);
+  const cardsPorTela = Number(questionsConfig?.cardsPorTela) || 4;
+  
+  // Total de slides da Pergunta 1
+  const totalSlidesP1 = Math.max(1, Math.ceil(cardsAtivosP1.length / cardsPorTela));
+  const cardsDoSlideAtual = cardsAtivosP1.slice(
+    p1SlideIndex * cardsPorTela,
+    (p1SlideIndex + 1) * cardsPorTela
+  );
 
-  // Opções dinâmicas da Pergunta 1 vindas do Firebase
-  const listaOpcoesConfig = questionsConfig?.opcoesChegada?.length > 0 
-    ? questionsConfig.opcoesChegada 
-    : DEFAULT_QUESTIONS_CONFIG.opcoesChegada;
+  // Telas extras ativas configuradas pelo admin
+  const telasExtrasAtivas = (questionsConfig?.telasExtras || []).filter((t) => t.ativa);
 
-  const opcoesChegada = listaOpcoesConfig.map((opcao, idx) => {
-    const fallbackId = ['faixa', 'membro', 'convidado', 'redes', 'outro'][idx] || 'outro';
-    const iconeInfo = iconesChegadaMap[opcao.id] || iconesChegadaMap[fallbackId] || iconesChegadaMap.outro;
-    return {
-      ...opcao,
-      ...iconeInfo
-    };
-  });
-
-  // Opções da Pergunta 2 (SÓ EU, 2, 3, 4, 5, 6, 7, 8, 9, +10)
-  const opcoesQuantidade = [
-    { valor: 2, label: '2' },
-    { valor: 3, label: '3' },
-    { valor: 4, label: '4' },
-    { valor: 5, label: '5' },
-    { valor: 6, label: '6' },
-    { valor: 7, label: '7' },
-    { valor: 8, label: '8' },
-    { valor: 9, label: '9' },
-    { valor: 10, label: '+10' },
-  ];
-
-  // Ao clicar numa opção na pergunta 1, abre IMEDIATAMENTE a segunda tela
+  // Avançar após selecionar um card na Pergunta 1
   const handleSelectComoChegou = (opcao) => {
     setComoChegou(opcao.titulo);
-    setStep(2);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    if (telasExtrasAtivas.length > 0) {
+      setCurrentStep('extra_0');
+    } else {
+      setCurrentStep('acompanhantes');
+    }
   };
 
-  // Ao escolher uma opção na pergunta 2, registra e TRAVA IMEDIATAMENTE este aparelho
-  const handleSelectQtd = (qtd) => {
-    if (step === 3) return; // Impede duplo clique
+  // Avançar após selecionar opção em tela extra
+  const handleSelectOpcaoExtra = (telaIndex, opcao) => {
+    const tela = telasExtrasAtivas[telaIndex];
+    setRespostasExtras((prev) => ({
+      ...prev,
+      [tela.titulo || `Pergunta_${telaIndex + 1}`]: opcao.titulo
+    }));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    // 1. Grava a trava definitiva e o horário neste aparelho
+    if (telaIndex + 1 < telasExtrasAtivas.length) {
+      setCurrentStep(`extra_${telaIndex + 1}`);
+    } else {
+      setCurrentStep('acompanhantes');
+    }
+  };
+
+  // Ao escolher quantidade de acompanhantes: registra e trava
+  const handleSelectQtd = (qtd) => {
+    if (currentStep === 'final') return;
+
     localStorage.setItem(CHECKIN_LOCK_KEY, 'true');
     localStorage.setItem(CHECKIN_TIME_KEY, new Date().toISOString());
 
-    // 2. Trava o botão Voltar do Android/iPhone
     try {
       window.history.pushState(null, '', window.location.href);
       window.onpopstate = function() {
@@ -174,14 +226,13 @@ export default function MobileForm() {
       };
     } catch (e) {}
 
-    // 3. Registra automaticamente no banco para o relatório
     registrarPresenca({
       comoChegou,
       qtdPessoas: qtd,
-      evento: eventoTitulo
+      evento: eventoTitulo,
+      respostasExtras
     });
 
-    // 4. Dispara confetes
     try {
       confetti({
         particleCount: 80,
@@ -190,40 +241,95 @@ export default function MobileForm() {
       });
     } catch (e) {}
 
-    // 5. Abre imediatamente a tela final
-    setStep(3);
+    setCurrentStep('final');
   };
 
   // ==============================================================
-  // TELA 3: TELA FINAL (MUITO OBRIGADO PELA SUA PRESENÇA. A CANTATA...)
+  // ESTADO 1: TELA DE ESPERA (QUANDO O ADMIN AINDA NÃO DEU START)
   // ==============================================================
-  if (step === 3) {
+  const jaRegistrou = localStorage.getItem(CHECKIN_LOCK_KEY);
+  if (!sessaoAtiva && !jaRegistrou && currentStep !== 'final') {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-5 text-center select-none animate-fade-in relative overflow-hidden">
+        {/* Luzes decorativas */}
+        <div className="absolute -top-24 -right-24 w-60 h-60 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -left-24 w-60 h-60 bg-sky-500/15 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="w-full max-w-sm bg-slate-900/95 border border-amber-500/30 rounded-3xl p-7 sm:p-8 shadow-2xl relative space-y-6">
+          
+          {/* Badge de Conexão */}
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-bold uppercase tracking-wider">
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+            <span>Conectado • Aguardando Início</span>
+          </div>
+
+          {/* Nome do Evento */}
+          <div className="space-y-2">
+            <p className="text-sm font-extrabold text-emerald-400 uppercase tracking-wide">
+              Seja muito bem-vindo!
+            </p>
+            <div className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-2xl bg-slate-950 border border-amber-500/40 text-amber-300 shadow">
+              <TreePine className="w-5 h-5 text-emerald-400 shrink-0" />
+              <h1 className="text-base sm:text-lg font-black tracking-wider uppercase text-amber-300">
+                {eventoTitulo}
+              </h1>
+            </div>
+          </div>
+
+          {/* Ícone de Pulso / Espera */}
+          <div className="py-2 flex flex-col items-center justify-center">
+            <div className="relative w-20 h-20 rounded-full bg-gradient-to-tr from-amber-500/20 to-orange-500/20 border-2 border-amber-500/40 flex items-center justify-center text-amber-400 shadow-xl shadow-amber-500/10">
+              <Clock className="w-9 h-9 animate-pulse" />
+              <div className="absolute inset-0 rounded-full border-2 border-amber-400/30 animate-ping pointer-events-none" />
+            </div>
+          </div>
+
+          {/* Mensagem Explicativa */}
+          <div className="space-y-2 text-slate-300">
+            <h3 className="text-lg font-black text-white">
+              A pesquisa começará em instantes!
+            </h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              O QR Code foi lido com sucesso. Mantenha esta página aberta no celular. Assim que a direção der o início oficial, as perguntas surgirão automaticamente na sua tela!
+            </p>
+          </div>
+
+          {/* Barra de Espera Animada */}
+          <div className="pt-2">
+            <div className="w-full bg-slate-950 rounded-full h-1.5 overflow-hidden">
+              <div className="bg-gradient-to-r from-amber-400 to-orange-400 h-full w-2/3 animate-pulse rounded-full" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ==============================================================
+  // ESTADO FINAL: TELA DE AGRADECIMENTO (REGISTRO CONCLUÍDO)
+  // ==============================================================
+  if (currentStep === 'final') {
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-6 text-center select-none fade-in">
         <div className="w-full max-w-sm bg-slate-900/95 border border-slate-800/80 rounded-3xl p-8 shadow-2xl relative overflow-hidden space-y-6">
-          {/* Efeitos sutis de luz */}
           <div className="absolute -top-20 -right-20 w-44 h-44 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute -bottom-20 -left-20 w-44 h-44 bg-sky-500/15 rounded-full blur-3xl pointer-events-none" />
 
-          {/* PARTE 1: MUITO OBRIGADO + EVENTO */}
           <div className="space-y-3">
             <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-snug">
               MUITO OBRIGADO PELA SUA PRESENÇA.
             </h1>
 
             <div className="space-y-1">
-              {/* Frase do evento reduzida em 15% */}
               <span className="block text-[17px] sm:text-[20px] font-black bg-gradient-to-r from-amber-300 via-orange-300 to-amber-400 bg-clip-text text-transparent uppercase tracking-wide leading-tight">
                 A {eventoTitulo}
               </span>
-              {/* 2ª frase reduzida em 10% */}
               <span className="block text-[16px] sm:text-[18px] font-extrabold text-amber-400 tracking-wide leading-tight">
                 será espetacular!
               </span>
             </div>
           </div>
 
-          {/* PARTE 2: REGISTRO CONCLUÍDO + PODE GUARDAR SEU CELULAR */}
           <div className="pt-5 border-t border-slate-800/80 space-y-3">
             {!finalizado && (
               <div className="w-full bg-slate-800/60 rounded-full h-1.5 overflow-hidden mb-3">
@@ -248,18 +354,20 @@ export default function MobileForm() {
     );
   }
 
+  // ==============================================================
+  // FLUXO PRINCIPAL: TELAS 1, 2, 3, 4, 5
+  // ==============================================================
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between p-4 sm:p-6 max-w-md mx-auto">
-      {/* ============================================================== */}
-      {/* CABEÇALHO DO EVENTO                                            */}
-      {/* ============================================================== */}
-      <header className="w-full pt-3 pb-2 text-center">
-        {/* 1. SEJA MUITO BEM-VINDO (REDUZIDO EM 20%) */}
+      
+      {/* ============================================================ */}
+      {/* CABEÇALHO DO EVENTO                                          */}
+      {/* ============================================================ */}
+      <header className="w-full pt-2 pb-2 text-center">
         <p className="text-lg sm:text-xl font-extrabold text-emerald-400 tracking-wide drop-shadow-sm">
           Seja muito bem-vindo!
         </p>
 
-        {/* 2. TÍTULO DO EVENTO AUMENTADO (CONFIGURÁVEL NO ADMIN) */}
         <div className="inline-flex items-center justify-center gap-2.5 px-5 py-2 rounded-2xl bg-slate-900/95 border-2 border-amber-500/40 text-amber-300 mt-2 mb-2 shadow-lg">
           <TreePine className="w-5 h-5 text-emerald-400 shrink-0" />
           <h1 className="text-base sm:text-lg md:text-xl font-black tracking-wider uppercase text-amber-300 drop-shadow">
@@ -267,9 +375,9 @@ export default function MobileForm() {
           </h1>
         </div>
 
-        {/* 3. PERGUNTA 1: Título e Subtítulo configuráveis */}
-        {step === 1 && (
-          <div className="mt-3 pt-3 border-t border-slate-800/60">
+        {/* TÍTULO DA ETAPA ATUAL */}
+        {currentStep === 'p1' && (
+          <div className="mt-2 pt-2 border-t border-slate-800/60">
             <h2 className="text-xl sm:text-2xl font-black text-white leading-tight">
               {questionsConfig.pergunta1Titulo || 'Como você chegou aqui?'}
             </h2>
@@ -281,9 +389,28 @@ export default function MobileForm() {
           </div>
         )}
 
-        {/* PERGUNTA 2: Título e Subtítulo configuráveis */}
-        {step === 2 && (
-          <div className="mt-3 pt-3 border-t border-slate-800/60">
+        {/* TELA EXTRA (SE HOUVER) */}
+        {currentStep.startsWith('extra_') && (() => {
+          const idx = parseInt(currentStep.split('_')[1], 10);
+          const tela = telasExtrasAtivas[idx];
+          if (!tela) return null;
+          return (
+            <div className="mt-2 pt-2 border-t border-slate-800/60">
+              <h2 className="text-xl sm:text-2xl font-black text-white leading-tight">
+                {tela.titulo || 'Pergunta Adicional'}
+              </h2>
+              {tela.subtitulo && (
+                <p className="text-xs sm:text-sm text-slate-400 mt-1">
+                  {tela.subtitulo}
+                </p>
+              )}
+            </div>
+          );
+        })()}
+
+        {/* PERGUNTA 2: ACOMPANHANTES */}
+        {currentStep === 'acompanhantes' && (
+          <div className="mt-2 pt-2 border-t border-slate-800/60">
             <h2 className="text-xl sm:text-2xl font-black text-white leading-tight whitespace-pre-line">
               {questionsConfig.pergunta2Titulo || 'Você está só ou tem mais pessoas te acompanhando?'}
             </h2>
@@ -296,46 +423,171 @@ export default function MobileForm() {
         )}
       </header>
 
-      {/* ============================================================== */}
-      {/* CONTEÚDO PRINCIPAL (TELAS 1 E 2)                               */}
-      {/* ============================================================== */}
+      {/* ============================================================ */}
+      {/* CORPO DINÂMICO CONFORME A ETAPA                              */}
+      {/* ============================================================ */}
       <main className="w-full flex-1 my-auto py-2">
-        {/* TELA 1: COMO CHEGOU (CARDS +25% ALTURA E +20% FONTE) */}
-        {step === 1 && (
-          <div className="space-y-3 fade-in">
-            {opcoesChegada.map((opcao) => {
-              const Icon = opcao.icone;
-              return (
+        
+        {/* ============================================================ */}
+        {/* ETAPA 1: PERGUNTA 1 COM SLIDER / PAGINAÇÃO DE CARDS GRANDES   */}
+        {/* ============================================================ */}
+        {currentStep === 'p1' && (
+          <div className="space-y-3.5 fade-in">
+            
+            {/* Indicador de Paginação/Slide se houver mais cards do que o limite */}
+            {totalSlidesP1 > 1 && (
+              <div className="flex items-center justify-between px-1 text-xs">
+                <span className="font-bold text-amber-300">
+                  Opções (Página {p1SlideIndex + 1} de {totalSlidesP1})
+                </span>
+
+                <div className="flex items-center gap-1.5">
+                  {Array.from({ length: totalSlidesP1 }).map((_, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setP1SlideIndex(i)}
+                      className={`h-2 rounded-full transition-all ${
+                        p1SlideIndex === i ? 'w-6 bg-amber-400' : 'w-2 bg-slate-700 hover:bg-slate-600'
+                      }`}
+                      title={`Ir para página ${i + 1}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Cards do Slide Atual (Grandes, fáceis de tocar, não encolhem!) */}
+            <div className="space-y-3">
+              {cardsDoSlideAtual.map((opcao) => {
+                const IconComponent = ICON_COMPONENTS[opcao.icone] || Tag;
+                const corCls = COR_CLASSES[opcao.cor] || COR_CLASSES.amber;
+
+                return (
+                  <button
+                    key={opcao.id}
+                    onClick={() => handleSelectComoChegou(opcao)}
+                    className="w-full text-left p-5 sm:p-5.5 min-h-[84px] rounded-2xl border border-slate-800 bg-slate-900/90 hover:bg-slate-800/90 active:scale-[0.98] transition-all flex items-center justify-between group shadow-md"
+                  >
+                    <div className="flex items-center gap-4 pr-2">
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border shadow-sm transition-transform group-hover:scale-105 ${corCls}`}>
+                        <IconComponent className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-base sm:text-lg text-white group-hover:text-amber-300 transition leading-snug">
+                          {opcao.titulo}
+                        </h3>
+                        {opcao.subtitulo && (
+                          <p className="text-xs sm:text-[13px] text-slate-400 mt-1 line-clamp-1">
+                            {opcao.subtitulo}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="w-7 h-7 rounded-full bg-slate-800/80 border border-slate-700/80 flex items-center justify-center shrink-0 text-slate-400 group-hover:text-amber-300 group-hover:border-amber-400/50 transition">
+                      <ChevronRight className="w-4 h-4" />
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Controles de Navegação de Slide (se houver múltiplas páginas de cards) */}
+            {totalSlidesP1 > 1 && (
+              <div className="flex items-center justify-between pt-2">
                 <button
-                  key={opcao.id}
-                  onClick={() => handleSelectComoChegou(opcao)}
-                  className="w-full text-left p-5 sm:p-5.5 min-h-[82px] rounded-2xl border border-slate-800 bg-slate-900/85 hover:bg-slate-800/90 active:scale-[0.98] transition-all flex items-center justify-between group shadow-sm"
+                  type="button"
+                  onClick={() => setP1SlideIndex(Math.max(0, p1SlideIndex - 1))}
+                  disabled={p1SlideIndex === 0}
+                  className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-300 bg-slate-900 border border-slate-800 hover:bg-slate-800 disabled:opacity-30 disabled:pointer-events-none transition flex items-center gap-1.5"
                 >
-                  <div className="flex items-center gap-4 pr-2">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border shadow-sm ${opcao.iconeCor}`}>
-                      <Icon className="w-6 h-6" />
-                    </div>
-                    <div>
-                      {/* FONTE DOS CARDS +20% */}
-                      <h3 className="font-bold text-base sm:text-lg text-white group-hover:text-amber-300 transition leading-snug">
-                        {opcao.titulo}
-                      </h3>
-                      <p className="text-xs sm:text-[13px] text-slate-400 mt-1 line-clamp-1">
-                        {opcao.subtitulo}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="w-7 h-7 rounded-full bg-slate-800/80 border border-slate-700/80 flex items-center justify-center shrink-0 text-slate-400 group-hover:text-amber-300">
-                    <ChevronRight className="w-4 h-4" />
-                  </div>
+                  <ChevronLeft className="w-4 h-4" />
+                  <span>Anterior</span>
                 </button>
-              );
-            })}
+
+                <button
+                  type="button"
+                  onClick={() => setP1SlideIndex(Math.min(totalSlidesP1 - 1, p1SlideIndex + 1))}
+                  disabled={p1SlideIndex >= totalSlidesP1 - 1}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-amber-300 bg-amber-500/15 border border-amber-500/30 hover:bg-amber-500/25 disabled:opacity-30 disabled:pointer-events-none transition flex items-center gap-1.5"
+                >
+                  <span>Ver mais opções</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
           </div>
         )}
 
-        {/* TELA 2: ACOMPANHANTES (EFEITO 3D E NÚMEROS +20%) */}
-        {step === 2 && (
+        {/* ============================================================ */}
+        {/* TELAS EXTRAS (3, 4 E 5 TELAS ADICIONADAS PELO ADMIN)         */}
+        {/* ============================================================ */}
+        {currentStep.startsWith('extra_') && (() => {
+          const idx = parseInt(currentStep.split('_')[1], 10);
+          const tela = telasExtrasAtivas[idx];
+          if (!tela) return null;
+
+          return (
+            <div className="space-y-3.5 fade-in">
+              <div className="space-y-3">
+                {(tela.opcoes || []).filter(o => o.ativo !== false).map((opt) => {
+                  const IconComp = ICON_COMPONENTS[opt.icone] || Sparkles;
+                  const corCls = COR_CLASSES[opt.cor] || COR_CLASSES.emerald;
+
+                  return (
+                    <button
+                      key={opt.id}
+                      onClick={() => handleSelectOpcaoExtra(idx, opt)}
+                      className="w-full text-left p-5 sm:p-5.5 min-h-[82px] rounded-2xl border border-slate-800 bg-slate-900/90 hover:bg-slate-800/90 active:scale-[0.98] transition-all flex items-center justify-between group shadow-md"
+                    >
+                      <div className="flex items-center gap-4 pr-2">
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border shadow-sm transition-transform group-hover:scale-105 ${corCls}`}>
+                          <IconComp className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-base sm:text-lg text-white group-hover:text-amber-300 transition leading-snug">
+                            {opt.titulo}
+                          </h3>
+                          {opt.subtitulo && (
+                            <p className="text-xs sm:text-[13px] text-slate-400 mt-1 line-clamp-1">
+                              {opt.subtitulo}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="w-7 h-7 rounded-full bg-slate-800/80 border border-slate-700/80 flex items-center justify-center shrink-0 text-slate-400 group-hover:text-amber-300 transition">
+                        <ChevronRight className="w-4 h-4" />
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Botão para voltar à etapa anterior */}
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (idx === 0) {
+                      setCurrentStep('p1');
+                    } else {
+                      setCurrentStep(`extra_${idx - 1}`);
+                    }
+                  }}
+                  className="text-xs text-slate-400 hover:text-white flex items-center gap-1 mx-auto py-1"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                  <span>Voltar para pergunta anterior</span>
+                </button>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* ============================================================ */}
+        {/* ETAPA FINAL DE PERGUNTAS: ACOMPANHANTES (BOTÕES 3D)          */}
+        {/* ============================================================ */}
+        {currentStep === 'acompanhantes' && (
           <div className="space-y-4 fade-in">
             {/* Opção em Destaque: SÓ EU (BOTÃO 3D TÁTIL) */}
             <button
@@ -347,7 +599,6 @@ export default function MobileForm() {
                   <User className="w-8 h-8 drop-shadow" />
                 </div>
                 <div className="text-left">
-                  {/* Título e Subtítulo configuráveis do Botão Individual */}
                   <h3 className="font-black text-2xl text-amber-300 drop-shadow-md flex items-baseline gap-1 flex-wrap">
                     <span>{questionsConfig.opcaoIndividualTitulo || 'SÓ EU'}</span>
                     <span className="text-sm sm:text-base font-semibold text-white">
@@ -361,7 +612,7 @@ export default function MobileForm() {
               </div>
             </button>
 
-            {/* Divisor com o DOBRO DE ESPAÇO empurrando os números para baixo */}
+            {/* Divisor */}
             <div className="relative flex py-6 my-2 items-center">
               <div className="flex-grow border-t border-slate-800/80"></div>
               <span className="flex-shrink mx-3 text-xs sm:text-sm font-black text-amber-300 uppercase tracking-wider text-center">
@@ -370,9 +621,19 @@ export default function MobileForm() {
               <div className="flex-grow border-t border-slate-800/80"></div>
             </div>
 
-            {/* Grid dos Botões 2 a +10 (BOTÕES 3D EMPURRADOS PARA BAIXO) */}
+            {/* Grid dos Botões 2 a +10 */}
             <div className="grid grid-cols-3 gap-3.5 pt-1">
-              {opcoesQuantidade.map((op) => (
+              {[
+                { valor: 2, label: '2' },
+                { valor: 3, label: '3' },
+                { valor: 4, label: '4' },
+                { valor: 5, label: '5' },
+                { valor: 6, label: '6' },
+                { valor: 7, label: '7' },
+                { valor: 8, label: '8' },
+                { valor: 9, label: '9' },
+                { valor: 10, label: '+10' },
+              ].map((op) => (
                 <button
                   key={op.valor}
                   onClick={() => handleSelectQtd(op.valor)}
@@ -387,11 +648,29 @@ export default function MobileForm() {
                 </button>
               ))}
             </div>
+
+            {/* Botão Voltar */}
+            <div className="pt-2 text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  if (telasExtrasAtivas.length > 0) {
+                    setCurrentStep(`extra_${telasExtrasAtivas.length - 1}`);
+                  } else {
+                    setCurrentStep('p1');
+                  }
+                }}
+                className="text-xs text-slate-400 hover:text-white flex items-center justify-center gap-1 mx-auto py-1"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+                <span>Voltar à pergunta anterior</span>
+              </button>
+            </div>
           </div>
         )}
       </main>
 
-      {/* Rodapé invisível ou mínimo */}
+      {/* Rodapé invisível */}
       <footer className="w-full text-center py-2" />
     </div>
   );

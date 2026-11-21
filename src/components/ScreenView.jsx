@@ -1,15 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { 
   Maximize2, 
   Minimize2, 
-  Settings
+  Settings,
+  Sparkles
 } from 'lucide-react';
+import { escutarStatusSessao } from '../firebase';
 
 export default function ScreenView() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [customUrl, setCustomUrl] = useState('');
   const [editUrl, setEditUrl] = useState(false);
+  const [sessaoAtiva, setSessaoAtiva] = useState(false);
+
+  useEffect(() => {
+    const unsub = escutarStatusSessao((ativa) => {
+      setSessaoAtiva(ativa);
+    });
+    return () => unsub && unsub();
+  }, []);
 
   // Link do QR Code aponta para a raiz (que abre o formulário direto)
   const defaultUrl = `${window.location.origin}/`;
@@ -103,6 +113,18 @@ export default function ScreenView() {
           {/* LINK SUPER LIMPO E FÁCIL DE DIGITAR (EX: conta-pessoas-iasd.web.app) */}
           <div className="mt-8 inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-emerald-950/90 border border-emerald-500/60 shadow-[0_0_25px_rgba(16,185,129,0.2)] text-white font-bold text-base sm:text-lg md:text-xl tracking-wide text-center">
             <span>{displayUrl}</span>
+          </div>
+
+          {/* Status do Start em tempo real */}
+          <div className="mt-4 flex items-center justify-center">
+            <span className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold uppercase tracking-wider border backdrop-blur-md transition-all ${
+              sessaoAtiva
+                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-lg shadow-emerald-500/20'
+                : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+            }`}>
+              <span className={`w-2.5 h-2.5 rounded-full ${sessaoAtiva ? 'bg-emerald-400 animate-ping' : 'bg-amber-400 animate-pulse'}`} />
+              <span>{sessaoAtiva ? 'Pesquisa Aberta • Participe agora!' : 'Aponte a câmera • Início em instantes'}</span>
+            </span>
           </div>
         </div>
       </main>
