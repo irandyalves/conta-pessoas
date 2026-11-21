@@ -396,19 +396,30 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto justify-end shrink-0">
-          {/* BOTÃO DAR START (QUANDO EM ESPERA) */}
-          {!sessaoAtiva && (
+          {/* BOTÃO DAR START / PAUSAR PESQUISA */}
+          {sessaoAtiva ? (
+            <button
+              onClick={handleToggleSessao}
+              disabled={alternandoSessao}
+              className="px-4 py-2.5 rounded-xl font-black text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-amber-900/40 shadow-xl active:scale-95 transition flex items-center justify-center gap-2 border border-amber-400/60"
+              title="Pausar pesquisa e voltar os celulares para tela de espera"
+            >
+              <Pause className="w-4 h-4 fill-slate-950" />
+              <span>{alternandoSessao ? 'Pausando...' : 'PAUSAR PESQUISA'}</span>
+            </button>
+          ) : (
             <button
               onClick={handleToggleSessao}
               disabled={alternandoSessao}
               className="px-5 py-2.5 rounded-xl font-black text-xs sm:text-sm bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 shadow-emerald-500/30 shadow-xl active:scale-95 transition flex items-center justify-center gap-2"
+              title="Liberar celulares para responder as perguntas"
             >
               <Play className="w-4 h-4 fill-slate-950" />
               <span>{alternandoSessao ? 'Iniciando...' : 'DAR START / LIBERAR PERGUNTAS'}</span>
             </button>
           )}
 
-          {/* BOTÃO ZERAR TUDO NO LUGAR DO BOTÃO PAUSE */}
+          {/* BOTÃO ZERAR TUDO */}
           <button
             onClick={() => setShowModalZerar(true)}
             disabled={zerando}
@@ -599,30 +610,36 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
           </p>
         </div>
 
-        <div className={`p-3 rounded-xl border relative overflow-hidden transition-all ${
-          sessaoAtiva 
-            ? 'bg-emerald-950/40 border-emerald-500/40' 
-            : 'bg-amber-950/40 border-amber-500/40'
-        }`}>
+        <button
+          type="button"
+          onClick={handleToggleSessao}
+          disabled={alternandoSessao}
+          title={sessaoAtiva ? 'Clique para pausar a pesquisa' : 'Clique para liberar a pesquisa'}
+          className={`p-3 rounded-xl border relative overflow-hidden transition-all text-left cursor-pointer group active:scale-95 ${
+            sessaoAtiva 
+              ? 'bg-emerald-950/40 border-emerald-500/40 hover:border-emerald-400/80 shadow-md shadow-emerald-950/30' 
+              : 'bg-amber-950/40 border-amber-500/40 hover:border-amber-400/80 shadow-md shadow-amber-950/30'
+          }`}
+        >
           <div className="flex items-center justify-between mb-1">
             <span className={`text-[11px] font-bold uppercase tracking-wider ${
               sessaoAtiva ? 'text-emerald-400' : 'text-amber-400'
             }`}>
               Status da Pesquisa
             </span>
-            <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${
+            <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110 ${
               sessaoAtiva ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
             }`}>
-              {sessaoAtiva ? <Play className="w-3.5 h-3.5 fill-emerald-400" /> : <Pause className="w-3.5 h-3.5 fill-amber-400" />}
+              {sessaoAtiva ? <Pause className="w-3.5 h-3.5 fill-emerald-400" /> : <Play className="w-3.5 h-3.5 fill-amber-400" />}
             </div>
           </div>
           <div className={`text-xl font-black tracking-tight ${sessaoAtiva ? 'text-emerald-300' : 'text-amber-300'}`}>
             {sessaoAtiva ? 'AO VIVO' : 'EM ESPERA'}
           </div>
           <p className="text-[11px] text-slate-300 mt-0.5">
-            {sessaoAtiva ? 'Celulares respondendo' : 'Aguardando Start do Admin'}
+            {sessaoAtiva ? 'Clique p/ pausar' : 'Clique p/ dar start'}
           </p>
-        </div>
+        </button>
       </div>
 
       {/* ============================================================== */}
