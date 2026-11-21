@@ -60,6 +60,30 @@ const COR_CLASSES = {
   rose: 'text-rose-400 bg-rose-500/15 border-rose-500/30 group-hover:border-rose-400',
 };
 
+const CARD_FUNDO_CLASSES = {
+  escuro: 'bg-slate-900/90 border-slate-800 hover:border-slate-700',
+  gradiente: 'bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 border-slate-700/80 hover:border-slate-600',
+  vidro: 'bg-slate-900/60 backdrop-blur-md border-slate-700/50 hover:border-slate-600/70',
+  azul_profundo: 'bg-gradient-to-r from-slate-950 via-slate-900 to-sky-950/80 border-sky-900/40 hover:border-sky-500/50',
+  esmeralda_suave: 'bg-gradient-to-r from-slate-950 via-slate-900 to-emerald-950/70 border-emerald-900/40 hover:border-emerald-500/50',
+  dourado_suave: 'bg-gradient-to-r from-slate-950 via-slate-900 to-amber-950/70 border-amber-900/40 hover:border-amber-500/50',
+};
+
+const CARD_FONTE_TITULO_CLASSES = {
+  branco: 'text-white',
+  dourado: 'text-amber-300',
+  esmeralda: 'text-emerald-300',
+  azul: 'text-sky-300',
+  amarelo: 'text-yellow-300',
+};
+
+const CARD_FONTE_SUBTITULO_CLASSES = {
+  cinza: 'text-slate-400',
+  cinza_claro: 'text-slate-300',
+  branco_suave: 'text-white/80',
+  dourado_suave: 'text-amber-300/80',
+};
+
 export default function MobileForm() {
   const [eventoTitulo, setEventoTitulo] = useState(DEFAULT_EVENT_TITLE);
   const [questionsConfig, setQuestionsConfig] = useState(DEFAULT_QUESTIONS_CONFIG);
@@ -536,13 +560,16 @@ export default function MobileForm() {
               {cardsDoSlideAtual.map((opcao) => {
                 const IconComponent = ICON_COMPONENTS[opcao.icone] || Tag;
                 const corCls = COR_CLASSES[opcao.cor] || COR_CLASSES.amber;
+                const cardFundoCls = CARD_FUNDO_CLASSES[questionsConfig?.cardFundoEstilo] || CARD_FUNDO_CLASSES.escuro;
+                const cardFonteTituloCls = CARD_FONTE_TITULO_CLASSES[questionsConfig?.cardCorFonteTitulo] || 'text-white';
+                const cardFonteSubtituloCls = CARD_FONTE_SUBTITULO_CLASSES[questionsConfig?.cardCorFonteSubtitulo] || 'text-slate-400';
 
                 return (
                   <button
                     key={opcao.id}
                     onClick={() => handleSelectComoChegou(opcao)}
                     style={{ minHeight: `${questionsConfig.cardAltura || 82}px` }}
-                    className="w-full text-left p-4 sm:p-5 rounded-2xl border border-slate-800 bg-slate-900/90 hover:bg-slate-800/90 active:scale-[0.98] transition-all flex items-center justify-between group shadow-md"
+                    className={`w-full text-left p-4 sm:p-5 rounded-2xl border active:scale-[0.98] transition-all flex items-center justify-between group shadow-md ${cardFundoCls}`}
                   >
                     <div className="flex items-center gap-4 pr-2 min-w-0">
                       <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border shadow-sm transition-transform group-hover:scale-105 ${corCls}`}>
@@ -551,14 +578,14 @@ export default function MobileForm() {
                       <div className="min-w-0">
                         <h3 
                           style={{ fontSize: `${questionsConfig.cardFonteTitulo || 16}px` }}
-                          className="font-bold text-white group-hover:text-amber-300 transition leading-snug truncate"
+                          className={`font-bold transition leading-snug truncate ${cardFonteTituloCls}`}
                         >
                           {opcao.titulo}
                         </h3>
                         {opcao.subtitulo && (
                           <p 
                             style={{ fontSize: `${questionsConfig.cardFonteSubtitulo || 12}px` }}
-                            className="text-slate-400 mt-1 line-clamp-2 leading-snug"
+                            className={`mt-1 line-clamp-2 leading-snug ${cardFonteSubtituloCls}`}
                           >
                             {opcao.subtitulo}
                           </p>
@@ -614,13 +641,16 @@ export default function MobileForm() {
                 {(tela.opcoes || []).filter(o => o.ativo !== false).map((opt) => {
                   const IconComp = ICON_COMPONENTS[opt.icone] || Sparkles;
                   const corCls = COR_CLASSES[opt.cor] || COR_CLASSES.emerald;
+                  const cardFundoCls = CARD_FUNDO_CLASSES[questionsConfig?.cardFundoEstilo] || CARD_FUNDO_CLASSES.escuro;
+                  const cardFonteTituloCls = CARD_FONTE_TITULO_CLASSES[questionsConfig?.cardCorFonteTitulo] || 'text-white';
+                  const cardFonteSubtituloCls = CARD_FONTE_SUBTITULO_CLASSES[questionsConfig?.cardCorFonteSubtitulo] || 'text-slate-400';
 
                   return (
                     <button
                       key={opt.id}
                       onClick={() => handleSelectOpcaoExtra(idx, opt)}
                       style={{ minHeight: `${questionsConfig.cardAltura || 82}px` }}
-                      className="w-full text-left p-4 sm:p-5 rounded-2xl border border-slate-800 bg-slate-900/90 hover:bg-slate-800/90 active:scale-[0.98] transition-all flex items-center justify-between group shadow-md"
+                      className={`w-full text-left p-4 sm:p-5 rounded-2xl border active:scale-[0.98] transition-all flex items-center justify-between group shadow-md ${cardFundoCls}`}
                     >
                       <div className="flex items-center gap-4 pr-2 min-w-0">
                         <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border shadow-sm transition-transform group-hover:scale-105 ${corCls}`}>
@@ -629,14 +659,14 @@ export default function MobileForm() {
                         <div className="min-w-0">
                           <h3 
                             style={{ fontSize: `${questionsConfig.cardFonteTitulo || 16}px` }}
-                            className="font-bold text-white group-hover:text-amber-300 transition leading-snug truncate"
+                            className={`font-bold transition leading-snug truncate ${cardFonteTituloCls}`}
                           >
                             {opt.titulo}
                           </h3>
                           {opt.subtitulo && (
                             <p 
                               style={{ fontSize: `${questionsConfig.cardFonteSubtitulo || 12}px` }}
-                              className="text-slate-400 mt-1 line-clamp-2 leading-snug"
+                              className={`mt-1 line-clamp-2 leading-snug ${cardFonteSubtituloCls}`}
                             >
                               {opt.subtitulo}
                             </p>

@@ -33,7 +33,8 @@ import {
   CheckCircle2,
   Smartphone,
   Layers,
-  ArrowRight
+  ArrowRight,
+  Palette
 } from 'lucide-react';
 import { 
   getSavedQuestionsConfig, 
@@ -62,6 +63,33 @@ const CORES = [
   { id: 'purple', label: 'Roxo', bg: 'bg-purple-400', badge: 'text-purple-400 bg-purple-500/15 border-purple-500/30' },
   { id: 'indigo', label: 'Índigo', bg: 'bg-indigo-400', badge: 'text-indigo-400 bg-indigo-500/15 border-indigo-500/30' },
   { id: 'rose', label: 'Rosa', bg: 'bg-rose-400', badge: 'text-rose-400 bg-rose-500/15 border-rose-500/30' },
+];
+
+// OPÇÕES DE FUNDO DOS CARDS
+export const FUNDOS_CARDS = [
+  { id: 'escuro', label: 'Slate Escuro', desc: 'Sólido clássico', classe: 'bg-slate-900 border-slate-800' },
+  { id: 'gradiente', label: 'Gradiente Noturno', desc: 'Degradê suave', classe: 'bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 border-slate-700/80' },
+  { id: 'vidro', label: 'Efeito Vidro', desc: 'Translúcido moderno', classe: 'bg-slate-900/60 backdrop-blur-md border-slate-700/50' },
+  { id: 'azul_profundo', label: 'Azul Meia-Noite', desc: 'Tons oceânicos', classe: 'bg-gradient-to-r from-slate-950 via-slate-900 to-sky-950/80 border-sky-900/40' },
+  { id: 'esmeralda_suave', label: 'Toque Esmeralda', desc: 'Verde aconchegante', classe: 'bg-gradient-to-r from-slate-950 via-slate-900 to-emerald-950/70 border-emerald-900/40' },
+  { id: 'dourado_suave', label: 'Toque Dourado', desc: 'Brilho âmbar nobre', classe: 'bg-gradient-to-r from-slate-950 via-slate-900 to-amber-950/70 border-amber-900/40' },
+];
+
+// OPÇÕES DE CORES DA FONTE DO TÍTULO DOS CARDS
+export const CORES_FONTE_TITULO = [
+  { id: 'branco', label: 'Branco', classe: 'text-white', dot: 'bg-white' },
+  { id: 'dourado', label: 'Dourado', classe: 'text-amber-300', dot: 'bg-amber-300' },
+  { id: 'esmeralda', label: 'Esmeralda', classe: 'text-emerald-300', dot: 'bg-emerald-300' },
+  { id: 'azul', label: 'Azul Céu', classe: 'text-sky-300', dot: 'bg-sky-300' },
+  { id: 'amarelo', label: 'Amarelo Sol', classe: 'text-yellow-300', dot: 'bg-yellow-300' },
+];
+
+// OPÇÕES DE CORES DA FONTE DO SUBTÍTULO DOS CARDS
+export const CORES_FONTE_SUBTITULO = [
+  { id: 'cinza', label: 'Cinza Suave', classe: 'text-slate-400', dot: 'bg-slate-400' },
+  { id: 'cinza_claro', label: 'Cinza Claro', classe: 'text-slate-300', dot: 'bg-slate-300' },
+  { id: 'branco_suave', label: 'Branco 80%', classe: 'text-white/80', dot: 'bg-slate-100' },
+  { id: 'dourado_suave', label: 'Dourado Suave', classe: 'text-amber-300/80', dot: 'bg-amber-200' },
 ];
 
 // 6 PRESETS DE MODELOS DE CELULARES PARA VISUALIZAÇÃO
@@ -391,6 +419,21 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
   const getCorBadge = (corId) => {
     const item = CORES.find(c => c.id === corId);
     return item ? item.badge : 'text-amber-400 bg-amber-500/15 border-amber-500/30';
+  };
+
+  const getCardFundoClass = (fundoId) => {
+    const item = FUNDOS_CARDS.find(f => f.id === (fundoId || config.cardFundoEstilo || 'escuro'));
+    return item ? item.classe : FUNDOS_CARDS[0].classe;
+  };
+
+  const getCardFonteTituloClass = (corId) => {
+    const item = CORES_FONTE_TITULO.find(c => c.id === (corId || config.cardCorFonteTitulo || 'branco'));
+    return item ? item.classe : 'text-white';
+  };
+
+  const getCardFonteSubtituloClass = (corId) => {
+    const item = CORES_FONTE_SUBTITULO.find(c => c.id === (corId || config.cardCorFonteSubtitulo || 'cinza'));
+    return item ? item.classe : 'text-slate-400';
   };
 
   return (
@@ -733,88 +776,190 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                     </div>
                   </div>
 
-                  {/* 2. SLIDERS DE DESIGN: FONTE DO TÍTULO, SUBTÍTULO E ALTURA DOS CARDS */}
-                  <div className="bg-slate-950 border border-amber-500/30 rounded-xl p-3.5 space-y-3.5 shadow-sm">
-                    <div className="flex items-center gap-2 pb-1 border-b border-slate-800">
-                      <SlidersHorizontal className="w-4 h-4 text-amber-400" />
+                  {/* 2. CONFIGURAÇÕES VISUAIS: FUNDO, CORES DAS FONTES E DIMENSÕES DOS CARDS */}
+                  <div className="bg-slate-950 border border-amber-500/30 rounded-2xl p-4 space-y-4 shadow-lg">
+                    
+                    {/* CABEÇALHO DO BLOCO VISUAL */}
+                    <div className="flex items-center gap-2 pb-2 border-b border-slate-800">
+                      <Palette className="w-4 h-4 text-amber-400" />
                       <span className="text-xs font-black text-white uppercase tracking-wider">
-                        Design & Dimensões dos Cards no Celular
+                        Personalização Visual dos Cards
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      {/* Slider Tamanho Fonte Título */}
-                      <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-2.5 space-y-1.5">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="font-bold text-slate-300">Fonte Título</span>
-                          <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
-                            {config.cardFonteTitulo || 16}px
-                          </span>
-                        </div>
-                        <input
-                          type="range"
-                          min="13"
-                          max="24"
-                          step="1"
-                          value={config.cardFonteTitulo || 16}
-                          onChange={(e) => setConfig({ ...config, cardFonteTitulo: Number(e.target.value) })}
-                          className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                        />
-                        <div className="flex justify-between text-[9px] text-slate-500 font-mono">
-                          <span>13px</span>
-                          <span>24px</span>
+                    {/* OPÇÃO PARA FUNDO DE CARDS */}
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-bold text-amber-300 block">
+                        Fundo dos Cards no Celular
+                      </label>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {FUNDOS_CARDS.map((fundo) => {
+                          const isSel = (config.cardFundoEstilo || 'escuro') === fundo.id;
+                          return (
+                            <button
+                              key={fundo.id}
+                              type="button"
+                              onClick={() => setConfig({ ...config, cardFundoEstilo: fundo.id })}
+                              className={`p-2 rounded-xl border text-left transition-all relative ${
+                                fundo.classe
+                              } ${
+                                isSel 
+                                  ? 'ring-2 ring-amber-400 border-amber-400 shadow-md scale-[1.02]' 
+                                  : 'opacity-70 hover:opacity-100 hover:scale-[1.01]'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold text-white block truncate">
+                                  {fundo.label}
+                                </span>
+                                {isSel && <Check className="w-3.5 h-3.5 text-amber-400 shrink-0" />}
+                              </div>
+                              <span className="text-[9px] text-slate-400 block mt-0.5 truncate">
+                                {fundo.desc}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* COR DAS FONTES (TÍTULO E SUBTÍTULO) */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-855">
+                      {/* Cor do Título */}
+                      <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-2.5 space-y-2">
+                        <span className="text-[11px] font-bold text-slate-200 block">
+                          Cor da Fonte do Título
+                        </span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {CORES_FONTE_TITULO.map((cf) => {
+                            const isSel = (config.cardCorFonteTitulo || 'branco') === cf.id;
+                            return (
+                              <button
+                                key={cf.id}
+                                type="button"
+                                onClick={() => setConfig({ ...config, cardCorFonteTitulo: cf.id })}
+                                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 border ${
+                                  isSel
+                                    ? 'bg-amber-500/20 text-white border-amber-400 shadow'
+                                    : 'bg-slate-950/80 text-slate-400 border-slate-800 hover:text-white'
+                                }`}
+                              >
+                                <span className={`w-2.5 h-2.5 rounded-full ${cf.dot}`} />
+                                <span className={cf.classe}>{cf.label}</span>
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
 
-                      {/* Slider Tamanho Fonte Subtítulo */}
-                      <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-2.5 space-y-1.5">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="font-bold text-slate-300">Fonte Subtítulo</span>
-                          <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
-                            {config.cardFonteSubtitulo || 12}px
-                          </span>
-                        </div>
-                        <input
-                          type="range"
-                          min="10"
-                          max="18"
-                          step="1"
-                          value={config.cardFonteSubtitulo || 12}
-                          onChange={(e) => setConfig({ ...config, cardFonteSubtitulo: Number(e.target.value) })}
-                          className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                        />
-                        <div className="flex justify-between text-[9px] text-slate-500 font-mono">
-                          <span>10px</span>
-                          <span>18px</span>
+                      {/* Cor do Subtítulo / Descrição */}
+                      <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-2.5 space-y-2">
+                        <span className="text-[11px] font-bold text-slate-200 block">
+                          Cor da Fonte da Descrição
+                        </span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {CORES_FONTE_SUBTITULO.map((cf) => {
+                            const isSel = (config.cardCorFonteSubtitulo || 'cinza') === cf.id;
+                            return (
+                              <button
+                                key={cf.id}
+                                type="button"
+                                onClick={() => setConfig({ ...config, cardCorFonteSubtitulo: cf.id })}
+                                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 border ${
+                                  isSel
+                                    ? 'bg-amber-500/20 text-white border-amber-400 shadow'
+                                    : 'bg-slate-950/80 text-slate-400 border-slate-800 hover:text-white'
+                                }`}
+                              >
+                                <span className={`w-2.5 h-2.5 rounded-full ${cf.dot}`} />
+                                <span className={cf.classe}>{cf.label}</span>
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
+                    </div>
 
-                      {/* Slider Altura do Card */}
-                      <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-2.5 space-y-1.5">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="font-bold text-slate-300">Altura do Card</span>
-                          <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
-                            {config.cardAltura || 82}px
-                          </span>
+                    {/* SLIDERS DE DIMENSÕES: FONTE DO TÍTULO, SUBTÍTULO E ALTURA DOS CARDS */}
+                    <div className="pt-2 border-t border-slate-855 space-y-2">
+                      <span className="text-[11px] font-bold text-slate-300 block">
+                        Dimensões dos Cards
+                      </span>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        {/* Slider Tamanho Fonte Título */}
+                        <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-2.5 space-y-1.5">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-bold text-slate-300">Fonte Título</span>
+                            <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
+                              {config.cardFonteTitulo || 16}px
+                            </span>
+                          </div>
+                          <input
+                            type="range"
+                            min="13"
+                            max="24"
+                            step="1"
+                            value={config.cardFonteTitulo || 16}
+                            onChange={(e) => setConfig({ ...config, cardFonteTitulo: Number(e.target.value) })}
+                            className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                          />
+                          <div className="flex justify-between text-[9px] text-slate-500 font-mono">
+                            <span>13px</span>
+                            <span>24px</span>
+                          </div>
                         </div>
-                        <input
-                          type="range"
-                          min="60"
-                          max="130"
-                          step="2"
-                          value={config.cardAltura || 82}
-                          onChange={(e) => setConfig({ ...config, cardAltura: Number(e.target.value) })}
-                          className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                        />
-                        <div className="flex justify-between text-[9px] text-slate-500 font-mono">
-                          <span>60px</span>
-                          <span>130px</span>
+
+                        {/* Slider Tamanho Fonte Subtítulo */}
+                        <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-2.5 space-y-1.5">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-bold text-slate-300">Fonte Subtítulo</span>
+                            <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
+                              {config.cardFonteSubtitulo || 12}px
+                            </span>
+                          </div>
+                          <input
+                            type="range"
+                            min="10"
+                            max="18"
+                            step="1"
+                            value={config.cardFonteSubtitulo || 12}
+                            onChange={(e) => setConfig({ ...config, cardFonteSubtitulo: Number(e.target.value) })}
+                            className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                          />
+                          <div className="flex justify-between text-[9px] text-slate-500 font-mono">
+                            <span>10px</span>
+                            <span>18px</span>
+                          </div>
+                        </div>
+
+                        {/* Slider Altura do Card */}
+                        <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-2.5 space-y-1.5">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-bold text-slate-300">Altura do Card</span>
+                            <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
+                              {config.cardAltura || 82}px
+                            </span>
+                          </div>
+                          <input
+                            type="range"
+                            min="60"
+                            max="130"
+                            step="2"
+                            value={config.cardAltura || 82}
+                            onChange={(e) => setConfig({ ...config, cardAltura: Number(e.target.value) })}
+                            className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                          />
+                          <div className="flex justify-between text-[9px] text-slate-500 font-mono">
+                            <span>60px</span>
+                            <span>130px</span>
+                          </div>
                         </div>
                       </div>
                     </div>
 
                     {/* Quantidade de Cards por Tela (Botões Rápidos) */}
-                    <div className="pt-2 border-t border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="pt-2 border-t border-slate-855 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                       <div>
                         <span className="text-xs font-bold text-slate-200 block">
                           Limite de Cards por Tela no Celular:
@@ -846,24 +991,29 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                     </div>
                   </div>
 
-                  {/* 3. LISTA DE OPÇÕES / CARDS DA TELA 1 */}
-                  <div className="space-y-2.5">
+                  {/* 3. LISTA REFEITA DE OPÇÕES / CARDS DA TELA 1 */}
+                  <div className="space-y-3 pt-1">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-300 uppercase tracking-wide">
-                        Cards da Tela 1 ({config.opcoesChegada?.length || 0})
-                      </span>
+                      <div>
+                        <span className="text-xs font-black text-slate-200 uppercase tracking-wider block">
+                          Opções de Resposta Cadastradas
+                        </span>
+                        <span className="text-[11px] text-slate-400">
+                          {config.opcoesChegada?.length || 0} total • {cardsAtivosP1.length} ativas no celular
+                        </span>
+                      </div>
 
                       <button
                         type="button"
                         onClick={handleAdicionarCardP1}
-                        className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg shadow active:scale-95 transition flex items-center gap-1.5"
+                        className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-1.5"
                       >
                         <Plus className="w-3.5 h-3.5" />
                         <span>Adicionar Opção</span>
                       </button>
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-2.5">
                       {(config.opcoesChegada || []).map((opcao, idx) => {
                         const isAtivo = opcao.ativo !== false;
                         const ativosAteAqui = (config.opcoesChegada || []).slice(0, idx + 1).filter(c => c.ativo !== false).length;
@@ -872,24 +1022,25 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                         return (
                           <div
                             key={opcao.id || idx}
-                            className={`rounded-xl border transition-all p-3 space-y-2 ${
+                            className={`rounded-2xl border transition-all p-3.5 space-y-3 shadow-md ${
                               isAtivo 
-                                ? 'bg-slate-950 border-slate-800 shadow-sm' 
-                                : 'bg-slate-950/40 border-slate-900 opacity-55'
+                                ? 'bg-slate-950/90 border-slate-800 hover:border-slate-700' 
+                                : 'bg-slate-950/40 border-slate-900 opacity-50'
                             }`}
                           >
-                            <div className="flex items-center justify-between gap-2">
+                            {/* Barra Superior do Card */}
+                            <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-850">
                               <div className="flex items-center gap-2">
                                 <button
                                   type="button"
                                   onClick={() => handleToggleAtivoP1(idx)}
-                                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition active:scale-95 border ${
+                                  className={`px-2.5 py-1 rounded-xl text-xs font-bold flex items-center gap-1.5 transition active:scale-95 border ${
                                     isAtivo
-                                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/30'
-                                      : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'
+                                      ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/25'
+                                      : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-750'
                                   }`}
                                 >
-                                  {isAtivo ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                                  {isAtivo ? <Eye className="w-3.5 h-3.5 text-emerald-400" /> : <EyeOff className="w-3.5 h-3.5 text-slate-500" />}
                                   <span>{isAtivo ? 'Visível no Celular' : 'Oculto'}</span>
                                 </button>
 
@@ -901,24 +1052,26 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                               </div>
 
                               <div className="flex items-center gap-2">
+                                {/* Seletor de Ícone */}
                                 <select
                                   value={opcao.icone || 'Tag'}
                                   onChange={(e) => handleUpdateOpcaoP1(idx, 'icone', e.target.value)}
-                                  className="bg-slate-900 border border-slate-700 rounded-md px-1.5 py-0.5 text-xs text-slate-200"
+                                  className="bg-slate-900 border border-slate-800 rounded-xl px-2.5 py-1 text-xs font-bold text-slate-200 focus:border-amber-400 cursor-pointer"
                                 >
                                   {ICONES.map(ic => (
-                                    <option key={ic.id} value={ic.id}>{ic.label}</option>
+                                    <option key={ic.id} value={ic.id} className="bg-slate-900 text-slate-200">{ic.label}</option>
                                   ))}
                                 </select>
 
-                                <div className="flex items-center gap-1">
+                                {/* Seletor de Cor do Ícone */}
+                                <div className="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded-xl px-2 py-1">
                                   {CORES.map(c => (
                                     <button
                                       key={c.id}
                                       type="button"
                                       onClick={() => handleUpdateOpcaoP1(idx, 'cor', c.id)}
-                                      className={`w-3.5 h-3.5 rounded-full ${c.bg} ${
-                                        (opcao.cor || 'amber') === c.id ? 'ring-2 ring-white scale-110' : 'opacity-40 hover:opacity-100'
+                                      className={`w-3.5 h-3.5 rounded-full transition-transform ${c.bg} ${
+                                        (opcao.cor || 'amber') === c.id ? 'ring-2 ring-white scale-110 shadow-sm' : 'opacity-40 hover:opacity-100'
                                       }`}
                                       title={c.label}
                                     />
@@ -929,29 +1082,30 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                                   type="button"
                                   onClick={() => handleExcluirCardP1(idx)}
                                   title="Excluir opção"
-                                  className="p-1 text-slate-500 hover:text-red-400 transition"
+                                  className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition"
                                 >
-                                  <Trash2 className="w-3.5 h-3.5" />
+                                  <Trash2 className="w-4 h-4" />
                                 </button>
                               </div>
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {/* Inputs de Título e Subtítulo */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                               <div>
-                                <label className="text-[10px] font-bold text-slate-400 block mb-0.5">
-                                  Título da Opção
+                                <label className="text-[10px] font-bold text-slate-400 block mb-1">
+                                  Título da Opção (Texto Principal)
                                 </label>
                                 <input
                                   type="text"
                                   value={opcao.titulo || ''}
                                   onChange={(e) => handleUpdateOpcaoP1(idx, 'titulo', e.target.value)}
                                   placeholder="Ex: Vi a faixa na igreja"
-                                  className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1 text-xs font-bold text-white shadow-inner"
+                                  className="w-full bg-slate-900 border border-slate-700/80 focus:border-amber-400 rounded-xl px-3 py-1.5 text-xs font-bold text-white shadow-inner"
                                 />
                               </div>
 
                               <div>
-                                <label className="text-[10px] font-bold text-slate-400 block mb-0.5">
+                                <label className="text-[10px] font-bold text-slate-400 block mb-1">
                                   Descrição / Detalhe (Opcional)
                                 </label>
                                 <input
@@ -959,7 +1113,7 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                                   value={opcao.subtitulo || ''}
                                   onChange={(e) => handleUpdateOpcaoP1(idx, 'subtitulo', e.target.value)}
                                   placeholder="Ex: Passei em frente e vi o anúncio"
-                                  className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1 text-xs text-slate-300 shadow-inner"
+                                  className="w-full bg-slate-900 border border-slate-700/80 focus:border-amber-400 rounded-xl px-3 py-1.5 text-xs text-slate-300 shadow-inner"
                                 />
                               </div>
                             </div>
@@ -1732,7 +1886,7 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                             <div
                               key={opcao.id}
                               style={{ minHeight: `${config.cardAltura || 82}px` }}
-                              className="w-full text-left p-2.5 rounded-xl border border-slate-800 bg-slate-900/90 flex items-center justify-between shadow-sm transition-all"
+                              className={`w-full text-left p-2.5 rounded-xl border flex items-center justify-between shadow-sm transition-all ${getCardFundoClass(config.cardFundoEstilo)}`}
                             >
                               <div className="flex items-center gap-2.5 pr-1 min-w-0">
                                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${corCls}`}>
@@ -1741,14 +1895,14 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                                 <div className="min-w-0">
                                   <h4 
                                     style={{ fontSize: `${config.cardFonteTitulo || 16}px` }}
-                                    className="font-bold text-white truncate leading-snug"
+                                    className={`font-bold truncate leading-snug ${getCardFonteTituloClass(config.cardCorFonteTitulo)}`}
                                   >
                                     {opcao.titulo || 'Opção sem título'}
                                   </h4>
                                   {opcao.subtitulo && (
                                     <p 
                                       style={{ fontSize: `${config.cardFonteSubtitulo || 12}px` }}
-                                      className="text-slate-400 truncate mt-0.5 leading-snug"
+                                      className={`truncate mt-0.5 leading-snug ${getCardFonteSubtituloClass(config.cardCorFonteSubtitulo)}`}
                                     >
                                       {opcao.subtitulo}
                                     </p>
@@ -1837,7 +1991,7 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                               <div
                                 key={opt.id}
                                 style={{ minHeight: `${config.cardAltura || 82}px` }}
-                                className="w-full text-left p-2.5 rounded-xl border border-slate-800 bg-slate-900/90 flex items-center justify-between shadow-sm transition-all"
+                                className={`w-full text-left p-2.5 rounded-xl border flex items-center justify-between shadow-sm transition-all ${getCardFundoClass(config.cardFundoEstilo)}`}
                               >
                                 <div className="flex items-center gap-2.5 pr-1 min-w-0">
                                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${corCls}`}>
@@ -1846,14 +2000,14 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                                   <div className="min-w-0">
                                     <h4 
                                       style={{ fontSize: `${config.cardFonteTitulo || 16}px` }}
-                                      className="font-bold text-white truncate leading-snug"
+                                      className={`font-bold truncate leading-snug ${getCardFonteTituloClass(config.cardCorFonteTitulo)}`}
                                     >
                                       {opt.titulo || 'Opção sem título'}
                                     </h4>
                                     {opt.subtitulo && (
                                       <p 
                                         style={{ fontSize: `${config.cardFonteSubtitulo || 12}px` }}
-                                        className="text-slate-400 truncate mt-0.5 leading-snug"
+                                        className={`truncate mt-0.5 leading-snug ${getCardFonteSubtituloClass(config.cardCorFonteSubtitulo)}`}
                                       >
                                         {opt.subtitulo}
                                       </p>
