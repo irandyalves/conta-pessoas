@@ -84,42 +84,8 @@ export const DEFAULT_QUESTIONS_CONFIG = {
       cor: 'indigo'
     }
   ],
-  // Telas Adicionais Configuráveis (permite compor 3, 4 e 5 telas no fluxo do celular)
-  telasExtras: [
-    {
-      id: 'extra_1',
-      ativa: false,
-      titulo: 'É a sua primeira vez conosco?',
-      subtitulo: 'Queremos te dar as boas-vindas com muito carinho',
-      cardsPorTela: 3,
-      opcoes: [
-        {
-          id: 'primeira_vez',
-          titulo: 'Sim, é minha primeira vez!',
-          subtitulo: 'Vim conhecer e prestigiar a programação',
-          ativo: true,
-          icone: 'Sparkles',
-          cor: 'emerald'
-        },
-        {
-          id: 'ja_visitei',
-          titulo: 'Já visitei em outras ocasiões',
-          subtitulo: 'Venho de vez em quando aos cultos e eventos',
-          ativo: true,
-          icone: 'Smile',
-          cor: 'sky'
-        },
-        {
-          id: 'frequento',
-          titulo: 'Já frequento regularmente',
-          subtitulo: 'Sou da casa ou congrego frequentemente',
-          ativo: true,
-          icone: 'Church',
-          cor: 'indigo'
-        }
-      ]
-    }
-  ],
+  // Telas Adicionais Configuráveis (vazio por padrão - criadas quando o usuário clica em + Inserir Tela)
+  telasExtras: [],
   pergunta2Titulo: 'Você está só ou tem mais pessoas te acompanhando?',
   pergunta2Subtitulo: '',
   opcaoIndividualTitulo: 'SÓ EU',
@@ -406,9 +372,27 @@ function normalizeQuestionsConfig(config) {
     merged.opcoesChegada = DEFAULT_QUESTIONS_CONFIG.opcoesChegada;
   }
 
-  // Garantir telas extras
+  // Garantir telas extras (somente telas reais criadas pelo usuário, sem telas fantasmas)
   if (!Array.isArray(merged.telasExtras)) {
-    merged.telasExtras = DEFAULT_QUESTIONS_CONFIG.telasExtras || [];
+    merged.telasExtras = [];
+  } else {
+    merged.telasExtras = merged.telasExtras
+      .filter(t => t && t.id !== 'extra_1') // remove tela fantasma antiga
+      .map((tela, idx) => ({
+        id: tela.id || `extra_${idx + 1}`,
+        ativa: true,
+        titulo: tela.titulo || `Pergunta da Tela ${idx + 2}`,
+        subtitulo: tela.subtitulo || '',
+        cardsPorTela: Number(tela.cardsPorTela) || 3,
+        opcoes: Array.isArray(tela.opcoes) ? tela.opcoes.map((op, oIdx) => ({
+          id: op.id || `opt_${oIdx + 1}`,
+          titulo: op.titulo || '',
+          subtitulo: op.subtitulo || '',
+          ativo: op.ativo !== false,
+          icone: op.icone || 'Sparkles',
+          cor: op.cor || 'emerald'
+        })) : []
+      }));
   }
 
   return merged;

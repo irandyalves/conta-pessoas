@@ -124,7 +124,7 @@ const MODELOS_CELULARES = [
 
 export default function QuestionsConfigModal({ isOpen, onClose }) {
   // Abas: 'inicio' | 'tela_1' | 'extra_0', 'extra_1'... | 'acompanhantes' | 'fim'
-  const [activeTab, setActiveTab] = useState('tela_1');
+  const [activeTab, setActiveTab] = useState('inicio');
   const [config, setConfig] = useState(DEFAULT_QUESTIONS_CONFIG);
   const [eventoTitulo, setEventoTitulo] = useState('');
   const [salvando, setSalvando] = useState(false);
@@ -134,7 +134,7 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
   const [modeloCelularId, setModeloCelularId] = useState('iphone16pro');
 
   // Estado do Preview do Celular: 'inicio' | 'tela_1' | 'extra_0', 'extra_1'... | 'acompanhantes' | 'fim'
-  const [previewScreen, setPreviewScreen] = useState('tela_1');
+  const [previewScreen, setPreviewScreen] = useState('inicio');
   const [previewPage, setPreviewPage] = useState(0);
 
   useEffect(() => {
@@ -142,6 +142,8 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
       setConfig(getSavedQuestionsConfig());
       setEventoTitulo(getSavedEventTitle() || 'CANTATA DE NATAL 2026');
       setSalvo(false);
+      setActiveTab('inicio');
+      setPreviewScreen('inicio');
       setPreviewPage(0);
     }
   }, [isOpen]);
@@ -264,7 +266,7 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
         const novas = (prev.telasExtras || []).filter((_, i) => i !== extraIndex);
         return { ...prev, telasExtras: novas };
       });
-      setActiveTab('tela_1');
+      setActiveTab('inicio');
     }
   };
 
@@ -357,7 +359,8 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
   const handleRestaurarPadroes = () => {
     if (confirm('Deseja restaurar todas as configurações de telas para o padrão original?')) {
       setConfig({ ...DEFAULT_QUESTIONS_CONFIG });
-      setActiveTab('tela_1');
+      setActiveTab('inicio');
+      setPreviewScreen('inicio');
       setPreviewPage(0);
     }
   };
@@ -860,7 +863,6 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                 if (!telaAlvo) return null;
 
                 const numTela = extraIndex + 2;
-                const isTelaAtiva = telaAlvo.ativa !== false;
                 const cardsAtivos = (telaAlvo.opcoes || []).filter(o => o.ativo !== false);
                 const limitCards = Number(telaAlvo.cardsPorTela) || 3;
 
@@ -872,17 +874,9 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                         <span className="text-sm font-black text-amber-400">
                           Configurando Tela {numTela}
                         </span>
-                        <button
-                          type="button"
-                          onClick={() => handleUpdateTelaProp(extraIndex, 'ativa', !isTelaAtiva)}
-                          className={`px-2 py-0.5 rounded-lg text-[10px] font-bold border transition ${
-                            isTelaAtiva
-                              ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300'
-                              : 'bg-slate-800 border-slate-700 text-slate-400'
-                          }`}
-                        >
-                          {isTelaAtiva ? '✓ Ativa no Celular' : '✕ Desativada'}
-                        </button>
+                        <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold border bg-emerald-500/15 border-emerald-500/30 text-emerald-300">
+                          ✓ Ativa no Celular
+                        </span>
                       </div>
 
                       <button
