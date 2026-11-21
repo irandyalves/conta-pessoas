@@ -92,6 +92,32 @@ export const CORES_FONTE_SUBTITULO = [
   { id: 'dourado_suave', label: 'Dourado Suave', classe: 'text-amber-300/80', dot: 'bg-amber-200' },
 ];
 
+// 10 OPÇÕES DE CORES EM BOLINHAS PARA OS BOTÕES NUMÉRICOS (TELA 2)
+export const CORES_BOTAO_QTD = [
+  { id: 'slate', label: 'Grafite', hex: '#475569', dot: 'bg-slate-600', classe: 'bg-gradient-to-b from-slate-800 via-slate-850 to-slate-900 border-slate-700/80 border-b-slate-950 text-slate-100', simClass: 'bg-slate-800 border-slate-700 border-b-slate-950' },
+  { id: 'esmeralda', label: 'Esmeralda', hex: '#10b981', dot: 'bg-emerald-500', classe: 'bg-gradient-to-b from-emerald-600 via-emerald-700 to-emerald-800 border-emerald-500/60 border-b-emerald-950 text-white', simClass: 'bg-emerald-700 border-emerald-600 border-b-emerald-950' },
+  { id: 'azul', label: 'Azul Real', hex: '#3b82f6', dot: 'bg-blue-600', classe: 'bg-gradient-to-b from-blue-600 via-blue-700 to-blue-800 border-blue-500/60 border-b-blue-950 text-white', simClass: 'bg-blue-700 border-blue-600 border-b-blue-950' },
+  { id: 'dourado', label: 'Dourado', hex: '#f59e0b', dot: 'bg-amber-500', classe: 'bg-gradient-to-b from-amber-600 via-amber-700 to-amber-800 border-amber-500/60 border-b-amber-950 text-white', simClass: 'bg-amber-700 border-amber-600 border-b-amber-950' },
+  { id: 'roxo', label: 'Roxo', hex: '#8b5cf6', dot: 'bg-purple-600', classe: 'bg-gradient-to-b from-purple-600 via-purple-700 to-purple-800 border-purple-500/60 border-b-purple-950 text-white', simClass: 'bg-purple-700 border-purple-600 border-b-purple-950' },
+  { id: 'vermelho', label: 'Rubi', hex: '#ef4444', dot: 'bg-red-600', classe: 'bg-gradient-to-b from-red-600 via-red-700 to-red-800 border-red-500/60 border-b-red-950 text-white', simClass: 'bg-red-700 border-red-600 border-b-red-950' },
+  { id: 'ciano', label: 'Turquesa', hex: '#14b8a6', dot: 'bg-teal-500', classe: 'bg-gradient-to-b from-teal-600 via-teal-700 to-teal-800 border-teal-500/60 border-b-teal-950 text-white', simClass: 'bg-teal-700 border-teal-600 border-b-teal-950' },
+  { id: 'laranja', label: 'Laranja', hex: '#f97316', dot: 'bg-orange-500', classe: 'bg-gradient-to-b from-orange-600 via-orange-700 to-orange-800 border-orange-500/60 border-b-orange-950 text-white', simClass: 'bg-orange-700 border-orange-600 border-b-orange-950' },
+  { id: 'rosa', label: 'Pink', hex: '#ec4899', dot: 'bg-pink-600', classe: 'bg-gradient-to-b from-pink-600 via-pink-700 to-pink-800 border-pink-500/60 border-b-pink-950 text-white', simClass: 'bg-pink-700 border-pink-600 border-b-pink-950' },
+  { id: 'indigo', label: 'Índigo', hex: '#6366f1', dot: 'bg-indigo-600', classe: 'bg-gradient-to-b from-indigo-600 via-indigo-700 to-indigo-800 border-indigo-500/60 border-b-indigo-950 text-white', simClass: 'bg-indigo-700 border-indigo-600 border-b-indigo-950' },
+];
+
+// OPÇÕES DE CORES DA FONTE DO NÚMERO (TELA 2)
+export const CORES_NUMERO_QTD = [
+  { id: 'branco', label: 'Branco Puro', hex: '#ffffff', dot: 'bg-white', classe: 'text-white' },
+  { id: 'dourado', label: 'Dourado', hex: '#fcd34d', dot: 'bg-amber-300', classe: 'text-amber-300' },
+  { id: 'amarelo', label: 'Amarelo', hex: '#fde047', dot: 'bg-yellow-300', classe: 'text-yellow-300' },
+  { id: 'esmeralda', label: 'Esmeralda', hex: '#6ee7b7', dot: 'bg-emerald-300', classe: 'text-emerald-300' },
+  { id: 'azul', label: 'Azul Céu', hex: '#7dd3fc', dot: 'bg-sky-300', classe: 'text-sky-300' },
+  { id: 'laranja', label: 'Laranja', hex: '#fb923c', dot: 'bg-orange-400', classe: 'text-orange-300' },
+  { id: 'rosa', label: 'Rosa Claro', hex: '#f472b6', dot: 'bg-pink-400', classe: 'text-pink-300' },
+  { id: 'preto', label: 'Preto', hex: '#0f172a', dot: 'bg-slate-900 border border-slate-600', classe: 'text-slate-950' },
+];
+
 // 6 PRESETS DE MODELOS DE CELULARES PARA VISUALIZAÇÃO
 const MODELOS_CELULARES = [
   {
@@ -434,6 +460,16 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
   const getCardFonteSubtituloClass = (corId) => {
     const item = CORES_FONTE_SUBTITULO.find(c => c.id === (corId || config.cardCorFonteSubtitulo || 'cinza'));
     return item ? item.classe : 'text-slate-400';
+  };
+
+  const getBtnQtdSimClass = (corId) => {
+    const item = CORES_BOTAO_QTD.find(c => c.id === (corId || config.btnQtdCor || 'slate'));
+    return item ? item.simClass : CORES_BOTAO_QTD[0].simClass;
+  };
+
+  const getBtnNumClass = (numCorId) => {
+    const item = CORES_NUMERO_QTD.find(c => c.id === (numCorId || config.btnQtdCorNumero || 'branco'));
+    return item ? item.classe : 'text-white';
   };
 
   return (
@@ -1612,6 +1648,139 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                     </div>
                   </div>
 
+                  {/* DESIGN & ESTILO DOS BOTÕES NUMÉRICOS (TELA 2) */}
+                  <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-4 shadow-sm">
+                    <div className="flex items-center justify-between pb-2 border-b border-slate-850">
+                      <div className="flex items-center gap-2">
+                        <SlidersHorizontal className="w-4 h-4 text-amber-400" />
+                        <span className="text-xs font-black text-amber-400 uppercase tracking-wide">
+                          Estilo dos Botões de Quantidade (Tela 2)
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-slate-400">
+                        Customização dos botões 2 a +10
+                      </span>
+                    </div>
+
+                    {/* 1. SLIDE: TAMANHO / ALTURA DO BOTÃO */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-bold text-slate-200">Tamanho / Altura do Botão</span>
+                        <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md text-[11px]">
+                          {config.btnQtdAltura || 74}px
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="48"
+                        max="100"
+                        step="2"
+                        value={config.btnQtdAltura || 74}
+                        onChange={(e) => setConfig({ ...config, btnQtdAltura: Number(e.target.value) })}
+                        className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                      />
+                      <div className="flex justify-between text-[9px] text-slate-500 font-mono">
+                        <span>48px (Compacto)</span>
+                        <span>74px (Padrão)</span>
+                        <span>100px (Grande)</span>
+                      </div>
+                    </div>
+
+                    {/* 2. COR DO BOTÃO (10 OPÇÕES EM BOLINHAS) */}
+                    <div className="space-y-2 pt-2 border-t border-slate-900">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-200">
+                          Cor do Botão (10 Opções)
+                        </span>
+                        <span className="text-[11px] font-bold text-amber-300 bg-slate-900 px-2 py-0.5 rounded-full border border-slate-800">
+                          {CORES_BOTAO_QTD.find(c => c.id === (config.btnQtdCor || 'slate'))?.label || 'Grafite'}
+                        </span>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2.5 p-2.5 bg-slate-900/90 rounded-xl border border-slate-800/80">
+                        {CORES_BOTAO_QTD.map((c) => {
+                          const isSelected = (config.btnQtdCor || 'slate') === c.id;
+                          return (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => setConfig({ ...config, btnQtdCor: c.id })}
+                              className={`w-8 h-8 rounded-full ${c.dot} shadow-md transition-all flex items-center justify-center relative ${
+                                isSelected 
+                                  ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-950 scale-110 shadow-lg' 
+                                  : 'opacity-70 hover:opacity-100 hover:scale-105'
+                              }`}
+                              title={c.label}
+                            >
+                              {isSelected && (
+                                <Check className="w-4 h-4 text-white stroke-[3] drop-shadow" />
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* 3. SLIDE: TAMANHO DO NÚMERO DENTRO DO BOTÃO */}
+                    <div className="space-y-1.5 pt-2 border-t border-slate-900">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-bold text-slate-200">Tamanho do Número no Botão</span>
+                        <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md text-[11px]">
+                          {config.btnQtdFonteNumero || 34}px
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="18"
+                        max="48"
+                        step="1"
+                        value={config.btnQtdFonteNumero || 34}
+                        onChange={(e) => setConfig({ ...config, btnQtdFonteNumero: Number(e.target.value) })}
+                        className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                      />
+                      <div className="flex justify-between text-[9px] text-slate-500 font-mono">
+                        <span>18px (Menor)</span>
+                        <span>34px (Padrão)</span>
+                        <span>48px (Gigante)</span>
+                      </div>
+                    </div>
+
+                    {/* 4. COR DO NÚMERO (OPÇÕES EM BOLINHAS) */}
+                    <div className="space-y-2 pt-2 border-t border-slate-900">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-200">
+                          Cor do Número (Dígitos)
+                        </span>
+                        <span className="text-[11px] font-bold text-amber-300 bg-slate-900 px-2 py-0.5 rounded-full border border-slate-800">
+                          {CORES_NUMERO_QTD.find(c => c.id === (config.btnQtdCorNumero || 'branco'))?.label || 'Branco'}
+                        </span>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2.5 p-2.5 bg-slate-900/90 rounded-xl border border-slate-800/80">
+                        {CORES_NUMERO_QTD.map((c) => {
+                          const isSelected = (config.btnQtdCorNumero || 'branco') === c.id;
+                          return (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => setConfig({ ...config, btnQtdCorNumero: c.id })}
+                              className={`w-7 h-7 rounded-full ${c.dot} shadow-md transition-all flex items-center justify-center relative ${
+                                isSelected 
+                                  ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110 shadow-lg' 
+                                  : 'opacity-70 hover:opacity-100 hover:scale-105'
+                              }`}
+                              title={c.label}
+                            >
+                              {isSelected && (
+                                <Check className={`w-3.5 h-3.5 stroke-[3] drop-shadow ${c.id === 'branco' ? 'text-slate-900' : 'text-white'}`} />
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-2">
                     <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wide block">
                       Texto do Botão Individual (1 Pessoa)
@@ -2083,15 +2252,30 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                       </div>
 
                       <div className="grid grid-cols-3 gap-1.5">
-                        {['2', '3', '4', '5', '6', '7', '8', '9', '+10'].map((num) => (
-                          <div
-                            key={num}
-                            className="py-1.5 rounded-xl border border-slate-700 border-b-2 border-b-slate-950 bg-slate-800 text-center"
-                          >
-                            <span className="text-sm font-black text-white block">{num}</span>
-                            <span className="text-[8px] font-bold text-sky-400 block">Pessoas</span>
-                          </div>
-                        ))}
+                        {['2', '3', '4', '5', '6', '7', '8', '9', '+10'].map((num) => {
+                          const btnCorCls = getBtnQtdSimClass(config.btnQtdCor);
+                          const numCorCls = getBtnNumClass(config.btnQtdCorNumero);
+                          const simBtnHeight = Math.round((config.btnQtdAltura || 74) * 0.58);
+                          const simNumSize = Math.round((config.btnQtdFonteNumero || 34) * 0.58);
+
+                          return (
+                            <div
+                              key={num}
+                              style={{ minHeight: `${simBtnHeight}px` }}
+                              className={`py-1 px-1 rounded-xl border border-b-2 text-center flex flex-col items-center justify-center transition-all ${btnCorCls}`}
+                            >
+                              <span 
+                                style={{ fontSize: `${simNumSize}px` }}
+                                className={`font-black leading-none block ${numCorCls}`}
+                              >
+                                {num}
+                              </span>
+                              <span className="text-[8px] font-bold text-white/80 block mt-0.5">
+                                {num === '+10' ? 'Pessoas +' : 'Pessoas'}
+                              </span>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>

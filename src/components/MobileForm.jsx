@@ -84,6 +84,30 @@ const CARD_FONTE_SUBTITULO_CLASSES = {
   dourado_suave: 'text-amber-300/80',
 };
 
+const BTN_QTD_CLASSES = {
+  slate: 'bg-gradient-to-b from-slate-800 via-slate-850 to-slate-900 border-slate-700/80 border-b-slate-950 text-slate-100 shadow-black/50',
+  esmeralda: 'bg-gradient-to-b from-emerald-600 via-emerald-700 to-emerald-800 border-emerald-500/60 border-b-emerald-950 text-white shadow-emerald-950/60',
+  azul: 'bg-gradient-to-b from-blue-600 via-blue-700 to-blue-800 border-blue-500/60 border-b-blue-950 text-white shadow-blue-950/60',
+  dourado: 'bg-gradient-to-b from-amber-600 via-amber-700 to-amber-800 border-amber-500/60 border-b-amber-950 text-white shadow-amber-950/60',
+  roxo: 'bg-gradient-to-b from-purple-600 via-purple-700 to-purple-800 border-purple-500/60 border-b-purple-950 text-white shadow-purple-950/60',
+  vermelho: 'bg-gradient-to-b from-red-600 via-red-700 to-red-800 border-red-500/60 border-b-red-950 text-white shadow-red-950/60',
+  ciano: 'bg-gradient-to-b from-teal-600 via-teal-700 to-teal-800 border-teal-500/60 border-b-teal-950 text-white shadow-teal-950/60',
+  laranja: 'bg-gradient-to-b from-orange-600 via-orange-700 to-orange-800 border-orange-500/60 border-b-orange-950 text-white shadow-orange-950/60',
+  rosa: 'bg-gradient-to-b from-pink-600 via-pink-700 to-pink-800 border-pink-500/60 border-b-pink-950 text-white shadow-pink-950/60',
+  indigo: 'bg-gradient-to-b from-indigo-600 via-indigo-700 to-indigo-800 border-indigo-500/60 border-b-indigo-950 text-white shadow-indigo-950/60',
+};
+
+const BTN_NUM_CLASSES = {
+  branco: 'text-white',
+  dourado: 'text-amber-300',
+  amarelo: 'text-yellow-300',
+  esmeralda: 'text-emerald-300',
+  azul: 'text-sky-300',
+  laranja: 'text-orange-300',
+  rosa: 'text-pink-300',
+  preto: 'text-slate-950',
+};
+
 export default function MobileForm() {
   const [eventoTitulo, setEventoTitulo] = useState(DEFAULT_EVENT_TITLE);
   const [questionsConfig, setQuestionsConfig] = useState(DEFAULT_QUESTIONS_CONFIG);
@@ -751,20 +775,31 @@ export default function MobileForm() {
                 { valor: 8, label: '8' },
                 { valor: 9, label: '9' },
                 { valor: 10, label: '+10' },
-              ].map((op) => (
-                <button
-                  key={op.valor}
-                  onClick={() => handleSelectQtd(op.valor)}
-                  className="py-4 sm:py-5 px-2 rounded-2xl border border-slate-700/80 border-b-[6px] border-b-slate-950 bg-gradient-to-b from-slate-800 via-slate-850 to-slate-900 active:translate-y-1.5 active:border-b-2 active:shadow-md transition-all text-slate-100 flex flex-col items-center justify-center shadow-lg shadow-black/50 group"
-                >
-                  <span className="text-3xl sm:text-4xl font-black tracking-tight text-white drop-shadow-md group-hover:text-amber-300 transition-colors">
-                    {op.label}
-                  </span>
-                  <span className="text-[11px] font-bold text-sky-400/90 group-hover:text-amber-400 transition-colors mt-1">
-                    {op.valor === 10 ? 'Pessoas +' : 'Pessoas'}
-                  </span>
-                </button>
-              ))}
+              ].map((op) => {
+                const btnCorCls = BTN_QTD_CLASSES[questionsConfig?.btnQtdCor] || BTN_QTD_CLASSES.slate;
+                const numCorCls = BTN_NUM_CLASSES[questionsConfig?.btnQtdCorNumero] || 'text-white';
+                const btnAltura = questionsConfig?.btnQtdAltura || 74;
+                const numFonte = questionsConfig?.btnQtdFonteNumero || 34;
+
+                return (
+                  <button
+                    key={op.valor}
+                    onClick={() => handleSelectQtd(op.valor)}
+                    style={{ minHeight: `${btnAltura}px` }}
+                    className={`px-2 py-2 rounded-2xl border border-b-[6px] active:translate-y-1.5 active:border-b-2 active:shadow-md transition-all flex flex-col items-center justify-center shadow-lg group ${btnCorCls}`}
+                  >
+                    <span 
+                      style={{ fontSize: `${numFonte}px` }}
+                      className={`font-black tracking-tight drop-shadow-md leading-none transition-colors ${numCorCls}`}
+                    >
+                      {op.label}
+                    </span>
+                    <span className="text-[11px] font-bold text-white/80 group-hover:text-amber-300 transition-colors mt-1">
+                      {op.valor === 10 ? 'Pessoas +' : 'Pessoas'}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
 
             {/* Botão Voltar */}

@@ -108,7 +108,13 @@ export const DEFAULT_QUESTIONS_CONFIG = {
   pergunta2FonteTamanho: 18,
   opcaoIndividualTitulo: 'SÓ EU',
   opcaoIndividualSubtitulo: ', vim sozinho',
-  divisorQtdTexto: 'Quantas pessoas vieram com você?'
+  divisorQtdTexto: 'Quantas pessoas vieram com você?',
+
+  // Estilo e Dimensões dos Botões Numéricos (Tela 2 - Acompanhantes)
+  btnQtdAltura: 74, // px (48 a 100)
+  btnQtdCor: 'slate', // 10 cores: 'slate' | 'esmeralda' | 'azul' | 'dourado' | 'roxo' | 'vermelho' | 'ciano' | 'laranja' | 'rosa' | 'indigo'
+  btnQtdFonteNumero: 34, // px (18 a 48)
+  btnQtdCorNumero: 'branco' // 'branco' | 'dourado' | 'amarelo' | 'esmeralda' | 'azul' | 'laranja' | 'rosa' | 'preto'
 };
 
 const QUESTIONS_STORAGE_KEY = 'church_questions_config';
@@ -407,6 +413,19 @@ function normalizeQuestionsConfig(config) {
   merged.pergunta2Titulo = merged.pergunta2Titulo || 'Você está só ou tem mais pessoas te acompanhando?';
   merged.pergunta2Titulo2 = merged.pergunta2Titulo2 || '';
   merged.pergunta2FonteTamanho = Number(merged.pergunta2FonteTamanho) || 18;
+
+  // Botões Numéricos da Tela 2 (Acompanhantes)
+  merged.btnQtdAltura = Number(merged.btnQtdAltura) || 74;
+  if (merged.btnQtdAltura < 40) merged.btnQtdAltura = 40;
+  if (merged.btnQtdAltura > 120) merged.btnQtdAltura = 120;
+
+  merged.btnQtdCor = merged.btnQtdCor || 'slate';
+
+  merged.btnQtdFonteNumero = Number(merged.btnQtdFonteNumero) || 34;
+  if (merged.btnQtdFonteNumero < 16) merged.btnQtdFonteNumero = 16;
+  if (merged.btnQtdFonteNumero > 56) merged.btnQtdFonteNumero = 56;
+
+  merged.btnQtdCorNumero = merged.btnQtdCorNumero || 'branco';
 
   // Garantir que cada opção tenha o campo 'ativo' e 'id'
   if (Array.isArray(merged.opcoesChegada)) {
