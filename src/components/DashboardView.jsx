@@ -320,14 +320,6 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
           </button>
 
           <button
-            onClick={handleExportCSV}
-            className="px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 transition active:scale-95 shadow-md shadow-emerald-600/20"
-          >
-            <FileSpreadsheet className="w-3.5 h-3.5" />
-            <span>Exportar Excel</span>
-          </button>
-
-          <button
             onClick={() => onChangeView('telao')}
             className="px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 flex items-center gap-1.5 transition"
           >
