@@ -20,13 +20,18 @@ export default function App() {
     const path = window.location.pathname.toLowerCase();
 
     if (viewParam === 'admin' || path.includes('/admin')) {
-      setView('admin');
+      if (!adminAuthed) {
+        setShowPinModal(true);
+        setView('form');
+      } else {
+        setView('admin');
+      }
     } else if (viewParam === 'telao' || path.includes('/telao')) {
       setView('telao');
     } else {
       setView('form');
     }
-  }, []);
+  }, [adminAuthed]);
 
   const handleChangeView = (newView) => {
     if (newView === 'admin' && !adminAuthed) {
@@ -36,6 +41,15 @@ export default function App() {
     setView(newView);
     const url = new URL(window.location);
     url.searchParams.set('view', newView);
+    window.history.pushState({}, '', url);
+  };
+
+  const handleCancelPin = () => {
+    setShowPinModal(false);
+    setPinInput('');
+    setView('form');
+    const url = new URL(window.location);
+    url.searchParams.delete('view');
     window.history.pushState({}, '', url);
   };
 
@@ -50,7 +64,8 @@ export default function App() {
       url.searchParams.set('view', 'admin');
       window.history.pushState({}, '', url);
     } else {
-      alert('Senha incorreta! (Senha padrão: 1234)');
+      alert('PIN incorreto!');
+      setPinInput('');
     }
   };
 
@@ -86,14 +101,14 @@ export default function App() {
                 maxLength={8}
                 value={pinInput}
                 onChange={(e) => setPinInput(e.target.value)}
-                placeholder="PIN (padrão: 1234)"
+                placeholder="Digite o PIN"
                 autoFocus
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-center text-lg font-mono text-white tracking-widest focus:outline-none focus:border-indigo-500"
               />
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() => setShowPinModal(false)}
+                  onClick={handleCancelPin}
                   className="flex-1 py-2 text-xs font-semibold text-slate-400 hover:text-white rounded-xl bg-slate-800"
                 >
                   Cancelar
