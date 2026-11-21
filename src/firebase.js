@@ -258,8 +258,10 @@ export async function saveSessionStatus(started) {
         iniciadoEm: isStarted ? now : null,
         atualizadoEm: serverTimestamp()
       }, { merge: true });
+      console.log('✅ Sessão salva no Firestore com status:', isStarted);
     } catch (e) {
-      console.warn('Erro ao salvar status da sessao no Firestore:', e);
+      console.error('❌ Erro ao salvar status da sessao no Firestore:', e);
+      throw e;
     }
   }
 }
@@ -281,18 +283,28 @@ export function escutarStatusSessao(callback) {
 
   if (isFirebaseReady()) {
     try {
-      const unsub = onSnapshot(doc(db, 'configuracoes', 'sessao'), (snap) => {
-        if (snap.exists()) {
-          const data = snap.data();
-          const ativa = Boolean(data?.ativa);
-          const iniciadoEm = data?.iniciadoEm || null;
-          localStorage.setItem(SESSION_STORAGE_KEY, String(ativa));
-          if (iniciadoEm) {
-            localStorage.setItem('church_session_started_at', iniciadoEm);
+      const unsub = onSnapshot(
+        doc(db, 'configuracoes', 'sessao'),
+        (snap) => {
+          if (snap.exists()) {
+            const data = snap.data();
+            const ativa = Boolean(data?.ativa);
+            const iniciadoEm = data?.iniciadoEm || null;
+            localStorage.setItem(SESSION_STORAGE_KEY, String(ativa));
+            if (iniciadoEm) {
+              localStorage.setItem('church_session_started_at', iniciadoEm);
+            }
+            console.log('📡 [Realtime Firestore] Sessão ativa:', ativa);
+            callback(ativa, { ativa, iniciadoEm });
+          } else {
+            console.log('📡 [Realtime Firestore] Doc de sessão inexistente, padrão: false');
+            callback(false, { ativa: false, iniciadoEm: null });
           }
-          callback(ativa, { ativa, iniciadoEm });
+        },
+        (error) => {
+          console.error('❌ Erro no listener de sessão do Firestore:', error);
         }
-      });
+      );
       return () => {
         unsub();
         window.removeEventListener('church_session_status_changed', localHandler);
