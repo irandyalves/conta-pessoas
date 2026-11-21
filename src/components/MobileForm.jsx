@@ -308,14 +308,23 @@ export default function MobileForm() {
 
           {/* TEXTO EM EXATAS 3 LINHAS SOLICITADO */}
           <div className="space-y-1 text-center">
-            <h2 className="text-2xl sm:text-3xl font-black text-white tracking-wide uppercase leading-tight drop-shadow-sm">
-              DENTRO DE INSTANTES
+            <h2 
+              style={{ fontSize: `${questionsConfig.esperaFonteTamanho || 26}px` }}
+              className="font-black text-white tracking-wide uppercase leading-tight drop-shadow-sm"
+            >
+              {questionsConfig.esperaLinha1 || 'DENTRO DE INSTANTES'}
             </h2>
-            <h2 className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-amber-300 via-orange-300 to-amber-400 bg-clip-text text-transparent tracking-wide uppercase leading-tight drop-shadow-sm">
-              ESTARÁ LIBERADO
+            <h2 
+              style={{ fontSize: `${questionsConfig.esperaFonteTamanho || 26}px` }}
+              className="font-black bg-gradient-to-r from-amber-300 via-orange-300 to-amber-400 bg-clip-text text-transparent tracking-wide uppercase leading-tight drop-shadow-sm"
+            >
+              {questionsConfig.esperaLinha2 || 'ESTARÁ LIBERADO'}
             </h2>
-            <h2 className="text-2xl sm:text-3xl font-black text-emerald-400 tracking-wide uppercase leading-tight drop-shadow-sm">
-              PARA RESPONDER.
+            <h2 
+              style={{ fontSize: `${questionsConfig.esperaFonteTamanho || 26}px` }}
+              className="font-black text-emerald-400 tracking-wide uppercase leading-tight drop-shadow-sm"
+            >
+              {questionsConfig.esperaLinha3 || 'PARA RESPONDER.'}
             </h2>
           </div>
 
@@ -345,8 +354,11 @@ export default function MobileForm() {
           <div className="absolute -bottom-20 -left-20 w-44 h-44 bg-sky-500/15 rounded-full blur-3xl pointer-events-none" />
 
           <div className="space-y-3">
-            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-snug">
-              MUITO OBRIGADO PELA SUA PRESENÇA.
+            <h1 
+              style={{ fontSize: `${questionsConfig.finalFonteTamanho || 26}px` }}
+              className="font-black text-white tracking-tight leading-snug"
+            >
+              {questionsConfig.finalTitulo || 'MUITO OBRIGADO PELA SUA PRESENÇA.'}
             </h1>
 
             <div className="space-y-1">
@@ -354,7 +366,7 @@ export default function MobileForm() {
                 A {eventoTitulo}
               </span>
               <span className="block text-[16px] sm:text-[18px] font-extrabold text-amber-400 tracking-wide leading-tight">
-                será espetacular!
+                {questionsConfig.finalMensagem || 'será espetacular!'}
               </span>
             </div>
           </div>
@@ -371,10 +383,10 @@ export default function MobileForm() {
 
             <div className="space-y-1.5 text-slate-200">
               <p className="text-base sm:text-lg font-black text-emerald-400 uppercase tracking-wide">
-                registro concluído!
+                {questionsConfig.finalStatus || 'REGISTRO CONCLUÍDO!'}
               </p>
               <p className="text-sm sm:text-base font-bold text-slate-300">
-                pode guardar seu celular
+                {questionsConfig.finalInstrucao || 'pode guardar seu celular'}
               </p>
             </div>
           </div>
@@ -496,18 +508,25 @@ export default function MobileForm() {
                   <button
                     key={opcao.id}
                     onClick={() => handleSelectComoChegou(opcao)}
-                    className="w-full text-left p-5 sm:p-5.5 min-h-[84px] rounded-2xl border border-slate-800 bg-slate-900/90 hover:bg-slate-800/90 active:scale-[0.98] transition-all flex items-center justify-between group shadow-md"
+                    style={{ minHeight: `${questionsConfig.cardAltura || 82}px` }}
+                    className="w-full text-left p-4 sm:p-5 rounded-2xl border border-slate-800 bg-slate-900/90 hover:bg-slate-800/90 active:scale-[0.98] transition-all flex items-center justify-between group shadow-md"
                   >
-                    <div className="flex items-center gap-4 pr-2">
+                    <div className="flex items-center gap-4 pr-2 min-w-0">
                       <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border shadow-sm transition-transform group-hover:scale-105 ${corCls}`}>
                         <IconComponent className="w-6 h-6" />
                       </div>
-                      <div>
-                        <h3 className="font-bold text-base sm:text-lg text-white group-hover:text-amber-300 transition leading-snug">
+                      <div className="min-w-0">
+                        <h3 
+                          style={{ fontSize: `${questionsConfig.cardFonteTitulo || 16}px` }}
+                          className="font-bold text-white group-hover:text-amber-300 transition leading-snug truncate"
+                        >
                           {opcao.titulo}
                         </h3>
                         {opcao.subtitulo && (
-                          <p className="text-xs sm:text-[13px] text-slate-400 mt-1 line-clamp-1">
+                          <p 
+                            style={{ fontSize: `${questionsConfig.cardFonteSubtitulo || 12}px` }}
+                            className="text-slate-400 mt-1 line-clamp-2 leading-snug"
+                          >
                             {opcao.subtitulo}
                           </p>
                         )}

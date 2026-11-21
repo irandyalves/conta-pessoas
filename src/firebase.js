@@ -23,6 +23,25 @@ export const DEFAULT_QUESTIONS_CONFIG = {
   pergunta1Titulo: 'Como você chegou aqui?',
   pergunta1Subtitulo: '',
   cardsPorTela: 4, // Slider: quantidade de cards exibidos por tela/slide no celular (2 a 6)
+  
+  // Customizações Visuais dos Cards
+  cardFonteTitulo: 16, // px (13 a 24)
+  cardFonteSubtitulo: 12, // px (10 a 18)
+  cardAltura: 82, // px (60 a 130)
+
+  // Configuração da Tela Inicial (Espera / Start do Admin)
+  esperaLinha1: 'DENTRO DE INSTANTES',
+  esperaLinha2: 'ESTARÁ LIBERADO',
+  esperaLinha3: 'PARA RESPONDER.',
+  esperaFonteTamanho: 26, // px (18 a 38)
+
+  // Configuração da Tela Final (Agradecimento)
+  finalTitulo: 'MUITO OBRIGADO PELA SUA PRESENÇA.',
+  finalMensagem: 'será espetacular!',
+  finalStatus: 'REGISTRO CONCLUÍDO!',
+  finalInstrucao: 'pode guardar seu celular',
+  finalFonteTamanho: 26, // px (18 a 38)
+
   opcoesChegada: [
     {
       id: 'faixa',
@@ -328,6 +347,36 @@ function normalizeQuestionsConfig(config) {
   merged.cardsPorTela = Number(merged.cardsPorTela) || 4;
   if (merged.cardsPorTela < 2) merged.cardsPorTela = 2;
   if (merged.cardsPorTela > 8) merged.cardsPorTela = 8;
+
+  // Garantir fontes e tamanhos dos cards
+  merged.cardFonteTitulo = Number(merged.cardFonteTitulo) || 16;
+  if (merged.cardFonteTitulo < 12) merged.cardFonteTitulo = 12;
+  if (merged.cardFonteTitulo > 28) merged.cardFonteTitulo = 28;
+
+  merged.cardFonteSubtitulo = Number(merged.cardFonteSubtitulo) || 12;
+  if (merged.cardFonteSubtitulo < 9) merged.cardFonteSubtitulo = 9;
+  if (merged.cardFonteSubtitulo > 20) merged.cardFonteSubtitulo = 20;
+
+  merged.cardAltura = Number(merged.cardAltura) || 82;
+  if (merged.cardAltura < 50) merged.cardAltura = 50;
+  if (merged.cardAltura > 150) merged.cardAltura = 150;
+
+  // Garantir tela inicial (espera)
+  merged.esperaLinha1 = (merged.esperaLinha1 || 'DENTRO DE INSTANTES').trim();
+  merged.esperaLinha2 = (merged.esperaLinha2 || 'ESTARÁ LIBERADO').trim();
+  merged.esperaLinha3 = (merged.esperaLinha3 || 'PARA RESPONDER.').trim();
+  merged.esperaFonteTamanho = Number(merged.esperaFonteTamanho) || 26;
+  if (merged.esperaFonteTamanho < 16) merged.esperaFonteTamanho = 16;
+  if (merged.esperaFonteTamanho > 42) merged.esperaFonteTamanho = 42;
+
+  // Garantir tela final (agradecimento)
+  merged.finalTitulo = (merged.finalTitulo || 'MUITO OBRIGADO PELA SUA PRESENÇA.').trim();
+  merged.finalMensagem = (merged.finalMensagem || 'será espetacular!').trim();
+  merged.finalStatus = (merged.finalStatus || 'REGISTRO CONCLUÍDO!').trim();
+  merged.finalInstrucao = (merged.finalInstrucao || 'pode guardar seu celular').trim();
+  merged.finalFonteTamanho = Number(merged.finalFonteTamanho) || 26;
+  if (merged.finalFonteTamanho < 16) merged.finalFonteTamanho = 16;
+  if (merged.finalFonteTamanho > 42) merged.finalFonteTamanho = 42;
 
   // Garantir que cada opção tenha o campo 'ativo' e 'id'
   if (Array.isArray(merged.opcoesChegada)) {
