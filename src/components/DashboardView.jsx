@@ -22,7 +22,8 @@ import {
   X,
   Copy,
   Check,
-  ExternalLink
+  ExternalLink,
+  AlertTriangle
 } from 'lucide-react';
 import { 
   escutarPresencas, 
@@ -44,6 +45,8 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
   const [dataPersonalizada, setDataPersonalizada] = useState(new Date().toISOString().slice(0, 10));
   const [copiedLink, setCopiedLink] = useState('');
   const [zerando, setZerando] = useState(false);
+  const [showModalZerar, setShowModalZerar] = useState(false);
+  const [feedbackZerar, setFeedbackZerar] = useState(false);
 
   const copyToClipboard = (text, label) => {
     navigator.clipboard.writeText(text);
@@ -80,20 +83,13 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
     setTimeout(() => setSalvoFeedback(false), 3000);
   };
 
-  const handleZerarTudo = async () => {
-    const confirmacao = window.confirm(
-      "⚠️ ATENÇÃO: Deseja realmente ZERAR TODAS as presenças?\n\n" +
-      "1. Todos os registros de presenças serão apagados do banco de dados.\n" +
-      "2. Os contadores voltarão a zero.\n" +
-      "3. Todos os celulares que votaram serão DESTRAVADOS imediatamente e poderão votar novamente!\n\n" +
-      "Deseja prosseguir?"
-    );
-    if (!confirmacao) return;
-
+  const handleConfirmarZerar = async () => {
     setZerando(true);
     try {
       await zerarTudo();
-      alert("✅ Banco de dados zerado com sucesso! Todos os celulares foram destravados.");
+      setShowModalZerar(false);
+      setFeedbackZerar(true);
+      setTimeout(() => setFeedbackZerar(false), 4500);
     } catch (e) {
       alert("Erro ao zerar: " + (e?.message || e));
     } finally {
@@ -271,7 +267,7 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
         <div className="flex flex-wrap items-center gap-1.5">
           {/* BOTÃO ZERAR TUDO COM DESTRAVAMENTO AUTOMÁTICO DE APARELHOS */}
           <button
-            onClick={handleZerarTudo}
+            onClick={() => setShowModalZerar(true)}
             disabled={zerando}
             title="Zera todas as presenças do banco e destrava todos os celulares"
             className="px-3 py-1.5 text-xs font-black rounded-lg bg-red-600/90 hover:bg-red-500 text-white flex items-center gap-1.5 transition active:scale-95 shadow-md shadow-red-600/25 border border-red-500/50 disabled:opacity-50"
@@ -661,6 +657,78 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
           <p className="font-bold">Pastor / Direção do Evento</p>
         </div>
       </div>
+
+      {/* ============================================================== */}
+      {/* MODAL MODERNO E ELEGANTE: CONFIRMAÇÃO DE ZERAR TUDO            */}
+      {/* ============================================================== */}
+      {showModalZerar && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="relative w-full max-w-md bg-slate-900 border border-red-500/30 rounded-3xl p-6 sm:p-7 shadow-2xl overflow-hidden space-y-5">
+            {/* Glow de fundo */}
+            <div className="absolute -top-16 -right-16 w-36 h-36 bg-red-500/15 rounded-full blur-2xl pointer-events-none" />
+
+            {/* Cabeçalho */}
+            <div className="flex items-start gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-red-500/15 border border-red-500/30 text-red-400 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-lg font-black text-white tracking-tight">
+                  Zerar Todas as Presenças?
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Esta ação reinicia a contagem oficial e libera todos os celulares.
+                </p>
+              </div>
+            </div>
+
+            {/* Lista dos impactos */}
+            <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 space-y-2.5 text-xs text-slate-300">
+              <div className="flex items-center gap-2.5">
+                <span className="w-5 h-5 rounded-full bg-red-500/20 text-red-300 flex items-center justify-center font-bold text-[11px] shrink-0">1</span>
+                <span>Todos os registros serão <strong>apagados</strong> do banco.</span>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center font-bold text-[11px] shrink-0">2</span>
+                <span>Os contadores de presença voltarão a <strong>zero</strong>.</span>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center font-bold text-[11px] shrink-0">3</span>
+                <span>Todos os celulares que já votaram serão <strong>destravados</strong>.</span>
+              </div>
+            </div>
+
+            {/* Botões de Ação */}
+            <div className="flex items-center gap-3 pt-1">
+              <button
+                type="button"
+                onClick={() => setShowModalZerar(false)}
+                disabled={zerando}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white font-bold text-xs transition active:scale-95"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmarZerar}
+                disabled={zerando}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-black text-xs shadow-lg shadow-red-600/30 active:scale-95 transition flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>{zerando ? 'Zerando...' : 'Sim, Zerar Tudo'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Feedback de Sucesso */}
+      {feedbackZerar && (
+        <div className="fixed bottom-6 right-6 z-50 bg-emerald-600 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-emerald-400/30">
+          <CheckCircle2 className="w-5 h-5 text-emerald-100" />
+          <span className="text-xs font-bold">Banco zerado e todos os celulares destravados com sucesso!</span>
+        </div>
+      )}
     </div>
   );
 }
