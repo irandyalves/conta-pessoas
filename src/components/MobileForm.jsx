@@ -31,8 +31,8 @@ import {
   DEFAULT_EVENT_TITLE 
 } from '../firebase';
 
-const VOTO_SESSAO_KEY = 'presenca_votou_sessao_id';
-const CHECKIN_TIME_KEY = 'presenca_hora_registro';
+const DISPOSITIVO_BLOQUEADO_KEY = 'presenca_dispositivo_bloqueado_voto';
+const DISPOSITIVO_VOTO_TIME_KEY = 'presenca_dispositivo_hora_voto';
 
 // Dicionário de ícones dinâmicos
 const ICON_COMPONENTS = {
@@ -64,44 +64,55 @@ export default function MobileForm() {
   const [eventoTitulo, setEventoTitulo] = useState(DEFAULT_EVENT_TITLE);
   const [questionsConfig, setQuestionsConfig] = useState(DEFAULT_QUESTIONS_CONFIG);
   const [sessaoAtiva, setSessaoAtiva] = useState(false);
-  const [currentSessaoId, setCurrentSessaoId] = useState('');
   
-  // Etapas de navegação:
-  // 'p1': Pergunta 1 (com slider/paginação de cards)
-  // 'extra_X': Telas adicionais configuradas pelo admin
-  // 'acompanhantes': Pergunta 2 (quantas pessoas vieram)
-  // 'final': Tela de agradecimento
-  const [currentStep, setCurrentStep] = useState('p1');
+  // BLOQUEIO PERMANENTE DO DISPOSITIVO APÓS O VOTO
+  const [dispositivoBloqueado, setDispositivoBloqueado] = useState(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('novo') === '1' || params.get('reset') === '1') {
+        localStorage.removeItem(DISPOSITIVO_BLOQUEADO_KEY);
+        localStorage.removeItem(DISPOSITIVO_VOTO_TIME_KEY);
+        return false;
+      }
+      return localStorage.getItem(DISPOSITIVO_BLOQUEADO_KEY) === 'true';
+    } catch (e) {
+      return false;
+    }
+  });
+
+  // Etapa inicial: se já votou, fica travado em 'final'; se não, começa em 'p1'
+  const [currentStep, setCurrentStep] = useState(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('novo') === '1' || params.get('reset') === '1') {
+        return 'p1';
+      }
+      return localStorage.getItem(DISPOSITIVO_BLOQUEADO_KEY) === 'true' ? 'final' : 'p1';
+    } catch (e) {
+      return 'p1';
+    }
+  });
+
   const [p1SlideIndex, setP1SlideIndex] = useState(0);
   const [comoChegou, setComoChegou] = useState('');
   const [respostasExtras, setRespostasExtras] = useState({});
   const [countdown, setCountdown] = useState(10);
-  const [finalizado, setFinalizado] = useState(false);
-
-  // 1. VERIFICAÇÃO INICIAL, LIMPEZA DE CHAVES LEGADAS E DESTRAVA POR URL
-  useEffect(() => {
-    // Remove qualquer chave legada que possa prender o celular indevidamente
+  const [finalizado, setFinalizado] = useState(() => {
     try {
-      localStorage.removeItem('presenca_finalizada_cantata_2026');
-    } catch (e) {}
-
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('novo') === '1' || params.get('reset') === '1') {
-      localStorage.removeItem(VOTO_SESSAO_KEY);
-      localStorage.removeItem(CHECKIN_TIME_KEY);
-      setCurrentStep('p1');
-      setFinalizado(false);
-      setCountdown(10);
-      return;
+      return localStorage.getItem(DISPOSITIVO_BLOQUEADO_KEY) === 'true';
+    } catch (e) {
+      return false;
     }
-  }, []);
+  });
 
-  // 2. ESCUTA O BOTÃO "ZERAR TUDO" DO ADMIN: Destrava o celular na hora
+  // 1. ESCUTA O BOTÃO "ZERAR TUDO" DO ADMIN: Única ação que destrava os celulares
   useEffect(() => {
     const unsub = escutarResetGlobal((resetEm) => {
-      if (resetEm) {
-        localStorage.removeItem(VOTO_SESSAO_KEY);
-        localStorage.removeItem(CHECKIN_TIME_KEY);
+      const horaVoto = localStorage.getItem(DISPOSITIVO_VOTO_TIME_KEY);
+      if (resetEm && (!horaVoto || new Date(resetEm) > new Date(horaVoto))) {
+        localStorage.removeItem(DISPOSITIVO_BLOQUEADO_KEY);
+        localStorage.removeItem(DISPOSITIVO_VOTO_TIME_KEY);
+        setDispositivoBloqueado(false);
         setCurrentStep('p1');
         setP1SlideIndex(0);
         setComoChegou('');
@@ -113,39 +124,21 @@ export default function MobileForm() {
     return () => unsub && unsub();
   }, []);
 
-  // 3. ESCUTA O STATUS DA SESSÃO (START DO ADMIN) EM TEMPO REAL
+  // 2. ESCUTA O STATUS DA SESSÃO (START / PAUSAR DO ADMIN) EM TEMPO REAL
   useEffect(() => {
-    const unsub = escutarStatusSessao((ativa, data) => {
+    const unsub = escutarStatusSessao((ativa) => {
       setSessaoAtiva(ativa);
 
-      const sessaoId = data?.sessaoId || 'sessao_ativa';
-      setCurrentSessaoId(sessaoId);
+      // SE ESTE DISPOSITIVO JÁ VOTOU, NUNCA SAI DA TELA FINAL MESMO QUE A SESSÃO MUDE!
+      if (localStorage.getItem(DISPOSITIVO_BLOQUEADO_KEY) === 'true') {
+        setDispositivoBloqueado(true);
+        setCurrentStep('final');
+        return;
+      }
 
       if (ativa) {
-        // Se o admin deu START:
-        // Verifica se este aparelho já votou ESPECIFICAMENTE nesta sessão ativa (sessaoId)
-        const votouNestaSessao = localStorage.getItem(VOTO_SESSAO_KEY) === sessaoId;
-
-        if (votouNestaSessao) {
-          // Já votou nesta rodada ativa -> mostra tela final
-          setCurrentStep('final');
-        } else {
-          // NÃO votou nesta rodada -> abre as perguntas (p1) imediatamente!
-          setCurrentStep('p1');
-          setP1SlideIndex(0);
-          setComoChegou('');
-          setRespostasExtras({});
-          setFinalizado(false);
-          setCountdown(10);
-        }
-      } else {
-        // Sessão pausada: reseta o formulário para quando for liberado
+        // Se a sessão foi liberada e não votou, vai para as perguntas
         setCurrentStep('p1');
-        setP1SlideIndex(0);
-        setComoChegou('');
-        setRespostasExtras({});
-        setFinalizado(false);
-        setCountdown(10);
       }
     });
     return () => unsub && unsub();
@@ -240,14 +233,18 @@ export default function MobileForm() {
     }
   };
 
-  // Ao escolher quantidade de acompanhantes: registra e trava apenas nesta sessão
+  // Ao escolher quantidade de acompanhantes: registra e trava definitivamente este dispositivo
   const handleSelectQtd = (qtd) => {
-    if (currentStep === 'final') return;
+    // Se já votou ou já está bloqueado, barra qualquer nova tentativa
+    if (dispositivoBloqueado || currentStep === 'final' || localStorage.getItem(DISPOSITIVO_BLOQUEADO_KEY) === 'true') {
+      return;
+    }
 
-    // Registra que este aparelho votou nesta sessão específica
-    const sessaoGravada = currentSessaoId || localStorage.getItem('church_session_id') || 'sessao_votada';
-    localStorage.setItem(VOTO_SESSAO_KEY, sessaoGravada);
-    localStorage.setItem(CHECKIN_TIME_KEY, new Date().toISOString());
+    // Grava bloqueio definitivo no navegador deste celular
+    localStorage.setItem(DISPOSITIVO_BLOQUEADO_KEY, 'true');
+    localStorage.setItem(DISPOSITIVO_VOTO_TIME_KEY, new Date().toISOString());
+    setDispositivoBloqueado(true);
+    setCurrentStep('final');
 
     try {
       window.history.pushState(null, '', window.location.href);
@@ -270,12 +267,54 @@ export default function MobileForm() {
         origin: { y: 0.5 }
       });
     } catch (e) {}
-
-    setCurrentStep('final');
   };
 
   // ==============================================================
-  // ESTADO 1: TELA DE ESPERA (QUANDO O ADMIN AINDA NÃO DEU O START)
+  // PRIORIDADE 1: SE O APARELHO JÁ VOTOU, FICA BLOQUEADO NA TELA FINAL!
+  // NÃO ADIANTA ATUALIZAR A PÁGINA (F5) NEM REABRIR O NAVEGADOR!
+  // ==============================================================
+  if (dispositivoBloqueado || currentStep === 'final' || localStorage.getItem(DISPOSITIVO_BLOQUEADO_KEY) === 'true') {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-6 text-center select-none fade-in">
+        <div className="w-full max-w-sm bg-slate-900/95 border border-slate-800/80 rounded-3xl p-8 shadow-2xl relative overflow-hidden space-y-6">
+          <div className="absolute -top-20 -right-20 w-44 h-44 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-20 -left-20 w-44 h-44 bg-sky-500/15 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="space-y-3">
+            <h1 
+              style={{ fontSize: `${questionsConfig.finalFonteTamanho || 26}px` }}
+              className="font-black text-white tracking-tight leading-snug"
+            >
+              {questionsConfig.finalTitulo || 'MUITO OBRIGADO PELA SUA PRESENÇA.'}
+            </h1>
+
+            <div className="space-y-1">
+              <span className="block text-[17px] sm:text-[20px] font-black bg-gradient-to-r from-amber-300 via-orange-300 to-amber-400 bg-clip-text text-transparent uppercase tracking-wide leading-tight">
+                A {eventoTitulo}
+              </span>
+              <span className="block text-[16px] sm:text-[18px] font-extrabold text-amber-400 tracking-wide leading-tight">
+                {questionsConfig.finalMensagem || 'será espetacular!'}
+              </span>
+            </div>
+          </div>
+
+          <div className="pt-5 border-t border-slate-800/80 space-y-3">
+            <div className="space-y-1.5 text-slate-200">
+              <p className="text-base sm:text-lg font-black text-emerald-400 uppercase tracking-wide">
+                {questionsConfig.finalStatus || 'REGISTRO CONCLUÍDO!'}
+              </p>
+              <p className="text-sm sm:text-base font-bold text-slate-300">
+                {questionsConfig.finalInstrucao || 'pode guardar seu celular'}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ==============================================================
+  // PRIORIDADE 2: SE NÃO VOTOU AINDA E A SESSÃO NÃO FOI INICIADA
   // ==============================================================
   if (!sessaoAtiva) {
     return (
@@ -294,27 +333,18 @@ export default function MobileForm() {
 
           {/* RODA DE EFEITOS (SHOW DE PROCESSAMENTO TECNOLÓGICO) */}
           <div className="relative w-32 h-32 flex items-center justify-center my-1">
-            {/* Anel Externo Girando em Sentido Horário com Gradiente */}
             <div 
               className="absolute inset-0 rounded-full border-4 border-transparent border-t-amber-400 border-r-emerald-400 animate-spin"
               style={{ animationDuration: '2.5s' }}
             />
-
-            {/* Anel Intermediário Girando em Sentido Anti-horário */}
             <div 
               className="absolute inset-2.5 rounded-full border-4 border-transparent border-b-sky-400 border-l-amber-300 animate-spin"
               style={{ animationDuration: '4s', animationDirection: 'reverse' }}
             />
-
-            {/* Anel Pulsante Suave com Glow */}
             <div className="absolute inset-5 rounded-full bg-gradient-to-tr from-amber-500/20 via-emerald-500/20 to-sky-500/20 border border-white/10 animate-pulse backdrop-blur-sm" />
-
-            {/* Núcleo Central de Efeito */}
             <div className="relative w-14 h-14 rounded-full bg-slate-950 border-2 border-slate-700/80 flex items-center justify-center shadow-xl">
               <Sparkles className="w-7 h-7 text-amber-300 animate-pulse" />
             </div>
-
-            {/* Brilho Glow de Fundo */}
             <div className="absolute inset-0 rounded-full bg-amber-400/15 blur-xl pointer-events-none animate-pulse" />
           </div>
 
@@ -350,58 +380,6 @@ export default function MobileForm() {
             </p>
           </div>
 
-        </div>
-      </div>
-    );
-  }
-
-  // ==============================================================
-  // ESTADO FINAL: TELA DE AGRADECIMENTO (REGISTRO CONCLUÍDO)
-  // ==============================================================
-  if (currentStep === 'final') {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-6 text-center select-none fade-in">
-        <div className="w-full max-w-sm bg-slate-900/95 border border-slate-800/80 rounded-3xl p-8 shadow-2xl relative overflow-hidden space-y-6">
-          <div className="absolute -top-20 -right-20 w-44 h-44 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-20 -left-20 w-44 h-44 bg-sky-500/15 rounded-full blur-3xl pointer-events-none" />
-
-          <div className="space-y-3">
-            <h1 
-              style={{ fontSize: `${questionsConfig.finalFonteTamanho || 26}px` }}
-              className="font-black text-white tracking-tight leading-snug"
-            >
-              {questionsConfig.finalTitulo || 'MUITO OBRIGADO PELA SUA PRESENÇA.'}
-            </h1>
-
-            <div className="space-y-1">
-              <span className="block text-[17px] sm:text-[20px] font-black bg-gradient-to-r from-amber-300 via-orange-300 to-amber-400 bg-clip-text text-transparent uppercase tracking-wide leading-tight">
-                A {eventoTitulo}
-              </span>
-              <span className="block text-[16px] sm:text-[18px] font-extrabold text-amber-400 tracking-wide leading-tight">
-                {questionsConfig.finalMensagem || 'será espetacular!'}
-              </span>
-            </div>
-          </div>
-
-          <div className="pt-5 border-t border-slate-800/80 space-y-3">
-            {!finalizado && (
-              <div className="w-full bg-slate-800/60 rounded-full h-1.5 overflow-hidden mb-3">
-                <div 
-                  className="bg-amber-400 h-full transition-all duration-1000 ease-linear"
-                  style={{ width: `${(countdown / 10) * 100}%` }}
-                />
-              </div>
-            )}
-
-            <div className="space-y-1.5 text-slate-200">
-              <p className="text-base sm:text-lg font-black text-emerald-400 uppercase tracking-wide">
-                {questionsConfig.finalStatus || 'REGISTRO CONCLUÍDO!'}
-              </p>
-              <p className="text-sm sm:text-base font-bold text-slate-300">
-                {questionsConfig.finalInstrucao || 'pode guardar seu celular'}
-              </p>
-            </div>
-          </div>
         </div>
       </div>
     );

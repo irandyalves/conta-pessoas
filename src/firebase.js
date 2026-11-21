@@ -599,6 +599,8 @@ export function limparDadosLocais() {
 // ZERA TUDO NO FIRESTORE E NOTIFICA TODOS OS APARELHOS
 export async function zerarTudo() {
   limparDadosLocais();
+  localStorage.removeItem('presenca_dispositivo_bloqueado_voto');
+  localStorage.removeItem('presenca_dispositivo_hora_voto');
   localStorage.removeItem('presenca_finalizada_cantata_2026');
   localStorage.removeItem('presenca_hora_registro');
   localStorage.removeItem('presenca_votou_sessao_id');
