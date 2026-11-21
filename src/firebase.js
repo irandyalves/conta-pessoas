@@ -242,13 +242,20 @@ export function getSavedSessionStatus() {
 
 export async function saveSessionStatus(started) {
   const isStarted = Boolean(started);
+  const now = new Date().toISOString();
   localStorage.setItem(SESSION_STORAGE_KEY, String(isStarted));
-  window.dispatchEvent(new CustomEvent('church_session_status_changed', { detail: isStarted }));
+  if (isStarted) {
+    localStorage.setItem('church_session_started_at', now);
+  }
+  window.dispatchEvent(new CustomEvent('church_session_status_changed', { 
+    detail: { ativa: isStarted, iniciadoEm: isStarted ? now : null } 
+  }));
 
   if (isFirebaseReady()) {
     try {
       await setDoc(doc(db, 'configuracoes', 'sessao'), {
         ativa: isStarted,
+        iniciadoEm: isStarted ? now : null,
         atualizadoEm: serverTimestamp()
       }, { merge: true });
     } catch (e) {
@@ -258,9 +265,18 @@ export async function saveSessionStatus(started) {
 }
 
 export function escutarStatusSessao(callback) {
-  callback(getSavedSessionStatus());
+  const localAtiva = getSavedSessionStatus();
+  const localIniciadoEm = localStorage.getItem('church_session_started_at') || null;
+  callback(localAtiva, { ativa: localAtiva, iniciadoEm: localIniciadoEm });
 
-  const localHandler = (e) => callback(Boolean(e.detail));
+  const localHandler = (e) => {
+    const detail = e.detail;
+    if (typeof detail === 'object' && detail !== null) {
+      callback(Boolean(detail.ativa), detail);
+    } else {
+      callback(Boolean(detail), { ativa: Boolean(detail) });
+    }
+  };
   window.addEventListener('church_session_status_changed', localHandler);
 
   if (isFirebaseReady()) {
@@ -269,8 +285,12 @@ export function escutarStatusSessao(callback) {
         if (snap.exists()) {
           const data = snap.data();
           const ativa = Boolean(data?.ativa);
+          const iniciadoEm = data?.iniciadoEm || null;
           localStorage.setItem(SESSION_STORAGE_KEY, String(ativa));
-          callback(ativa);
+          if (iniciadoEm) {
+            localStorage.setItem('church_session_started_at', iniciadoEm);
+          }
+          callback(ativa, { ativa, iniciadoEm });
         }
       });
       return () => {

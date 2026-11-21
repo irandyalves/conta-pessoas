@@ -77,7 +77,7 @@ export default function MobileForm() {
   const [countdown, setCountdown] = useState(10);
   const [finalizado, setFinalizado] = useState(false);
 
-  // 1. BLOQUEIO DEFINITIVO: Se o aparelho já registrou, vai direto para tela final
+  // 1. VERIFICAÇÃO INICIAL DE BLOQUEIO DE APARELHO
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('novo') === '1' || params.get('reset') === '1') {
@@ -87,13 +87,6 @@ export default function MobileForm() {
       setFinalizado(false);
       setCountdown(10);
       return;
-    }
-
-    const jaRegistrou = localStorage.getItem(CHECKIN_LOCK_KEY);
-    if (jaRegistrou) {
-      setCurrentStep('final');
-      setFinalizado(true);
-      setCountdown(0);
     }
   }, []);
 
@@ -115,10 +108,35 @@ export default function MobileForm() {
     return () => unsub && unsub();
   }, []);
 
-  // 3. ESCUTA O STATUS DA SESSÃO (START DO ADMIN)
+  // 3. ESCUTA O STATUS DA SESSÃO (START DO ADMIN) EM TEMPO REAL
   useEffect(() => {
-    const unsub = escutarStatusSessao((ativa) => {
+    const unsub = escutarStatusSessao((ativa, data) => {
       setSessaoAtiva(ativa);
+
+      if (ativa) {
+        // Se o admin deu START:
+        // Verifica se o voto deste aparelho é antigo (de uma rodada anterior ao início desta sessão)
+        const horaRegistro = localStorage.getItem(CHECKIN_TIME_KEY);
+        const iniciadoEm = data?.iniciadoEm || localStorage.getItem('church_session_started_at');
+
+        if (iniciadoEm && horaRegistro && new Date(iniciadoEm) > new Date(horaRegistro)) {
+          // Sessão nova iniciada após o último registro -> Destrava na hora!
+          localStorage.removeItem(CHECKIN_LOCK_KEY);
+          localStorage.removeItem(CHECKIN_TIME_KEY);
+          setCurrentStep('p1');
+          setP1SlideIndex(0);
+          setComoChegou('');
+          setRespostasExtras({});
+          setFinalizado(false);
+          setCountdown(10);
+        } else if (!localStorage.getItem(CHECKIN_LOCK_KEY)) {
+          // Se não votou ainda nesta sessão, abre a 1ª pergunta automaticamente!
+          setCurrentStep('p1');
+        } else {
+          // Se já votou nesta sessão ativa, mostra a tela final
+          setCurrentStep('final');
+        }
+      }
     });
     return () => unsub && unsub();
   }, []);
@@ -245,61 +263,72 @@ export default function MobileForm() {
   };
 
   // ==============================================================
-  // ESTADO 1: TELA DE ESPERA (QUANDO O ADMIN AINDA NÃO DEU START)
+  // ESTADO 1: TELA DE ESPERA (QUANDO O ADMIN AINDA NÃO DEU O START)
   // ==============================================================
-  const jaRegistrou = localStorage.getItem(CHECKIN_LOCK_KEY);
-  if (!sessaoAtiva && !jaRegistrou && currentStep !== 'final') {
+  if (!sessaoAtiva) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-5 text-center select-none animate-fade-in relative overflow-hidden">
-        {/* Luzes decorativas */}
-        <div className="absolute -top-24 -right-24 w-60 h-60 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-24 -left-24 w-60 h-60 bg-sky-500/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-6 text-center select-none animate-fade-in relative overflow-hidden">
+        {/* Luzes decorativas de fundo */}
+        <div className="absolute -top-32 -right-32 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="w-full max-w-sm bg-slate-900/95 border border-amber-500/30 rounded-3xl p-7 sm:p-8 shadow-2xl relative space-y-6">
+        <div className="w-full max-w-sm bg-slate-900/90 border border-slate-800 rounded-3xl p-8 sm:p-9 shadow-2xl relative space-y-7 flex flex-col items-center">
           
-          {/* Badge de Conexão */}
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-bold uppercase tracking-wider">
-            <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-            <span>Conectado • Aguardando Início</span>
+          {/* Nome do Evento discreto no topo */}
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-950 border border-slate-800 text-amber-300 text-xs font-bold uppercase tracking-wider shadow-inner">
+            <TreePine className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span className="truncate max-w-[220px]">{eventoTitulo}</span>
           </div>
 
-          {/* Nome do Evento */}
-          <div className="space-y-2">
-            <p className="text-sm font-extrabold text-emerald-400 uppercase tracking-wide">
-              Seja muito bem-vindo!
-            </p>
-            <div className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-2xl bg-slate-950 border border-amber-500/40 text-amber-300 shadow">
-              <TreePine className="w-5 h-5 text-emerald-400 shrink-0" />
-              <h1 className="text-base sm:text-lg font-black tracking-wider uppercase text-amber-300">
-                {eventoTitulo}
-              </h1>
+          {/* RODA DE EFEITOS (SHOW DE PROCESSAMENTO TECNOLÓGICO) */}
+          <div className="relative w-32 h-32 flex items-center justify-center my-1">
+            {/* Anel Externo Girando em Sentido Horário com Gradiente */}
+            <div 
+              className="absolute inset-0 rounded-full border-4 border-transparent border-t-amber-400 border-r-emerald-400 animate-spin"
+              style={{ animationDuration: '2.5s' }}
+            />
+
+            {/* Anel Intermediário Girando em Sentido Anti-horário */}
+            <div 
+              className="absolute inset-2.5 rounded-full border-4 border-transparent border-b-sky-400 border-l-amber-300 animate-spin"
+              style={{ animationDuration: '4s', animationDirection: 'reverse' }}
+            />
+
+            {/* Anel Pulsante Suave com Glow */}
+            <div className="absolute inset-5 rounded-full bg-gradient-to-tr from-amber-500/20 via-emerald-500/20 to-sky-500/20 border border-white/10 animate-pulse backdrop-blur-sm" />
+
+            {/* Núcleo Central de Efeito */}
+            <div className="relative w-14 h-14 rounded-full bg-slate-950 border-2 border-slate-700/80 flex items-center justify-center shadow-xl">
+              <Sparkles className="w-7 h-7 text-amber-300 animate-pulse" />
             </div>
+
+            {/* Brilho Glow de Fundo */}
+            <div className="absolute inset-0 rounded-full bg-amber-400/15 blur-xl pointer-events-none animate-pulse" />
           </div>
 
-          {/* Ícone de Pulso / Espera */}
-          <div className="py-2 flex flex-col items-center justify-center">
-            <div className="relative w-20 h-20 rounded-full bg-gradient-to-tr from-amber-500/20 to-orange-500/20 border-2 border-amber-500/40 flex items-center justify-center text-amber-400 shadow-xl shadow-amber-500/10">
-              <Clock className="w-9 h-9 animate-pulse" />
-              <div className="absolute inset-0 rounded-full border-2 border-amber-400/30 animate-ping pointer-events-none" />
-            </div>
+          {/* TEXTO EM EXATAS 3 LINHAS SOLICITADO */}
+          <div className="space-y-1 text-center">
+            <h2 className="text-2xl sm:text-3xl font-black text-white tracking-wide uppercase leading-tight drop-shadow-sm">
+              DENTRO DE INSTANTES
+            </h2>
+            <h2 className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-amber-300 via-orange-300 to-amber-400 bg-clip-text text-transparent tracking-wide uppercase leading-tight drop-shadow-sm">
+              ESTARÁ LIBERADO
+            </h2>
+            <h2 className="text-2xl sm:text-3xl font-black text-emerald-400 tracking-wide uppercase leading-tight drop-shadow-sm">
+              PARA RESPONDER.
+            </h2>
           </div>
 
-          {/* Mensagem Explicativa */}
-          <div className="space-y-2 text-slate-300">
-            <h3 className="text-lg font-black text-white">
-              A pesquisa começará em instantes!
-            </h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              O QR Code foi lido com sucesso. Mantenha esta página aberta no celular. Assim que a direção der o início oficial, as perguntas surgirão automaticamente na sua tela!
-            </p>
-          </div>
-
-          {/* Barra de Espera Animada */}
-          <div className="pt-2">
+          {/* Barra de Progresso e Aviso de Mudança Automática */}
+          <div className="w-full pt-1 space-y-2">
             <div className="w-full bg-slate-950 rounded-full h-1.5 overflow-hidden">
-              <div className="bg-gradient-to-r from-amber-400 to-orange-400 h-full w-2/3 animate-pulse rounded-full" />
+              <div className="bg-gradient-to-r from-amber-400 via-emerald-400 to-sky-400 h-full w-2/3 rounded-full animate-pulse mx-auto" />
             </div>
+            <p className="text-[11px] text-slate-400 font-medium">
+              A tela mudará automaticamente assim que o admin liberar
+            </p>
           </div>
+
         </div>
       </div>
     );
