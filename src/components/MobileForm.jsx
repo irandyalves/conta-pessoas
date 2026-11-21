@@ -210,7 +210,7 @@ export default function MobileForm() {
   );
 
   // Telas extras ativas configuradas pelo admin
-  const telasExtrasAtivas = (questionsConfig?.telasExtras || []).filter((t) => t.ativa);
+  const telasExtrasAtivas = (questionsConfig?.telasExtras || []).filter((t) => t.ativa !== false);
 
   // Avançar após selecionar um card na Pergunta 1
   const handleSelectComoChegou = (opcao) => {
@@ -598,18 +598,25 @@ export default function MobileForm() {
                     <button
                       key={opt.id}
                       onClick={() => handleSelectOpcaoExtra(idx, opt)}
-                      className="w-full text-left p-5 sm:p-5.5 min-h-[82px] rounded-2xl border border-slate-800 bg-slate-900/90 hover:bg-slate-800/90 active:scale-[0.98] transition-all flex items-center justify-between group shadow-md"
+                      style={{ minHeight: `${questionsConfig.cardAltura || 82}px` }}
+                      className="w-full text-left p-4 sm:p-5 rounded-2xl border border-slate-800 bg-slate-900/90 hover:bg-slate-800/90 active:scale-[0.98] transition-all flex items-center justify-between group shadow-md"
                     >
-                      <div className="flex items-center gap-4 pr-2">
+                      <div className="flex items-center gap-4 pr-2 min-w-0">
                         <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border shadow-sm transition-transform group-hover:scale-105 ${corCls}`}>
                           <IconComp className="w-6 h-6" />
                         </div>
-                        <div>
-                          <h3 className="font-bold text-base sm:text-lg text-white group-hover:text-amber-300 transition leading-snug">
+                        <div className="min-w-0">
+                          <h3 
+                            style={{ fontSize: `${questionsConfig.cardFonteTitulo || 16}px` }}
+                            className="font-bold text-white group-hover:text-amber-300 transition leading-snug truncate"
+                          >
                             {opt.titulo}
                           </h3>
                           {opt.subtitulo && (
-                            <p className="text-xs sm:text-[13px] text-slate-400 mt-1 line-clamp-1">
+                            <p 
+                              style={{ fontSize: `${questionsConfig.cardFonteSubtitulo || 12}px` }}
+                              className="text-slate-400 mt-1 line-clamp-2 leading-snug"
+                            >
                               {opt.subtitulo}
                             </p>
                           )}
