@@ -23,8 +23,10 @@ import {
   Copy,
   Check,
   ExternalLink,
-  AlertTriangle
+  AlertTriangle,
+  HelpCircle
 } from 'lucide-react';
+import QuestionsConfigModal from './QuestionsConfigModal';
 import { 
   escutarPresencas, 
   limparDadosLocais, 
@@ -47,6 +49,7 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
   const [zerando, setZerando] = useState(false);
   const [showModalZerar, setShowModalZerar] = useState(false);
   const [feedbackZerar, setFeedbackZerar] = useState(false);
+  const [modalPerguntasOpen, setModalPerguntasOpen] = useState(false);
 
   const copyToClipboard = (text, label) => {
     navigator.clipboard.writeText(text);
@@ -298,6 +301,15 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
           >
             <Tv className="w-3.5 h-3.5" />
             <span>Telão</span>
+          </button>
+
+          <button
+            onClick={() => setModalPerguntasOpen(true)}
+            title="Configurar perguntas, opções e subtítulos salvos no Firebase"
+            className="px-3 py-1.5 text-xs font-bold rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 flex items-center gap-1.5 transition active:scale-95 shadow-sm"
+          >
+            <HelpCircle className="w-3.5 h-3.5" />
+            <span>Configurar Perguntas</span>
           </button>
 
           <button
@@ -729,6 +741,12 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
           <span className="text-xs font-bold">Banco zerado e todos os celulares destravados com sucesso!</span>
         </div>
       )}
+
+      {/* Modal de Configuração de Perguntas e Subtítulos no Firebase */}
+      <QuestionsConfigModal 
+        isOpen={modalPerguntasOpen} 
+        onClose={() => setModalPerguntasOpen(false)} 
+      />
     </div>
   );
 }

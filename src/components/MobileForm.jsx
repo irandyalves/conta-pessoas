@@ -16,6 +16,8 @@ import {
   registrarPresenca, 
   escutarTituloEvento, 
   escutarResetGlobal,
+  escutarConfigPerguntas,
+  DEFAULT_QUESTIONS_CONFIG,
   DEFAULT_EVENT_TITLE 
 } from '../firebase';
 
@@ -24,6 +26,7 @@ const CHECKIN_TIME_KEY = 'presenca_hora_registro';
 
 export default function MobileForm() {
   const [eventoTitulo, setEventoTitulo] = useState(DEFAULT_EVENT_TITLE);
+  const [questionsConfig, setQuestionsConfig] = useState(DEFAULT_QUESTIONS_CONFIG);
   const [step, setStep] = useState(1);
   const [comoChegou, setComoChegou] = useState('');
   const [countdown, setCountdown] = useState(10);
@@ -85,6 +88,14 @@ export default function MobileForm() {
     return () => unsub && unsub();
   }, []);
 
+  // Escuta configuração de perguntas e subtítulos do Firebase
+  useEffect(() => {
+    const unsub = escutarConfigPerguntas((cfg) => {
+      if (cfg) setQuestionsConfig(cfg);
+    });
+    return () => unsub && unsub();
+  }, []);
+
   // Timer de 10 segundos na tela final para fechar
   useEffect(() => {
     let timer;
@@ -104,44 +115,28 @@ export default function MobileForm() {
     return () => clearInterval(timer);
   }, [step, countdown]);
 
-  // Opções da Pergunta 1
-  const opcoesChegada = [
-    {
-      id: 'faixa',
-      titulo: 'Vi a faixa na frente da igreja',
-      subtitulo: 'Passei e vi o anúncio na fachada',
-      icone: Tag,
-      iconeCor: 'text-amber-400 bg-amber-500/15 border-amber-500/30',
-    },
-    {
-      id: 'membro',
-      titulo: 'Sou membro da igreja',
-      subtitulo: 'Já congrego nesta comunidade',
-      icone: Church,
-      iconeCor: 'text-sky-400 bg-sky-500/15 border-sky-500/30',
-    },
-    {
-      id: 'convidado',
-      titulo: 'Fui convidado(a)',
-      subtitulo: 'Vim por convite de amigo, irmão ou familiar',
-      icone: HeartHandshake,
-      iconeCor: 'text-emerald-400 bg-emerald-500/15 border-emerald-500/30',
-    },
-    {
-      id: 'redes',
-      titulo: 'Redes Sociais / Internet',
-      subtitulo: 'Instagram, YouTube, Google ou WhatsApp',
-      icone: Share2,
-      iconeCor: 'text-purple-400 bg-purple-500/15 border-purple-500/30',
-    },
-    {
-      id: 'outro',
-      titulo: 'Passando em frente / Outro motivo',
-      subtitulo: 'Curiosidade, visita espontânea ou retorno',
-      icone: Compass,
-      iconeCor: 'text-indigo-400 bg-indigo-500/15 border-indigo-500/30',
-    }
-  ];
+  // Ícones padrão associados por ID
+  const iconesChegadaMap = {
+    faixa: { icone: Tag, iconeCor: 'text-amber-400 bg-amber-500/15 border-amber-500/30' },
+    membro: { icone: Church, iconeCor: 'text-sky-400 bg-sky-500/15 border-sky-500/30' },
+    convidado: { icone: HeartHandshake, iconeCor: 'text-emerald-400 bg-emerald-500/15 border-emerald-500/30' },
+    redes: { icone: Share2, iconeCor: 'text-purple-400 bg-purple-500/15 border-purple-500/30' },
+    outro: { icone: Compass, iconeCor: 'text-indigo-400 bg-indigo-500/15 border-indigo-500/30' }
+  };
+
+  // Opções dinâmicas da Pergunta 1 vindas do Firebase
+  const listaOpcoesConfig = questionsConfig?.opcoesChegada?.length > 0 
+    ? questionsConfig.opcoesChegada 
+    : DEFAULT_QUESTIONS_CONFIG.opcoesChegada;
+
+  const opcoesChegada = listaOpcoesConfig.map((opcao, idx) => {
+    const fallbackId = ['faixa', 'membro', 'convidado', 'redes', 'outro'][idx] || 'outro';
+    const iconeInfo = iconesChegadaMap[opcao.id] || iconesChegadaMap[fallbackId] || iconesChegadaMap.outro;
+    return {
+      ...opcao,
+      ...iconeInfo
+    };
+  });
 
   // Opções da Pergunta 2 (SÓ EU, 2, 3, 4, 5, 6, 7, 8, 9, +10)
   const opcoesQuantidade = [
@@ -272,22 +267,31 @@ export default function MobileForm() {
           </h1>
         </div>
 
-        {/* 3. PERGUNTA 1: Como você chegou aqui? */}
+        {/* 3. PERGUNTA 1: Título e Subtítulo configuráveis */}
         {step === 1 && (
           <div className="mt-3 pt-3 border-t border-slate-800/60">
             <h2 className="text-xl sm:text-2xl font-black text-white leading-tight">
-              Como você chegou aqui?
+              {questionsConfig.pergunta1Titulo || 'Como você chegou aqui?'}
             </h2>
+            {questionsConfig.pergunta1Subtitulo && (
+              <p className="text-xs sm:text-sm text-slate-400 mt-1">
+                {questionsConfig.pergunta1Subtitulo}
+              </p>
+            )}
           </div>
         )}
 
-        {/* PERGUNTA 2: DUAS LINHAS SOLICITADAS */}
+        {/* PERGUNTA 2: Título e Subtítulo configuráveis */}
         {step === 2 && (
           <div className="mt-3 pt-3 border-t border-slate-800/60">
-            <h2 className="text-xl sm:text-2xl font-black text-white leading-tight">
-              Você está só ou tem mais <br />
-              <span className="text-slate-100">pessoas te acompanhando?</span>
+            <h2 className="text-xl sm:text-2xl font-black text-white leading-tight whitespace-pre-line">
+              {questionsConfig.pergunta2Titulo || 'Você está só ou tem mais pessoas te acompanhando?'}
             </h2>
+            {questionsConfig.pergunta2Subtitulo && (
+              <p className="text-xs sm:text-sm text-slate-400 mt-1">
+                {questionsConfig.pergunta2Subtitulo}
+              </p>
+            )}
           </div>
         )}
       </header>
@@ -343,10 +347,12 @@ export default function MobileForm() {
                   <User className="w-8 h-8 drop-shadow" />
                 </div>
                 <div className="text-left">
-                  {/* SÓ EU EM AMARELO COM ", vim sozinho" EM LETRA MENOR */}
+                  {/* Título e Subtítulo configuráveis do Botão Individual */}
                   <h3 className="font-black text-2xl text-amber-300 drop-shadow-md flex items-baseline gap-1 flex-wrap">
-                    <span>SÓ EU</span>
-                    <span className="text-sm sm:text-base font-semibold text-white">, vim sozinho</span>
+                    <span>{questionsConfig.opcaoIndividualTitulo || 'SÓ EU'}</span>
+                    <span className="text-sm sm:text-base font-semibold text-white">
+                      {questionsConfig.opcaoIndividualSubtitulo || ', vim sozinho'}
+                    </span>
                   </h3>
                 </div>
               </div>
@@ -359,7 +365,7 @@ export default function MobileForm() {
             <div className="relative flex py-6 my-2 items-center">
               <div className="flex-grow border-t border-slate-800/80"></div>
               <span className="flex-shrink mx-3 text-xs sm:text-sm font-black text-amber-300 uppercase tracking-wider text-center">
-                Quantas pessoas vieram com você?
+                {questionsConfig.divisorQtdTexto || 'Quantas pessoas vieram com você?'}
               </span>
               <div className="flex-grow border-t border-slate-800/80"></div>
             </div>

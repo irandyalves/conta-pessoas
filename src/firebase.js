@@ -18,6 +18,45 @@ const LOCAL_DATA_KEY = 'church_local_attendance_data';
 const EVENT_STORAGE_KEY = 'church_event_title';
 export const DEFAULT_EVENT_TITLE = 'CANTATA DE NATAL 2026';
 
+export const DEFAULT_QUESTIONS_CONFIG = {
+  pergunta1Titulo: 'Como você chegou aqui?',
+  pergunta1Subtitulo: '',
+  opcoesChegada: [
+    {
+      id: 'faixa',
+      titulo: 'Vi a faixa na frente da igreja',
+      subtitulo: 'Passei e vi o anúncio na fachada',
+    },
+    {
+      id: 'membro',
+      titulo: 'Sou membro da igreja',
+      subtitulo: 'Já congrego nesta comunidade',
+    },
+    {
+      id: 'convidado',
+      titulo: 'Fui convidado(a)',
+      subtitulo: 'Vim por convite de amigo, irmão ou familiar',
+    },
+    {
+      id: 'redes',
+      titulo: 'Redes Sociais / Internet',
+      subtitulo: 'Instagram, YouTube, Google ou WhatsApp',
+    },
+    {
+      id: 'outro',
+      titulo: 'Passando em frente / Outro motivo',
+      subtitulo: 'Curiosidade, visita espontânea ou retorno',
+    }
+  ],
+  pergunta2Titulo: 'Você está só ou tem mais pessoas te acompanhando?',
+  pergunta2Subtitulo: '',
+  opcaoIndividualTitulo: 'SÓ EU',
+  opcaoIndividualSubtitulo: ', vim sozinho',
+  divisorQtdTexto: 'Quantas pessoas vieram com você?'
+};
+
+const QUESTIONS_STORAGE_KEY = 'church_questions_config';
+
 // Configuração padrão do Firebase conectada ao projeto oficial
 const DEFAULT_FIREBASE_CONFIG = {
   projectId: "conta-pessoas-iasd",
@@ -133,6 +172,68 @@ export function escutarTituloEvento(callback) {
   }
 
   return () => window.removeEventListener('church_event_title_changed', localHandler);
+}
+
+// ==========================================
+// CONFIGURAÇÃO DAS PERGUNTAS E SUBTÍTULOS
+// ==========================================
+export function getSavedQuestionsConfig() {
+  try {
+    const raw = localStorage.getItem(QUESTIONS_STORAGE_KEY);
+    if (raw) {
+      return { ...DEFAULT_QUESTIONS_CONFIG, ...JSON.parse(raw) };
+    }
+  } catch (e) {
+    console.error('Erro ao ler perguntas do localStorage:', e);
+  }
+  return DEFAULT_QUESTIONS_CONFIG;
+}
+
+export async function saveQuestionsConfig(config) {
+  const merged = { ...DEFAULT_QUESTIONS_CONFIG, ...(config || {}) };
+  localStorage.setItem(QUESTIONS_STORAGE_KEY, JSON.stringify(merged));
+  window.dispatchEvent(new CustomEvent('church_questions_changed', { detail: merged }));
+
+  if (isFirebaseReady()) {
+    try {
+      await setDoc(doc(db, 'configuracoes', 'perguntas'), {
+        ...merged,
+        atualizadoEm: serverTimestamp()
+      }, { merge: true });
+    } catch (e) {
+      console.warn('Erro ao salvar perguntas no Firestore:', e);
+    }
+  }
+}
+
+export function escutarConfigPerguntas(callback) {
+  callback(getSavedQuestionsConfig());
+
+  const localHandler = (e) => callback(e.detail || getSavedQuestionsConfig());
+  window.addEventListener('church_questions_changed', localHandler);
+
+  if (isFirebaseReady()) {
+    try {
+      const unsub = onSnapshot(doc(db, 'configuracoes', 'perguntas'), (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.data();
+          if (data) {
+            const merged = { ...DEFAULT_QUESTIONS_CONFIG, ...data };
+            localStorage.setItem(QUESTIONS_STORAGE_KEY, JSON.stringify(merged));
+            callback(merged);
+          }
+        }
+      });
+      return () => {
+        unsub();
+        window.removeEventListener('church_questions_changed', localHandler);
+      };
+    } catch (e) {
+      console.warn('Erro no listener de perguntas do Firestore:', e);
+    }
+  }
+
+  return () => window.removeEventListener('church_questions_changed', localHandler);
 }
 
 // ==========================================
