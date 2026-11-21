@@ -65,31 +65,61 @@ const CORES = [
   { id: 'rose', label: 'Rosa', bg: 'bg-rose-400', badge: 'text-rose-400 bg-rose-500/15 border-rose-500/30' },
 ];
 
-// OPÇÕES DE FUNDO DOS CARDS
+// OPÇÕES DE FUNDO DOS CARDS (16 CORES / DEGRADÊS)
 export const FUNDOS_CARDS = [
-  { id: 'escuro', label: 'Slate Escuro', desc: 'Sólido clássico', classe: 'bg-slate-900 border-slate-800' },
-  { id: 'gradiente', label: 'Gradiente Noturno', desc: 'Degradê suave', classe: 'bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 border-slate-700/80' },
-  { id: 'vidro', label: 'Efeito Vidro', desc: 'Translúcido moderno', classe: 'bg-slate-900/60 backdrop-blur-md border-slate-700/50' },
-  { id: 'azul_profundo', label: 'Azul Meia-Noite', desc: 'Tons oceânicos', classe: 'bg-gradient-to-r from-slate-950 via-slate-900 to-sky-950/80 border-sky-900/40' },
-  { id: 'esmeralda_suave', label: 'Toque Esmeralda', desc: 'Verde aconchegante', classe: 'bg-gradient-to-r from-slate-950 via-slate-900 to-emerald-950/70 border-emerald-900/40' },
-  { id: 'dourado_suave', label: 'Toque Dourado', desc: 'Brilho âmbar nobre', classe: 'bg-gradient-to-r from-slate-950 via-slate-900 to-amber-950/70 border-amber-900/40' },
+  // 6 Originais
+  { id: 'escuro', label: 'Slate Escuro', classe: 'bg-slate-900 border-slate-750' },
+  { id: 'gradiente', label: 'Gradiente Noturno', classe: 'bg-gradient-to-r from-slate-950 via-slate-900 to-slate-850 border-slate-750' },
+  { id: 'vidro', label: 'Efeito Vidro', classe: 'bg-slate-900/50 backdrop-blur-md border-white/20' },
+  { id: 'azul_profundo', label: 'Azul Meia-Noite', classe: 'bg-gradient-to-r from-slate-950 via-slate-900 to-sky-950 border-sky-900/60' },
+  { id: 'esmeralda_suave', label: 'Toque Esmeralda', classe: 'bg-gradient-to-r from-slate-950 via-slate-900 to-emerald-950 border-emerald-900/60' },
+  { id: 'dourado_suave', label: 'Toque Dourado', classe: 'bg-gradient-to-r from-slate-950 via-slate-900 to-amber-950 border-amber-900/60' },
+  // 10 Novas Cores / Degradês
+  { id: 'preto_onix', label: 'Preto Ônix', classe: 'bg-neutral-950 border-neutral-800' },
+  { id: 'safira_real', label: 'Safira Real', classe: 'bg-gradient-to-r from-blue-950 via-blue-900 to-slate-950 border-blue-800/60' },
+  { id: 'verde_floresta', label: 'Verde Floresta', classe: 'bg-gradient-to-r from-emerald-950 via-emerald-900 to-teal-950 border-emerald-800/60' },
+  { id: 'ouro_nobre', label: 'Ouro Nobre', classe: 'bg-gradient-to-r from-amber-950 via-amber-900 to-yellow-950 border-amber-800/60' },
+  { id: 'roxo_imperial', label: 'Roxo Imperial', classe: 'bg-gradient-to-r from-slate-950 via-purple-950 to-purple-900 border-purple-800/60' },
+  { id: 'violeta_cosmico', label: 'Violeta Cósmico', classe: 'bg-gradient-to-r from-violet-950 via-indigo-950 to-slate-950 border-violet-800/60' },
+  { id: 'rubi_vinho', label: 'Rubi Vinho', classe: 'bg-gradient-to-r from-slate-950 via-rose-950 to-red-950 border-rose-800/60' },
+  { id: 'carmim_noturno', label: 'Carmim Noturno', classe: 'bg-gradient-to-r from-red-950 via-rose-900 to-neutral-950 border-red-800/60' },
+  { id: 'turquesa_ciano', label: 'Turquesa Ciano', classe: 'bg-gradient-to-r from-slate-950 via-teal-950 to-cyan-950 border-teal-800/60' },
+  { id: 'sunset_laranja', label: 'Sunset Laranja', classe: 'bg-gradient-to-r from-slate-950 via-orange-950 to-amber-950 border-orange-800/60' },
 ];
 
-// OPÇÕES DE CORES DA FONTE DO TÍTULO DOS CARDS
+// OPÇÕES DE EFEITOS E ACABAMENTOS DOS CARDS (3D, VIDRO, ENTALHE, ETC.)
+export const EFEITOS_CARDS = [
+  { id: 'padrao', label: 'Normal / Flat', desc: 'Borda sutil elegante', classe: 'border border-slate-700/80 shadow-md' },
+  { id: 'efeito_3d', label: 'Efeito 3D', desc: 'Relevo tátil com base', classe: 'border border-slate-700/80 border-b-[4px] border-b-black/90 shadow-xl' },
+  { id: 'vidro', label: 'Efeito Vidro', desc: 'Translúcido com blur', classe: 'backdrop-blur-md bg-opacity-70 border border-white/25 shadow-lg' },
+  { id: 'entalhe', label: 'Entalhe', desc: 'Profundidade chanfrada', classe: 'shadow-[inset_0_2px_6px_rgba(0,0,0,0.85),0_1px_2px_rgba(255,255,255,0.06)] border border-slate-800' },
+  { id: 'glow', label: 'Glow Neon', desc: 'Iluminação de contorno', classe: 'border border-amber-400/50 shadow-[0_0_15px_rgba(245,158,11,0.25)]' },
+];
+
+// OPÇÕES DE CORES DA FONTE DO TÍTULO DOS CARDS (EM BOLINHAS)
 export const CORES_FONTE_TITULO = [
   { id: 'branco', label: 'Branco', classe: 'text-white', dot: 'bg-white' },
   { id: 'dourado', label: 'Dourado', classe: 'text-amber-300', dot: 'bg-amber-300' },
+  { id: 'amarelo', label: 'Amarelo', classe: 'text-yellow-300', dot: 'bg-yellow-300' },
   { id: 'esmeralda', label: 'Esmeralda', classe: 'text-emerald-300', dot: 'bg-emerald-300' },
   { id: 'azul', label: 'Azul Céu', classe: 'text-sky-300', dot: 'bg-sky-300' },
-  { id: 'amarelo', label: 'Amarelo Sol', classe: 'text-yellow-300', dot: 'bg-yellow-300' },
+  { id: 'ciano', label: 'Ciano', classe: 'text-cyan-300', dot: 'bg-cyan-300' },
+  { id: 'laranja', label: 'Laranja', classe: 'text-orange-400', dot: 'bg-orange-400' },
+  { id: 'rosa', label: 'Rosa Pink', classe: 'text-pink-300', dot: 'bg-pink-400' },
+  { id: 'roxo', label: 'Roxo Claro', classe: 'text-purple-300', dot: 'bg-purple-400' },
+  { id: 'prata', label: 'Prata', classe: 'text-slate-200', dot: 'bg-slate-300' },
 ];
 
-// OPÇÕES DE CORES DA FONTE DO SUBTÍTULO DOS CARDS
+// OPÇÕES DE CORES DA FONTE DO SUBTÍTULO DOS CARDS (EM BOLINHAS)
 export const CORES_FONTE_SUBTITULO = [
-  { id: 'cinza', label: 'Cinza Suave', classe: 'text-slate-400', dot: 'bg-slate-400' },
+  { id: 'cinza', label: 'Cinza Médio', classe: 'text-slate-400', dot: 'bg-slate-400' },
   { id: 'cinza_claro', label: 'Cinza Claro', classe: 'text-slate-300', dot: 'bg-slate-300' },
-  { id: 'branco_suave', label: 'Branco 80%', classe: 'text-white/80', dot: 'bg-slate-100' },
-  { id: 'dourado_suave', label: 'Dourado Suave', classe: 'text-amber-300/80', dot: 'bg-amber-200' },
+  { id: 'branco_suave', label: 'Branco Suave', classe: 'text-white/80', dot: 'bg-slate-100' },
+  { id: 'dourado_suave', label: 'Dourado Suave', classe: 'text-amber-200/90', dot: 'bg-amber-200' },
+  { id: 'amarelo_suave', label: 'Amarelo Suave', classe: 'text-yellow-200/80', dot: 'bg-yellow-200' },
+  { id: 'esmeralda_suave', label: 'Verde Suave', classe: 'text-emerald-200/80', dot: 'bg-emerald-300' },
+  { id: 'azul_suave', label: 'Azul Suave', classe: 'text-sky-200/80', dot: 'bg-sky-300' },
+  { id: 'rosa_suave', label: 'Rosa Suave', classe: 'text-pink-200/80', dot: 'bg-pink-300' },
 ];
 
 // 10 OPÇÕES DE CORES EM BOLINHAS PARA OS BOTÕES NUMÉRICOS (TELA 2)
@@ -450,6 +480,11 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
   const getCardFundoClass = (fundoId) => {
     const item = FUNDOS_CARDS.find(f => f.id === (fundoId || config.cardFundoEstilo || 'escuro'));
     return item ? item.classe : FUNDOS_CARDS[0].classe;
+  };
+
+  const getCardEfeitoClass = (efeitoId) => {
+    const item = EFEITOS_CARDS.find(e => e.id === (efeitoId || config.cardEfeitoEstilo || 'padrao'));
+    return item ? item.classe : EFEITOS_CARDS[0].classe;
   };
 
   const getCardFonteTituloClass = (corId) => {
@@ -823,12 +858,17 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                       </span>
                     </div>
 
-                    {/* OPÇÃO PARA FUNDO DE CARDS */}
+                    {/* OPÇÃO PARA FUNDO DE CARDS (16 QUADRADOS VISUAIS) */}
                     <div className="space-y-1.5">
-                      <label className="text-[11px] font-bold text-amber-300 block">
-                        Fundo dos Cards no Celular
-                      </label>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-[11px] font-bold text-amber-300 block">
+                          Fundo dos Cards no Celular (16 Opções)
+                        </label>
+                        <span className="text-[10px] text-amber-200/90 font-bold bg-slate-900 px-2 py-0.5 rounded-full border border-slate-800">
+                          {FUNDOS_CARDS.find(f => f.id === (config.cardFundoEstilo || 'escuro'))?.label}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 p-2.5 bg-slate-900/90 rounded-2xl border border-slate-800/80">
                         {FUNDOS_CARDS.map((fundo) => {
                           const isSel = (config.cardFundoEstilo || 'escuro') === fundo.id;
                           return (
@@ -836,36 +876,69 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                               key={fundo.id}
                               type="button"
                               onClick={() => setConfig({ ...config, cardFundoEstilo: fundo.id })}
-                              className={`p-2 rounded-xl border text-left transition-all relative ${
+                              className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl transition-all relative flex items-center justify-center border shadow-md ${
                                 fundo.classe
                               } ${
                                 isSel 
-                                  ? 'ring-2 ring-amber-400 border-amber-400 shadow-md scale-[1.02]' 
-                                  : 'opacity-70 hover:opacity-100 hover:scale-[1.01]'
+                                  ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110 shadow-lg z-10' 
+                                  : 'opacity-75 hover:opacity-100 hover:scale-105'
                               }`}
+                              title={fundo.label}
                             >
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs font-bold text-white block truncate">
-                                  {fundo.label}
-                                </span>
-                                {isSel && <Check className="w-3.5 h-3.5 text-amber-400 shrink-0" />}
-                              </div>
-                              <span className="text-[9px] text-slate-400 block mt-0.5 truncate">
-                                {fundo.desc}
-                              </span>
+                              {isSel && (
+                                <Check className="w-4 h-4 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] stroke-[3]" />
+                              )}
                             </button>
                           );
                         })}
                       </div>
                     </div>
 
-                    {/* COR DAS FONTES (TÍTULO E SUBTÍTULO) */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-855">
-                      {/* Cor do Título */}
-                      <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-2.5 space-y-2">
-                        <span className="text-[11px] font-bold text-slate-200 block">
-                          Cor da Fonte do Título
+                    {/* OPÇÕES DE EFEITOS E ACABAMENTOS (3D, VIDRO, ENTALHE, ETC.) */}
+                    <div className="space-y-1.5 pt-2 border-t border-slate-850">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-amber-300 block">
+                          Efeito & Acabamento do Card (3D, Vidro, Entalhe, etc.)
                         </span>
+                        <span className="text-[10px] text-slate-400">
+                          {EFEITOS_CARDS.find(e => e.id === (config.cardEfeitoEstilo || 'padrao'))?.desc}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {EFEITOS_CARDS.map((ef) => {
+                          const isSel = (config.cardEfeitoEstilo || 'padrao') === ef.id;
+                          return (
+                            <button
+                              key={ef.id}
+                              type="button"
+                              onClick={() => setConfig({ ...config, cardEfeitoEstilo: ef.id })}
+                              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border active:scale-95 ${
+                                isSel
+                                  ? 'bg-amber-500/20 text-amber-300 border-amber-400 shadow-md ring-1 ring-amber-400'
+                                  : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-850'
+                              }`}
+                              title={ef.desc}
+                            >
+                              <span>{ef.label}</span>
+                              {isSel && <Check className="w-3.5 h-3.5 text-amber-400" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* COR DAS FONTES (TÍTULO E SUBTÍTULO) - SOMENTE BOLINHAS COMPACTAS */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-850">
+                      {/* Cor do Título */}
+                      <div className="bg-slate-900/90 border border-slate-800/80 rounded-xl p-2.5 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-bold text-slate-200 block">
+                            Cor da Fonte do Título
+                          </span>
+                          <span className="text-[10px] text-amber-300 font-bold">
+                            {CORES_FONTE_TITULO.find(c => c.id === (config.cardCorFonteTitulo || 'branco'))?.label}
+                          </span>
+                        </div>
                         <div className="flex items-center gap-2 flex-wrap">
                           {CORES_FONTE_TITULO.map((cf) => {
                             const isSel = (config.cardCorFonteTitulo || 'branco') === cf.id;
@@ -874,25 +947,32 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                                 key={cf.id}
                                 type="button"
                                 onClick={() => setConfig({ ...config, cardCorFonteTitulo: cf.id })}
-                                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 border ${
+                                className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full ${cf.dot} shadow-md transition-all flex items-center justify-center relative ${
                                   isSel
-                                    ? 'bg-amber-500/20 text-white border-amber-400 shadow'
-                                    : 'bg-slate-950/80 text-slate-400 border-slate-800 hover:text-white'
+                                    ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110 shadow-lg z-10'
+                                    : 'opacity-70 hover:opacity-100 hover:scale-105'
                                 }`}
+                                title={cf.label}
                               >
-                                <span className={`w-2.5 h-2.5 rounded-full ${cf.dot}`} />
-                                <span className={cf.classe}>{cf.label}</span>
+                                {isSel && (
+                                  <Check className={`w-3.5 h-3.5 stroke-[3] drop-shadow ${cf.id === 'branco' ? 'text-slate-950' : 'text-white'}`} />
+                                )}
                               </button>
                             );
                           })}
                         </div>
                       </div>
 
-                      {/* Cor do Subtítulo / Descrição */}
-                      <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-2.5 space-y-2">
-                        <span className="text-[11px] font-bold text-slate-200 block">
-                          Cor da Fonte da Descrição
-                        </span>
+                      {/* Cor da Descrição */}
+                      <div className="bg-slate-900/90 border border-slate-800/80 rounded-xl p-2.5 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-bold text-slate-200 block">
+                            Cor da Fonte da Descrição
+                          </span>
+                          <span className="text-[10px] text-amber-300 font-bold">
+                            {CORES_FONTE_SUBTITULO.find(c => c.id === (config.cardCorFonteSubtitulo || 'cinza'))?.label}
+                          </span>
+                        </div>
                         <div className="flex items-center gap-2 flex-wrap">
                           {CORES_FONTE_SUBTITULO.map((cf) => {
                             const isSel = (config.cardCorFonteSubtitulo || 'cinza') === cf.id;
@@ -901,14 +981,16 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                                 key={cf.id}
                                 type="button"
                                 onClick={() => setConfig({ ...config, cardCorFonteSubtitulo: cf.id })}
-                                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 border ${
+                                className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full ${cf.dot} shadow-md transition-all flex items-center justify-center relative ${
                                   isSel
-                                    ? 'bg-amber-500/20 text-white border-amber-400 shadow'
-                                    : 'bg-slate-950/80 text-slate-400 border-slate-800 hover:text-white'
+                                    ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110 shadow-lg z-10'
+                                    : 'opacity-70 hover:opacity-100 hover:scale-105'
                                 }`}
+                                title={cf.label}
                               >
-                                <span className={`w-2.5 h-2.5 rounded-full ${cf.dot}`} />
-                                <span className={cf.classe}>{cf.label}</span>
+                                {isSel && (
+                                  <Check className={`w-3.5 h-3.5 stroke-[3] drop-shadow ${cf.id === 'branco_suave' ? 'text-slate-950' : 'text-white'}`} />
+                                )}
                               </button>
                             );
                           })}
@@ -2055,7 +2137,7 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                             <div
                               key={opcao.id}
                               style={{ minHeight: `${config.cardAltura || 82}px` }}
-                              className={`w-full text-left p-2.5 rounded-xl border flex items-center justify-between shadow-sm transition-all ${getCardFundoClass(config.cardFundoEstilo)}`}
+                              className={`w-full text-left p-2.5 rounded-xl flex items-center justify-between transition-all ${getCardFundoClass(config.cardFundoEstilo)} ${getCardEfeitoClass(config.cardEfeitoEstilo)}`}
                             >
                               <div className="flex items-center gap-2.5 pr-1 min-w-0">
                                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${corCls}`}>
@@ -2160,7 +2242,7 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                               <div
                                 key={opt.id}
                                 style={{ minHeight: `${config.cardAltura || 82}px` }}
-                                className={`w-full text-left p-2.5 rounded-xl border flex items-center justify-between shadow-sm transition-all ${getCardFundoClass(config.cardFundoEstilo)}`}
+                                className={`w-full text-left p-2.5 rounded-xl flex items-center justify-between transition-all ${getCardFundoClass(config.cardFundoEstilo)} ${getCardEfeitoClass(config.cardEfeitoEstilo)}`}
                               >
                                 <div className="flex items-center gap-2.5 pr-1 min-w-0">
                                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${corCls}`}>

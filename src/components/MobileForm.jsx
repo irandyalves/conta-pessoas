@@ -61,27 +61,56 @@ const COR_CLASSES = {
 };
 
 const CARD_FUNDO_CLASSES = {
-  escuro: 'bg-slate-900/90 border-slate-800 hover:border-slate-700',
-  gradiente: 'bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 border-slate-700/80 hover:border-slate-600',
-  vidro: 'bg-slate-900/60 backdrop-blur-md border-slate-700/50 hover:border-slate-600/70',
-  azul_profundo: 'bg-gradient-to-r from-slate-950 via-slate-900 to-sky-950/80 border-sky-900/40 hover:border-sky-500/50',
-  esmeralda_suave: 'bg-gradient-to-r from-slate-950 via-slate-900 to-emerald-950/70 border-emerald-900/40 hover:border-emerald-500/50',
-  dourado_suave: 'bg-gradient-to-r from-slate-950 via-slate-900 to-amber-950/70 border-amber-900/40 hover:border-amber-500/50',
+  // 6 Originais
+  escuro: 'bg-slate-900/90',
+  gradiente: 'bg-gradient-to-r from-slate-950 via-slate-900 to-slate-850',
+  vidro: 'bg-slate-900/50 backdrop-blur-md',
+  azul_profundo: 'bg-gradient-to-r from-slate-950 via-slate-900 to-sky-950',
+  esmeralda_suave: 'bg-gradient-to-r from-slate-950 via-slate-900 to-emerald-950',
+  dourado_suave: 'bg-gradient-to-r from-slate-950 via-slate-900 to-amber-950',
+  // 10 Novas Opções
+  preto_onix: 'bg-neutral-950',
+  safira_real: 'bg-gradient-to-r from-blue-950 via-blue-900 to-slate-950',
+  verde_floresta: 'bg-gradient-to-r from-emerald-950 via-emerald-900 to-teal-950',
+  ouro_nobre: 'bg-gradient-to-r from-amber-950 via-amber-900 to-yellow-950',
+  roxo_imperial: 'bg-gradient-to-r from-slate-950 via-purple-950 to-purple-900',
+  violeta_cosmico: 'bg-gradient-to-r from-violet-950 via-indigo-950 to-slate-950',
+  rubi_vinho: 'bg-gradient-to-r from-slate-950 via-rose-950 to-red-950',
+  carmim_noturno: 'bg-gradient-to-r from-red-950 via-rose-900 to-neutral-950',
+  turquesa_ciano: 'bg-gradient-to-r from-slate-950 via-teal-950 to-cyan-950',
+  sunset_laranja: 'bg-gradient-to-r from-slate-950 via-orange-950 to-amber-950',
+};
+
+const CARD_EFEITO_CLASSES = {
+  padrao: 'border border-slate-700/80 hover:border-slate-600 shadow-md',
+  efeito_3d: 'border border-slate-700/80 border-b-[5px] border-b-black/90 active:translate-y-1 active:border-b-2 shadow-xl',
+  vidro: 'backdrop-blur-md bg-opacity-70 border border-white/20 hover:border-white/35 shadow-lg',
+  entalhe: 'shadow-[inset_0_2px_6px_rgba(0,0,0,0.85),0_1px_2px_rgba(255,255,255,0.06)] border border-slate-800 border-t-white/10 border-b-black/80',
+  glow: 'border border-amber-400/50 hover:border-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.25)] hover:shadow-[0_0_22px_rgba(245,158,11,0.45)]',
 };
 
 const CARD_FONTE_TITULO_CLASSES = {
   branco: 'text-white',
   dourado: 'text-amber-300',
+  amarelo: 'text-yellow-300',
   esmeralda: 'text-emerald-300',
   azul: 'text-sky-300',
-  amarelo: 'text-yellow-300',
+  ciano: 'text-cyan-300',
+  laranja: 'text-orange-300',
+  rosa: 'text-pink-300',
+  roxo: 'text-purple-300',
+  prata: 'text-slate-200',
 };
 
 const CARD_FONTE_SUBTITULO_CLASSES = {
   cinza: 'text-slate-400',
   cinza_claro: 'text-slate-300',
   branco_suave: 'text-white/80',
-  dourado_suave: 'text-amber-300/80',
+  dourado_suave: 'text-amber-200/90',
+  amarelo_suave: 'text-yellow-200/80',
+  esmeralda_suave: 'text-emerald-200/80',
+  azul_suave: 'text-sky-200/80',
+  rosa_suave: 'text-pink-200/80',
 };
 
 const BTN_QTD_CLASSES = {
@@ -585,6 +614,7 @@ export default function MobileForm() {
                 const IconComponent = ICON_COMPONENTS[opcao.icone] || Tag;
                 const corCls = COR_CLASSES[opcao.cor] || COR_CLASSES.amber;
                 const cardFundoCls = CARD_FUNDO_CLASSES[questionsConfig?.cardFundoEstilo] || CARD_FUNDO_CLASSES.escuro;
+                const cardEfeitoCls = CARD_EFEITO_CLASSES[questionsConfig?.cardEfeitoEstilo] || CARD_EFEITO_CLASSES.padrao;
                 const cardFonteTituloCls = CARD_FONTE_TITULO_CLASSES[questionsConfig?.cardCorFonteTitulo] || 'text-white';
                 const cardFonteSubtituloCls = CARD_FONTE_SUBTITULO_CLASSES[questionsConfig?.cardCorFonteSubtitulo] || 'text-slate-400';
 
@@ -593,7 +623,7 @@ export default function MobileForm() {
                     key={opcao.id}
                     onClick={() => handleSelectComoChegou(opcao)}
                     style={{ minHeight: `${questionsConfig.cardAltura || 82}px` }}
-                    className={`w-full text-left p-4 sm:p-5 rounded-2xl border active:scale-[0.98] transition-all flex items-center justify-between group shadow-md ${cardFundoCls}`}
+                    className={`w-full text-left p-4 sm:p-5 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-between group ${cardFundoCls} ${cardEfeitoCls}`}
                   >
                     <div className="flex items-center gap-4 pr-2 min-w-0">
                       <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border shadow-sm transition-transform group-hover:scale-105 ${corCls}`}>
@@ -666,6 +696,7 @@ export default function MobileForm() {
                   const IconComp = ICON_COMPONENTS[opt.icone] || Sparkles;
                   const corCls = COR_CLASSES[opt.cor] || COR_CLASSES.emerald;
                   const cardFundoCls = CARD_FUNDO_CLASSES[questionsConfig?.cardFundoEstilo] || CARD_FUNDO_CLASSES.escuro;
+                  const cardEfeitoCls = CARD_EFEITO_CLASSES[questionsConfig?.cardEfeitoEstilo] || CARD_EFEITO_CLASSES.padrao;
                   const cardFonteTituloCls = CARD_FONTE_TITULO_CLASSES[questionsConfig?.cardCorFonteTitulo] || 'text-white';
                   const cardFonteSubtituloCls = CARD_FONTE_SUBTITULO_CLASSES[questionsConfig?.cardCorFonteSubtitulo] || 'text-slate-400';
 
@@ -674,7 +705,7 @@ export default function MobileForm() {
                       key={opt.id}
                       onClick={() => handleSelectOpcaoExtra(idx, opt)}
                       style={{ minHeight: `${questionsConfig.cardAltura || 82}px` }}
-                      className={`w-full text-left p-4 sm:p-5 rounded-2xl border active:scale-[0.98] transition-all flex items-center justify-between group shadow-md ${cardFundoCls}`}
+                      className={`w-full text-left p-4 sm:p-5 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-between group ${cardFundoCls} ${cardEfeitoCls}`}
                     >
                       <div className="flex items-center gap-4 pr-2 min-w-0">
                         <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border shadow-sm transition-transform group-hover:scale-105 ${corCls}`}>

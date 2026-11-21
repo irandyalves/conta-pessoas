@@ -31,9 +31,10 @@ export const DEFAULT_QUESTIONS_CONFIG = {
   cardFonteTitulo: 16, // px (12 a 24)
   cardFonteSubtitulo: 12, // px (10 a 18)
   cardAltura: 82, // px (60 a 130)
-  cardFundoEstilo: 'escuro', // 'escuro' | 'gradiente' | 'vidro' | 'azul_profundo' | 'esmeralda_suave' | 'dourado_suave'
-  cardCorFonteTitulo: 'branco', // 'branco' | 'dourado' | 'esmeralda' | 'azul' | 'amarelo'
-  cardCorFonteSubtitulo: 'cinza', // 'cinza' | 'cinza_claro' | 'branco_suave' | 'dourado_suave'
+  cardFundoEstilo: 'escuro', // 16 opções de cores/degradês
+  cardEfeitoEstilo: 'padrao', // 'padrao' | 'efeito_3d' | 'vidro' | 'entalhe' | 'glow'
+  cardCorFonteTitulo: 'branco', // 'branco' | 'dourado' | 'esmeralda' | 'azul' | 'amarelo' ...
+  cardCorFonteSubtitulo: 'cinza', // 'cinza' | 'cinza_claro' | 'branco_suave' | 'dourado_suave' ...
 
   // Configuração da Tela Inicial (Espera / Start do Admin)
   esperaLinha1: 'DENTRO DE INSTANTES',
@@ -365,8 +366,9 @@ function normalizeQuestionsConfig(config) {
   if (merged.cardAltura < 50) merged.cardAltura = 50;
   if (merged.cardAltura > 150) merged.cardAltura = 150;
 
-  // Fundo e cores de fontes dos cards
+  // Fundo, efeitos e cores de fontes dos cards
   merged.cardFundoEstilo = merged.cardFundoEstilo || 'escuro';
+  merged.cardEfeitoEstilo = merged.cardEfeitoEstilo || 'padrao';
   merged.cardCorFonteTitulo = merged.cardCorFonteTitulo || 'branco';
   merged.cardCorFonteSubtitulo = merged.cardCorFonteSubtitulo || 'cinza';
 
