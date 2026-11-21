@@ -20,12 +20,15 @@ const SESSION_STORAGE_KEY = 'church_session_started';
 export const DEFAULT_EVENT_TITLE = 'CANTATA DE NATAL 2026';
 
 export const DEFAULT_QUESTIONS_CONFIG = {
+  // Tela 1
   pergunta1Titulo: 'Como você chegou aqui?',
+  pergunta1Titulo2: '', // Titulo 2 para quebrar o titulo
   pergunta1Subtitulo: '',
+  pergunta1FonteTamanho: 18,
   cardsPorTela: 4, // Slider: quantidade de cards exibidos por tela/slide no celular (2 a 6)
   
   // Customizações Visuais dos Cards
-  cardFonteTitulo: 16, // px (13 a 24)
+  cardFonteTitulo: 16, // px (12 a 24)
   cardFonteSubtitulo: 12, // px (10 a 18)
   cardAltura: 82, // px (60 a 130)
 
@@ -33,14 +36,23 @@ export const DEFAULT_QUESTIONS_CONFIG = {
   esperaLinha1: 'DENTRO DE INSTANTES',
   esperaLinha2: 'ESTARÁ LIBERADO',
   esperaLinha3: 'PARA RESPONDER.',
-  esperaFonteTamanho: 26, // px (18 a 38)
+  esperaLinha1Tamanho: 26, // px
+  esperaLinha2Tamanho: 26, // px
+  esperaLinha3Tamanho: 26, // px
+  esperaFonteTamanho: 26, // fallback
 
   // Configuração da Tela Final (Agradecimento)
+  finalTitulo1: 'MUITO OBRIGADO',
+  finalTitulo2: 'PELA SUA PRESENÇA.',
   finalTitulo: 'MUITO OBRIGADO PELA SUA PRESENÇA.',
+  finalTituloFonteTamanho: 26, // px
   finalMensagem: 'será espetacular!',
+  finalMensagemFonteTamanho: 16, // px
   finalStatus: 'REGISTRO CONCLUÍDO!',
+  finalStatusFonteTamanho: 18, // px
   finalInstrucao: 'pode guardar seu celular',
-  finalFonteTamanho: 26, // px (18 a 38)
+  finalInstrucaoFonteTamanho: 13, // px
+  finalFonteTamanho: 26, // fallback
 
   opcoesChegada: [
     {
@@ -86,8 +98,11 @@ export const DEFAULT_QUESTIONS_CONFIG = {
   ],
   // Telas Adicionais Configuráveis (vazio por padrão - criadas quando o usuário clica em + Inserir Tela)
   telasExtras: [],
+  // Tela 2 (Acompanhantes)
   pergunta2Titulo: 'Você está só ou tem mais pessoas te acompanhando?',
+  pergunta2Titulo2: '',
   pergunta2Subtitulo: '',
+  pergunta2FonteTamanho: 18,
   opcaoIndividualTitulo: 'SÓ EU',
   opcaoIndividualSubtitulo: ', vim sozinho',
   divisorQtdTexto: 'Quantas pessoas vieram com você?'
@@ -345,18 +360,45 @@ function normalizeQuestionsConfig(config) {
   merged.esperaLinha1 = (merged.esperaLinha1 || 'DENTRO DE INSTANTES').trim();
   merged.esperaLinha2 = (merged.esperaLinha2 || 'ESTARÁ LIBERADO').trim();
   merged.esperaLinha3 = (merged.esperaLinha3 || 'PARA RESPONDER.').trim();
-  merged.esperaFonteTamanho = Number(merged.esperaFonteTamanho) || 26;
-  if (merged.esperaFonteTamanho < 16) merged.esperaFonteTamanho = 16;
-  if (merged.esperaFonteTamanho > 42) merged.esperaFonteTamanho = 42;
+  const baseEspera = Number(merged.esperaFonteTamanho) || 26;
+  merged.esperaLinha1Tamanho = Number(merged.esperaLinha1Tamanho) || baseEspera;
+  merged.esperaLinha2Tamanho = Number(merged.esperaLinha2Tamanho) || baseEspera;
+  merged.esperaLinha3Tamanho = Number(merged.esperaLinha3Tamanho) || baseEspera;
+  merged.esperaFonteTamanho = baseEspera;
 
-  // Garantir tela final (agradecimento)
-  merged.finalTitulo = (merged.finalTitulo || 'MUITO OBRIGADO PELA SUA PRESENÇA.').trim();
+  // Garantir tela final (agradecimento) com Titulo 1 e Titulo 2 para quebrar
+  if (!merged.finalTitulo1 && !merged.finalTitulo2) {
+    if (merged.finalTitulo && merged.finalTitulo.includes('PELA SUA PRESENÇA')) {
+      merged.finalTitulo1 = 'MUITO OBRIGADO';
+      merged.finalTitulo2 = 'PELA SUA PRESENÇA.';
+    } else {
+      merged.finalTitulo1 = merged.finalTitulo || 'MUITO OBRIGADO';
+      merged.finalTitulo2 = '';
+    }
+  } else {
+    merged.finalTitulo1 = (merged.finalTitulo1 || '').trim();
+    merged.finalTitulo2 = (merged.finalTitulo2 || '').trim();
+  }
+  merged.finalTitulo = `${merged.finalTitulo1} ${merged.finalTitulo2}`.trim() || 'MUITO OBRIGADO PELA SUA PRESENÇA.';
   merged.finalMensagem = (merged.finalMensagem || 'será espetacular!').trim();
   merged.finalStatus = (merged.finalStatus || 'REGISTRO CONCLUÍDO!').trim();
   merged.finalInstrucao = (merged.finalInstrucao || 'pode guardar seu celular').trim();
-  merged.finalFonteTamanho = Number(merged.finalFonteTamanho) || 26;
-  if (merged.finalFonteTamanho < 16) merged.finalFonteTamanho = 16;
-  if (merged.finalFonteTamanho > 42) merged.finalFonteTamanho = 42;
+
+  const baseFinal = Number(merged.finalFonteTamanho) || 26;
+  merged.finalTituloFonteTamanho = Number(merged.finalTituloFonteTamanho) || baseFinal;
+  merged.finalMensagemFonteTamanho = Number(merged.finalMensagemFonteTamanho) || 16;
+  merged.finalStatusFonteTamanho = Number(merged.finalStatusFonteTamanho) || 18;
+  merged.finalInstrucaoFonteTamanho = Number(merged.finalInstrucaoFonteTamanho) || 13;
+  merged.finalFonteTamanho = merged.finalTituloFonteTamanho;
+
+  // Tela 1 e Tela 2 (Perguntas)
+  merged.pergunta1Titulo = merged.pergunta1Titulo || 'Como você chegou aqui?';
+  merged.pergunta1Titulo2 = merged.pergunta1Titulo2 || '';
+  merged.pergunta1FonteTamanho = Number(merged.pergunta1FonteTamanho) || 18;
+
+  merged.pergunta2Titulo = merged.pergunta2Titulo || 'Você está só ou tem mais pessoas te acompanhando?';
+  merged.pergunta2Titulo2 = merged.pergunta2Titulo2 || '';
+  merged.pergunta2FonteTamanho = Number(merged.pergunta2FonteTamanho) || 18;
 
   // Garantir que cada opção tenha o campo 'ativo' e 'id'
   if (Array.isArray(merged.opcoesChegada)) {

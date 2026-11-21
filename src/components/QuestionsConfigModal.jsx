@@ -222,33 +222,51 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
   };
 
   // ============================================================
-  // GESTÃO DE TELAS EXTRAS (TELA 2, TELA 3, ETC.)
+  // GESTÃO DE TELAS EXTRAS (TELA 3, TELA 4, ETC. COM CARDS PRÉ-PRONTOS)
   // ============================================================
   const handleAdicionarTela = () => {
     const totalExtras = (config.telasExtras || []).length;
-    const novoNumeroTela = totalExtras + 2; // Tela 1 já existe, então começa na Tela 2
+    const novoNumeroTela = totalExtras + 3; // Tela 1 e Tela 2 (Acompanhantes) já existem
     const novaTela = {
       id: `extra_${Date.now()}`,
       ativa: true,
-      titulo: `Pergunta da Tela ${novoNumeroTela}`,
-      subtitulo: 'Descreva o objetivo desta tela adicional',
-      cardsPorTela: 3,
+      titulo: 'É a sua primeira vez conosco?',
+      titulo1: 'É a sua primeira vez',
+      titulo2: 'conosco?',
+      subtitulo: 'Queremos te dar as boas-vindas com muito carinho',
+      cardsPorTela: 4,
       opcoes: [
         {
           id: `opt_${Date.now()}_1`,
-          titulo: 'Primeira Opção',
-          subtitulo: 'Descrição explicativa',
+          titulo: 'Sim, pela primeira vez',
+          subtitulo: 'Vim conhecer e prestigiar a programação',
           ativo: true,
           icone: 'Sparkles',
           cor: 'emerald'
         },
         {
           id: `opt_${Date.now()}_2`,
-          titulo: 'Segunda Opção',
-          subtitulo: 'Outro detalhe importante',
+          titulo: 'Já visitei em outras ocasiões',
+          subtitulo: 'Venho aos cultos e ocasiões especiais',
           ativo: true,
-          icone: 'Smile',
+          icone: 'Star',
+          cor: 'amber'
+        },
+        {
+          id: `opt_${Date.now()}_3`,
+          titulo: 'Frequento com regularidade',
+          subtitulo: 'Já congrego ou acompanho os cultos',
+          ativo: true,
+          icone: 'Church',
           cor: 'sky'
+        },
+        {
+          id: `opt_${Date.now()}_4`,
+          titulo: 'Vim com família ou amigos',
+          subtitulo: 'Convite especial de alguém querido',
+          ativo: true,
+          icone: 'HeartHandshake',
+          cor: 'rose'
         }
       ]
     };
@@ -260,7 +278,7 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
   };
 
   const handleExcluirTela = (extraIndex) => {
-    const numTela = extraIndex + 2;
+    const numTela = extraIndex + 3;
     if (confirm(`Tem certeza que deseja excluir a Tela ${numTela}?`)) {
       setConfig((prev) => {
         const novas = (prev.telasExtras || []).filter((_, i) => i !== extraIndex);
@@ -410,7 +428,7 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
           {/* ========================================================== */}
           <div className="lg:col-span-7 flex flex-col min-h-0 bg-slate-900/50">
             
-            {/* BARRA DE ABAS: TELA INÍCIO, TELA 1, TELA 2... ACOMPANHANTES, TELA FIM + BOTÃO ADICIONAR TELA */}
+            {/* BARRA DE ABAS: TELA INÍCIO, TELA 1, TELA 2 (ACOMP.), TELAS EXTRAS, TELA FIM + BOTÃO INSERIR NO FIM */}
             <div className="flex border-b border-slate-800 bg-slate-950/70 px-3 pt-2.5 shrink-0 gap-1.5 overflow-x-auto items-center custom-scrollbar">
               
               {/* Tela Início */}
@@ -444,10 +462,27 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                 </span>
               </button>
 
-              {/* Telas Extras Configuradas Dinamicamente (Tela 2, Tela 3, etc.) */}
+              {/* Tela 2 (Acompanhantes) */}
+              <button
+                type="button"
+                onClick={() => setActiveTab('acompanhantes')}
+                className={`pb-2.5 px-3 text-xs sm:text-sm font-bold border-b-2 transition flex items-center gap-1.5 whitespace-nowrap ${
+                  activeTab === 'acompanhantes'
+                    ? 'border-amber-400 text-amber-300'
+                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Users className="w-4 h-4" />
+                <span>Tela 2</span>
+                <span className="text-[10px] bg-slate-800 text-slate-300 px-1.5 py-0.2 rounded-full font-mono">
+                  Acomp.
+                </span>
+              </button>
+
+              {/* Telas Extras Criadas Dinamicamente (Tela 3, Tela 4, etc.) */}
               {(config.telasExtras || []).map((tela, idx) => {
                 const tabKey = `extra_${idx}`;
-                const numTela = idx + 2;
+                const numTela = idx + 3;
                 const cardsAtivos = (tela.opcoes || []).filter(o => o.ativo !== false).length;
                 return (
                   <button
@@ -469,31 +504,6 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                 );
               })}
 
-              {/* Botão + Nova Tela para Inserir Mais Abas / Telas */}
-              <button
-                type="button"
-                onClick={handleAdicionarTela}
-                className="mb-2 px-2.5 py-1 text-xs font-black text-amber-400 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 rounded-xl transition flex items-center gap-1 whitespace-nowrap shrink-0 active:scale-95"
-                title="Inserir mais uma tela no fluxo de perguntas do celular"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>+ Inserir Tela</span>
-              </button>
-
-              {/* Acompanhantes */}
-              <button
-                type="button"
-                onClick={() => setActiveTab('acompanhantes')}
-                className={`pb-2.5 px-3 text-xs sm:text-sm font-bold border-b-2 transition flex items-center gap-1.5 whitespace-nowrap ${
-                  activeTab === 'acompanhantes'
-                    ? 'border-amber-400 text-amber-300'
-                    : 'border-transparent text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <Users className="w-4 h-4" />
-                <span>Acompanhantes</span>
-              </button>
-
               {/* Tela Fim */}
               <button
                 type="button"
@@ -506,6 +516,17 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
               >
                 <CheckCircle2 className="w-4 h-4" />
                 <span>Tela Fim</span>
+              </button>
+
+              {/* Botão + Inserir Tela NO FIM DE TUDO (com cards pré-prontos) */}
+              <button
+                type="button"
+                onClick={handleAdicionarTela}
+                className="mb-2 px-3 py-1.5 text-xs font-black text-amber-400 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap shrink-0 active:scale-95 ml-auto sm:ml-2 shadow-sm"
+                title="Inserir mais uma tela com cards pré-prontos no fluxo de perguntas"
+              >
+                <Plus className="w-4 h-4" />
+                <span>+ Inserir Tela</span>
               </button>
 
             </div>
@@ -564,55 +585,152 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                     </div>
                   </div>
 
-                  {/* Slider de Tamanho da Fonte da Tela de Espera */}
-                  <div className="bg-slate-950 border border-amber-500/30 rounded-xl p-3.5 space-y-2 shadow-sm">
-                    <div className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-1.5">
-                        <Type className="w-4 h-4 text-amber-400" />
-                        <span className="font-bold text-white">Tamanho da Fonte das Frases</span>
-                      </div>
-                      <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded text-xs">
-                        {config.esperaFonteTamanho || 26}px
+                  {/* VÁRIOS SLIDERS: TAMANHO DE CADA UMA DAS 3 LINHAS DE ESPERA */}
+                  <div className="bg-slate-950 border border-amber-500/30 rounded-xl p-3.5 space-y-3 shadow-sm">
+                    <div className="flex items-center gap-2 pb-1 border-b border-slate-800">
+                      <SlidersHorizontal className="w-4 h-4 text-amber-400" />
+                      <span className="text-xs font-black text-white uppercase tracking-wider">
+                        Tamanho das Fontes da Tela de Espera
                       </span>
                     </div>
 
-                    <input
-                      type="range"
-                      min="18"
-                      max="38"
-                      step="1"
-                      value={config.esperaFonteTamanho || 26}
-                      onChange={(e) => setConfig({ ...config, esperaFonteTamanho: Number(e.target.value) })}
-                      className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                    />
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {/* 1ª Linha */}
+                      <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-2.5 space-y-1.5">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-bold text-slate-300">1ª Linha (Branco)</span>
+                          <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
+                            {config.esperaLinha1Tamanho || config.esperaFonteTamanho || 26}px
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min="16"
+                          max="40"
+                          step="1"
+                          value={config.esperaLinha1Tamanho || config.esperaFonteTamanho || 26}
+                          onChange={(e) => setConfig({ ...config, esperaLinha1Tamanho: Number(e.target.value) })}
+                          className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                        />
+                        <div className="flex justify-between text-[9px] text-slate-500 font-mono">
+                          <span>16px</span>
+                          <span>40px</span>
+                        </div>
+                      </div>
 
-                    <div className="flex justify-between text-[10px] text-slate-500 font-mono">
-                      <span>18px (Menor)</span>
-                      <span>26px (Padrão)</span>
-                      <span>38px (Maior)</span>
+                      {/* 2ª Linha */}
+                      <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-2.5 space-y-1.5">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-bold text-amber-300">2ª Linha (Dourado)</span>
+                          <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
+                            {config.esperaLinha2Tamanho || config.esperaFonteTamanho || 26}px
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min="16"
+                          max="40"
+                          step="1"
+                          value={config.esperaLinha2Tamanho || config.esperaFonteTamanho || 26}
+                          onChange={(e) => setConfig({ ...config, esperaLinha2Tamanho: Number(e.target.value) })}
+                          className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                        />
+                        <div className="flex justify-between text-[9px] text-slate-500 font-mono">
+                          <span>16px</span>
+                          <span>40px</span>
+                        </div>
+                      </div>
+
+                      {/* 3ª Linha */}
+                      <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-2.5 space-y-1.5">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-bold text-emerald-400">3ª Linha (Verde)</span>
+                          <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
+                            {config.esperaLinha3Tamanho || config.esperaFonteTamanho || 26}px
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min="16"
+                          max="40"
+                          step="1"
+                          value={config.esperaLinha3Tamanho || config.esperaFonteTamanho || 26}
+                          onChange={(e) => setConfig({ ...config, esperaLinha3Tamanho: Number(e.target.value) })}
+                          className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                        />
+                        <div className="flex justify-between text-[9px] text-slate-500 font-mono">
+                          <span>16px</span>
+                          <span>40px</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               )}
 
               {/* ====================================================== */}
-              {/* ABA: TELA 1 (COM SLIDERS DE DESIGN GLOBAIS DOS CARDS)  */}
+              {/* ABA: TELA 1 (COM TÍTULO 1 & 2 E SLIDERS DE DESIGN)    */}
               {/* ====================================================== */}
               {activeTab === 'tela_1' && (
                 <div className="space-y-4">
                   
-                  {/* 1. TÍTULO DA TELA 1 */}
-                  <div className="bg-slate-950 border border-slate-800 rounded-xl p-3 space-y-1 shadow-sm">
-                    <label className="text-[11px] font-bold text-amber-400 uppercase tracking-wide block">
-                      Texto da Pergunta Principal (Tela 1)
-                    </label>
-                    <input
-                      type="text"
-                      value={config.pergunta1Titulo || ''}
-                      onChange={(e) => setConfig({ ...config, pergunta1Titulo: e.target.value })}
-                      placeholder="Ex: Como você chegou aqui?"
-                      className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-3 py-1.5 text-xs font-bold text-white shadow-inner"
-                    />
+                  {/* 1. TÍTULO 1 E TÍTULO 2 DA TELA 1 PARA QUEBRAR O TÍTULO */}
+                  <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-2.5 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wide">
+                        Título da Pergunta (Tela 1)
+                      </span>
+                      <span className="text-[10px] text-slate-400">
+                        Use Título 1 e 2 para quebrar em 2 linhas
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Título 1 (1ª Linha)</label>
+                        <input
+                          type="text"
+                          value={config.pergunta1Titulo || ''}
+                          onChange={(e) => setConfig({ ...config, pergunta1Titulo: e.target.value })}
+                          placeholder="Ex: Como você"
+                          className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-white shadow-inner"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Título 2 (2ª Linha - Opcional)</label>
+                        <input
+                          type="text"
+                          value={config.pergunta1Titulo2 || ''}
+                          onChange={(e) => setConfig({ ...config, pergunta1Titulo2: e.target.value })}
+                          placeholder="Ex: chegou aqui?"
+                          className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-amber-300 shadow-inner"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Slider de Tamanho da Fonte da Pergunta 1 */}
+                    <div className="pt-2 border-t border-slate-800/80">
+                      <div className="flex items-center justify-between text-xs mb-1">
+                        <span className="font-bold text-slate-300">Tamanho da Fonte da Pergunta 1</span>
+                        <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
+                          {config.pergunta1FonteTamanho || 18}px
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="14"
+                        max="28"
+                        step="1"
+                        value={config.pergunta1FonteTamanho || 18}
+                        onChange={(e) => setConfig({ ...config, pergunta1FonteTamanho: Number(e.target.value) })}
+                        className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                      />
+                      <div className="flex justify-between text-[9px] text-slate-500 font-mono">
+                        <span>14px (Menor)</span>
+                        <span>18px (Padrão)</span>
+                        <span>28px (Maior)</span>
+                      </div>
+                    </div>
                   </div>
 
                   {/* 2. SLIDERS DE DESIGN: FONTE DO TÍTULO, SUBTÍTULO E ALTURA DOS CARDS */}
@@ -862,9 +980,9 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                 const telaAlvo = (config.telasExtras || [])[extraIndex];
                 if (!telaAlvo) return null;
 
-                const numTela = extraIndex + 2;
+                const numTela = extraIndex + 3;
                 const cardsAtivos = (telaAlvo.opcoes || []).filter(o => o.ativo !== false);
-                const limitCards = Number(telaAlvo.cardsPorTela) || 3;
+                const limitCards = Number(telaAlvo.cardsPorTela) || 4;
 
                 return (
                   <div className="space-y-4">
@@ -890,19 +1008,40 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                       </button>
                     </div>
 
-                    {/* Título e Subtítulo da Tela Extra */}
+                    {/* Título e Subtítulo da Tela Extra com Título 1 e Título 2 */}
                     <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-3">
-                      <div>
-                        <label className="text-[10px] font-bold text-amber-400 uppercase tracking-wide block mb-1">
-                          Título da Pergunta (Tela {numTela})
-                        </label>
-                        <input
-                          type="text"
-                          value={telaAlvo.titulo || ''}
-                          onChange={(e) => handleUpdateTelaProp(extraIndex, 'titulo', e.target.value)}
-                          placeholder={`Ex: Pergunta da Tela ${numTela}`}
-                          className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-3 py-1.5 text-xs font-bold text-white"
-                        />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-[10px] font-bold text-amber-400 uppercase tracking-wide block mb-1">
+                            Título 1 (Linha 1)
+                          </label>
+                          <input
+                            type="text"
+                            value={telaAlvo.titulo1 ?? telaAlvo.titulo ?? ''}
+                            onChange={(e) => {
+                              handleUpdateTelaProp(extraIndex, 'titulo1', e.target.value);
+                              handleUpdateTelaProp(extraIndex, 'titulo', `${e.target.value} ${telaAlvo.titulo2 || ''}`.trim());
+                            }}
+                            placeholder={`Ex: Pergunta da Tela ${numTela}`}
+                            className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-3 py-1.5 text-xs font-bold text-white"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide block mb-1">
+                            Título 2 (Linha 2 - Opcional)
+                          </label>
+                          <input
+                            type="text"
+                            value={telaAlvo.titulo2 ?? ''}
+                            onChange={(e) => {
+                              handleUpdateTelaProp(extraIndex, 'titulo2', e.target.value);
+                              handleUpdateTelaProp(extraIndex, 'titulo', `${telaAlvo.titulo1 || telaAlvo.titulo || ''} ${e.target.value}`.trim());
+                            }}
+                            placeholder="Ex: Quebra do título"
+                            className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-3 py-1.5 text-xs font-bold text-amber-300"
+                          />
+                        </div>
                       </div>
 
                       <div>
@@ -1065,17 +1204,41 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                     </div>
 
                     <div className="space-y-2.5">
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-400 block mb-0.5">
-                          Título Principal (Agradecimento)
-                        </label>
-                        <input
-                          type="text"
-                          value={config.finalTitulo ?? 'MUITO OBRIGADO PELA SUA PRESENÇA.'}
-                          onChange={(e) => setConfig({ ...config, finalTitulo: e.target.value })}
-                          placeholder="MUITO OBRIGADO PELA SUA PRESENÇA."
-                          className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-3 py-1.5 text-xs font-bold text-white"
-                        />
+                      {/* TÍTULO 1 E TÍTULO 2 PARA QUEBRAR O TÍTULO */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 block mb-0.5">
+                            Título 1 (Linha 1)
+                          </label>
+                          <input
+                            type="text"
+                            value={config.finalTitulo1 ?? 'MUITO OBRIGADO'}
+                            onChange={(e) => setConfig({ 
+                              ...config, 
+                              finalTitulo1: e.target.value,
+                              finalTitulo: `${e.target.value} ${config.finalTitulo2 || ''}`.trim()
+                            })}
+                            placeholder="MUITO OBRIGADO"
+                            className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-white"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 block mb-0.5">
+                            Título 2 (Linha 2 - Quebra do Título)
+                          </label>
+                          <input
+                            type="text"
+                            value={config.finalTitulo2 ?? 'PELA SUA PRESENÇA.'}
+                            onChange={(e) => setConfig({ 
+                              ...config, 
+                              finalTitulo2: e.target.value,
+                              finalTitulo: `${config.finalTitulo1 || ''} ${e.target.value}`.trim()
+                            })}
+                            placeholder="PELA SUA PRESENÇA."
+                            className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-amber-300"
+                          />
+                        </div>
                       </div>
 
                       <div>
@@ -1121,53 +1284,178 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                     </div>
                   </div>
 
-                  {/* Slider de Tamanho da Fonte do Título de Agradecimento */}
-                  <div className="bg-slate-950 border border-amber-500/30 rounded-xl p-3.5 space-y-2 shadow-sm">
-                    <div className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-1.5">
-                        <Type className="w-4 h-4 text-amber-400" />
-                        <span className="font-bold text-white">Tamanho da Fonte do Título Principal</span>
-                      </div>
-                      <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded text-xs">
-                        {config.finalFonteTamanho || 26}px
+                  {/* VÁRIOS SLIDERS: TÍTULO, MENSAGEM, STATUS E INSTRUÇÃO DA TELA FIM */}
+                  <div className="bg-slate-950 border border-amber-500/30 rounded-xl p-3.5 space-y-3 shadow-sm">
+                    <div className="flex items-center gap-2 pb-1 border-b border-slate-800">
+                      <SlidersHorizontal className="w-4 h-4 text-amber-400" />
+                      <span className="text-xs font-black text-white uppercase tracking-wider">
+                        Tamanho das Fontes da Tela de Agradecimento
                       </span>
                     </div>
 
-                    <input
-                      type="range"
-                      min="18"
-                      max="38"
-                      step="1"
-                      value={config.finalFonteTamanho || 26}
-                      onChange={(e) => setConfig({ ...config, finalFonteTamanho: Number(e.target.value) })}
-                      className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                    />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* Slider 1: Título Principal */}
+                      <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-2.5 space-y-1.5">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-bold text-white">Título (Linhas 1 e 2)</span>
+                          <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
+                            {config.finalTituloFonteTamanho || config.finalFonteTamanho || 26}px
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min="16"
+                          max="40"
+                          step="1"
+                          value={config.finalTituloFonteTamanho || config.finalFonteTamanho || 26}
+                          onChange={(e) => setConfig({ 
+                            ...config, 
+                            finalTituloFonteTamanho: Number(e.target.value),
+                            finalFonteTamanho: Number(e.target.value)
+                          })}
+                          className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                        />
+                        <div className="flex justify-between text-[9px] text-slate-500 font-mono">
+                          <span>16px (Menor)</span>
+                          <span>40px (Maior)</span>
+                        </div>
+                      </div>
 
-                    <div className="flex justify-between text-[10px] text-slate-500 font-mono">
-                      <span>18px (Menor)</span>
-                      <span>26px (Padrão)</span>
-                      <span>38px (Maior)</span>
+                      {/* Slider 2: Mensagem / Complemento */}
+                      <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-2.5 space-y-1.5">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-bold text-amber-300">Mensagem do Evento</span>
+                          <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
+                            {config.finalMensagemFonteTamanho || 16}px
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min="12"
+                          max="28"
+                          step="1"
+                          value={config.finalMensagemFonteTamanho || 16}
+                          onChange={(e) => setConfig({ ...config, finalMensagemFonteTamanho: Number(e.target.value) })}
+                          className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                        />
+                        <div className="flex justify-between text-[9px] text-slate-500 font-mono">
+                          <span>12px</span>
+                          <span>28px</span>
+                        </div>
+                      </div>
+
+                      {/* Slider 3: Status de Conclusão */}
+                      <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-2.5 space-y-1.5">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-bold text-emerald-400">Status de Conclusão</span>
+                          <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
+                            {config.finalStatusFonteTamanho || 18}px
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min="12"
+                          max="28"
+                          step="1"
+                          value={config.finalStatusFonteTamanho || 18}
+                          onChange={(e) => setConfig({ ...config, finalStatusFonteTamanho: Number(e.target.value) })}
+                          className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                        />
+                        <div className="flex justify-between text-[9px] text-slate-500 font-mono">
+                          <span>12px</span>
+                          <span>28px</span>
+                        </div>
+                      </div>
+
+                      {/* Slider 4: Instrução ao Visitante */}
+                      <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-2.5 space-y-1.5">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-bold text-slate-300">Instrução ao Visitante</span>
+                          <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
+                            {config.finalInstrucaoFonteTamanho || 13}px
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min="10"
+                          max="22"
+                          step="1"
+                          value={config.finalInstrucaoFonteTamanho || 13}
+                          onChange={(e) => setConfig({ ...config, finalInstrucaoFonteTamanho: Number(e.target.value) })}
+                          className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                        />
+                        <div className="flex justify-between text-[9px] text-slate-500 font-mono">
+                          <span>10px</span>
+                          <span>22px</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               )}
 
               {/* ====================================================== */}
-              {/* ABA: ACOMPANHANTES (QUANTAS PESSOAS VIERAM)            */}
+              {/* ABA: TELA 2 (ACOMPANHANTES / QUANTAS PESSOAS VIERAM)   */}
               {/* ====================================================== */}
               {activeTab === 'acompanhantes' && (
                 <div className="space-y-4">
-                  <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-1">
-                    <label className="text-[11px] font-bold text-amber-400 uppercase tracking-wide block">
-                      Pergunta sobre Acompanhantes
-                    </label>
-                    <input
-                      type="text"
-                      value={config.pergunta2Titulo || ''}
-                      onChange={(e) => setConfig({ ...config, pergunta2Titulo: e.target.value })}
-                      placeholder="Ex: Você está só ou tem mais pessoas te acompanhando?"
-                      className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-3 py-1.5 text-xs font-bold text-white"
-                    />
+                  {/* Título da Tela 2 com Título 1 e Título 2 */}
+                  <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-2.5 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wide">
+                        Título da Pergunta (Tela 2)
+                      </span>
+                      <span className="text-[10px] text-slate-400">
+                        Use Título 1 e 2 para quebrar em 2 linhas
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Título 1 (1ª Linha)</label>
+                        <input
+                          type="text"
+                          value={config.pergunta2Titulo || ''}
+                          onChange={(e) => setConfig({ ...config, pergunta2Titulo: e.target.value })}
+                          placeholder="Ex: Você está só ou tem mais"
+                          className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1 text-xs font-bold text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Título 2 (2ª Linha - Opcional)</label>
+                        <input
+                          type="text"
+                          value={config.pergunta2Titulo2 || ''}
+                          onChange={(e) => setConfig({ ...config, pergunta2Titulo2: e.target.value })}
+                          placeholder="Ex: pessoas te acompanhando?"
+                          className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1 text-xs font-bold text-amber-300"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Slider de Tamanho da Fonte da Pergunta 2 */}
+                    <div className="pt-2 border-t border-slate-800/80">
+                      <div className="flex items-center justify-between text-xs mb-1">
+                        <span className="font-bold text-slate-300">Tamanho da Fonte da Pergunta 2</span>
+                        <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
+                          {config.pergunta2FonteTamanho || 18}px
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="14"
+                        max="28"
+                        step="1"
+                        value={config.pergunta2FonteTamanho || 18}
+                        onChange={(e) => setConfig({ ...config, pergunta2FonteTamanho: Number(e.target.value) })}
+                        className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                      />
+                      <div className="flex justify-between text-[9px] text-slate-500 font-mono">
+                        <span>14px (Menor)</span>
+                        <span>18px (Padrão)</span>
+                        <span>28px (Maior)</span>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-2">
@@ -1253,7 +1541,7 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
               </div>
             </div>
 
-            {/* SELETOR DE TELAS DO PREVIEW (SINCRONIZADO COM AS ABAS) */}
+            {/* SELETOR DE TELAS DO PREVIEW (SINCRONIZADO COM AS ABAS: INÍCIO, TELA 1, TELA 2, EXTRAS, TELA FIM) */}
             <div className="w-full max-w-[340px] mb-3 flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800 overflow-x-auto shrink-0 custom-scrollbar">
               <button
                 type="button"
@@ -1275,6 +1563,16 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                 Tela 1
               </button>
 
+              <button
+                type="button"
+                onClick={() => setPreviewScreen('acompanhantes')}
+                className={`py-1 px-2 rounded-lg text-[10px] font-bold transition text-center shrink-0 ${
+                  previewScreen === 'acompanhantes' ? 'bg-amber-400 text-slate-950 shadow' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Tela 2
+              </button>
+
               {(config.telasExtras || []).map((_, idx) => (
                 <button
                   key={idx}
@@ -1284,19 +1582,9 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                     previewScreen === `extra_${idx}` ? 'bg-amber-400 text-slate-950 shadow' : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  Tela {idx + 2}
+                  Tela {idx + 3}
                 </button>
               ))}
-
-              <button
-                type="button"
-                onClick={() => setPreviewScreen('acompanhantes')}
-                className={`py-1 px-2 rounded-lg text-[10px] font-bold transition text-center shrink-0 ${
-                  previewScreen === 'acompanhantes' ? 'bg-amber-400 text-slate-950 shadow' : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Acomp.
-              </button>
 
               <button
                 type="button"
@@ -1305,7 +1593,7 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                   previewScreen === 'fim' ? 'bg-amber-400 text-slate-950 shadow' : 'text-slate-400 hover:text-white'
                 }`}
               >
-                Fim
+                Tela Fim
               </button>
             </div>
 
@@ -1353,19 +1641,19 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
 
                     <div className="space-y-1 text-center px-2">
                       <span 
-                        style={{ fontSize: `${(config.esperaFonteTamanho || 26) * 0.58}px` }}
+                        style={{ fontSize: `${(config.esperaLinha1Tamanho || config.esperaFonteTamanho || 26) * 0.58}px` }}
                         className="block font-black text-white tracking-wide uppercase leading-tight"
                       >
                         {config.esperaLinha1 || 'DENTRO DE INSTANTES'}
                       </span>
                       <span 
-                        style={{ fontSize: `${(config.esperaFonteTamanho || 26) * 0.58}px` }}
+                        style={{ fontSize: `${(config.esperaLinha2Tamanho || config.esperaFonteTamanho || 26) * 0.58}px` }}
                         className="block font-black bg-gradient-to-r from-amber-300 to-amber-400 bg-clip-text text-transparent tracking-wide uppercase leading-tight"
                       >
                         {config.esperaLinha2 || 'ESTARÁ LIBERADO'}
                       </span>
                       <span 
-                        style={{ fontSize: `${(config.esperaFonteTamanho || 26) * 0.58}px` }}
+                        style={{ fontSize: `${(config.esperaLinha3Tamanho || config.esperaFonteTamanho || 26) * 0.58}px` }}
                         className="block font-black text-emerald-400 tracking-wide uppercase leading-tight"
                       >
                         {config.esperaLinha3 || 'PARA RESPONDER.'}
@@ -1393,8 +1681,18 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                       </div>
 
                       <div className="pt-1 border-t border-slate-800/60">
-                        <h3 className="text-xs sm:text-sm font-black text-white leading-tight">
-                          {config.pergunta1Titulo || 'Como você chegou aqui?'}
+                        <h3 
+                          style={{ fontSize: `${(config.pergunta1FonteTamanho || 18) * 0.72}px` }}
+                          className="font-black text-white leading-tight"
+                        >
+                          {config.pergunta1Titulo2 ? (
+                            <>
+                              <span className="block">{config.pergunta1Titulo}</span>
+                              <span className="block">{config.pergunta1Titulo2}</span>
+                            </>
+                          ) : (
+                            config.pergunta1Titulo || 'Como você chegou aqui?'
+                          )}
                         </h3>
                       </div>
 
@@ -1492,24 +1790,31 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                   </div>
                 )}
 
-                {/* PREVIEW: TELAS EXTRAS (TELA 2, TELA 3, ETC.) */}
+                {/* PREVIEW: TELAS EXTRAS (TELA 3, TELA 4, ETC.) */}
                 {previewScreen.startsWith('extra_') && (() => {
                   const extraIdx = parseInt(previewScreen.split('_')[1], 10);
                   const telaExtra = (config.telasExtras || [])[extraIdx];
                   if (!telaExtra) return null;
 
-                  const numTela = extraIdx + 2;
+                  const numTela = extraIdx + 3;
                   const cardsAtivos = (telaExtra.opcoes || []).filter(o => o.ativo !== false);
 
                   return (
                     <div className="flex flex-col justify-between h-full space-y-2">
                       <div className="shrink-0 space-y-1">
                         <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[9px] font-black uppercase">
-                          <span>Tela {numTela} de {1 + (config.telasExtras || []).length + 1}</span>
+                          <span>Tela {numTela} de {2 + (config.telasExtras || []).length + 1}</span>
                         </div>
 
                         <h3 className="text-xs sm:text-sm font-black text-white leading-tight">
-                          {telaExtra.titulo || `Pergunta da Tela ${numTela}`}
+                          {telaExtra.titulo1 && telaExtra.titulo2 ? (
+                            <>
+                              <span className="block">{telaExtra.titulo1}</span>
+                              <span className="block">{telaExtra.titulo2}</span>
+                            </>
+                          ) : (
+                            telaExtra.titulo || `Pergunta da Tela ${numTela}`
+                          )}
                         </h3>
                         {telaExtra.subtitulo && (
                           <p className="text-[10px] text-slate-400">
@@ -1565,23 +1870,33 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                       </div>
 
                       <div className="shrink-0 pt-1 border-t border-slate-800/80">
-                        <span className="text-[9px] text-slate-400">
-                          {isTelaAtiva ? '✓ Esta tela aparecerá no celular' : '✕ Esta tela está oculta no celular'}
+                        <span className="text-[9px] text-emerald-400 font-bold">
+                          ✓ Esta tela aparecerá no celular
                         </span>
                       </div>
                     </div>
                   );
                 })()}
 
-                {/* PREVIEW: ACOMPANHANTES */}
+                {/* PREVIEW: TELA 2 (ACOMPANHANTES) */}
                 {previewScreen === 'acompanhantes' && (
                   <div className="flex flex-col justify-between h-full space-y-2">
                     <div className="shrink-0 space-y-1">
                       <p className="text-xs font-black text-emerald-400 tracking-wide">
                         Seja muito bem-vindo!
                       </p>
-                      <h3 className="text-xs sm:text-sm font-black text-white leading-tight">
-                        {config.pergunta2Titulo || 'Você está só ou tem mais pessoas te acompanhando?'}
+                      <h3 
+                        style={{ fontSize: `${(config.pergunta2FonteTamanho || 18) * 0.72}px` }}
+                        className="font-black text-white leading-tight"
+                      >
+                        {config.pergunta2Titulo2 ? (
+                          <>
+                            <span className="block">{config.pergunta2Titulo}</span>
+                            <span className="block">{config.pergunta2Titulo2}</span>
+                          </>
+                        ) : (
+                          config.pergunta2Titulo || 'Você está só ou tem mais pessoas te acompanhando?'
+                        )}
                       </h3>
                     </div>
 
@@ -1633,17 +1948,27 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                   <div className="flex flex-col items-center justify-center h-full space-y-3.5 my-auto px-2">
                     <div className="w-full bg-slate-900/95 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-3">
                       <h3 
-                        style={{ fontSize: `${(config.finalFonteTamanho || 26) * 0.58}px` }}
+                        style={{ fontSize: `${(config.finalTituloFonteTamanho || config.finalFonteTamanho || 26) * 0.58}px` }}
                         className="font-black text-white tracking-tight leading-snug"
                       >
-                        {config.finalTitulo || 'MUITO OBRIGADO PELA SUA PRESENÇA.'}
+                        {config.finalTitulo1 && config.finalTitulo2 ? (
+                          <>
+                            <span className="block">{config.finalTitulo1}</span>
+                            <span className="block">{config.finalTitulo2}</span>
+                          </>
+                        ) : (
+                          config.finalTitulo || 'MUITO OBRIGADO PELA SUA PRESENÇA.'
+                        )}
                       </h3>
 
                       <div className="space-y-0.5">
                         <span className="block text-[11px] font-black bg-gradient-to-r from-amber-300 to-amber-400 bg-clip-text text-transparent uppercase tracking-wide">
                           A {eventoTitulo}
                         </span>
-                        <span className="block text-[10px] font-extrabold text-amber-400">
+                        <span 
+                          style={{ fontSize: `${(config.finalMensagemFonteTamanho || 16) * 0.65}px` }}
+                          className="block font-extrabold text-amber-400"
+                        >
                           {config.finalMensagem || 'será espetacular!'}
                         </span>
                       </div>
@@ -1652,10 +1977,16 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                         <div className="w-full bg-slate-950 rounded-full h-1 overflow-hidden mb-2">
                           <div className="bg-amber-400 h-full w-2/3 rounded-full mx-auto" />
                         </div>
-                        <p className="text-[11px] font-black text-emerald-400 uppercase tracking-wide">
+                        <p 
+                          style={{ fontSize: `${(config.finalStatusFonteTamanho || 18) * 0.65}px` }}
+                          className="font-black text-emerald-400 uppercase tracking-wide"
+                        >
                           {config.finalStatus || 'REGISTRO CONCLUÍDO!'}
                         </p>
-                        <p className="text-[10px] font-bold text-slate-400">
+                        <p 
+                          style={{ fontSize: `${(config.finalInstrucaoFonteTamanho || 13) * 0.72}px` }}
+                          className="font-bold text-slate-400"
+                        >
                           {config.finalInstrucao || 'pode guardar seu celular'}
                         </p>
                       </div>

@@ -282,17 +282,27 @@ export default function MobileForm() {
 
           <div className="space-y-3">
             <h1 
-              style={{ fontSize: `${questionsConfig.finalFonteTamanho || 26}px` }}
+              style={{ fontSize: `${questionsConfig.finalTituloFonteTamanho || questionsConfig.finalFonteTamanho || 26}px` }}
               className="font-black text-white tracking-tight leading-snug"
             >
-              {questionsConfig.finalTitulo || 'MUITO OBRIGADO PELA SUA PRESENÇA.'}
+              {questionsConfig.finalTitulo1 && questionsConfig.finalTitulo2 ? (
+                <>
+                  <span className="block">{questionsConfig.finalTitulo1}</span>
+                  <span className="block">{questionsConfig.finalTitulo2}</span>
+                </>
+              ) : (
+                questionsConfig.finalTitulo || 'MUITO OBRIGADO PELA SUA PRESENÇA.'
+              )}
             </h1>
 
             <div className="space-y-1">
               <span className="block text-[17px] sm:text-[20px] font-black bg-gradient-to-r from-amber-300 via-orange-300 to-amber-400 bg-clip-text text-transparent uppercase tracking-wide leading-tight">
                 A {eventoTitulo}
               </span>
-              <span className="block text-[16px] sm:text-[18px] font-extrabold text-amber-400 tracking-wide leading-tight">
+              <span 
+                style={{ fontSize: `${questionsConfig.finalMensagemFonteTamanho || 16}px` }}
+                className="block font-extrabold text-amber-400 tracking-wide leading-tight"
+              >
                 {questionsConfig.finalMensagem || 'será espetacular!'}
               </span>
             </div>
@@ -300,10 +310,16 @@ export default function MobileForm() {
 
           <div className="pt-5 border-t border-slate-800/80 space-y-3">
             <div className="space-y-1.5 text-slate-200">
-              <p className="text-base sm:text-lg font-black text-emerald-400 uppercase tracking-wide">
+              <p 
+                style={{ fontSize: `${questionsConfig.finalStatusFonteTamanho || 18}px` }}
+                className="font-black text-emerald-400 uppercase tracking-wide"
+              >
                 {questionsConfig.finalStatus || 'REGISTRO CONCLUÍDO!'}
               </p>
-              <p className="text-sm sm:text-base font-bold text-slate-300">
+              <p 
+                style={{ fontSize: `${questionsConfig.finalInstrucaoFonteTamanho || 13}px` }}
+                className="font-bold text-slate-300"
+              >
                 {questionsConfig.finalInstrucao || 'pode guardar seu celular'}
               </p>
             </div>
@@ -348,22 +364,22 @@ export default function MobileForm() {
             <div className="absolute inset-0 rounded-full bg-amber-400/15 blur-xl pointer-events-none animate-pulse" />
           </div>
 
-          {/* TEXTO EM EXATAS 3 LINHAS SOLICITADO */}
+          {/* TEXTO EM EXATAS 3 LINHAS COM FONTES INDIVIDUAIS */}
           <div className="space-y-1 text-center">
             <h2 
-              style={{ fontSize: `${questionsConfig.esperaFonteTamanho || 26}px` }}
+              style={{ fontSize: `${questionsConfig.esperaLinha1Tamanho || questionsConfig.esperaFonteTamanho || 26}px` }}
               className="font-black text-white tracking-wide uppercase leading-tight drop-shadow-sm"
             >
               {questionsConfig.esperaLinha1 || 'DENTRO DE INSTANTES'}
             </h2>
             <h2 
-              style={{ fontSize: `${questionsConfig.esperaFonteTamanho || 26}px` }}
+              style={{ fontSize: `${questionsConfig.esperaLinha2Tamanho || questionsConfig.esperaFonteTamanho || 26}px` }}
               className="font-black bg-gradient-to-r from-amber-300 via-orange-300 to-amber-400 bg-clip-text text-transparent tracking-wide uppercase leading-tight drop-shadow-sm"
             >
               {questionsConfig.esperaLinha2 || 'ESTARÁ LIBERADO'}
             </h2>
             <h2 
-              style={{ fontSize: `${questionsConfig.esperaFonteTamanho || 26}px` }}
+              style={{ fontSize: `${questionsConfig.esperaLinha3Tamanho || questionsConfig.esperaFonteTamanho || 26}px` }}
               className="font-black text-emerald-400 tracking-wide uppercase leading-tight drop-shadow-sm"
             >
               {questionsConfig.esperaLinha3 || 'PARA RESPONDER.'}
@@ -406,11 +422,21 @@ export default function MobileForm() {
           </h1>
         </div>
 
-        {/* TÍTULO DA ETAPA ATUAL */}
+        {/* TÍTULO DA ETAPA ATUAL: TELA 1 */}
         {currentStep === 'p1' && (
           <div className="mt-2 pt-2 border-t border-slate-800/60">
-            <h2 className="text-xl sm:text-2xl font-black text-white leading-tight">
-              {questionsConfig.pergunta1Titulo || 'Como você chegou aqui?'}
+            <h2 
+              style={{ fontSize: `${questionsConfig.pergunta1FonteTamanho || 22}px` }}
+              className="font-black text-white leading-tight"
+            >
+              {questionsConfig.pergunta1Titulo2 ? (
+                <>
+                  <span className="block">{questionsConfig.pergunta1Titulo}</span>
+                  <span className="block">{questionsConfig.pergunta1Titulo2}</span>
+                </>
+              ) : (
+                questionsConfig.pergunta1Titulo || 'Como você chegou aqui?'
+              )}
             </h2>
             {questionsConfig.pergunta1Subtitulo && (
               <p className="text-xs sm:text-sm text-slate-400 mt-1">
@@ -428,7 +454,14 @@ export default function MobileForm() {
           return (
             <div className="mt-2 pt-2 border-t border-slate-800/60">
               <h2 className="text-xl sm:text-2xl font-black text-white leading-tight">
-                {tela.titulo || 'Pergunta Adicional'}
+                {tela.titulo1 && tela.titulo2 ? (
+                  <>
+                    <span className="block">{tela.titulo1}</span>
+                    <span className="block">{tela.titulo2}</span>
+                  </>
+                ) : (
+                  tela.titulo || `Pergunta da Tela ${idx + 3}`
+                )}
               </h2>
               {tela.subtitulo && (
                 <p className="text-xs sm:text-sm text-slate-400 mt-1">
@@ -439,11 +472,21 @@ export default function MobileForm() {
           );
         })()}
 
-        {/* PERGUNTA 2: ACOMPANHANTES */}
+        {/* PERGUNTA 2: ACOMPANHANTES (TELA 2) */}
         {currentStep === 'acompanhantes' && (
           <div className="mt-2 pt-2 border-t border-slate-800/60">
-            <h2 className="text-xl sm:text-2xl font-black text-white leading-tight whitespace-pre-line">
-              {questionsConfig.pergunta2Titulo || 'Você está só ou tem mais pessoas te acompanhando?'}
+            <h2 
+              style={{ fontSize: `${questionsConfig.pergunta2FonteTamanho || 22}px` }}
+              className="font-black text-white leading-tight whitespace-pre-line"
+            >
+              {questionsConfig.pergunta2Titulo2 ? (
+                <>
+                  <span className="block">{questionsConfig.pergunta2Titulo}</span>
+                  <span className="block">{questionsConfig.pergunta2Titulo2}</span>
+                </>
+              ) : (
+                questionsConfig.pergunta2Titulo || 'Você está só ou tem mais pessoas te acompanhando?'
+              )}
             </h2>
             {questionsConfig.pergunta2Subtitulo && (
               <p className="text-xs sm:text-sm text-slate-400 mt-1">
