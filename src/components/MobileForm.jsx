@@ -183,20 +183,27 @@ const BTN_NUM_CLASSES = {
 };
 
 export default function MobileForm() {
+  const [activeEventId] = useState(() => getActiveEventId());
+  const DISPOSITIVO_BLOQUEADO_EVENTO_KEY = `presenca_dispositivo_bloqueado_voto_${activeEventId}`;
+  const DISPOSITIVO_VOTO_TIME_EVENTO_KEY = `presenca_dispositivo_hora_voto_${activeEventId}`;
+
   const [eventoTitulo, setEventoTitulo] = useState(DEFAULT_EVENT_TITLE);
   const [questionsConfig, setQuestionsConfig] = useState(DEFAULT_QUESTIONS_CONFIG);
   const [sessaoAtiva, setSessaoAtiva] = useState(false);
   
-  // BLOQUEIO PERMANENTE DO DISPOSITIVO APÓS O VOTO
+  // BLOQUEIO PERMANENTE DO DISPOSITIVO APÓS O VOTO POR EVENTO
   const [dispositivoBloqueado, setDispositivoBloqueado] = useState(() => {
     try {
       const params = new URLSearchParams(window.location.search);
       if (params.get('novo') === '1' || params.get('reset') === '1') {
+        localStorage.removeItem(DISPOSITIVO_BLOQUEADO_EVENTO_KEY);
+        localStorage.removeItem(DISPOSITIVO_VOTO_TIME_EVENTO_KEY);
         localStorage.removeItem(DISPOSITIVO_BLOQUEADO_KEY);
         localStorage.removeItem(DISPOSITIVO_VOTO_TIME_KEY);
         return false;
       }
-      return localStorage.getItem(DISPOSITIVO_BLOQUEADO_KEY) === 'true';
+      return localStorage.getItem(DISPOSITIVO_BLOQUEADO_EVENTO_KEY) === 'true' ||
+        (activeEventId === DEFAULT_EVENT_ID && localStorage.getItem(DISPOSITIVO_BLOQUEADO_KEY) === 'true');
     } catch (e) {
       return false;
     }
@@ -209,7 +216,9 @@ export default function MobileForm() {
       if (params.get('novo') === '1' || params.get('reset') === '1') {
         return 'p1';
       }
-      return localStorage.getItem(DISPOSITIVO_BLOQUEADO_KEY) === 'true' ? 'final' : 'p1';
+      const travado = localStorage.getItem(DISPOSITIVO_BLOQUEADO_EVENTO_KEY) === 'true' ||
+        (activeEventId === DEFAULT_EVENT_ID && localStorage.getItem(DISPOSITIVO_BLOQUEADO_KEY) === 'true');
+      return travado ? 'final' : 'p1';
     } catch (e) {
       return 'p1';
     }
@@ -225,17 +234,20 @@ export default function MobileForm() {
   const [countdown, setCountdown] = useState(10);
   const [finalizado, setFinalizado] = useState(() => {
     try {
-      return localStorage.getItem(DISPOSITIVO_BLOQUEADO_KEY) === 'true';
+      return localStorage.getItem(DISPOSITIVO_BLOQUEADO_EVENTO_KEY) === 'true' ||
+        (activeEventId === DEFAULT_EVENT_ID && localStorage.getItem(DISPOSITIVO_BLOQUEADO_KEY) === 'true');
     } catch (e) {
       return false;
     }
   });
 
-  // 1. ESCUTA O BOTÃO "ZERAR TUDO" DO ADMIN: Única ação que destrava os celulares
+  // 1. ESCUTA O BOTÃO "ZERAR TUDO" DO ADMIN PARA ESTE EVENTO
   useEffect(() => {
     const unsub = escutarResetGlobal((resetEm) => {
-      const horaVoto = localStorage.getItem(DISPOSITIVO_VOTO_TIME_KEY);
+      const horaVoto = localStorage.getItem(DISPOSITIVO_VOTO_TIME_EVENTO_KEY) || localStorage.getItem(DISPOSITIVO_VOTO_TIME_KEY);
       if (resetEm && (!horaVoto || new Date(resetEm) > new Date(horaVoto))) {
+        localStorage.removeItem(DISPOSITIVO_BLOQUEADO_EVENTO_KEY);
+        localStorage.removeItem(DISPOSITIVO_VOTO_TIME_EVENTO_KEY);
         localStorage.removeItem(DISPOSITIVO_BLOQUEADO_KEY);
         localStorage.removeItem(DISPOSITIVO_VOTO_TIME_KEY);
         setDispositivoBloqueado(false);
@@ -250,29 +262,31 @@ export default function MobileForm() {
         setFinalizado(false);
         setCountdown(10);
       }
-    });
+    }, activeEventId);
     return () => unsub && unsub();
-  }, []);
+  }, [activeEventId]);
 
-  // 2. ESCUTA O STATUS DA SESSÃO (START / PAUSAR DO ADMIN) EM TEMPO REAL
+  // 2. ESCUTA O STATUS DA SESSÃO (START / PAUSAR DESTE EVENTO) EM TEMPO REAL
   useEffect(() => {
     const unsub = escutarStatusSessao((ativa) => {
       setSessaoAtiva(ativa);
 
-      // SE ESTE DISPOSITIVO JÁ VOTOU, NUNCA SAI DA TELA FINAL MESMO QUE A SESSÃO MUDE!
-      if (localStorage.getItem(DISPOSITIVO_BLOQUEADO_KEY) === 'true') {
+      // SE ESTE DISPOSITIVO JÁ VOTOU NESTE EVENTO, NUNCA SAI DA TELA FINAL
+      const jaVotou = localStorage.getItem(DISPOSITIVO_BLOQUEADO_EVENTO_KEY) === 'true' ||
+        (activeEventId === DEFAULT_EVENT_ID && localStorage.getItem(DISPOSITIVO_BLOQUEADO_KEY) === 'true');
+
+      if (jaVotou) {
         setDispositivoBloqueado(true);
         setCurrentStep('final');
         return;
       }
 
       if (ativa) {
-        // Se a sessão foi liberada e não votou, vai para as perguntas
         setCurrentStep('p1');
       }
-    });
+    }, activeEventId);
     return () => unsub && unsub();
-  }, []);
+  }, [activeEventId]);
 
   // 4. BLOQUEIO DO BOTÃO "VOLTAR" DO NAVEGADOR
   useEffect(() => {
@@ -287,21 +301,21 @@ export default function MobileForm() {
     }
   }, [currentStep]);
 
-  // Escuta título do evento configurável pelo Admin
+  // Escuta título do evento configurável pelo Admin para este evento
   useEffect(() => {
     const unsub = escutarTituloEvento((titulo) => {
       if (titulo) setEventoTitulo(titulo);
-    });
+    }, activeEventId);
     return () => unsub && unsub();
-  }, []);
+  }, [activeEventId]);
 
-  // Escuta configuração de perguntas e subtítulos do Firebase
+  // Escuta configuração de perguntas e subtítulos do Firebase para este evento
   useEffect(() => {
     const unsub = escutarConfigPerguntas((cfg) => {
       if (cfg) setQuestionsConfig(cfg);
-    });
+    }, activeEventId);
     return () => unsub && unsub();
-  }, []);
+  }, [activeEventId]);
 
   // Timer de 10 segundos na tela final
   useEffect(() => {
@@ -414,13 +428,22 @@ export default function MobileForm() {
   // Ao escolher quantidade de acompanhantes: registra e trava definitivamente este dispositivo
   const handleSelectQtd = (qtd) => {
     // Se já votou ou já está bloqueado, barra qualquer nova tentativa
-    if (dispositivoBloqueado || currentStep === 'final' || localStorage.getItem(DISPOSITIVO_BLOQUEADO_KEY) === 'true') {
+    const estaBloqueadoAntes = dispositivoBloqueado || currentStep === 'final' || 
+      localStorage.getItem(DISPOSITIVO_BLOQUEADO_EVENTO_KEY) === 'true' || 
+      (activeEventId === DEFAULT_EVENT_ID && localStorage.getItem(DISPOSITIVO_BLOQUEADO_KEY) === 'true');
+
+    if (estaBloqueadoAntes) {
       return;
     }
 
-    // Grava bloqueio definitivo no navegador deste celular
-    localStorage.setItem(DISPOSITIVO_BLOQUEADO_KEY, 'true');
-    localStorage.setItem(DISPOSITIVO_VOTO_TIME_KEY, new Date().toISOString());
+    // Grava bloqueio definitivo no navegador deste celular para este evento
+    const agoraIso = new Date().toISOString();
+    localStorage.setItem(DISPOSITIVO_BLOQUEADO_EVENTO_KEY, 'true');
+    localStorage.setItem(DISPOSITIVO_VOTO_TIME_EVENTO_KEY, agoraIso);
+    if (activeEventId === DEFAULT_EVENT_ID) {
+      localStorage.setItem(DISPOSITIVO_BLOQUEADO_KEY, 'true');
+      localStorage.setItem(DISPOSITIVO_VOTO_TIME_KEY, agoraIso);
+    }
     setDispositivoBloqueado(true);
     setCurrentStep('final');
 
@@ -431,7 +454,6 @@ export default function MobileForm() {
       };
     } catch (e) {}
 
-    const activeEventId = getActiveEventId();
     registrarPresenca({
       comoChegou,
       qtdPessoas: qtd,
@@ -452,10 +474,14 @@ export default function MobileForm() {
   };
 
   // ==============================================================
-  // PRIORIDADE 1: SE O APARELHO JÁ VOTOU, FICA BLOQUEADO NA TELA FINAL!
+  // PRIORIDADE 1: SE O APARELHO JÁ VOTOU NESTE EVENTO, FICA BLOQUEADO NA TELA FINAL!
   // NÃO ADIANTA ATUALIZAR A PÁGINA (F5) NEM REABRIR O NAVEGADOR!
   // ==============================================================
-  if (dispositivoBloqueado || currentStep === 'final' || localStorage.getItem(DISPOSITIVO_BLOQUEADO_KEY) === 'true') {
+  const isVotadoNesteEvento = dispositivoBloqueado || currentStep === 'final' || 
+    localStorage.getItem(DISPOSITIVO_BLOQUEADO_EVENTO_KEY) === 'true' ||
+    (activeEventId === DEFAULT_EVENT_ID && localStorage.getItem(DISPOSITIVO_BLOQUEADO_KEY) === 'true');
+
+  if (isVotadoNesteEvento) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-6 text-center select-none fade-in">
         <div className="w-full max-w-sm bg-slate-900/95 border border-slate-800/80 rounded-3xl p-8 shadow-2xl relative overflow-hidden space-y-6">

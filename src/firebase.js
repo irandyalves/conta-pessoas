@@ -9,8 +9,10 @@ import {
   serverTimestamp,
   doc,
   setDoc,
+  getDoc,
   getDocs,
-  deleteDoc
+  deleteDoc,
+  where
 } from 'firebase/firestore';
 
 const STORAGE_KEY = 'church_firebase_config';
@@ -28,11 +30,13 @@ export function getActiveEventId() {
     const fromUrl = params.get('e') || params.get('evento') || params.get('event');
     if (fromUrl) {
       const clean = fromUrl.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-');
-      localStorage.setItem(EVENT_ID_KEY, clean);
       return clean;
     }
-    const saved = localStorage.getItem(EVENT_ID_KEY);
-    if (saved) return saved.trim();
+    // No painel admin (view=admin), recupera o último evento selecionado
+    if (params.get('view') === 'admin') {
+      const saved = localStorage.getItem(EVENT_ID_KEY);
+      if (saved) return saved.trim();
+    }
   } catch (e) {}
   return DEFAULT_EVENT_ID;
 }
@@ -50,8 +54,8 @@ export function getSavedEventosLista() {
     if (raw) return JSON.parse(raw);
   } catch (e) {}
   return [
-    { id: 'cantata-natal-2026', titulo: 'CANTATA DE NATAL 2026', ativo: true },
-    { id: 'culto-domingo', titulo: 'CULTO DE CELEBRAÇÃO', ativo: false }
+    { id: 'cantata-natal-2026', titulo: 'CANTATA DE NATAL 2026', ativo: true, sessaoAtiva: false },
+    { id: 'culto-domingo', titulo: 'CULTO DE CELEBRAÇÃO', ativo: false, sessaoAtiva: false }
   ];
 }
 
@@ -289,162 +293,263 @@ export function isFirebaseReady() {
 // ==========================================
 // CONFIGURAÇÃO DO EVENTO (TÍTULO CONFIGURÁVEL)
 // ==========================================
-export function getSavedEventTitle() {
+export function getSavedEventTitle(targetEventId = null) {
+  const eventId = targetEventId || getActiveEventId();
   try {
-    return localStorage.getItem(EVENT_STORAGE_KEY) || DEFAULT_EVENT_TITLE;
-  } catch (e) {
-    return DEFAULT_EVENT_TITLE;
-  }
+    const specific = localStorage.getItem(`${EVENT_STORAGE_KEY}_${eventId}`);
+    if (specific) return specific;
+    if (eventId === DEFAULT_EVENT_ID) {
+      return localStorage.getItem(EVENT_STORAGE_KEY) || DEFAULT_EVENT_TITLE;
+    }
+    const lista = getSavedEventosLista();
+    const ev = lista.find(e => e.id === eventId);
+    if (ev?.titulo) return ev.titulo;
+  } catch (e) {}
+  return DEFAULT_EVENT_TITLE;
 }
 
-export async function saveEventTitle(title) {
+export async function saveEventTitle(title, targetEventId = null) {
+  const eventId = targetEventId || getActiveEventId();
   const cleanTitle = (title || DEFAULT_EVENT_TITLE).trim();
-  localStorage.setItem(EVENT_STORAGE_KEY, cleanTitle);
+  localStorage.setItem(`${EVENT_STORAGE_KEY}_${eventId}`, cleanTitle);
+  if (eventId === DEFAULT_EVENT_ID) {
+    localStorage.setItem(EVENT_STORAGE_KEY, cleanTitle);
+  }
+
+  // Atualiza na lista de eventos locais
+  const lista = getSavedEventosLista();
+  const novaLista = lista.map(e => e.id === eventId ? { ...e, titulo: cleanTitle } : e);
+  if (!lista.some(e => e.id === eventId)) {
+    novaLista.push({ id: eventId, titulo: cleanTitle, ativo: true });
+  }
+  localStorage.setItem(EVENTOS_LISTA_KEY, JSON.stringify(novaLista));
+
+  window.dispatchEvent(new CustomEvent(`church_event_title_changed_${eventId}`, { detail: cleanTitle }));
   window.dispatchEvent(new CustomEvent('church_event_title_changed', { detail: cleanTitle }));
+  window.dispatchEvent(new CustomEvent('church_eventos_lista_changed', { detail: novaLista }));
 
   if (isFirebaseReady()) {
     try {
-      await setDoc(doc(db, 'configuracoes', 'evento'), {
+      await setDoc(doc(db, 'eventos_titulos', eventId), {
         titulo: cleanTitle,
         atualizadoEm: serverTimestamp()
       }, { merge: true });
+
+      if (eventId === DEFAULT_EVENT_ID) {
+        await setDoc(doc(db, 'configuracoes', 'evento'), {
+          titulo: cleanTitle,
+          atualizadoEm: serverTimestamp()
+        }, { merge: true });
+      }
+
+      await salvarEventosLista(novaLista);
     } catch (e) {
       console.warn('Erro ao salvar título no Firestore:', e);
     }
   }
 }
 
-export function escutarTituloEvento(callback) {
-  callback(getSavedEventTitle());
+export function escutarTituloEvento(callback, targetEventId = null) {
+  const eventId = targetEventId || getActiveEventId();
+  callback(getSavedEventTitle(eventId));
 
-  const localHandler = (e) => callback(e.detail || getSavedEventTitle());
-  window.addEventListener('church_event_title_changed', localHandler);
+  const localHandler = (e) => callback(e.detail || getSavedEventTitle(eventId));
+  window.addEventListener(`church_event_title_changed_${eventId}`, localHandler);
 
   if (isFirebaseReady()) {
     try {
-      const unsub = onSnapshot(doc(db, 'configuracoes', 'evento'), (snapshot) => {
+      const unsub = onSnapshot(doc(db, 'eventos_titulos', eventId), (snapshot) => {
         if (snapshot.exists()) {
           const data = snapshot.data();
           if (data && data.titulo) {
-            localStorage.setItem(EVENT_STORAGE_KEY, data.titulo);
+            localStorage.setItem(`${EVENT_STORAGE_KEY}_${eventId}`, data.titulo);
             callback(data.titulo);
+            return;
           }
+        }
+        if (eventId === DEFAULT_EVENT_ID) {
+          getDoc(doc(db, 'configuracoes', 'evento')).then(legacySnap => {
+            if (legacySnap?.exists() && legacySnap.data()?.titulo) {
+              callback(legacySnap.data().titulo);
+            }
+          }).catch(() => {});
         }
       });
       return () => {
         unsub();
-        window.removeEventListener('church_event_title_changed', localHandler);
+        window.removeEventListener(`church_event_title_changed_${eventId}`, localHandler);
       };
     } catch (e) {
       console.warn('Erro no listener de título do Firestore:', e);
     }
   }
 
-  return () => window.removeEventListener('church_event_title_changed', localHandler);
+  return () => window.removeEventListener(`church_event_title_changed_${eventId}`, localHandler);
 }
 
 // ==========================================
-// CONTROLE DE SESSÃO / START DO ADMIN
+// CONTROLE DE SESSÃO / START / PAUSAR POR EVENTO
 // ==========================================
-export function getSavedSessionStatus() {
+export function getSavedSessionStatus(targetEventId = null) {
+  const eventId = targetEventId || getActiveEventId();
   try {
-    const val = localStorage.getItem(SESSION_STORAGE_KEY);
-    // Por padrão no primeiro carregamento: se não definido, false (aguardando o admin dar start)
-    return val === 'true';
+    const val = localStorage.getItem(`${SESSION_STORAGE_KEY}_${eventId}`);
+    if (val !== null) return val === 'true';
+    if (eventId === DEFAULT_EVENT_ID) {
+      const legacy = localStorage.getItem(SESSION_STORAGE_KEY);
+      return legacy === 'true';
+    }
+    const lista = getSavedEventosLista();
+    const ev = lista.find(e => e.id === eventId);
+    if (ev && typeof ev.sessaoAtiva === 'boolean') {
+      return ev.sessaoAtiva;
+    }
+    return false;
   } catch (e) {
     return false;
   }
 }
 
-export async function saveSessionStatus(started) {
+export async function saveSessionStatus(started, targetEventId = null) {
+  const eventId = targetEventId || getActiveEventId();
   const isStarted = Boolean(started);
   const now = new Date().toISOString();
-  // Quando o admin ativa (START), gera um sessaoId novo para identificar a rodada de votação
-  const sessaoId = isStarted ? `sessao_${Date.now()}` : null;
-  localStorage.setItem(SESSION_STORAGE_KEY, String(isStarted));
+  const sessaoId = isStarted ? `sessao_${eventId}_${Date.now()}` : null;
+
+  localStorage.setItem(`${SESSION_STORAGE_KEY}_${eventId}`, String(isStarted));
   if (isStarted) {
-    localStorage.setItem('church_session_started_at', now);
-    localStorage.setItem('church_session_id', sessaoId);
+    localStorage.setItem(`church_session_started_at_${eventId}`, now);
+    localStorage.setItem(`church_session_id_${eventId}`, sessaoId);
+  } else {
+    localStorage.removeItem(`church_session_started_at_${eventId}`);
+    localStorage.removeItem(`church_session_id_${eventId}`);
   }
-  
+
+  if (eventId === DEFAULT_EVENT_ID) {
+    localStorage.setItem(SESSION_STORAGE_KEY, String(isStarted));
+    if (isStarted) {
+      localStorage.setItem('church_session_started_at', now);
+      localStorage.setItem('church_session_id', sessaoId);
+    } else {
+      localStorage.removeItem('church_session_started_at');
+      localStorage.removeItem('church_session_id');
+    }
+  }
+
+  // Atualiza também na lista de eventos para exibição global
+  const lista = getSavedEventosLista();
+  const novaLista = lista.map(e => e.id === eventId ? { ...e, sessaoAtiva: isStarted } : e);
+  if (!lista.some(e => e.id === eventId)) {
+    novaLista.push({ id: eventId, titulo: eventId.toUpperCase(), ativo: true, sessaoAtiva: isStarted });
+  }
+  localStorage.setItem(EVENTOS_LISTA_KEY, JSON.stringify(novaLista));
+
   const payload = {
     ativa: isStarted,
     sessaoId: isStarted ? sessaoId : null,
-    iniciadoEm: isStarted ? now : null
+    iniciadoEm: isStarted ? now : null,
+    eventId
   };
 
-  window.dispatchEvent(new CustomEvent('church_session_status_changed', { 
-    detail: payload 
-  }));
+  window.dispatchEvent(new CustomEvent(`church_session_status_changed_${eventId}`, { detail: payload }));
+  window.dispatchEvent(new CustomEvent('church_session_status_changed', { detail: payload }));
+  window.dispatchEvent(new CustomEvent('church_eventos_lista_changed', { detail: novaLista }));
 
   if (isFirebaseReady()) {
     try {
-      await setDoc(doc(db, 'configuracoes', 'sessao'), {
+      // Salva sessão exclusiva do evento
+      await setDoc(doc(db, 'sessoes_eventos', eventId), {
         ...payload,
         atualizadoEm: serverTimestamp()
       }, { merge: true });
-      console.log('✅ Sessão salva no Firestore com status:', isStarted, 'sessaoId:', sessaoId);
+
+      // Se for o evento default, mantém sincronizado também no legado
+      if (eventId === DEFAULT_EVENT_ID) {
+        await setDoc(doc(db, 'configuracoes', 'sessao'), {
+          ...payload,
+          atualizadoEm: serverTimestamp()
+        }, { merge: true });
+      }
+
+      // Atualiza também a lista geral com o status sessaoAtiva de cada evento
+      await setDoc(doc(db, 'configuracoes', 'eventos_lista'), {
+        lista: novaLista,
+        atualizadoEm: serverTimestamp()
+      }, { merge: true });
+
+      console.log(`✅ [${eventId}] Sessão salva no Firestore:`, isStarted, 'sessaoId:', sessaoId);
     } catch (e) {
-      console.error('❌ Erro ao salvar status da sessao no Firestore:', e);
+      console.error(`❌ Erro ao salvar status da sessão de ${eventId} no Firestore:`, e);
       throw e;
     }
   }
 }
 
-export function escutarStatusSessao(callback) {
-  const localAtiva = getSavedSessionStatus();
-  const localIniciadoEm = localStorage.getItem('church_session_started_at') || null;
-  const localSessaoId = localStorage.getItem('church_session_id') || null;
-  callback(localAtiva, { ativa: localAtiva, iniciadoEm: localIniciadoEm, sessaoId: localSessaoId });
+export function escutarStatusSessao(callback, targetEventId = null) {
+  const eventId = targetEventId || getActiveEventId();
+  const localAtiva = getSavedSessionStatus(eventId);
+  const localIniciadoEm = localStorage.getItem(`church_session_started_at_${eventId}`) || null;
+  const localSessaoId = localStorage.getItem(`church_session_id_${eventId}`) || null;
+  callback(localAtiva, { ativa: localAtiva, iniciadoEm: localIniciadoEm, sessaoId: localSessaoId, eventId });
 
   const localHandler = (e) => {
     const detail = e.detail;
     if (typeof detail === 'object' && detail !== null) {
       callback(Boolean(detail.ativa), detail);
     } else {
-      callback(Boolean(detail), { ativa: Boolean(detail) });
+      callback(Boolean(detail), { ativa: Boolean(detail), eventId });
     }
   };
-  window.addEventListener('church_session_status_changed', localHandler);
+  window.addEventListener(`church_session_status_changed_${eventId}`, localHandler);
 
   if (isFirebaseReady()) {
     try {
       const unsub = onSnapshot(
-        doc(db, 'configuracoes', 'sessao'),
+        doc(db, 'sessoes_eventos', eventId),
         (snap) => {
           if (snap.exists()) {
             const data = snap.data();
             const ativa = Boolean(data?.ativa);
             const iniciadoEm = data?.iniciadoEm || null;
-            const sessaoId = data?.sessaoId || (ativa ? 'sessao_ativa' : null);
-            localStorage.setItem(SESSION_STORAGE_KEY, String(ativa));
+            const sessaoId = data?.sessaoId || (ativa ? `sessao_${eventId}` : null);
+            localStorage.setItem(`${SESSION_STORAGE_KEY}_${eventId}`, String(ativa));
             if (iniciadoEm) {
-              localStorage.setItem('church_session_started_at', iniciadoEm);
+              localStorage.setItem(`church_session_started_at_${eventId}`, iniciadoEm);
             }
             if (sessaoId) {
-              localStorage.setItem('church_session_id', sessaoId);
+              localStorage.setItem(`church_session_id_${eventId}`, sessaoId);
             }
-            console.log('📡 [Realtime Firestore] Sessão ativa:', ativa, 'sessaoId:', sessaoId);
-            callback(ativa, { ativa, iniciadoEm, sessaoId });
+            console.log(`📡 [Realtime Firestore] [${eventId}] Sessão ativa:`, ativa, 'sessaoId:', sessaoId);
+            callback(ativa, { ativa, iniciadoEm, sessaoId, eventId });
+          } else if (eventId === DEFAULT_EVENT_ID) {
+            // Fallback legado se ainda não tiver em sessoes_eventos
+            getDoc(doc(db, 'configuracoes', 'sessao')).then((legSnap) => {
+              if (legSnap?.exists()) {
+                const legData = legSnap.data();
+                const ativa = Boolean(legData?.ativa);
+                callback(ativa, { ativa, iniciadoEm: legData?.iniciadoEm, sessaoId: legData?.sessaoId, eventId });
+              } else {
+                callback(false, { ativa: false, iniciadoEm: null, sessaoId: null, eventId });
+              }
+            }).catch(() => {});
           } else {
-            console.log('📡 [Realtime Firestore] Doc de sessão inexistente, padrão: false');
-            callback(false, { ativa: false, iniciadoEm: null, sessaoId: null });
+            callback(false, { ativa: false, iniciadoEm: null, sessaoId: null, eventId });
           }
         },
         (error) => {
-          console.error('❌ Erro no listener de sessão do Firestore:', error);
+          console.error(`❌ Erro no listener de sessão do Firestore para ${eventId}:`, error);
         }
       );
       return () => {
         unsub();
-        window.removeEventListener('church_session_status_changed', localHandler);
+        window.removeEventListener(`church_session_status_changed_${eventId}`, localHandler);
       };
     } catch (e) {
-      console.warn('Erro ao escutar sessao no Firestore:', e);
+      console.warn(`Erro ao escutar sessao de ${eventId} no Firestore:`, e);
     }
   }
 
-  return () => window.removeEventListener('church_session_status_changed', localHandler);
+  return () => window.removeEventListener(`church_session_status_changed_${eventId}`, localHandler);
 }
 
 // ==========================================
@@ -614,13 +719,20 @@ function normalizeQuestionsConfig(config) {
 }
 
 // ==========================================
-// CONFIGURAÇÃO DAS PERGUNTAS E SUBTÍTULOS
+// CONFIGURAÇÃO DAS PERGUNTAS E SUBTÍTULOS POR EVENTO
 // ==========================================
-export function getSavedQuestionsConfig() {
+export function getSavedQuestionsConfig(targetEventId = null) {
+  const eventId = targetEventId || getActiveEventId();
   try {
-    const raw = localStorage.getItem(QUESTIONS_STORAGE_KEY);
-    if (raw) {
-      return normalizeQuestionsConfig(JSON.parse(raw));
+    const rawSpecific = localStorage.getItem(`${QUESTIONS_STORAGE_KEY}_${eventId}`);
+    if (rawSpecific) {
+      return normalizeQuestionsConfig(JSON.parse(rawSpecific));
+    }
+    if (eventId === DEFAULT_EVENT_ID) {
+      const rawLegacy = localStorage.getItem(QUESTIONS_STORAGE_KEY);
+      if (rawLegacy) {
+        return normalizeQuestionsConfig(JSON.parse(rawLegacy));
+      }
     }
   } catch (e) {
     console.error('Erro ao ler perguntas do localStorage:', e);
@@ -628,69 +740,102 @@ export function getSavedQuestionsConfig() {
   return DEFAULT_QUESTIONS_CONFIG;
 }
 
-export async function saveQuestionsConfig(config) {
+export async function saveQuestionsConfig(config, targetEventId = null) {
+  const eventId = targetEventId || getActiveEventId();
   const normalized = normalizeQuestionsConfig(config);
-  localStorage.setItem(QUESTIONS_STORAGE_KEY, JSON.stringify(normalized));
+  localStorage.setItem(`${QUESTIONS_STORAGE_KEY}_${eventId}`, JSON.stringify(normalized));
+  if (eventId === DEFAULT_EVENT_ID) {
+    localStorage.setItem(QUESTIONS_STORAGE_KEY, JSON.stringify(normalized));
+  }
+
+  window.dispatchEvent(new CustomEvent(`church_questions_changed_${eventId}`, { detail: normalized }));
   window.dispatchEvent(new CustomEvent('church_questions_changed', { detail: normalized }));
 
   if (isFirebaseReady()) {
     try {
-      await setDoc(doc(db, 'configuracoes', 'perguntas'), {
+      await setDoc(doc(db, 'eventos_perguntas', eventId), {
         ...normalized,
         atualizadoEm: serverTimestamp()
       }, { merge: true });
+
+      if (eventId === DEFAULT_EVENT_ID) {
+        await setDoc(doc(db, 'configuracoes', 'perguntas'), {
+          ...normalized,
+          atualizadoEm: serverTimestamp()
+        }, { merge: true });
+      }
     } catch (e) {
-      console.warn('Erro ao salvar perguntas no Firestore:', e);
+      console.warn(`Erro ao salvar perguntas de ${eventId} no Firestore:`, e);
     }
   }
 }
 
-export function escutarConfigPerguntas(callback) {
-  callback(getSavedQuestionsConfig());
+export function escutarConfigPerguntas(callback, targetEventId = null) {
+  const eventId = targetEventId || getActiveEventId();
+  callback(getSavedQuestionsConfig(eventId));
 
   const localHandler = (e) => callback(normalizeQuestionsConfig(e.detail));
-  window.addEventListener('church_questions_changed', localHandler);
+  window.addEventListener(`church_questions_changed_${eventId}`, localHandler);
 
   if (isFirebaseReady()) {
     try {
-      const unsub = onSnapshot(doc(db, 'configuracoes', 'perguntas'), (snapshot) => {
+      const unsub = onSnapshot(doc(db, 'eventos_perguntas', eventId), (snapshot) => {
         if (snapshot.exists()) {
           const data = snapshot.data();
           if (data) {
             const normalized = normalizeQuestionsConfig(data);
-            localStorage.setItem(QUESTIONS_STORAGE_KEY, JSON.stringify(normalized));
+            localStorage.setItem(`${QUESTIONS_STORAGE_KEY}_${eventId}`, JSON.stringify(normalized));
             callback(normalized);
+            return;
           }
+        }
+        if (eventId === DEFAULT_EVENT_ID) {
+          getDoc(doc(db, 'configuracoes', 'perguntas')).then(legSnap => {
+            if (legSnap?.exists() && legSnap.data()) {
+              const legNorm = normalizeQuestionsConfig(legSnap.data());
+              callback(legNorm);
+            }
+          }).catch(() => {});
         }
       });
       return () => {
         unsub();
-        window.removeEventListener('church_questions_changed', localHandler);
+        window.removeEventListener(`church_questions_changed_${eventId}`, localHandler);
       };
     } catch (e) {
-      console.warn('Erro no listener de perguntas do Firestore:', e);
+      console.warn(`Erro no listener de perguntas do Firestore para ${eventId}:`, e);
     }
   }
 
-  return () => window.removeEventListener('church_questions_changed', localHandler);
+  return () => window.removeEventListener(`church_questions_changed_${eventId}`, localHandler);
 }
 
 // ==========================================
-// RESET GLOBAL PARA DESTRAVAR APARELHOS
+// RESET DE DISPOSITIVOS POR EVENTO
 // ==========================================
-export function escutarResetGlobal(callback) {
+export function escutarResetGlobal(callback, targetEventId = null) {
+  const eventId = targetEventId || getActiveEventId();
   if (isFirebaseReady()) {
     try {
-      return onSnapshot(doc(db, 'configuracoes', 'reset'), (snap) => {
+      const unsub = onSnapshot(doc(db, 'resets_eventos', eventId), (snap) => {
         if (snap.exists()) {
           const data = snap.data();
           if (data && data.resetEm) {
             callback(data.resetEm);
+            return;
           }
         }
+        if (eventId === DEFAULT_EVENT_ID) {
+          getDoc(doc(db, 'configuracoes', 'reset')).then(legacySnap => {
+            if (legacySnap?.exists() && legacySnap.data()?.resetEm) {
+              callback(legacySnap.data().resetEm);
+            }
+          }).catch(() => {});
+        }
       });
+      return unsub;
     } catch (e) {
-      console.warn('Erro ao escutar reset:', e);
+      console.warn(`Erro ao escutar reset de ${eventId}:`, e);
     }
   }
   return () => {};
@@ -727,7 +872,7 @@ export async function registrarPresenca({
   eventoId = '' 
 }) {
   const activeEventId = eventoId || getActiveEventId();
-  const nomeEvento = evento || getSavedEventTitle();
+  const nomeEvento = evento || getSavedEventTitle(activeEventId);
   const payload = {
     eventoId: activeEventId,
     comoChegou: comoChegou || '',
@@ -766,6 +911,7 @@ export async function registrarPresenca({
 }
 
 export function escutarPresencas(callback, targetEventId = null) {
+  const eventId = targetEventId || getActiveEventId();
   if (isFirebaseReady()) {
     try {
       const q = query(collection(db, 'presencas'), orderBy('timestamp', 'desc'));
@@ -775,8 +921,8 @@ export function escutarPresencas(callback, targetEventId = null) {
           const items = [];
           snapshot.forEach((doc) => {
             const data = doc.data();
-            // Se targetEventId for especificado, filtra; caso contrário, traz itens correspondentes
-            if (!targetEventId || !data.eventoId || data.eventoId === targetEventId) {
+            // Se targetEventId for especificado, filtra estritamente por eventoId
+            if (!eventId || !data.eventoId || data.eventoId === eventId) {
               items.push({
                 id: doc.id,
                 ...data,
@@ -810,9 +956,12 @@ export function limparDadosLocais() {
   window.dispatchEvent(new Event('church_local_data_changed'));
 }
 
-// ZERA TUDO NO FIRESTORE E NOTIFICA TODOS OS APARELHOS
-export async function zerarTudo() {
+// ZERA REGISTROS POR EVENTO OU GLOBAL NO FIRESTORE
+export async function zerarTudo(targetEventId = null) {
+  const eventId = targetEventId || getActiveEventId();
   limparDadosLocais();
+  localStorage.removeItem(`presenca_dispositivo_bloqueado_voto_${eventId}`);
+  localStorage.removeItem(`presenca_dispositivo_hora_voto_${eventId}`);
   localStorage.removeItem('presenca_dispositivo_bloqueado_voto');
   localStorage.removeItem('presenca_dispositivo_hora_voto');
   localStorage.removeItem('presenca_finalizada_cantata_2026');
@@ -821,7 +970,14 @@ export async function zerarTudo() {
 
   if (isFirebaseReady()) {
     try {
-      const snap = await getDocs(collection(db, 'presencas'));
+      // Se targetEventId informado, apaga somente presenças deste evento
+      let snap;
+      if (eventId) {
+        snap = await getDocs(query(collection(db, 'presencas'), where('eventoId', '==', eventId)));
+      } else {
+        snap = await getDocs(collection(db, 'presencas'));
+      }
+
       const promises = [];
       snap.forEach((d) => {
         promises.push(deleteDoc(doc(db, 'presencas', d.id)));
@@ -829,19 +985,35 @@ export async function zerarTudo() {
       await Promise.all(promises);
 
       const resetEm = new Date().toISOString();
-      const resetId = `reset_${Date.now()}`;
-      // Marca o reset global no Firestore
-      await setDoc(doc(db, 'configuracoes', 'reset'), {
+      const resetId = `reset_${eventId}_${Date.now()}`;
+      
+      // Marca o reset específico deste evento
+      await setDoc(doc(db, 'resets_eventos', eventId), {
         resetEm,
-        resetId
+        resetId,
+        eventId
       }, { merge: true });
 
-      // Atualiza também a sessão com novo sessaoId para destravar imediatamente qualquer celular conectado
-      const novaSessaoId = `sessao_${Date.now()}`;
-      await setDoc(doc(db, 'configuracoes', 'sessao'), {
+      if (eventId === DEFAULT_EVENT_ID) {
+        await setDoc(doc(db, 'configuracoes', 'reset'), {
+          resetEm,
+          resetId
+        }, { merge: true });
+      }
+
+      // Atualiza também a sessão com novo sessaoId para destravar imediatamente
+      const novaSessaoId = `sessao_${eventId}_${Date.now()}`;
+      await setDoc(doc(db, 'sessoes_eventos', eventId), {
         sessaoId: novaSessaoId,
         iniciadoEm: resetEm
       }, { merge: true });
+
+      if (eventId === DEFAULT_EVENT_ID) {
+        await setDoc(doc(db, 'configuracoes', 'sessao'), {
+          sessaoId: novaSessaoId,
+          iniciadoEm: resetEm
+        }, { merge: true });
+      }
     } catch (e) {
       console.error('Erro ao zerar banco Firestore:', e);
     }

@@ -256,7 +256,7 @@ const MODELOS_CELULARES = [
   }
 ];
 
-export default function QuestionsConfigModal({ isOpen, onClose }) {
+export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = null, eventTitle = '' }) {
   // Abas: 'inicio' | 'tela_1' | 'extra_0', 'extra_1'... | 'acompanhantes' | 'fim'
   const [activeTab, setActiveTab] = useState('inicio');
   const [config, setConfig] = useState(DEFAULT_QUESTIONS_CONFIG);
@@ -281,14 +281,14 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
 
   useEffect(() => {
     if (isOpen) {
-      setConfig(getSavedQuestionsConfig());
-      setEventoTitulo(getSavedEventTitle() || 'CANTATA DE NATAL 2026');
+      setConfig(getSavedQuestionsConfig(activeEventId));
+      setEventoTitulo(eventTitle || getSavedEventTitle(activeEventId) || 'CANTATA DE NATAL 2026');
       setSalvo(false);
       setActiveTab('inicio');
       setPreviewScreen('inicio');
       setPreviewPage(0);
     }
-  }, [isOpen]);
+  }, [isOpen, activeEventId, eventTitle]);
 
   // Alinha a tela do preview sempre que a aba ativa mudar
   useEffect(() => {
@@ -588,11 +588,14 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
     });
   };
 
-  // Salvar no Firebase
+  // Salvar no Firebase para o evento atual
   const handleSalvar = async () => {
     setSalvando(true);
     try {
-      await saveQuestionsConfig(config);
+      await saveQuestionsConfig(config, activeEventId);
+      if (eventoTitulo.trim()) {
+        await saveEventTitle(eventoTitulo.trim(), activeEventId);
+      }
       setSalvo(true);
       setTimeout(() => {
         setSalvo(false);

@@ -7,9 +7,11 @@ import {
   Sparkles,
   ArrowLeft
 } from 'lucide-react';
-import { escutarStatusSessao } from '../firebase';
+import { escutarStatusSessao, escutarTituloEvento, getActiveEventId, DEFAULT_EVENT_TITLE } from '../firebase';
 
 export default function ScreenView({ adminAuthed, onReturnToAdmin }) {
+  const [activeEventId] = useState(() => getActiveEventId());
+  const [eventoTitulo, setEventoTitulo] = useState(DEFAULT_EVENT_TITLE);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [customUrl, setCustomUrl] = useState('');
   const [editUrl, setEditUrl] = useState(false);
@@ -27,19 +29,28 @@ export default function ScreenView({ adminAuthed, onReturnToAdmin }) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [adminAuthed, onReturnToAdmin]);
 
+  // Escuta status da sessão do evento exibido no telão
   useEffect(() => {
     const unsub = escutarStatusSessao((ativa) => {
       setSessaoAtiva(ativa);
-    });
+    }, activeEventId);
     return () => unsub && unsub();
-  }, []);
+  }, [activeEventId]);
+
+  // Escuta título do evento exibido no telão
+  useEffect(() => {
+    const unsub = escutarTituloEvento((titulo) => {
+      if (titulo) setEventoTitulo(titulo);
+    }, activeEventId);
+    return () => unsub && unsub();
+  }, [activeEventId]);
 
   // Link do QR Code aponta para o evento específico ou para a raiz
   const defaultUrl = (() => {
     try {
       const params = new URLSearchParams(window.location.search);
-      const eventParam = params.get('e');
-      if (eventParam) {
+      const eventParam = params.get('e') || activeEventId;
+      if (eventParam && eventParam !== 'cantata-natal-2026') {
         return `${window.location.origin}/?e=${encodeURIComponent(eventParam)}`;
       }
     } catch (e) {}

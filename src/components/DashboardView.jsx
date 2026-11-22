@@ -74,6 +74,7 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
   const [eventosLista, setEventosLista] = useState([]);
   const [showModalQrCode, setShowModalQrCode] = useState(false);
   const [showModalNovoEvento, setShowModalNovoEvento] = useState(false);
+  const [showModalEventosSimultaneos, setShowModalEventosSimultaneos] = useState(false);
   const [novoEventoNome, setNovoEventoNome] = useState('');
   const [criandoEvento, setCriandoEvento] = useState(false);
 
@@ -108,19 +109,19 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
         setEventoTitulo(titulo);
         setInputTitulo(titulo);
       }
-    });
+    }, activeEventId);
     const unsubSessao = escutarStatusSessao((ativa) => {
       setSessaoAtiva(ativa);
-    });
+    }, activeEventId);
     const unsubConfig = escutarConfigPerguntas((cfg) => {
       setQuestionsConfig(cfg);
-    });
+    }, activeEventId);
     return () => {
       unsubTitulo && unsubTitulo();
       unsubSessao && unsubSessao();
       unsubConfig && unsubConfig();
     };
-  }, []);
+  }, [activeEventId]);
 
   const handleSelectEvent = (e) => {
     const val = e.target.value;
@@ -156,10 +157,14 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
     }
   };
 
-  const handleToggleSessao = async () => {
+  const handleToggleSessao = async (targetId = null, forceStatus = null) => {
     setAlternandoSessao(true);
     try {
-      await saveSessionStatus(!sessaoAtiva);
+      const id = targetId || activeEventId;
+      const ev = eventosLista.find(e => e.id === id);
+      const isTargetActive = id === activeEventId ? sessaoAtiva : Boolean(ev?.sessaoAtiva);
+      const novoStatus = forceStatus !== null ? forceStatus : !isTargetActive;
+      await saveSessionStatus(novoStatus, id);
     } catch (e) {
       alert('Erro ao alterar status da sessão: ' + (e?.message || e));
     } finally {
@@ -169,7 +174,7 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
 
   const handleSalvarTitulo = async () => {
     if (!inputTitulo.trim()) return;
-    await saveEventTitle(inputTitulo.trim());
+    await saveEventTitle(inputTitulo.trim(), activeEventId);
     setEditandoTitulo(false);
     setSalvoFeedback(true);
     setTimeout(() => setSalvoFeedback(false), 3000);
@@ -178,7 +183,7 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
   const handleConfirmarZerar = async () => {
     setZerando(true);
     try {
-      await zerarTudo();
+      await zerarTudo(activeEventId);
       setShowModalZerar(false);
       setFeedbackZerar(true);
       setTimeout(() => setFeedbackZerar(false), 4500);
@@ -491,50 +496,60 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
                   : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
               }`}>
                 <span className={`w-2 h-2 rounded-full ${sessaoAtiva ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'}`}></span>
-                {sessaoAtiva ? 'PESQUISA AO VIVO • CELULARES LIBERADOS' : 'PESQUISA EM ESPERA • AGUARDANDO SEU START'}
+                {sessaoAtiva ? `AO VIVO • ${eventoTitulo.toUpperCase()}` : `EM ESPERA • ${eventoTitulo.toUpperCase()}`}
               </span>
             </div>
             <p className="text-xs text-slate-300 mt-1">
               {sessaoAtiva 
-                ? 'Os celulares já podem responder e avançar pelas telas. O QR Code está totalmente ativo.' 
-                : 'O QR Code é fixo, mas os celulares ficam na tela de espera até você clicar em Dar Start.'}
+                ? `Celulares liberados para responder "${eventoTitulo}". Se você pausar, os demais eventos simultâneos continuarão funcionando.` 
+                : `Celulares de "${eventoTitulo}" aguardando liberação. Outros eventos simultâneos permanecem independentes.`}
             </p>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto justify-end shrink-0">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end shrink-0">
           {/* BOTÃO DAR START / PAUSAR PESQUISA */}
           {sessaoAtiva ? (
             <button
-              onClick={handleToggleSessao}
+              onClick={() => handleToggleSessao(activeEventId, false)}
               disabled={alternandoSessao}
               className="px-4 py-2.5 rounded-xl font-black text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-amber-900/40 shadow-xl active:scale-95 transition flex items-center justify-center gap-2 border border-amber-400/60"
-              title="Pausar pesquisa e voltar os celulares para tela de espera"
+              title="Pausar este evento e voltar seus celulares para tela de espera"
             >
               <Pause className="w-4 h-4 fill-slate-950" />
-              <span>{alternandoSessao ? 'Pausando...' : 'PAUSAR PESQUISA'}</span>
+              <span>{alternandoSessao ? 'Pausando...' : 'PAUSAR ESTE EVENTO'}</span>
             </button>
           ) : (
             <button
-              onClick={handleToggleSessao}
+              onClick={() => handleToggleSessao(activeEventId, true)}
               disabled={alternandoSessao}
               className="px-5 py-2.5 rounded-xl font-black text-xs sm:text-sm bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 shadow-emerald-500/30 shadow-xl active:scale-95 transition flex items-center justify-center gap-2"
-              title="Liberar celulares para responder as perguntas"
+              title="Liberar celulares para responder as perguntas deste evento"
             >
               <Play className="w-4 h-4 fill-slate-950" />
-              <span>{alternandoSessao ? 'Iniciando...' : 'DAR START / LIBERAR PERGUNTAS'}</span>
+              <span>{alternandoSessao ? 'Iniciando...' : 'LIBERAR ESTE EVENTO'}</span>
             </button>
           )}
+
+          {/* BOTÃO EVENTOS SIMULTÂNEOS */}
+          <button
+            onClick={() => setShowModalEventosSimultaneos(true)}
+            className="px-3.5 py-2.5 rounded-xl font-bold text-xs bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-sky-300 flex items-center justify-center gap-1.5 transition active:scale-95 shadow"
+            title="Ver e controlar o status de pausa de todos os eventos simultâneos"
+          >
+            <Layers className="w-4 h-4 text-sky-400" />
+            <span>⚡ Eventos Simultâneos</span>
+          </button>
 
           {/* BOTÃO ZERAR TUDO */}
           <button
             onClick={() => setShowModalZerar(true)}
             disabled={zerando}
-            title="Zera todas as presenças do banco e destrava todos os celulares"
-            className="px-4 py-2.5 rounded-xl font-black text-xs sm:text-sm bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white flex items-center justify-center gap-2 transition active:scale-95 shadow-lg shadow-red-600/30 border border-red-500/50 disabled:opacity-50"
+            title="Zera as presenças deste evento no banco e destrava os celulares"
+            className="px-3.5 py-2.5 rounded-xl font-black text-xs sm:text-sm bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white flex items-center justify-center gap-2 transition active:scale-95 shadow-lg shadow-red-600/30 border border-red-500/50 disabled:opacity-50"
           >
             <Trash2 className="w-4 h-4 text-red-100" />
-            <span>{zerando ? 'Zerando...' : 'ZERAR TUDO'}</span>
+            <span>{zerando ? 'Zerando...' : 'ZERAR DADOS'}</span>
           </button>
         </div>
       </div>
@@ -1123,10 +1138,170 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
         </div>
       )}
 
+      {/* ============================================================== */}
+      {/* MODAL: CONTROLE DE EVENTOS SIMULTÂNEOS & PAUSA INDEPENDENTE   */}
+      {/* ============================================================== */}
+      {showModalEventosSimultaneos && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-750 rounded-2xl w-full max-w-2xl p-6 shadow-2xl relative max-h-[90vh] flex flex-col">
+            <div className="flex items-start justify-between pb-4 border-b border-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-sky-500/15 border border-sky-500/30 text-sky-400 flex items-center justify-center">
+                  <Layers className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-white flex items-center gap-2">
+                    Eventos Simultâneos & Controle de Pausa
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Pause ou libere cada evento individualmente. Eventos em lugares diferentes continuam independentes.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowModalEventosSimultaneos(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto py-4 space-y-3">
+              {eventosLista.map((ev) => {
+                const isSelected = ev.id === activeEventId;
+                const isLive = isSelected ? sessaoAtiva : Boolean(ev.sessaoAtiva);
+                const evLink = `${originUrl}/?e=${ev.id}`;
+
+                return (
+                  <div
+                    key={ev.id}
+                    className={`p-4 rounded-xl border transition-all ${
+                      isSelected 
+                        ? 'bg-slate-850/90 border-sky-500/50 shadow-md' 
+                        : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
+                    }`}
+                  >
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="text-sm font-black text-white truncate">{ev.titulo}</h4>
+                          {isSelected && (
+                            <span className="px-2 py-0.5 rounded text-[10px] font-black bg-sky-500/20 text-sky-300 border border-sky-500/30">
+                              ATIVO NO PAINEL
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 mt-1">
+                          <code className="text-[11px] text-slate-400 font-mono bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800">
+                            ID: {ev.id}
+                          </code>
+                          <button
+                            onClick={() => copyToClipboard(evLink, `ev_${ev.id}`)}
+                            className="text-[11px] text-slate-400 hover:text-slate-200 flex items-center gap-1 transition"
+                            title="Copiar link fixo"
+                          >
+                            {copiedLink === `ev_${ev.id}` ? (
+                              <Check className="w-3 h-3 text-emerald-400" />
+                            ) : (
+                              <Copy className="w-3 h-3" />
+                            )}
+                            <span>{copiedLink === `ev_${ev.id}` ? 'Copiado!' : 'Copiar Link'}</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Status e Botão de Pausar / Iniciar */}
+                      <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end shrink-0">
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wider border ${
+                            isLive
+                              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                              : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                          }`}
+                        >
+                          <span
+                            className={`w-2 h-2 rounded-full ${
+                              isLive ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'
+                            }`}
+                          />
+                          {isLive ? 'AO VIVO' : 'PAUSADO'}
+                        </span>
+
+                        {isLive ? (
+                          <button
+                            onClick={() => handleToggleSessao(ev.id, false)}
+                            disabled={alternandoSessao}
+                            className="px-3 py-1.5 rounded-lg text-xs font-black bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/50 text-amber-300 flex items-center gap-1.5 transition active:scale-95 shadow-sm"
+                            title={`Pausar ${ev.titulo}`}
+                          >
+                            <Pause className="w-3.5 h-3.5 fill-amber-400" />
+                            <span>Pausar</span>
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleToggleSessao(ev.id, true)}
+                            disabled={alternandoSessao}
+                            className="px-3 py-1.5 rounded-lg text-xs font-black bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/50 text-emerald-300 flex items-center gap-1.5 transition active:scale-95 shadow-sm"
+                            title={`Liberar ${ev.titulo}`}
+                          >
+                            <Play className="w-3.5 h-3.5 fill-emerald-400" />
+                            <span>Liberar</span>
+                          </button>
+                        )}
+
+                        {!isSelected && (
+                          <button
+                            onClick={() => {
+                              setActiveEventId(ev.id);
+                              setActiveEventIdState(ev.id);
+                              if (ev.titulo) {
+                                setEventoTitulo(ev.titulo);
+                                setInputTitulo(ev.titulo);
+                              }
+                              setShowModalEventosSimultaneos(false);
+                            }}
+                            className="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 transition"
+                            title="Visualizar este evento no painel admin"
+                          >
+                            Selecionar
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="pt-3 border-t border-slate-800 flex items-center justify-between">
+              <button
+                onClick={() => {
+                  setShowModalEventosSimultaneos(false);
+                  setShowModalNovoEvento(true);
+                }}
+                className="px-3.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center gap-1.5 transition active:scale-95"
+              >
+                <Plus className="w-4 h-4" />
+                <span>+ Criar Outro Evento Simultâneo</span>
+              </button>
+
+              <button
+                onClick={() => setShowModalEventosSimultaneos(false)}
+                className="px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal de Configuração de Perguntas e Subtítulos no Firebase */}
       <QuestionsConfigModal 
         isOpen={modalPerguntasOpen} 
         onClose={() => setModalPerguntasOpen(false)} 
+        activeEventId={activeEventId}
+        eventTitle={eventoTitulo}
       />
     </div>
   );
