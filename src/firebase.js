@@ -18,6 +18,109 @@ const LOCAL_DATA_KEY = 'church_local_attendance_data';
 const EVENT_STORAGE_KEY = 'church_event_title';
 const SESSION_STORAGE_KEY = 'church_session_started';
 export const DEFAULT_EVENT_TITLE = 'CANTATA DE NATAL 2026';
+export const DEFAULT_EVENT_ID = 'cantata-natal-2026';
+const EVENT_ID_KEY = 'church_current_event_id';
+const EVENTOS_LISTA_KEY = 'church_eventos_lista';
+
+export function getActiveEventId() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const fromUrl = params.get('e') || params.get('evento') || params.get('event');
+    if (fromUrl) {
+      const clean = fromUrl.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+      localStorage.setItem(EVENT_ID_KEY, clean);
+      return clean;
+    }
+    const saved = localStorage.getItem(EVENT_ID_KEY);
+    if (saved) return saved.trim();
+  } catch (e) {}
+  return DEFAULT_EVENT_ID;
+}
+
+export function setActiveEventId(eventId) {
+  if (!eventId) return;
+  const clean = eventId.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+  localStorage.setItem(EVENT_ID_KEY, clean);
+  window.dispatchEvent(new CustomEvent('church_event_id_changed', { detail: clean }));
+}
+
+export function getSavedEventosLista() {
+  try {
+    const raw = localStorage.getItem(EVENTOS_LISTA_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return [
+    { id: 'cantata-natal-2026', titulo: 'CANTATA DE NATAL 2026', ativo: true },
+    { id: 'culto-domingo', titulo: 'CULTO DE CELEBRAÇÃO', ativo: false }
+  ];
+}
+
+export async function salvarEventosLista(lista) {
+  if (!Array.isArray(lista)) return;
+  localStorage.setItem(EVENTOS_LISTA_KEY, JSON.stringify(lista));
+  window.dispatchEvent(new CustomEvent('church_eventos_lista_changed', { detail: lista }));
+
+  if (isFirebaseReady()) {
+    try {
+      await setDoc(doc(db, 'configuracoes', 'eventos_lista'), {
+        lista,
+        atualizadoEm: serverTimestamp()
+      }, { merge: true });
+    } catch (e) {
+      console.warn('Erro ao salvar lista de eventos no Firestore:', e);
+    }
+  }
+}
+
+export function escutarEventosLista(callback) {
+  callback(getSavedEventosLista());
+
+  const localHandler = (e) => callback(e.detail || getSavedEventosLista());
+  window.addEventListener('church_eventos_lista_changed', localHandler);
+
+  if (isFirebaseReady()) {
+    try {
+      const unsub = onSnapshot(doc(db, 'configuracoes', 'eventos_lista'), (snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data && Array.isArray(data.lista)) {
+            localStorage.setItem(EVENTOS_LISTA_KEY, JSON.stringify(data.lista));
+            callback(data.lista);
+          }
+        }
+      });
+      return () => {
+        unsub();
+        window.removeEventListener('church_eventos_lista_changed', localHandler);
+      };
+    } catch (e) {
+      console.warn('Erro ao escutar eventos lista no Firestore:', e);
+    }
+  }
+
+  return () => window.removeEventListener('church_eventos_lista_changed', localHandler);
+}
+
+export async function criarNovoEvento(id, titulo, presetConfig = null) {
+  const cleanId = (id || `evento_${Date.now()}`).trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+  const cleanTitle = (titulo || cleanId.toUpperCase()).trim();
+  const listaAtual = getSavedEventosLista();
+  
+  const existe = listaAtual.find(e => e.id === cleanId);
+  const novaLista = existe 
+    ? listaAtual.map(e => e.id === cleanId ? { ...e, titulo: cleanTitle } : e)
+    : [...listaAtual, { id: cleanId, titulo: cleanTitle, ativo: true }];
+
+  await salvarEventosLista(novaLista);
+  setActiveEventId(cleanId);
+  await saveEventTitle(cleanTitle, cleanId);
+
+  if (presetConfig) {
+    await saveQuestionsConfig(presetConfig, cleanId);
+  }
+
+  return { id: cleanId, titulo: cleanTitle };
+}
 
 export const DEFAULT_QUESTIONS_CONFIG = {
   // Tela 1
@@ -439,7 +542,10 @@ function normalizeQuestionsConfig(config) {
 
   merged.btnQtdCorNumero = merged.btnQtdCorNumero || 'branco';
 
-  // Garantir que cada opção tenha o campo 'ativo' e 'id'
+  merged.tela1Tipo = merged.tela1Tipo || 'cards';
+  merged.tela1TextoPlaceholder = merged.tela1TextoPlaceholder || 'Digite sua resposta aqui...';
+
+  // Garantir que cada opção tenha o campo 'ativo', 'id' e suporte a gaveta condicional
   if (Array.isArray(merged.opcoesChegada)) {
     merged.opcoesChegada = merged.opcoesChegada.map((op, idx) => ({
       id: op.id || `card_${idx + 1}`,
@@ -447,13 +553,23 @@ function normalizeQuestionsConfig(config) {
       subtitulo: op.subtitulo || '',
       ativo: op.ativo !== false,
       icone: op.icone || 'Tag',
-      cor: op.cor || 'amber'
+      cor: op.cor || 'amber',
+      temGaveta: Boolean(op.temGaveta),
+      gaveta: op.temGaveta ? {
+        tipo: op.gaveta?.tipo || 'texto',
+        pergunta: op.gaveta?.pergunta || 'Por favor, detalhe sua resposta:',
+        placeholder: op.gaveta?.placeholder || 'Digite sua resposta aqui...',
+        obrigatorio: Boolean(op.gaveta?.obrigatorio),
+        linhas: Number(op.gaveta?.linhas) || 3,
+        botaoConfirmar: op.gaveta?.botaoConfirmar || 'Confirmar & Continuar',
+        opcoes: Array.isArray(op.gaveta?.opcoes) ? op.gaveta.opcoes : []
+      } : null
     }));
   } else {
     merged.opcoesChegada = DEFAULT_QUESTIONS_CONFIG.opcoesChegada;
   }
 
-  // Garantir telas extras (somente telas reais criadas pelo usuário, sem telas fantasmas)
+  // Garantir telas extras (somente telas reais criadas pelo usuário, cards ou dissertativas)
   if (!Array.isArray(merged.telasExtras)) {
     merged.telasExtras = [];
   } else {
@@ -462,8 +578,16 @@ function normalizeQuestionsConfig(config) {
       .map((tela, idx) => ({
         id: tela.id || `extra_${idx + 1}`,
         ativa: true,
+        tipo: tela.tipo || 'cards', // 'cards' ou 'texto' (dissertativa/aberta)
         titulo: tela.titulo || `Pergunta da Tela ${idx + 2}`,
+        titulo1: tela.titulo1 || tela.titulo || `Pergunta da Tela ${idx + 2}`,
+        titulo2: tela.titulo2 || '',
         subtitulo: tela.subtitulo || '',
+        placeholder: tela.placeholder || 'Digite sua resposta aqui...',
+        multiline: tela.multiline !== false,
+        linhas: Number(tela.linhas) || 4,
+        obrigatorio: Boolean(tela.obrigatorio),
+        botaoTexto: tela.botaoTexto || 'Avançar',
         cardsPorTela: Number(tela.cardsPorTela) || 3,
         opcoes: Array.isArray(tela.opcoes) ? tela.opcoes.map((op, oIdx) => ({
           id: op.id || `opt_${oIdx + 1}`,
@@ -471,7 +595,17 @@ function normalizeQuestionsConfig(config) {
           subtitulo: op.subtitulo || '',
           ativo: op.ativo !== false,
           icone: op.icone || 'Sparkles',
-          cor: op.cor || 'emerald'
+          cor: op.cor || 'emerald',
+          temGaveta: Boolean(op.temGaveta),
+          gaveta: op.temGaveta ? {
+            tipo: op.gaveta?.tipo || 'texto',
+            pergunta: op.gaveta?.pergunta || 'Por favor, detalhe sua resposta:',
+            placeholder: op.gaveta?.placeholder || 'Digite sua resposta aqui...',
+            obrigatorio: Boolean(op.gaveta?.obrigatorio),
+            linhas: Number(op.gaveta?.linhas) || 3,
+            botaoConfirmar: op.gaveta?.botaoConfirmar || 'Confirmar & Continuar',
+            opcoes: Array.isArray(op.gaveta?.opcoes) ? op.gaveta.opcoes : []
+          } : null
         })) : []
       }));
   }
@@ -583,13 +717,25 @@ function saveLocalData(items) {
   }
 }
 
-export async function registrarPresenca({ comoChegou, qtdPessoas, evento = '', respostasExtras = {} }) {
+export async function registrarPresenca({ 
+  comoChegou, 
+  qtdPessoas, 
+  evento = '', 
+  respostasExtras = {}, 
+  gavetaRespostas = {},
+  textoRespostas = {},
+  eventoId = '' 
+}) {
+  const activeEventId = eventoId || getActiveEventId();
   const nomeEvento = evento || getSavedEventTitle();
   const payload = {
-    comoChegou,
+    eventoId: activeEventId,
+    comoChegou: comoChegou || '',
     qtdPessoas: Number(qtdPessoas) || 1,
     evento: nomeEvento,
     respostasExtras: respostasExtras || {},
+    gavetaRespostas: gavetaRespostas || {},
+    textoRespostas: textoRespostas || {},
     criadoEm: new Date().toISOString(),
     dataCulto: new Date().toLocaleDateString('pt-BR'),
     hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
@@ -619,7 +765,7 @@ export async function registrarPresenca({ comoChegou, qtdPessoas, evento = '', r
   }
 }
 
-export function escutarPresencas(callback) {
+export function escutarPresencas(callback, targetEventId = null) {
   if (isFirebaseReady()) {
     try {
       const q = query(collection(db, 'presencas'), orderBy('timestamp', 'desc'));
@@ -629,11 +775,14 @@ export function escutarPresencas(callback) {
           const items = [];
           snapshot.forEach((doc) => {
             const data = doc.data();
-            items.push({
-              id: doc.id,
-              ...data,
-              criadoEm: data.criadoEm || new Date().toISOString(),
-            });
+            // Se targetEventId for especificado, filtra; caso contrário, traz itens correspondentes
+            if (!targetEventId || !data.eventoId || data.eventoId === targetEventId) {
+              items.push({
+                id: doc.id,
+                ...data,
+                criadoEm: data.criadoEm || new Date().toISOString(),
+              });
+            }
           });
           callback(items);
         },

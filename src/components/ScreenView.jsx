@@ -34,8 +34,17 @@ export default function ScreenView({ adminAuthed, onReturnToAdmin }) {
     return () => unsub && unsub();
   }, []);
 
-  // Link do QR Code aponta para a raiz (que abre o formulário direto)
-  const defaultUrl = `${window.location.origin}/`;
+  // Link do QR Code aponta para o evento específico ou para a raiz
+  const defaultUrl = (() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const eventParam = params.get('e');
+      if (eventParam) {
+        return `${window.location.origin}/?e=${encodeURIComponent(eventParam)}`;
+      }
+    } catch (e) {}
+    return `${window.location.origin}/`;
+  })();
   const qrUrl = customUrl || defaultUrl;
 
   // Texto amigável e limpo para digitar no celular: conta-pessoas-iasd.web.app

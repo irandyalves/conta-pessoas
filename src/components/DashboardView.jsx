@@ -29,8 +29,11 @@ import {
   Pause,
   Sliders,
   Layers,
-  Sparkles
+  Sparkles,
+  QrCode,
+  Plus
 } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import QuestionsConfigModal from './QuestionsConfigModal';
 import { 
   escutarPresencas, 
@@ -42,7 +45,11 @@ import {
   DEFAULT_EVENT_TITLE,
   escutarStatusSessao,
   saveSessionStatus,
-  escutarConfigPerguntas
+  escutarConfigPerguntas,
+  getActiveEventId,
+  setActiveEventId,
+  escutarEventosLista,
+  criarNovoEvento
 } from '../firebase';
 
 export default function DashboardView({ onOpenConfig, onChangeView }) {
@@ -62,6 +69,14 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
   const [alternandoSessao, setAlternandoSessao] = useState(false);
   const [questionsConfig, setQuestionsConfig] = useState(null);
 
+  // GESTÃO DE MÚLTIPLOS EVENTOS & QR CODES FIXOS
+  const [activeEventId, setActiveEventIdState] = useState(() => getActiveEventId());
+  const [eventosLista, setEventosLista] = useState([]);
+  const [showModalQrCode, setShowModalQrCode] = useState(false);
+  const [showModalNovoEvento, setShowModalNovoEvento] = useState(false);
+  const [novoEventoNome, setNovoEventoNome] = useState('');
+  const [criandoEvento, setCriandoEvento] = useState(false);
+
   const copyToClipboard = (text, label) => {
     navigator.clipboard.writeText(text);
     setCopiedLink(label);
@@ -69,14 +84,25 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
   };
 
   const originUrl = window.location.origin;
-  const linkMobile = `${originUrl}/`;
-  const linkTelao = `${originUrl}/?view=telao`;
-  const linkAdmin = `${originUrl}/?view=admin`;
+  const linkMobile = `${originUrl}/?e=${activeEventId}`;
+  const linkTelao = `${originUrl}/?view=telao&e=${activeEventId}`;
+  const linkAdmin = `${originUrl}/?view=admin&e=${activeEventId}`;
+
+  useEffect(() => {
+    const unsubEventos = escutarEventosLista((lista) => {
+      setEventosLista(lista || []);
+    });
+    return () => unsubEventos && unsubEventos();
+  }, []);
 
   useEffect(() => {
     const unsubPresencas = escutarPresencas((dados) => {
       setPresencas(dados || []);
-    });
+    }, activeEventId);
+    return () => unsubPresencas && unsubPresencas();
+  }, [activeEventId]);
+
+  useEffect(() => {
     const unsubTitulo = escutarTituloEvento((titulo) => {
       if (titulo) {
         setEventoTitulo(titulo);
@@ -90,12 +116,45 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
       setQuestionsConfig(cfg);
     });
     return () => {
-      unsubPresencas && unsubPresencas();
       unsubTitulo && unsubTitulo();
       unsubSessao && unsubSessao();
       unsubConfig && unsubConfig();
     };
   }, []);
+
+  const handleSelectEvent = (e) => {
+    const val = e.target.value;
+    if (val === '__novo__') {
+      setShowModalNovoEvento(true);
+      return;
+    }
+    setActiveEventId(val);
+    setActiveEventIdState(val);
+    const ev = eventosLista.find(item => item.id === val);
+    if (ev && ev.titulo) {
+      setEventoTitulo(ev.titulo);
+      setInputTitulo(ev.titulo);
+    }
+  };
+
+  const handleCriarEvento = async (e) => {
+    e?.preventDefault();
+    if (!novoEventoNome.trim()) return;
+    setCriandoEvento(true);
+    try {
+      const slug = novoEventoNome.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+      const created = await criarNovoEvento(slug, novoEventoNome.trim());
+      setActiveEventIdState(created.id);
+      setEventoTitulo(created.titulo);
+      setInputTitulo(created.titulo);
+      setShowModalNovoEvento(false);
+      setNovoEventoNome('');
+    } catch (err) {
+      alert('Erro ao criar evento: ' + (err?.message || err));
+    } finally {
+      setCriandoEvento(false);
+    }
+  };
 
   const handleToggleSessao = async () => {
     setAlternandoSessao(true);
@@ -182,15 +241,34 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
       return;
     }
 
-    const headers = ['Evento', 'Data do Culto', 'Horário', 'Como Chegou', 'Quantidade de Pessoas no Grupo', 'ID do Registro'];
-    const rows = presencasFiltradas.map(p => [
-      `"${p.evento || eventoTitulo}"`,
-      `"${p.dataCulto || hoje}"`,
-      `"${p.hora || ''}"`,
-      `"${(p.comoChegou || '').replace(/"/g, '""')}"`,
-      p.qtdPessoas || 1,
-      `"${p.id || ''}"`
-    ]);
+    const headers = [
+      'Evento',
+      'Data do Culto',
+      'Horário',
+      'Como Chegou',
+      'Quantidade de Pessoas no Grupo',
+      'Respostas Gavetas (Subperguntas)',
+      'Respostas de Texto (Dissertativas)',
+      'ID do Registro'
+    ];
+    const rows = presencasFiltradas.map(p => {
+      const gavetasStr = p.gavetaRespostas 
+        ? Object.entries(p.gavetaRespostas).map(([k, v]) => `${k}: ${v}`).join(' | ') 
+        : '';
+      const textosStr = p.textoRespostas 
+        ? Object.entries(p.textoRespostas).map(([k, v]) => `${k}: ${v}`).join(' | ') 
+        : '';
+      return [
+        `"${p.evento || eventoTitulo}"`,
+        `"${p.dataCulto || hoje}"`,
+        `"${p.hora || ''}"`,
+        `"${(p.comoChegou || '').replace(/"/g, '""')}"`,
+        p.qtdPessoas || 1,
+        `"${gavetasStr.replace(/"/g, '""')}"`,
+        `"${textosStr.replace(/"/g, '""')}"`,
+        `"${p.id || ''}"`
+      ];
+    });
 
     const csvContent = '\uFEFF' + [headers.join(';'), ...rows.map(r => r.join(';'))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -294,15 +372,44 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
                   </button>
                 </div>
               ) : (
-                <div className="flex items-center gap-1.5 mt-0.2">
-                  <h1 className="text-xl font-black text-white">{eventoTitulo}</h1>
-                  <button
-                    onClick={() => setEditandoTitulo(true)}
-                    title="Editar nome do evento que aparece no celular"
-                    className="p-1 text-slate-400 hover:text-amber-400 transition"
-                  >
-                    <Edit3 className="w-3.5 h-3.5" />
-                  </button>
+                <div className="space-y-1 mt-0.5">
+                  <div className="flex items-center gap-1.5">
+                    <h1 className="text-xl font-black text-white">{eventoTitulo}</h1>
+                    <button
+                      onClick={() => setEditandoTitulo(true)}
+                      title="Editar nome do evento que aparece no celular"
+                      className="p-1 text-slate-400 hover:text-amber-400 transition"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  {/* Seletor de Eventos & QR Code Fixo */}
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={activeEventId}
+                      onChange={handleSelectEvent}
+                      className="bg-slate-900 border border-slate-700 hover:border-amber-400 focus:border-amber-400 rounded-lg px-2 py-0.5 text-xs font-bold text-amber-300 cursor-pointer shadow-sm"
+                    >
+                      {eventosLista.map((ev) => (
+                        <option key={ev.id} value={ev.id} className="bg-slate-900 text-white">
+                          📅 {ev.titulo} ({ev.id})
+                        </option>
+                      ))}
+                      <option value="__novo__" className="bg-slate-900 text-emerald-400 font-bold">
+                        + Criar Novo Evento...
+                      </option>
+                    </select>
+
+                    <button
+                      onClick={() => setShowModalQrCode(true)}
+                      className="px-2.5 py-0.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center gap-1 transition shadow-sm active:scale-95"
+                      title="Ver e imprimir QR Code fixo e permanente deste evento"
+                    >
+                      <QrCode className="w-3.5 h-3.5" />
+                      <span>QR Code Fixo</span>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -311,6 +418,14 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
 
         {/* Ações Rápidas */}
         <div className="flex flex-wrap items-center gap-1.5">
+          <button
+            onClick={() => setShowModalQrCode(true)}
+            className="px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 flex items-center gap-1.5 transition active:scale-95 shadow"
+          >
+            <QrCode className="w-3.5 h-3.5" />
+            <span>QR Code Fixo</span>
+          </button>
+
           <button
             onClick={handlePrint}
             className="px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-900 hover:bg-slate-850 border border-slate-700 text-sky-300 flex items-center gap-1.5 transition active:scale-95 shadow"
@@ -714,32 +829,61 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
                 <th className="py-2.5 px-4">Horário</th>
                 <th className="py-2.5 px-4">Data</th>
                 <th className="py-2.5 px-4">Como Chegou</th>
+                <th className="py-2.5 px-4">Respostas (Gavetas & Textos Digitados)</th>
                 <th className="py-2.5 px-4 text-center">Pessoas no Grupo</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60 print:divide-slate-200 text-slate-200 print:text-black">
               {presencasFiltradas.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-8 text-center text-slate-400">
+                  <td colSpan={6} className="py-8 text-center text-slate-400">
                     Nenhum registro encontrado no filtro selecionado.
                   </td>
                 </tr>
               ) : (
-                presencasFiltradas.map((item, index) => (
-                  <tr key={item.id || index} className="hover:bg-slate-800/40 print:hover:bg-transparent">
-                    <td className="py-2.5 px-4 font-mono text-slate-400">{index + 1}</td>
-                    <td className="py-2.5 px-4 font-mono">{item.hora || '--:--'}</td>
-                    <td className="py-2.5 px-4">{item.dataCulto || hoje}</td>
-                    <td className="py-2.5 px-4 font-semibold text-white print:text-black">
-                      {item.comoChegou}
-                    </td>
-                    <td className="py-2.5 px-4 text-center">
-                      <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-black bg-amber-500/20 print:bg-slate-200 text-amber-300 print:text-black border border-amber-500/30 print:border-slate-300">
-                        {item.qtdPessoas === 1 ? '1 (Só eu)' : `${item.qtdPessoas} pessoas`}
-                      </span>
-                    </td>
-                  </tr>
-                ))
+                presencasFiltradas.map((item, index) => {
+                  const temGaveta = item.gavetaRespostas && Object.keys(item.gavetaRespostas).length > 0;
+                  const temTexto = item.textoRespostas && Object.keys(item.textoRespostas).length > 0;
+
+                  return (
+                    <tr key={item.id || index} className="hover:bg-slate-800/40 print:hover:bg-transparent">
+                      <td className="py-2.5 px-4 font-mono text-slate-400">{index + 1}</td>
+                      <td className="py-2.5 px-4 font-mono">{item.hora || '--:--'}</td>
+                      <td className="py-2.5 px-4">{item.dataCulto || hoje}</td>
+                      <td className="py-2.5 px-4 font-semibold text-white print:text-black">
+                        {item.comoChegou}
+                      </td>
+                      <td className="py-2.5 px-4">
+                        {temGaveta && (
+                          <div className="space-y-1">
+                            {Object.entries(item.gavetaRespostas).map(([cardId, txt]) => (
+                              <span key={cardId} className="inline-block text-[11px] bg-amber-500/15 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-lg mr-1 mb-1 font-sans">
+                                🗄️ {txt}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        {temTexto && (
+                          <div className="space-y-1">
+                            {Object.entries(item.textoRespostas).map(([telaId, txt]) => (
+                              <span key={telaId} className="inline-block text-[11px] bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-lg mr-1 mb-1 font-sans">
+                                ✍️ "{txt}"
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        {!temGaveta && !temTexto && (
+                          <span className="text-slate-500 text-[11px]">-</span>
+                        )}
+                      </td>
+                      <td className="py-2.5 px-4 text-center">
+                        <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-black bg-amber-500/20 print:bg-slate-200 text-amber-300 print:text-black border border-amber-500/30 print:border-slate-300">
+                          {item.qtdPessoas === 1 ? '1 (Só eu)' : `${item.qtdPessoas} pessoas`}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -825,6 +969,157 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
         <div className="fixed bottom-6 right-6 z-50 bg-emerald-600 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-emerald-400/30">
           <CheckCircle2 className="w-5 h-5 text-emerald-100" />
           <span className="text-xs font-bold">Banco zerado e todos os celulares destravados com sucesso!</span>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* MODAL: QR CODE FIXO E PERMANENTE DO EVENTO                     */}
+      {/* ============================================================== */}
+      {showModalQrCode && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in">
+          <div className="relative w-full max-w-md bg-slate-900 border border-emerald-500/40 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-5 text-center">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2.5 text-left">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center">
+                  <QrCode className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-white">QR Code Fixo do Evento</h3>
+                  <p className="text-[11px] text-slate-400 font-mono">Evento: {activeEventId}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowModalQrCode(false)}
+                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* QR Code Container */}
+            <div className="bg-white p-5 rounded-2xl shadow-xl inline-block mx-auto border-4 border-emerald-400/30">
+              <QRCodeSVG
+                value={linkMobile}
+                size={230}
+                level="H"
+                includeMargin={false}
+              />
+            </div>
+
+            <div className="space-y-1.5 text-xs text-slate-300">
+              <p className="font-bold text-amber-300">
+                🔒 QR Code 100% Permanente e Imutável!
+              </p>
+              <p className="text-slate-400 text-[11px] leading-relaxed">
+                Você pode mandar imprimir em folhetos, cartazes e telões com meses de antecedência. O link não muda nunca.
+              </p>
+            </div>
+
+            {/* Link Rápido para Copiar */}
+            <div className="p-2.5 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between gap-2 text-left">
+              <span className="text-[11px] font-mono text-emerald-400 truncate select-all">
+                {linkMobile}
+              </span>
+              <button
+                onClick={() => copyToClipboard(linkMobile, 'qrcode_modal')}
+                className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold shrink-0 transition active:scale-95 flex items-center gap-1"
+              >
+                {copiedLink === 'qrcode_modal' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copiedLink === 'qrcode_modal' ? 'Copiado!' : 'Copiar'}</span>
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3 pt-1">
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-750 text-sky-300 font-bold text-xs transition flex items-center justify-center gap-1.5 active:scale-95"
+              >
+                <Printer className="w-4 h-4" />
+                <span>Imprimir QR Code</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowModalQrCode(false)}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-black text-xs transition active:scale-95"
+              >
+                Concluído
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* MODAL: CRIAR NOVO EVENTO COM QR CODE PRÓPRIO                   */}
+      {/* ============================================================== */}
+      {showModalNovoEvento && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in">
+          <div className="relative w-full max-w-md bg-slate-900 border border-slate-700 rounded-3xl p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center">
+                  <Plus className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-white">Criar Novo Evento</h3>
+                  <p className="text-xs text-slate-400">Gera um QR Code fixo exclusivo para este evento</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowModalNovoEvento(false)}
+                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCriarEvento} className="space-y-3.5">
+              <div>
+                <label className="text-xs font-bold text-amber-300 block mb-1">
+                  Nome do Evento / Culto
+                </label>
+                <input
+                  type="text"
+                  autoFocus
+                  value={novoEventoNome}
+                  onChange={(e) => setNovoEventoNome(e.target.value)}
+                  placeholder="Ex: Culto de Jovens, Retiro Espiritual, Avaliação 2026..."
+                  className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-2 text-sm text-white font-bold placeholder-slate-500 focus:outline-none shadow-inner"
+                />
+              </div>
+
+              {novoEventoNome && (
+                <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-[11px] space-y-1">
+                  <span className="text-slate-400 block font-mono">
+                    ID/Slug do Evento: <strong className="text-amber-300">{novoEventoNome.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')}</strong>
+                  </span>
+                  <span className="text-emerald-400 block font-mono text-[10px]">
+                    URL Fixa: .../?e={novoEventoNome.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')}
+                  </span>
+                </div>
+              )}
+
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowModalNovoEvento(false)}
+                  className="flex-1 py-2 px-4 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 text-xs font-bold transition active:scale-95"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={criandoEvento || !novoEventoNome.trim()}
+                  className="flex-1 py-2 px-4 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black text-xs shadow-lg active:scale-95 transition disabled:opacity-50"
+                >
+                  {criandoEvento ? 'Criando...' : 'Criar & Ativar Evento'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 

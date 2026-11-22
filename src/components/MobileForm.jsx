@@ -9,6 +9,7 @@ import {
   Compass,
   ChevronRight,
   ChevronLeft,
+  ChevronDown,
   Sparkles,
   TreePine,
   Clock,
@@ -27,6 +28,7 @@ import {
   escutarResetGlobal,
   escutarConfigPerguntas,
   escutarStatusSessao,
+  getActiveEventId,
   DEFAULT_QUESTIONS_CONFIG,
   DEFAULT_EVENT_TITLE 
 } from '../firebase';
@@ -216,6 +218,10 @@ export default function MobileForm() {
   const [p1SlideIndex, setP1SlideIndex] = useState(0);
   const [comoChegou, setComoChegou] = useState('');
   const [respostasExtras, setRespostasExtras] = useState({});
+  const [gavetasAbertas, setGavetasAbertas] = useState({});
+  const [gavetaTextos, setGavetaTextos] = useState({});
+  const [gavetaRespondidas, setGavetaRespondidas] = useState({});
+  const [dissertativaTextos, setDissertativaTextos] = useState({});
   const [countdown, setCountdown] = useState(10);
   const [finalizado, setFinalizado] = useState(() => {
     try {
@@ -237,6 +243,10 @@ export default function MobileForm() {
         setP1SlideIndex(0);
         setComoChegou('');
         setRespostasExtras({});
+        setGavetasAbertas({});
+        setGavetaTextos({});
+        setGavetaRespondidas({});
+        setDissertativaTextos({});
         setFinalizado(false);
         setCountdown(10);
       }
@@ -328,6 +338,28 @@ export default function MobileForm() {
   // Avançar após selecionar um card na Pergunta 1
   const handleSelectComoChegou = (opcao) => {
     setComoChegou(opcao.titulo);
+
+    // Se o card tem gaveta condicional (campo para digitar ou sub-pergunta), expande a gaveta
+    if (opcao.temGaveta) {
+      setGavetasAbertas((prev) => ({
+        ...prev,
+        [opcao.id]: true
+      }));
+      return;
+    }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (telasExtrasAtivas.length > 0) {
+      setCurrentStep('extra_0');
+    } else {
+      setCurrentStep('acompanhantes');
+    }
+  };
+
+  // Confirmar resposta da gaveta na Pergunta 1 e avançar
+  const handleConfirmarGavetaP1 = (opcao) => {
+    setComoChegou(opcao.titulo);
+    setGavetaRespondidas((prev) => ({ ...prev, [opcao.id]: true }));
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
     if (telasExtrasAtivas.length > 0) {
@@ -344,6 +376,32 @@ export default function MobileForm() {
       ...prev,
       [tela.titulo || `Pergunta_${telaIndex + 1}`]: opcao.titulo
     }));
+
+    // Se o card tem gaveta condicional, abre a gaveta para o respondente digitar
+    if (opcao.temGaveta) {
+      setGavetasAbertas((prev) => ({
+        ...prev,
+        [opcao.id]: true
+      }));
+      return;
+    }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (telaIndex + 1 < telasExtrasAtivas.length) {
+      setCurrentStep(`extra_${telaIndex + 1}`);
+    } else {
+      setCurrentStep('acompanhantes');
+    }
+  };
+
+  // Confirmar resposta da gaveta em tela extra e avançar
+  const handleConfirmarGavetaExtra = (telaIndex, opcao) => {
+    const tela = telasExtrasAtivas[telaIndex];
+    setRespostasExtras((prev) => ({
+      ...prev,
+      [tela.titulo || `Pergunta_${telaIndex + 1}`]: opcao.titulo
+    }));
+    setGavetaRespondidas((prev) => ({ ...prev, [opcao.id]: true }));
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
     if (telaIndex + 1 < telasExtrasAtivas.length) {
@@ -373,11 +431,15 @@ export default function MobileForm() {
       };
     } catch (e) {}
 
+    const activeEventId = getActiveEventId();
     registrarPresenca({
       comoChegou,
       qtdPessoas: qtd,
       evento: eventoTitulo,
-      respostasExtras
+      respostasExtras,
+      gavetaRespostas: gavetaTextos,
+      textoRespostas: dissertativaTextos,
+      eventoId: activeEventId
     });
 
     try {
@@ -657,44 +719,99 @@ export default function MobileForm() {
                 const IconComponent = ICON_COMPONENTS[opcao.icone] || Tag;
                 const corCls = COR_CLASSES[opcao.cor] || COR_CLASSES.amber;
                 const cardFundoCls = CARD_FUNDO_CLASSES[questionsConfig?.cardFundoEstilo] || CARD_FUNDO_CLASSES.escuro;
-                const cardEfeitoCls = CARD_EFEITO_CLASSES[questionsConfig?.cardEfeitoEstilo] || CARD_EFEITO_CLASSES.padrao;
                 const cardFonteTituloCls = CARD_FONTE_TITULO_CLASSES[questionsConfig?.cardCorFonteTitulo] || 'text-white';
                 const cardFonteSubtituloCls = CARD_FONTE_SUBTITULO_CLASSES[questionsConfig?.cardCorFonteSubtitulo] || 'text-slate-400';
-
                 const cardEfeitoInline = getEfeitoStyle(questionsConfig?.cardEfeitoEstilo, questionsConfig?.cardProfundidade);
 
+                const isGavetaAberta = Boolean(
+                  opcao.temGaveta && (
+                    gavetasAbertas[opcao.id] || 
+                    gavetaRespondidas[opcao.id] || 
+                    (gavetaTextos[opcao.id] && gavetaTextos[opcao.id].trim().length > 0)
+                  )
+                );
+
                 return (
-                  <button
-                    key={opcao.id}
-                    onClick={() => handleSelectComoChegou(opcao)}
-                    style={{ minHeight: `${questionsConfig.cardAltura || 82}px`, ...cardEfeitoInline }}
-                    className={`w-full text-left p-4 sm:p-5 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-between group border ${cardFundoCls}`}
-                  >
-                    <div className="flex items-center gap-4 pr-2 min-w-0">
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border shadow-sm transition-transform group-hover:scale-105 ${corCls}`}>
-                        <IconComponent className="w-6 h-6" />
-                      </div>
-                      <div className="min-w-0">
-                        <h3 
-                          style={{ fontSize: `${questionsConfig.cardFonteTitulo || 16}px` }}
-                          className={`font-bold transition leading-snug truncate ${cardFonteTituloCls}`}
-                        >
-                          {opcao.titulo}
-                        </h3>
-                        {opcao.subtitulo && (
-                          <p 
-                            style={{ fontSize: `${questionsConfig.cardFonteSubtitulo || 12}px` }}
-                            className={`mt-1 line-clamp-2 leading-snug ${cardFonteSubtituloCls}`}
+                  <div key={opcao.id} className="space-y-2">
+                    <button
+                      type="button"
+                      onClick={() => handleSelectComoChegou(opcao)}
+                      style={{ minHeight: `${questionsConfig.cardAltura || 82}px`, ...cardEfeitoInline }}
+                      className={`w-full text-left p-4 sm:p-5 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-between group border ${cardFundoCls} ${
+                        isGavetaAberta ? 'border-amber-400/80 ring-1 ring-amber-400/40' : ''
+                      }`}
+                    >
+                      <div className="flex items-center gap-4 pr-2 min-w-0">
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border shadow-sm transition-transform group-hover:scale-105 ${corCls}`}>
+                          <IconComponent className="w-6 h-6" />
+                        </div>
+                        <div className="min-w-0">
+                          <h3 
+                            style={{ fontSize: `${questionsConfig.cardFonteTitulo || 16}px` }}
+                            className={`font-bold transition leading-snug truncate ${cardFonteTituloCls}`}
                           >
-                            {opcao.subtitulo}
-                          </p>
+                            {opcao.titulo}
+                          </h3>
+                          {opcao.subtitulo && (
+                            <p 
+                              style={{ fontSize: `${questionsConfig.cardFonteSubtitulo || 12}px` }}
+                              className={`mt-1 line-clamp-2 leading-snug ${cardFonteSubtituloCls}`}
+                            >
+                              {opcao.subtitulo}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="w-7 h-7 rounded-full bg-slate-800/80 border border-slate-700/80 flex items-center justify-center shrink-0 text-slate-400 group-hover:text-amber-300 group-hover:border-amber-400/50 transition">
+                        {opcao.temGaveta ? (
+                          <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isGavetaAberta ? 'rotate-180 text-amber-400' : ''}`} />
+                        ) : (
+                          <ChevronRight className="w-4 h-4" />
                         )}
                       </div>
-                    </div>
-                    <div className="w-7 h-7 rounded-full bg-slate-800/80 border border-slate-700/80 flex items-center justify-center shrink-0 text-slate-400 group-hover:text-amber-300 group-hover:border-amber-400/50 transition">
-                      <ChevronRight className="w-4 h-4" />
-                    </div>
-                  </button>
+                    </button>
+
+                    {/* GAVETA ACCORDION (CAMPO RETRÁTIL PARA DIGITAR - FICA ABERTO DESDE QUE RESPONDIDO) */}
+                    {opcao.temGaveta && isGavetaAberta && (
+                      <div className="p-4 rounded-2xl bg-slate-900/95 border-2 border-amber-500/50 shadow-xl space-y-3 animate-fade-in text-left">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-xs sm:text-sm font-black text-amber-300 flex items-center gap-1.5">
+                            <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                            <span>{opcao.gaveta?.pergunta || 'Por favor, detalhe sua resposta:'}</span>
+                          </p>
+                          {gavetaRespondidas[opcao.id] && (
+                            <span className="text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
+                              <CheckCircle2 className="w-3 h-3" /> Respondido
+                            </span>
+                          )}
+                        </div>
+
+                        <textarea
+                          rows={opcao.gaveta?.linhas || 3}
+                          value={gavetaTextos[opcao.id] || ''}
+                          onChange={(e) => setGavetaTextos((prev) => ({ ...prev, [opcao.id]: e.target.value }))}
+                          placeholder={opcao.gaveta?.placeholder || 'Digite aqui sua resposta, pedido ou comentário...'}
+                          className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl p-3 text-sm text-white placeholder-slate-500 focus:outline-none transition resize-none shadow-inner"
+                        />
+
+                        <div className="flex items-center justify-between pt-1">
+                          <span className="text-[11px] text-slate-400">
+                            {(gavetaTextos[opcao.id] || '').length > 0
+                              ? `${(gavetaTextos[opcao.id] || '').length} caracteres`
+                              : (opcao.gaveta?.obrigatorio ? '* Obrigatório' : 'Campo aberto')}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleConfirmarGavetaP1(opcao)}
+                            className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-xl shadow-lg active:scale-95 transition flex items-center gap-1.5"
+                          >
+                            <span>{opcao.gaveta?.botaoConfirmar || 'Confirmar & Avançar'}</span>
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>
@@ -734,6 +851,78 @@ export default function MobileForm() {
           const tela = telasExtrasAtivas[idx];
           if (!tela) return null;
 
+          if (tela.tipo === 'texto') {
+            return (
+              <div className="space-y-4 fade-in py-2">
+                <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl space-y-3.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs sm:text-sm font-black text-amber-300 uppercase tracking-wider flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-amber-400" />
+                      <span>{tela.subtitulo || 'Digite sua resposta abaixo:'}</span>
+                    </label>
+                    {dissertativaTextos[tela.id] && (
+                      <span className="text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3" /> Preenchido
+                      </span>
+                    )}
+                  </div>
+
+                  <textarea
+                    rows={tela.linhas || 4}
+                    value={dissertativaTextos[tela.id] || ''}
+                    onChange={(e) => setDissertativaTextos((prev) => ({ ...prev, [tela.id]: e.target.value }))}
+                    placeholder={tela.placeholder || 'Digite sua resposta aqui...'}
+                    className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-2xl p-4 text-sm sm:text-base text-white placeholder-slate-500 focus:outline-none transition resize-none shadow-inner"
+                  />
+
+                  <div className="flex items-center justify-between text-xs text-slate-400 px-1">
+                    <span>{tela.obrigatorio ? '* Resposta obrigatória' : 'Campo aberto (opcional)'}</span>
+                    <span>{(dissertativaTextos[tela.id] || '').length} caracteres</span>
+                  </div>
+                </div>
+
+                {/* Botão de Avançar com estilo 3D */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (tela.obrigatorio && !(dissertativaTextos[tela.id] || '').trim()) {
+                      alert('Por favor, preencha este campo antes de continuar.');
+                      return;
+                    }
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    if (idx + 1 < telasExtrasAtivas.length) {
+                      setCurrentStep(`extra_${idx + 1}`);
+                    } else {
+                      setCurrentStep('acompanhantes');
+                    }
+                  }}
+                  className="w-full py-4 px-6 rounded-2xl font-black text-base bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-slate-950 shadow-xl shadow-amber-950/60 active:scale-[0.98] transition border border-amber-300 flex items-center justify-center gap-2"
+                >
+                  <span>{tela.botaoTexto || 'Avançar'}</span>
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+
+                {/* Botão Voltar */}
+                <div className="pt-2 text-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (idx === 0) {
+                        setCurrentStep('p1');
+                      } else {
+                        setCurrentStep(`extra_${idx - 1}`);
+                      }
+                    }}
+                    className="text-xs text-slate-400 hover:text-white flex items-center justify-center gap-1 mx-auto py-1"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                    <span>Voltar à pergunta anterior</span>
+                  </button>
+                </div>
+              </div>
+            );
+          }
+
           return (
             <div className="space-y-3.5 fade-in">
               <div className="space-y-3">
@@ -744,41 +933,97 @@ export default function MobileForm() {
                   const cardEfeitoCls = CARD_EFEITO_CLASSES[questionsConfig?.cardEfeitoEstilo] || CARD_EFEITO_CLASSES.padrao;
                   const cardFonteTituloCls = CARD_FONTE_TITULO_CLASSES[questionsConfig?.cardCorFonteTitulo] || 'text-white';
                   const cardFonteSubtituloCls = CARD_FONTE_SUBTITULO_CLASSES[questionsConfig?.cardCorFonteSubtitulo] || 'text-slate-400';
-
                   const cardEfeitoInline = getEfeitoStyle(questionsConfig?.cardEfeitoEstilo, questionsConfig?.cardProfundidade);
 
+                  const isGavetaAberta = Boolean(
+                    opt.temGaveta && (
+                      gavetasAbertas[opt.id] || 
+                      gavetaRespondidas[opt.id] || 
+                      (gavetaTextos[opt.id] && gavetaTextos[opt.id].trim().length > 0)
+                    )
+                  );
+
                   return (
-                    <button
-                      key={opt.id}
-                      onClick={() => handleSelectOpcaoExtra(idx, opt)}
-                      style={{ minHeight: `${questionsConfig.cardAltura || 82}px`, ...cardEfeitoInline }}
-                      className={`w-full text-left p-4 sm:p-5 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-between group border ${cardFundoCls}`}
-                    >
-                      <div className="flex items-center gap-4 pr-2 min-w-0">
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border shadow-sm transition-transform group-hover:scale-105 ${corCls}`}>
-                          <IconComp className="w-6 h-6" />
-                        </div>
-                        <div className="min-w-0">
-                          <h3 
-                            style={{ fontSize: `${questionsConfig.cardFonteTitulo || 16}px` }}
-                            className={`font-bold transition leading-snug truncate ${cardFonteTituloCls}`}
-                          >
-                            {opt.titulo}
-                          </h3>
-                          {opt.subtitulo && (
-                            <p 
-                              style={{ fontSize: `${questionsConfig.cardFonteSubtitulo || 12}px` }}
-                              className={`mt-1 line-clamp-2 leading-snug ${cardFonteSubtituloCls}`}
+                    <div key={opt.id} className="space-y-2">
+                      <button
+                        type="button"
+                        onClick={() => handleSelectOpcaoExtra(idx, opt)}
+                        style={{ minHeight: `${questionsConfig.cardAltura || 82}px`, ...cardEfeitoInline }}
+                        className={`w-full text-left p-4 sm:p-5 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-between group border ${cardFundoCls} ${
+                          isGavetaAberta ? 'border-amber-400/80 ring-1 ring-amber-400/40' : ''
+                        }`}
+                      >
+                        <div className="flex items-center gap-4 pr-2 min-w-0">
+                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border shadow-sm transition-transform group-hover:scale-105 ${corCls}`}>
+                            <IconComp className="w-6 h-6" />
+                          </div>
+                          <div className="min-w-0">
+                            <h3 
+                              style={{ fontSize: `${questionsConfig.cardFonteTitulo || 16}px` }}
+                              className={`font-bold transition leading-snug truncate ${cardFonteTituloCls}`}
                             >
-                              {opt.subtitulo}
-                            </p>
+                              {opt.titulo}
+                            </h3>
+                            {opt.subtitulo && (
+                              <p 
+                                style={{ fontSize: `${questionsConfig.cardFonteSubtitulo || 12}px` }}
+                                className={`mt-1 line-clamp-2 leading-snug ${cardFonteSubtituloCls}`}
+                              >
+                                {opt.subtitulo}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="w-7 h-7 rounded-full bg-slate-800/80 border border-slate-700/80 flex items-center justify-center shrink-0 text-slate-400 group-hover:text-amber-300 transition">
+                          {opt.temGaveta ? (
+                            <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isGavetaAberta ? 'rotate-180 text-amber-400' : ''}`} />
+                          ) : (
+                            <ChevronRight className="w-4 h-4" />
                           )}
                         </div>
-                      </div>
-                      <div className="w-7 h-7 rounded-full bg-slate-800/80 border border-slate-700/80 flex items-center justify-center shrink-0 text-slate-400 group-hover:text-amber-300 transition">
-                        <ChevronRight className="w-4 h-4" />
-                      </div>
-                    </button>
+                      </button>
+
+                      {/* GAVETA ACCORDION (CAMPO RETRÁTIL PARA DIGITAR EM TELA EXTRA) */}
+                      {opt.temGaveta && isGavetaAberta && (
+                        <div className="p-4 rounded-2xl bg-slate-900/95 border-2 border-amber-500/50 shadow-xl space-y-3 animate-fade-in text-left">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-xs sm:text-sm font-black text-amber-300 flex items-center gap-1.5">
+                              <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                              <span>{opt.gaveta?.pergunta || 'Por favor, detalhe sua resposta:'}</span>
+                            </p>
+                            {gavetaRespondidas[opt.id] && (
+                              <span className="text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
+                                <CheckCircle2 className="w-3 h-3" /> Respondido
+                              </span>
+                            )}
+                          </div>
+
+                          <textarea
+                            rows={opt.gaveta?.linhas || 3}
+                            value={gavetaTextos[opt.id] || ''}
+                            onChange={(e) => setGavetaTextos((prev) => ({ ...prev, [opt.id]: e.target.value }))}
+                            placeholder={opt.gaveta?.placeholder || 'Digite sua resposta ou observação...'}
+                            className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl p-3 text-sm text-white placeholder-slate-500 focus:outline-none transition resize-none shadow-inner"
+                          />
+
+                          <div className="flex items-center justify-between pt-1">
+                            <span className="text-[11px] text-slate-400">
+                              {(gavetaTextos[opt.id] || '').length > 0
+                                ? `${(gavetaTextos[opt.id] || '').length} caracteres`
+                                : (opt.gaveta?.obrigatorio ? '* Obrigatório' : 'Campo aberto')}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleConfirmarGavetaExtra(idx, opt)}
+                              className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-xl shadow-lg active:scale-95 transition flex items-center gap-1.5"
+                            >
+                              <span>{opt.gaveta?.botaoConfirmar || 'Confirmar & Avançar'}</span>
+                              <ChevronRight className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
               </div>

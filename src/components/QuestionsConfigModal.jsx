@@ -34,7 +34,12 @@ import {
   Smartphone,
   Layers,
   ArrowRight,
-  Palette
+  Palette,
+  FileText,
+  UploadCloud,
+  FolderUp,
+  ChevronDown,
+  AlignLeft
 } from 'lucide-react';
 import { 
   getSavedQuestionsConfig, 
@@ -42,6 +47,8 @@ import {
   getSavedEventTitle,
   DEFAULT_QUESTIONS_CONFIG 
 } from '../firebase';
+import { parseDocxFile, parseJsonOrText } from '../utils/formImporter';
+import { PRESETS_PESQUISAS } from '../utils/presets';
 
 // Lista de ícones amigáveis
 const ICONES = [
@@ -264,6 +271,14 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
   const [previewScreen, setPreviewScreen] = useState('inicio');
   const [previewPage, setPreviewPage] = useState(0);
 
+  // Modais de Modelos Prontos e Importação de Arquivos / Formulários
+  const [showPresetsModal, setShowPresetsModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importTexto, setImportTexto] = useState('');
+  const [importando, setImportando] = useState(false);
+  const [previewImportado, setPreviewImportado] = useState(null);
+  const [showTipoNovaTelaModal, setShowTipoNovaTelaModal] = useState(false);
+
   useEffect(() => {
     if (isOpen) {
       setConfig(getSavedQuestionsConfig());
@@ -349,59 +364,148 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
   };
 
   // ============================================================
-  // GESTÃO DE TELAS EXTRAS (TELA 3, TELA 4, ETC. COM CARDS PRÉ-PRONTOS)
+  // GESTÃO DE TELAS EXTRAS (CARDS OU CAMPOS ABERTOS PARA DIGITAR)
   // ============================================================
-  const handleAdicionarTela = () => {
+  const handleAdicionarTela = (tipo = 'cards') => {
     const totalExtras = (config.telasExtras || []).length;
     const novoNumeroTela = totalExtras + 3; // Tela 1 e Tela 2 (Acompanhantes) já existem
-    const novaTela = {
-      id: `extra_${Date.now()}`,
-      ativa: true,
-      titulo: 'É a sua primeira vez conosco?',
-      titulo1: 'É a sua primeira vez',
-      titulo2: 'conosco?',
-      subtitulo: 'Queremos te dar as boas-vindas com muito carinho',
-      cardsPorTela: 4,
-      opcoes: [
-        {
-          id: `opt_${Date.now()}_1`,
-          titulo: 'Sim, pela primeira vez',
-          subtitulo: 'Vim conhecer e prestigiar a programação',
-          ativo: true,
-          icone: 'Sparkles',
-          cor: 'emerald'
-        },
-        {
-          id: `opt_${Date.now()}_2`,
-          titulo: 'Já visitei em outras ocasiões',
-          subtitulo: 'Venho aos cultos e ocasiões especiais',
-          ativo: true,
-          icone: 'Star',
-          cor: 'amber'
-        },
-        {
-          id: `opt_${Date.now()}_3`,
-          titulo: 'Frequento com regularidade',
-          subtitulo: 'Já congrego ou acompanho os cultos',
-          ativo: true,
-          icone: 'Church',
-          cor: 'sky'
-        },
-        {
-          id: `opt_${Date.now()}_4`,
-          titulo: 'Vim com família ou amigos',
-          subtitulo: 'Convite especial de alguém querido',
-          ativo: true,
-          icone: 'HeartHandshake',
-          cor: 'rose'
-        }
-      ]
-    };
+    setShowTipoNovaTelaModal(false);
+
+    let novaTela;
+    if (tipo === 'texto') {
+      novaTela = {
+        id: `extra_${Date.now()}`,
+        ativa: true,
+        tipo: 'texto',
+        titulo: 'O que você achou do evento?',
+        titulo1: 'O que você achou',
+        titulo2: 'do evento?',
+        subtitulo: 'Escreva sua mensagem sincera ou sugestões:',
+        placeholder: 'Digite sua mensagem ou opinião aqui...',
+        multiline: true,
+        linhas: 4,
+        obrigatorio: false,
+        botaoTexto: 'Avançar',
+        opcoes: []
+      };
+    } else {
+      novaTela = {
+        id: `extra_${Date.now()}`,
+        ativa: true,
+        tipo: 'cards',
+        titulo: 'É a sua primeira vez conosco?',
+        titulo1: 'É a sua primeira vez',
+        titulo2: 'conosco?',
+        subtitulo: 'Queremos te dar as boas-vindas com muito carinho',
+        cardsPorTela: 4,
+        opcoes: [
+          {
+            id: `opt_${Date.now()}_1`,
+            titulo: 'Sim, pela primeira vez',
+            subtitulo: 'Vim conhecer e prestigiar a programação',
+            ativo: true,
+            icone: 'Sparkles',
+            cor: 'emerald',
+            temGaveta: false,
+            gaveta: null
+          },
+          {
+            id: `opt_${Date.now()}_2`,
+            titulo: 'Já visitei em outras ocasiões',
+            subtitulo: 'Venho aos cultos e ocasiões especiais',
+            ativo: true,
+            icone: 'Star',
+            cor: 'amber',
+            temGaveta: false,
+            gaveta: null
+          },
+          {
+            id: `opt_${Date.now()}_3`,
+            titulo: 'Frequento com regularidade',
+            subtitulo: 'Já congrego ou acompanho os cultos',
+            ativo: true,
+            icone: 'Church',
+            cor: 'sky',
+            temGaveta: false,
+            gaveta: null
+          },
+          {
+            id: `opt_${Date.now()}_4`,
+            titulo: 'Vim com família ou amigos',
+            subtitulo: 'Convite especial de alguém querido',
+            ativo: true,
+            icone: 'HeartHandshake',
+            cor: 'rose',
+            temGaveta: false,
+            gaveta: null
+          }
+        ]
+      };
+    }
+
     setConfig((prev) => ({
       ...prev,
       telasExtras: [...(prev.telasExtras || []), novaTela]
     }));
     setActiveTab(`extra_${totalExtras}`);
+  };
+
+  // Aplicar modelo pré-pronto
+  const handleAplicarPreset = (presetId) => {
+    const p = PRESETS_PESQUISAS.find(pr => pr.id === presetId);
+    if (!p) return;
+    setConfig((prev) => ({
+      ...prev,
+      ...p.config
+    }));
+    setShowPresetsModal(false);
+    setActiveTab('tela_1');
+  };
+
+  // Importar arquivo (.docx / .txt / .json)
+  const handleImportarArquivo = async (file) => {
+    try {
+      setImportando(true);
+      let imported = null;
+      if (file.name.endsWith('.docx')) {
+        imported = await parseDocxFile(file);
+      } else {
+        const text = await file.text();
+        imported = parseJsonOrText(text);
+      }
+      setPreviewImportado(imported);
+    } catch (err) {
+      alert('Erro ao importar arquivo: ' + (err?.message || err));
+    } finally {
+      setImportando(false);
+    }
+  };
+
+  // Importar texto colado do Forms ou Google Docs
+  const handleImportarTextoColado = () => {
+    if (!importTexto.trim()) {
+      alert('Por favor, cole o texto das perguntas ou formulário.');
+      return;
+    }
+    try {
+      const imported = parseJsonOrText(importTexto);
+      setPreviewImportado(imported);
+    } catch (err) {
+      alert('Erro ao analisar texto: ' + (err?.message || err));
+    }
+  };
+
+  // Confirmar aplicação de formulário importado
+  const handleConfirmarImportacao = () => {
+    if (!previewImportado) return;
+    setConfig((prev) => ({
+      ...prev,
+      ...previewImportado
+    }));
+    setPreviewImportado(null);
+    setImportTexto('');
+    setShowImportModal(false);
+    setActiveTab('tela_1');
   };
 
   const handleExcluirTela = (extraIndex) => {
@@ -557,7 +661,7 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
         {/* ============================================================ */}
         {/* CABEÇALHO DO MODAL (FIXO NO TOPO)                            */}
         {/* ============================================================ */}
-        <div className="px-5 py-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-950/80 shrink-0">
+        <div className="px-5 py-3.5 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 bg-slate-950/80 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center">
               <Sliders className="w-4 h-4" />
@@ -567,12 +671,39 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
               <p className="text-xs text-slate-400">Monte o fluxo de telas (Tela 1, Tela 2, Tela 3...), adicione mais abas e visualize à direita</p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition"
-          >
-            <X className="w-5 h-5" />
-          </button>
+
+          <div className="flex items-center gap-2">
+            {/* Botão Modelos Prontos */}
+            <button
+              type="button"
+              onClick={() => setShowPresetsModal(true)}
+              className="px-3 py-1.5 text-xs font-bold rounded-xl bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/40 text-sky-300 flex items-center gap-1.5 transition active:scale-95 shadow-sm"
+              title="Carregar modelos prontos (Culto, Ajuda Pastoral com Gaveta, Avaliação Dissertativa)"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Modelos Prontos</span>
+              <span className="sm:hidden">Modelos</span>
+            </button>
+
+            {/* Botão Importar Form */}
+            <button
+              type="button"
+              onClick={() => setShowImportModal(true)}
+              className="px-3 py-1.5 text-xs font-bold rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 flex items-center gap-1.5 transition active:scale-95 shadow-sm"
+              title="Importar perguntas de arquivos Word (.docx) ou formulários do Google Forms"
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Importar (.docx / Forms)</span>
+              <span className="sm:hidden">Importar</span>
+            </button>
+
+            <button
+              onClick={onClose}
+              className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition ml-1"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* ============================================================ */}
@@ -675,12 +806,12 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                 <span>Tela Fim</span>
               </button>
 
-              {/* Botão + Inserir Tela NO FIM DE TUDO (com cards pré-prontos) */}
+              {/* Botão + Inserir Tela NO FIM DE TUDO (com escolha entre Cards ou Digitação) */}
               <button
                 type="button"
-                onClick={handleAdicionarTela}
+                onClick={() => setShowTipoNovaTelaModal(true)}
                 className="mb-2 px-3 py-1.5 text-xs font-black text-amber-400 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap shrink-0 active:scale-95 ml-auto sm:ml-2 shadow-sm"
-                title="Inserir mais uma tela com cards pré-prontos no fluxo de perguntas"
+                title="Inserir mais uma tela no fluxo de perguntas"
               >
                 <Plus className="w-4 h-4" />
                 <span>+ Inserir Tela</span>
@@ -1302,6 +1433,88 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                                 />
                               </div>
                             </div>
+
+                            {/* CONFIGURAÇÃO DE GAVETA CONDICIONAL NA TELA 1 (CAMPO PARA DIGITAR) */}
+                            <div className="pt-2 border-t border-slate-850">
+                              <label className="flex items-center gap-2 cursor-pointer select-none">
+                                <input
+                                  type="checkbox"
+                                  checked={Boolean(opcao.temGaveta)}
+                                  onChange={(e) => {
+                                    const checked = e.target.checked;
+                                    handleUpdateOpcaoP1(idx, 'temGaveta', checked);
+                                    if (checked && !opcao.gaveta) {
+                                      handleUpdateOpcaoP1(idx, 'gaveta', {
+                                        tipo: 'texto',
+                                        pergunta: 'Por favor, detalhe sua resposta:',
+                                        placeholder: 'Digite sua resposta ou pedido...',
+                                        linhas: 3,
+                                        obrigatorio: false,
+                                        botaoConfirmar: 'Confirmar & Avançar'
+                                      });
+                                    }
+                                  }}
+                                  className="w-4 h-4 rounded border-slate-700 bg-slate-900 text-amber-500 focus:ring-amber-400"
+                                />
+                                <span className={`text-xs font-bold ${opcao.temGaveta ? 'text-amber-300' : 'text-slate-400'}`}>
+                                  🗄️ Abrir Gaveta ao Selecionar (Campo para o Visitante Digitar)
+                                </span>
+                              </label>
+
+                              {opcao.temGaveta && (
+                                <div className="mt-2.5 p-3 rounded-xl bg-slate-900/90 border border-amber-500/30 space-y-2.5 animate-fade-in">
+                                  <div>
+                                    <label className="text-[10px] font-bold text-amber-300 block mb-1">
+                                      Pergunta ou Instrução da Gaveta
+                                    </label>
+                                    <input
+                                      type="text"
+                                      value={opcao.gaveta?.pergunta || ''}
+                                      onChange={(e) => handleUpdateOpcaoP1(idx, 'gaveta', {
+                                        ...(opcao.gaveta || {}),
+                                        pergunta: e.target.value
+                                      })}
+                                      placeholder="Ex: Qual tipo de ajuda você precisa?"
+                                      className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1 text-xs text-white"
+                                    />
+                                  </div>
+
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <div>
+                                      <label className="text-[10px] font-bold text-slate-400 block mb-1">
+                                        Placeholder da Caixa de Texto
+                                      </label>
+                                      <input
+                                        type="text"
+                                        value={opcao.gaveta?.placeholder || ''}
+                                        onChange={(e) => handleUpdateOpcaoP1(idx, 'gaveta', {
+                                          ...(opcao.gaveta || {}),
+                                          placeholder: e.target.value
+                                        })}
+                                        placeholder="Ex: Digite seu pedido..."
+                                        className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1 text-xs text-slate-200"
+                                      />
+                                    </div>
+
+                                    <div>
+                                      <label className="text-[10px] font-bold text-slate-400 block mb-1">
+                                        Texto do Botão
+                                      </label>
+                                      <input
+                                        type="text"
+                                        value={opcao.gaveta?.botaoConfirmar || ''}
+                                        onChange={(e) => handleUpdateOpcaoP1(idx, 'gaveta', {
+                                          ...(opcao.gaveta || {}),
+                                          botaoConfirmar: e.target.value
+                                        })}
+                                        placeholder="Confirmar & Avançar"
+                                        className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1 text-xs text-amber-300 font-bold"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         );
                       })}
@@ -1326,7 +1539,7 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                 return (
                   <div className="space-y-4">
                     {/* Barra Superior da Tela Extra */}
-                    <div className="bg-slate-950 border border-slate-800 rounded-xl p-3 flex items-center justify-between gap-3 shadow-sm">
+                    <div className="bg-slate-950 border border-slate-800 rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 shadow-sm">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-black text-amber-400">
                           Configurando Tela {numTela}
@@ -1334,6 +1547,34 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                         <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold border bg-emerald-500/15 border-emerald-500/30 text-emerald-300">
                           ✓ Ativa no Celular
                         </span>
+                      </div>
+
+                      {/* Seletor de Tipo da Tela: Cards vs Dissertativa (Campo Aberto) */}
+                      <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateTelaProp(extraIndex, 'tipo', 'cards')}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+                            telaAlvo.tipo !== 'texto'
+                              ? 'bg-amber-400 text-slate-950 shadow'
+                              : 'text-slate-400 hover:text-white'
+                          }`}
+                        >
+                          <Layers className="w-3.5 h-3.5" />
+                          <span>Cards</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateTelaProp(extraIndex, 'tipo', 'texto')}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+                            telaAlvo.tipo === 'texto'
+                              ? 'bg-amber-400 text-slate-950 shadow'
+                              : 'text-slate-400 hover:text-white'
+                          }`}
+                        >
+                          <AlignLeft className="w-3.5 h-3.5" />
+                          <span>Campo para Digitar</span>
+                        </button>
                       </div>
 
                       <button
@@ -1395,134 +1636,293 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                           className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-3 py-1.5 text-xs text-slate-300"
                         />
                       </div>
-
-                      <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-xs">
-                        <span className="text-slate-300 font-bold">Cards por tela nesta etapa:</span>
-                        <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
-                          {[2, 3, 4, 5, 6].map((num) => (
-                            <button
-                              key={num}
-                              type="button"
-                              onClick={() => handleUpdateTelaProp(extraIndex, 'cardsPorTela', num)}
-                              className={`w-6 h-6 rounded-lg font-black text-[11px] transition ${
-                                limitCards === num
-                                  ? 'bg-amber-400 text-slate-950 shadow'
-                                  : 'text-slate-400 hover:text-white'
-                              }`}
-                            >
-                              {num}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
                     </div>
 
-                    {/* Cards desta Tela Extra */}
-                    <div className="space-y-2.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-300 uppercase tracking-wide">
-                          Cards Cadastrados na Tela {numTela} ({telaAlvo.opcoes?.length || 0})
-                        </span>
+                    {/* CONFIGURAÇÃO ESPECÍFICA: TELA DISSERTATIVA (CAMPO PARA DIGITAR) */}
+                    {telaAlvo.tipo === 'texto' ? (
+                      <div className="bg-slate-950 border border-amber-500/40 rounded-2xl p-4 space-y-3.5 shadow-lg animate-fade-in">
+                        <div className="flex items-center gap-2 pb-2 border-b border-slate-800">
+                          <AlignLeft className="w-4 h-4 text-amber-400" />
+                          <span className="text-xs font-black text-amber-300 uppercase tracking-wider">
+                            Opções da Caixa de Texto no Celular
+                          </span>
+                        </div>
 
-                        <button
-                          type="button"
-                          onClick={() => handleAddCardExtra(extraIndex)}
-                          className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg shadow active:scale-95 transition flex items-center gap-1.5"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                          <span>Adicionar Card</span>
-                        </button>
-                      </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          <div>
+                            <label className="text-[10px] font-bold text-slate-400 block mb-1">
+                              Placeholder da Caixa (Texto de Dica)
+                            </label>
+                            <input
+                              type="text"
+                              value={telaAlvo.placeholder || ''}
+                              onChange={(e) => handleUpdateTelaProp(extraIndex, 'placeholder', e.target.value)}
+                              placeholder="Ex: O que você achou do evento? Digite aqui..."
+                              className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-1.5 text-xs font-bold text-white shadow-inner"
+                            />
+                          </div>
 
-                      <div className="space-y-2">
-                        {(telaAlvo.opcoes || []).map((opcao, optIdx) => {
-                          const isAtivo = opcao.ativo !== false;
+                          <div>
+                            <label className="text-[10px] font-bold text-slate-400 block mb-1">
+                              Texto do Botão de Avançar
+                            </label>
+                            <input
+                              type="text"
+                              value={telaAlvo.botaoTexto || ''}
+                              onChange={(e) => handleUpdateTelaProp(extraIndex, 'botaoTexto', e.target.value)}
+                              placeholder="Avançar"
+                              className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-1.5 text-xs font-bold text-amber-300 shadow-inner"
+                            />
+                          </div>
+                        </div>
 
-                          return (
-                            <div
-                              key={opcao.id || optIdx}
-                              className={`rounded-xl border transition-all p-3 space-y-2 ${
-                                isAtivo 
-                                  ? 'bg-slate-950 border-slate-800 shadow-sm' 
-                                  : 'bg-slate-950/40 border-slate-900 opacity-55'
-                              }`}
-                            >
-                              <div className="flex items-center justify-between gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2 border-t border-slate-850">
+                          <div className="flex items-center justify-between text-xs bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
+                            <span className="text-slate-300 font-bold">Altura (Linhas):</span>
+                            <div className="flex items-center gap-1">
+                              {[2, 3, 4, 5, 6].map((l) => (
                                 <button
+                                  key={l}
                                   type="button"
-                                  onClick={() => handleToggleCardExtra(extraIndex, optIdx)}
-                                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition border ${
-                                    isAtivo
-                                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/30'
-                                      : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'
+                                  onClick={() => handleUpdateTelaProp(extraIndex, 'linhas', l)}
+                                  className={`w-6 h-6 rounded-lg font-bold text-xs ${
+                                    (telaAlvo.linhas || 4) === l ? 'bg-amber-400 text-slate-950 font-black' : 'bg-slate-800 text-slate-400 hover:text-white'
                                   }`}
                                 >
-                                  {isAtivo ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                                  <span>{isAtivo ? 'Visível' : 'Oculto'}</span>
+                                  {l}
                                 </button>
+                              ))}
+                            </div>
+                          </div>
 
-                                <div className="flex items-center gap-2">
-                                  <select
-                                    value={opcao.icone || 'Sparkles'}
-                                    onChange={(e) => handleUpdateCardExtra(extraIndex, optIdx, 'icone', e.target.value)}
-                                    className="bg-slate-900 border border-slate-700 rounded-md px-1.5 py-0.5 text-xs text-slate-200"
-                                  >
-                                    {ICONES.map(ic => (
-                                      <option key={ic.id} value={ic.id}>{ic.label}</option>
-                                    ))}
-                                  </select>
+                          <div className="flex items-center justify-between text-xs bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
+                            <span className="text-slate-300 font-bold">Obrigatoriedade:</span>
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateTelaProp(extraIndex, 'obrigatorio', !telaAlvo.obrigatorio)}
+                              className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
+                                telaAlvo.obrigatorio
+                                  ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                                  : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                              }`}
+                            >
+                              {telaAlvo.obrigatorio ? 'Obrigatório' : 'Opcional'}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      /* CONFIGURAÇÃO ESPECÍFICA: TELA DE CARDS COM GAVETAS */
+                      <div className="space-y-3">
+                        <div className="bg-slate-950 border border-slate-800 rounded-xl p-3 flex items-center justify-between text-xs">
+                          <span className="text-slate-300 font-bold">Cards por tela nesta etapa:</span>
+                          <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
+                            {[2, 3, 4, 5, 6].map((num) => (
+                              <button
+                                key={num}
+                                type="button"
+                                onClick={() => handleUpdateTelaProp(extraIndex, 'cardsPorTela', num)}
+                                className={`w-6 h-6 rounded-lg font-black text-[11px] transition ${
+                                  limitCards === num
+                                    ? 'bg-amber-400 text-slate-950 shadow'
+                                    : 'text-slate-400 hover:text-white'
+                                }`}
+                              >
+                                {num}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
 
-                                  <div className="flex items-center gap-1">
-                                    {CORES.map(c => (
+                        {/* Cards desta Tela Extra */}
+                        <div className="space-y-2.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-slate-300 uppercase tracking-wide">
+                              Cards Cadastrados na Tela {numTela} ({telaAlvo.opcoes?.length || 0})
+                            </span>
+
+                            <button
+                              type="button"
+                              onClick={() => handleAddCardExtra(extraIndex)}
+                              className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg shadow active:scale-95 transition flex items-center gap-1.5"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                              <span>Adicionar Card</span>
+                            </button>
+                          </div>
+
+                          <div className="space-y-2">
+                            {(telaAlvo.opcoes || []).map((opcao, optIdx) => {
+                              const isAtivo = opcao.ativo !== false;
+
+                              return (
+                                <div
+                                  key={opcao.id || optIdx}
+                                  className={`rounded-xl border transition-all p-3 space-y-2.5 ${
+                                    isAtivo 
+                                      ? 'bg-slate-950 border-slate-800 shadow-sm' 
+                                      : 'bg-slate-950/40 border-slate-900 opacity-55'
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleToggleCardExtra(extraIndex, optIdx)}
+                                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition border ${
+                                        isAtivo
+                                          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/30'
+                                          : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'
+                                      }`}
+                                    >
+                                      {isAtivo ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                                      <span>{isAtivo ? 'Visível' : 'Oculto'}</span>
+                                    </button>
+
+                                    <div className="flex items-center gap-2">
+                                      <select
+                                        value={opcao.icone || 'Sparkles'}
+                                        onChange={(e) => handleUpdateCardExtra(extraIndex, optIdx, 'icone', e.target.value)}
+                                        className="bg-slate-900 border border-slate-700 rounded-md px-1.5 py-0.5 text-xs text-slate-200"
+                                      >
+                                        {ICONES.map(ic => (
+                                          <option key={ic.id} value={ic.id}>{ic.label}</option>
+                                        ))}
+                                      </select>
+
+                                      <div className="flex items-center gap-1">
+                                        {CORES.map(c => (
+                                          <button
+                                            key={c.id}
+                                            type="button"
+                                            onClick={() => handleUpdateCardExtra(extraIndex, optIdx, 'cor', c.id)}
+                                            className={`w-3.5 h-3.5 rounded-full ${c.bg} ${
+                                              (opcao.cor || 'emerald') === c.id ? 'ring-2 ring-white scale-110' : 'opacity-40 hover:opacity-100'
+                                            }`}
+                                            title={c.label}
+                                          />
+                                        ))}
+                                      </div>
+
                                       <button
-                                        key={c.id}
                                         type="button"
-                                        onClick={() => handleUpdateCardExtra(extraIndex, optIdx, 'cor', c.id)}
-                                        className={`w-3.5 h-3.5 rounded-full ${c.bg} ${
-                                          (opcao.cor || 'emerald') === c.id ? 'ring-2 ring-white scale-110' : 'opacity-40 hover:opacity-100'
-                                        }`}
-                                        title={c.label}
-                                      />
-                                    ))}
+                                        onClick={() => handleExcluirCardExtra(extraIndex, optIdx)}
+                                        className="p-1 text-slate-500 hover:text-red-400 transition"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
                                   </div>
 
-                                  <button
-                                    type="button"
-                                    onClick={() => handleExcluirCardExtra(extraIndex, optIdx)}
-                                    className="p-1 text-slate-500 hover:text-red-400 transition"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
-                                </div>
-                              </div>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <div>
+                                      <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Título do Card</label>
+                                      <input
+                                        type="text"
+                                        value={opcao.titulo || ''}
+                                        onChange={(e) => handleUpdateCardExtra(extraIndex, optIdx, 'titulo', e.target.value)}
+                                        placeholder="Ex: Sim, é minha primeira vez!"
+                                        className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1 text-xs font-bold text-white shadow-inner"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Descrição (Opcional)</label>
+                                      <input
+                                        type="text"
+                                        value={opcao.subtitulo || ''}
+                                        onChange={(e) => handleUpdateCardExtra(extraIndex, optIdx, 'subtitulo', e.target.value)}
+                                        placeholder="Ex: Vim conhecer a igreja"
+                                        className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1 text-xs text-slate-300 shadow-inner"
+                                      />
+                                    </div>
+                                  </div>
 
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                <div>
-                                  <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Título do Card</label>
-                                  <input
-                                    type="text"
-                                    value={opcao.titulo || ''}
-                                    onChange={(e) => handleUpdateCardExtra(extraIndex, optIdx, 'titulo', e.target.value)}
-                                    placeholder="Ex: Sim, é minha primeira vez!"
-                                    className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1 text-xs font-bold text-white shadow-inner"
-                                  />
+                                  {/* CONFIGURAÇÃO DE GAVETA CONDICIONAL NO CARD EXTRA */}
+                                  <div className="pt-1.5 border-t border-slate-850">
+                                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                                      <input
+                                        type="checkbox"
+                                        checked={Boolean(opcao.temGaveta)}
+                                        onChange={(e) => {
+                                          const checked = e.target.checked;
+                                          handleUpdateCardExtra(extraIndex, optIdx, 'temGaveta', checked);
+                                          if (checked && !opcao.gaveta) {
+                                            handleUpdateCardExtra(extraIndex, optIdx, 'gaveta', {
+                                              tipo: 'texto',
+                                              pergunta: 'Por favor, detalhe sua resposta:',
+                                              placeholder: 'Digite sua resposta ou observação...',
+                                              linhas: 3,
+                                              obrigatorio: false,
+                                              botaoConfirmar: 'Confirmar & Avançar'
+                                            });
+                                          }
+                                        }}
+                                        className="w-3.5 h-3.5 rounded border-slate-700 bg-slate-900 text-amber-500 focus:ring-amber-400"
+                                      />
+                                      <span className={`text-[11px] font-bold ${opcao.temGaveta ? 'text-amber-300' : 'text-slate-400'}`}>
+                                        🗄️ Abrir Gaveta ao Selecionar (Campo para Digitar)
+                                      </span>
+                                    </label>
+
+                                    {opcao.temGaveta && (
+                                      <div className="mt-2 p-2.5 rounded-lg bg-slate-900/95 border border-amber-500/30 space-y-2 animate-fade-in">
+                                        <div>
+                                          <label className="text-[10px] font-bold text-amber-300 block mb-0.5">
+                                            Pergunta da Gaveta
+                                          </label>
+                                          <input
+                                            type="text"
+                                            value={opcao.gaveta?.pergunta || ''}
+                                            onChange={(e) => handleUpdateCardExtra(extraIndex, optIdx, 'gaveta', {
+                                              ...(opcao.gaveta || {}),
+                                              pergunta: e.target.value
+                                            })}
+                                            placeholder="Ex: Qual o tipo de ajuda ou sugestão?"
+                                            className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-lg px-2 py-1 text-xs text-white"
+                                          />
+                                        </div>
+
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                          <div>
+                                            <label className="text-[10px] font-bold text-slate-400 block mb-0.5">
+                                              Placeholder
+                                            </label>
+                                            <input
+                                              type="text"
+                                              value={opcao.gaveta?.placeholder || ''}
+                                              onChange={(e) => handleUpdateCardExtra(extraIndex, optIdx, 'gaveta', {
+                                                ...(opcao.gaveta || {}),
+                                                placeholder: e.target.value
+                                              })}
+                                              placeholder="Digite aqui..."
+                                              className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-lg px-2 py-1 text-xs text-slate-200"
+                                            />
+                                          </div>
+                                          <div>
+                                            <label className="text-[10px] font-bold text-slate-400 block mb-0.5">
+                                              Texto do Botão
+                                            </label>
+                                            <input
+                                              type="text"
+                                              value={opcao.gaveta?.botaoConfirmar || ''}
+                                              onChange={(e) => handleUpdateCardExtra(extraIndex, optIdx, 'gaveta', {
+                                                ...(opcao.gaveta || {}),
+                                                botaoConfirmar: e.target.value
+                                              })}
+                                              placeholder="Confirmar & Avançar"
+                                              className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-lg px-2 py-1 text-xs text-amber-300 font-bold"
+                                            />
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
-                                <div>
-                                  <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Descrição (Opcional)</label>
-                                  <input
-                                    type="text"
-                                    value={opcao.subtitulo || ''}
-                                    onChange={(e) => handleUpdateCardExtra(extraIndex, optIdx, 'subtitulo', e.target.value)}
-                                    placeholder="Ex: Vim conhecer a igreja"
-                                    className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1 text-xs text-slate-300 shadow-inner"
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
+                              );
+                            })}
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 );
               })()}
@@ -2602,6 +3002,280 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
             </button>
           </div>
         </div>
+
+        {/* ============================================================ */}
+        {/* MODAL 1: ESCOLHER TIPO DA NOVA TELA (+ INSERIR TELA)         */}
+        {/* ============================================================ */}
+        {showTipoNovaTelaModal && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+            <div className="bg-slate-900 border border-slate-700 rounded-2xl p-5 max-w-md w-full shadow-2xl space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center">
+                    <Plus className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-white">Inserir Nova Tela</h3>
+                    <p className="text-[11px] text-slate-400">Qual o tipo de pergunta deseja adicionar?</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowTipoNovaTelaModal(false)}
+                  className="p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 gap-2.5">
+                {/* Opção 1: Cards */}
+                <button
+                  type="button"
+                  onClick={() => handleAdicionarTela('cards')}
+                  className="p-4 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-400/80 hover:bg-slate-900 text-left transition group space-y-1 shadow-sm"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-lg bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <Layers className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black text-white group-hover:text-amber-300 transition-colors">
+                        🃏 Tela de Cards (Múltipla Escolha)
+                      </h4>
+                      <p className="text-[11px] text-slate-400">
+                        O visitante escolhe tocando em cards visuais grandes (com suporte a gavetas retráteis).
+                      </p>
+                    </div>
+                  </div>
+                </button>
+
+                {/* Opção 2: Campo Dissertativo para Digitar */}
+                <button
+                  type="button"
+                  onClick={() => handleAdicionarTela('texto')}
+                  className="p-4 rounded-xl bg-slate-950 border border-slate-800 hover:border-emerald-400/80 hover:bg-slate-900 text-left transition group space-y-1 shadow-sm"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <AlignLeft className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black text-white group-hover:text-emerald-300 transition-colors">
+                        ✍️ Campo Aberto (Pergunta Dissertativa)
+                      </h4>
+                      <p className="text-[11px] text-slate-400">
+                        Ex: "O que você achou do evento?" O visitante digita livremente sua resposta no celular.
+                      </p>
+                    </div>
+                  </div>
+                </button>
+              </div>
+
+              <div className="pt-1 text-right">
+                <button
+                  type="button"
+                  onClick={() => setShowTipoNovaTelaModal(false)}
+                  className="px-3 py-1.5 text-xs text-slate-400 hover:text-white"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================ */}
+        {/* MODAL 2: MODELOS PRONTOS DE PESQUISAS (PRESETS)              */}
+        {/* ============================================================ */}
+        {showPresetsModal && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fade-in overflow-y-auto">
+            <div className="bg-slate-900 border border-slate-700 rounded-3xl p-5 max-w-2xl w-full shadow-2xl space-y-4 my-auto">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-sky-500/20 text-sky-400 border border-sky-500/40 flex items-center justify-center">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-white">Modelos Prontos de Pesquisa</h3>
+                    <p className="text-xs text-slate-400">Selecione um preset para carregar um fluxo completo pré-configurado com 1 toque</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowPresetsModal(false)}
+                  className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 max-h-[65vh] overflow-y-auto custom-scrollbar pr-1">
+                {PRESETS_PESQUISAS.map((preset) => (
+                  <div
+                    key={preset.id}
+                    className="p-4 rounded-2xl bg-slate-950 border border-slate-800 hover:border-sky-500/60 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md group"
+                  >
+                    <div className="space-y-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-sky-500/15 border border-sky-500/30 text-sky-300">
+                          {preset.tag}
+                        </span>
+                        <h4 className="text-sm font-black text-white group-hover:text-sky-300 transition-colors">
+                          {preset.nome}
+                        </h4>
+                      </div>
+                      <p className="text-xs text-slate-400">
+                        {preset.descricao}
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleAplicarPreset(preset.id)}
+                      className="px-4 py-2 bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-400 hover:to-sky-500 text-slate-950 font-black text-xs rounded-xl shadow-md active:scale-95 transition flex items-center justify-center gap-1.5 shrink-0"
+                    >
+                      <Check className="w-4 h-4" />
+                      <span>Aplicar Modelo</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="pt-2 border-t border-slate-800 text-right">
+                <button
+                  type="button"
+                  onClick={() => setShowPresetsModal(false)}
+                  className="px-4 py-1.5 text-xs text-slate-400 hover:text-white"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================ */}
+        {/* MODAL 3: IMPORTADOR INTELIGENTE (WORD .DOCX / FORMS / TEXTO)  */}
+        {/* ============================================================ */}
+        {showImportModal && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fade-in overflow-y-auto">
+            <div className="bg-slate-900 border border-slate-700 rounded-3xl p-5 max-w-2xl w-full shadow-2xl space-y-4 my-auto">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center">
+                    <FileText className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-white">Importador Inteligente de Avaliações</h3>
+                    <p className="text-xs text-slate-400">Importe arquivos Word (.docx) ou cole perguntas do Google Forms/Docs</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowImportModal(false)}
+                  className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Upload de Arquivo Word (.docx) */}
+              <div className="p-4 rounded-2xl bg-slate-950 border-2 border-dashed border-slate-800 hover:border-emerald-500/50 transition text-center space-y-2">
+                <UploadCloud className="w-8 h-8 text-emerald-400 mx-auto" />
+                <div>
+                  <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 font-bold text-xs hover:bg-emerald-500/25 active:scale-95 transition">
+                    <FolderUp className="w-4 h-4" />
+                    <span>Selecionar Arquivo Word (.docx) ou Texto (.txt, .json)</span>
+                    <input
+                      type="file"
+                      accept=".docx,.txt,.json"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleImportarArquivo(file);
+                      }}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+                <p className="text-[11px] text-slate-500">
+                  O sistema extrai o texto do Word, identifica perguntas de múltipla escolha, campos para digitar e gavetas!
+                </p>
+              </div>
+
+              {/* Ou Colar Texto */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-300 block">
+                  Ou cole o texto copiado do Google Forms / Word aqui:
+                </label>
+                <textarea
+                  rows={5}
+                  value={importTexto}
+                  onChange={(e) => setImportTexto(e.target.value)}
+                  placeholder={`Exemplo:
+1. Você precisa de apoio ou ajuda?
+- Sim (Gaveta: Qual tipo de ajuda você precisa?)
+- Não
+
+2. O que você achou do evento? [texto]`}
+                  className="w-full bg-slate-950 border border-slate-800 focus:border-emerald-400 rounded-xl p-3 text-xs text-white placeholder-slate-600 focus:outline-none transition resize-none font-mono"
+                />
+
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={handleImportarTextoColado}
+                    disabled={importando || !importTexto.trim()}
+                    className="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-300 font-bold text-xs rounded-xl border border-emerald-500/30 active:scale-95 transition disabled:opacity-40"
+                  >
+                    Analisar Texto Colado
+                  </button>
+                </div>
+              </div>
+
+              {/* Preview da Importação */}
+              {previewImportado && (
+                <div className="p-3.5 rounded-2xl bg-emerald-950/40 border border-emerald-500/50 space-y-3 animate-fade-in text-left">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black text-emerald-300 uppercase tracking-wide flex items-center gap-1.5">
+                      <Check className="w-4 h-4 text-emerald-400" />
+                      Formulário Analisado com Sucesso!
+                    </span>
+                    <span className="text-[11px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-bold">
+                      1 Tela Principal + {(previewImportado.telasExtras || []).length} Telas Extras
+                    </span>
+                  </div>
+
+                  <div className="space-y-1 text-xs text-slate-300">
+                    <p><strong>Tela 1:</strong> {previewImportado.pergunta1Titulo} ({previewImportado.opcoesChegada?.length || 0} opções)</p>
+                    {(previewImportado.telasExtras || []).map((t, i) => (
+                      <p key={i}><strong>Tela {i + 2}:</strong> {t.titulo} ({t.tipo === 'texto' ? '✍️ Campo Aberto' : `${t.opcoes?.length || 0} opções`})</p>
+                    ))}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleConfirmarImportacao}
+                    className="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-xs sm:text-sm rounded-xl shadow-lg active:scale-95 transition flex items-center justify-center gap-2"
+                  >
+                    <Check className="w-4 h-4" />
+                    <span>Aplicar Este Formulário à Pesquisa</span>
+                  </button>
+                </div>
+              )}
+
+              <div className="pt-2 border-t border-slate-800 text-right">
+                <button
+                  type="button"
+                  onClick={() => setShowImportModal(false)}
+                  className="px-4 py-1.5 text-xs text-slate-400 hover:text-white"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>
