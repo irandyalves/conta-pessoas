@@ -47,6 +47,7 @@ import {
   getSavedQuestionsConfig, 
   saveQuestionsConfig, 
   getSavedEventTitle,
+  saveEventTitle,
   DEFAULT_QUESTIONS_CONFIG 
 } from '../firebase';
 import { parseDocxFile, parseJsonOrText } from '../utils/formImporter';
