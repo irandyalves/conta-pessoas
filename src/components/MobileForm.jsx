@@ -86,8 +86,51 @@ const CARD_EFEITO_CLASSES = {
   efeito_3d: 'border border-slate-700/80 border-b-[5px] border-b-black/90 active:translate-y-1 active:border-b-2 shadow-xl',
   vidro: 'backdrop-blur-md bg-opacity-70 border border-white/20 hover:border-white/35 shadow-lg',
   entalhe: 'shadow-[inset_0_2px_6px_rgba(0,0,0,0.85),0_1px_2px_rgba(255,255,255,0.06)] border border-slate-800 border-t-white/10 border-b-black/80',
+  alto_relevo: 'border border-slate-700 shadow-lg',
   glow: 'border border-amber-400/50 hover:border-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.25)] hover:shadow-[0_0_22px_rgba(245,158,11,0.45)]',
 };
+
+function getEfeitoStyle(efeito = 'padrao', profundidade = 5) {
+  const p = Math.max(1, Math.min(10, Number(profundidade) || 5));
+  
+  switch (efeito) {
+    case 'efeito_3d':
+      return {
+        borderBottomWidth: `${p}px`,
+        borderBottomColor: 'rgba(0, 0, 0, 0.95)',
+        boxShadow: `0 ${p * 1.5}px ${p * 2.5}px rgba(0, 0, 0, 0.6)`,
+      };
+    case 'entalhe':
+      return {
+        boxShadow: `inset 0 ${p * 1.2}px ${p * 2}px rgba(0, 0, 0, 0.9), inset 0 -${Math.round(p * 0.5)}px ${p}px rgba(255, 255, 255, 0.08)`,
+        borderTopColor: 'rgba(255, 255, 255, 0.1)',
+        borderBottomColor: 'rgba(0, 0, 0, 0.9)',
+      };
+    case 'alto_relevo':
+      return {
+        boxShadow: `0 ${p * 1.5}px ${p * 2.5}px rgba(0, 0, 0, 0.7), inset 0 ${Math.max(1, Math.round(p * 0.4))}px ${Math.max(1, Math.round(p * 0.4))}px rgba(255, 255, 255, 0.25), inset 0 -${Math.max(1, Math.round(p * 0.4))}px ${Math.max(1, Math.round(p * 0.4))}px rgba(0, 0, 0, 0.6)`,
+        borderTopColor: 'rgba(255, 255, 255, 0.3)',
+        borderBottomColor: 'rgba(0, 0, 0, 0.8)',
+      };
+    case 'vidro':
+      return {
+        backdropFilter: `blur(${p * 2.5}px)`,
+        WebkitBackdropFilter: `blur(${p * 2.5}px)`,
+        boxShadow: `0 ${p * 1.2}px ${p * 2.5}px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, ${0.1 + p * 0.02})`,
+        borderColor: `rgba(255, 255, 255, ${0.15 + p * 0.025})`,
+      };
+    case 'glow':
+      return {
+        boxShadow: `0 0 ${p * 2.5}px rgba(245, 158, 11, ${0.2 + p * 0.04}), inset 0 0 ${p * 1.2}px rgba(245, 158, 11, 0.15)`,
+        borderColor: 'rgba(251, 191, 36, 0.6)',
+      };
+    case 'padrao':
+    default:
+      return {
+        boxShadow: `0 ${p}px ${p * 1.5}px rgba(0, 0, 0, 0.35)`,
+      };
+  }
+}
 
 const CARD_FONTE_TITULO_CLASSES = {
   branco: 'text-white',
@@ -618,12 +661,14 @@ export default function MobileForm() {
                 const cardFonteTituloCls = CARD_FONTE_TITULO_CLASSES[questionsConfig?.cardCorFonteTitulo] || 'text-white';
                 const cardFonteSubtituloCls = CARD_FONTE_SUBTITULO_CLASSES[questionsConfig?.cardCorFonteSubtitulo] || 'text-slate-400';
 
+                const cardEfeitoInline = getEfeitoStyle(questionsConfig?.cardEfeitoEstilo, questionsConfig?.cardProfundidade);
+
                 return (
                   <button
                     key={opcao.id}
                     onClick={() => handleSelectComoChegou(opcao)}
-                    style={{ minHeight: `${questionsConfig.cardAltura || 82}px` }}
-                    className={`w-full text-left p-4 sm:p-5 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-between group ${cardFundoCls} ${cardEfeitoCls}`}
+                    style={{ minHeight: `${questionsConfig.cardAltura || 82}px`, ...cardEfeitoInline }}
+                    className={`w-full text-left p-4 sm:p-5 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-between group border ${cardFundoCls}`}
                   >
                     <div className="flex items-center gap-4 pr-2 min-w-0">
                       <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border shadow-sm transition-transform group-hover:scale-105 ${corCls}`}>
@@ -700,12 +745,14 @@ export default function MobileForm() {
                   const cardFonteTituloCls = CARD_FONTE_TITULO_CLASSES[questionsConfig?.cardCorFonteTitulo] || 'text-white';
                   const cardFonteSubtituloCls = CARD_FONTE_SUBTITULO_CLASSES[questionsConfig?.cardCorFonteSubtitulo] || 'text-slate-400';
 
+                  const cardEfeitoInline = getEfeitoStyle(questionsConfig?.cardEfeitoEstilo, questionsConfig?.cardProfundidade);
+
                   return (
                     <button
                       key={opt.id}
                       onClick={() => handleSelectOpcaoExtra(idx, opt)}
-                      style={{ minHeight: `${questionsConfig.cardAltura || 82}px` }}
-                      className={`w-full text-left p-4 sm:p-5 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-between group ${cardFundoCls} ${cardEfeitoCls}`}
+                      style={{ minHeight: `${questionsConfig.cardAltura || 82}px`, ...cardEfeitoInline }}
+                      className={`w-full text-left p-4 sm:p-5 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-between group border ${cardFundoCls}`}
                     >
                       <div className="flex items-center gap-4 pr-2 min-w-0">
                         <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border shadow-sm transition-transform group-hover:scale-105 ${corCls}`}>
@@ -811,13 +858,14 @@ export default function MobileForm() {
                 const numCorCls = BTN_NUM_CLASSES[questionsConfig?.btnQtdCorNumero] || 'text-white';
                 const btnAltura = questionsConfig?.btnQtdAltura || 74;
                 const numFonte = questionsConfig?.btnQtdFonteNumero || 34;
+                const btnEfeitoInline = getEfeitoStyle(questionsConfig?.btnQtdEfeito || 'efeito_3d', questionsConfig?.btnQtdProfundidade || 5);
 
                 return (
                   <button
                     key={op.valor}
                     onClick={() => handleSelectQtd(op.valor)}
-                    style={{ minHeight: `${btnAltura}px` }}
-                    className={`px-2 py-2 rounded-2xl border border-b-[6px] active:translate-y-1.5 active:border-b-2 active:shadow-md transition-all flex flex-col items-center justify-center shadow-lg group ${btnCorCls}`}
+                    style={{ minHeight: `${btnAltura}px`, ...btnEfeitoInline }}
+                    className={`px-2 py-2 rounded-2xl border active:scale-[0.98] transition-all flex flex-col items-center justify-center group ${btnCorCls}`}
                   >
                     <span 
                       style={{ fontSize: `${numFonte}px` }}

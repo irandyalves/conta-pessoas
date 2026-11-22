@@ -87,14 +87,57 @@ export const FUNDOS_CARDS = [
   { id: 'sunset_laranja', label: 'Sunset Laranja', classe: 'bg-gradient-to-r from-slate-950 via-orange-950 to-amber-950 border-orange-800/60' },
 ];
 
-// OPÇÕES DE EFEITOS E ACABAMENTOS DOS CARDS (3D, VIDRO, ENTALHE, ETC.)
+// OPÇÕES DE EFEITOS E ACABAMENTOS DOS CARDS (3D, VIDRO, ENTALHE, ALTO-RELEVO, ETC.)
 export const EFEITOS_CARDS = [
-  { id: 'padrao', label: 'Normal / Flat', desc: 'Borda sutil elegante', classe: 'border border-slate-700/80 shadow-md' },
-  { id: 'efeito_3d', label: 'Efeito 3D', desc: 'Relevo tátil com base', classe: 'border border-slate-700/80 border-b-[4px] border-b-black/90 shadow-xl' },
-  { id: 'vidro', label: 'Efeito Vidro', desc: 'Translúcido com blur', classe: 'backdrop-blur-md bg-opacity-70 border border-white/25 shadow-lg' },
-  { id: 'entalhe', label: 'Entalhe', desc: 'Profundidade chanfrada', classe: 'shadow-[inset_0_2px_6px_rgba(0,0,0,0.85),0_1px_2px_rgba(255,255,255,0.06)] border border-slate-800' },
-  { id: 'glow', label: 'Glow Neon', desc: 'Iluminação de contorno', classe: 'border border-amber-400/50 shadow-[0_0_15px_rgba(245,158,11,0.25)]' },
+  { id: 'padrao', label: 'Normal / Flat', desc: 'Borda sutil e limpa' },
+  { id: 'efeito_3d', label: 'Efeito 3D', desc: 'Base tátil saliente com profundidade' },
+  { id: 'vidro', label: 'Efeito Vidro', desc: 'Translúcido com blur e reflexo' },
+  { id: 'entalhe', label: 'Entalhe (Baixo-Relevo)', desc: 'Profundidade esculpida para dentro' },
+  { id: 'alto_relevo', label: 'Alto-Relevo', desc: 'Relevo saltado para fora (emboss)' },
+  { id: 'glow', label: 'Glow Neon', desc: 'Iluminação de contorno' },
 ];
+
+export function getEfeitoStyle(efeito = 'padrao', profundidade = 5) {
+  const p = Math.max(1, Math.min(10, Number(profundidade) || 5));
+  
+  switch (efeito) {
+    case 'efeito_3d':
+      return {
+        borderBottomWidth: `${p}px`,
+        borderBottomColor: 'rgba(0, 0, 0, 0.95)',
+        boxShadow: `0 ${p * 1.5}px ${p * 2.5}px rgba(0, 0, 0, 0.6)`,
+      };
+    case 'entalhe':
+      return {
+        boxShadow: `inset 0 ${p * 1.2}px ${p * 2}px rgba(0, 0, 0, 0.9), inset 0 -${Math.round(p * 0.5)}px ${p}px rgba(255, 255, 255, 0.08)`,
+        borderTopColor: 'rgba(255, 255, 255, 0.1)',
+        borderBottomColor: 'rgba(0, 0, 0, 0.9)',
+      };
+    case 'alto_relevo':
+      return {
+        boxShadow: `0 ${p * 1.5}px ${p * 2.5}px rgba(0, 0, 0, 0.7), inset 0 ${Math.max(1, Math.round(p * 0.4))}px ${Math.max(1, Math.round(p * 0.4))}px rgba(255, 255, 255, 0.25), inset 0 -${Math.max(1, Math.round(p * 0.4))}px ${Math.max(1, Math.round(p * 0.4))}px rgba(0, 0, 0, 0.6)`,
+        borderTopColor: 'rgba(255, 255, 255, 0.3)',
+        borderBottomColor: 'rgba(0, 0, 0, 0.8)',
+      };
+    case 'vidro':
+      return {
+        backdropFilter: `blur(${p * 2.5}px)`,
+        WebkitBackdropFilter: `blur(${p * 2.5}px)`,
+        boxShadow: `0 ${p * 1.2}px ${p * 2.5}px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, ${0.1 + p * 0.02})`,
+        borderColor: `rgba(255, 255, 255, ${0.15 + p * 0.025})`,
+      };
+    case 'glow':
+      return {
+        boxShadow: `0 0 ${p * 2.5}px rgba(245, 158, 11, ${0.2 + p * 0.04}), inset 0 0 ${p * 1.2}px rgba(245, 158, 11, 0.15)`,
+        borderColor: 'rgba(251, 191, 36, 0.6)',
+      };
+    case 'padrao':
+    default:
+      return {
+        boxShadow: `0 ${p}px ${p * 1.5}px rgba(0, 0, 0, 0.35)`,
+      };
+  }
+}
 
 // OPÇÕES DE CORES DA FONTE DO TÍTULO DOS CARDS (EM BOLINHAS)
 export const CORES_FONTE_TITULO = [
@@ -894,11 +937,11 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                       </div>
                     </div>
 
-                    {/* OPÇÕES DE EFEITOS E ACABAMENTOS (3D, VIDRO, ENTALHE, ETC.) */}
-                    <div className="space-y-1.5 pt-2 border-t border-slate-850">
+                    {/* OPÇÕES DE EFEITOS E ACABAMENTOS (3D, VIDRO, ENTALHE, ALTO-RELEVO, ETC.) */}
+                    <div className="space-y-2 pt-2 border-t border-slate-850">
                       <div className="flex items-center justify-between">
                         <span className="text-[11px] font-bold text-amber-300 block">
-                          Efeito & Acabamento do Card (3D, Vidro, Entalhe, etc.)
+                          Efeito & Acabamento do Card (3D, Vidro, Entalhe, Alto-Relevo)
                         </span>
                         <span className="text-[10px] text-slate-400">
                           {EFEITOS_CARDS.find(e => e.id === (config.cardEfeitoEstilo || 'padrao'))?.desc}
@@ -924,6 +967,30 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                             </button>
                           );
                         })}
+                      </div>
+
+                      {/* SLIDE: PROFUNDIDADE DO EFEITO DOS CARDS (TELA 1) */}
+                      <div className="pt-1.5">
+                        <div className="flex items-center justify-between text-xs mb-1">
+                          <span className="font-bold text-slate-300">Profundidade / Intensidade do Efeito</span>
+                          <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md text-[11px]">
+                            Nível {config.cardProfundidade || 5}
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min="1"
+                          max="10"
+                          step="1"
+                          value={config.cardProfundidade || 5}
+                          onChange={(e) => setConfig({ ...config, cardProfundidade: Number(e.target.value) })}
+                          className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                        />
+                        <div className="flex justify-between text-[9px] text-slate-500 font-mono">
+                          <span>1 (Sutil)</span>
+                          <span>5 (Padrão)</span>
+                          <span>10 (Profundidade Máxima)</span>
+                        </div>
                       </div>
                     </div>
 
@@ -1803,7 +1870,64 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                       </div>
                     </div>
 
-                    {/* 3. SLIDE: TAMANHO DO NÚMERO DENTRO DO BOTÃO */}
+                    {/* 3. EFEITO DOS BOTÕES NUMÉRICOS (3D, VIDRO, ENTALHE, ALTO-RELEVO, ETC.) */}
+                    <div className="space-y-2 pt-2 border-t border-slate-900">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-200">
+                          Efeito & Acabamento dos Botões
+                        </span>
+                        <span className="text-[10px] text-amber-300 font-bold bg-slate-900 px-2 py-0.5 rounded-full border border-slate-800">
+                          {EFEITOS_CARDS.find(e => e.id === (config.btnQtdEfeito || 'efeito_3d'))?.label}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {EFEITOS_CARDS.map((ef) => {
+                          const isSel = (config.btnQtdEfeito || 'efeito_3d') === ef.id;
+                          return (
+                            <button
+                              key={ef.id}
+                              type="button"
+                              onClick={() => setConfig({ ...config, btnQtdEfeito: ef.id })}
+                              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border active:scale-95 ${
+                                isSel
+                                  ? 'bg-amber-500/20 text-amber-300 border-amber-400 shadow-md ring-1 ring-amber-400'
+                                  : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-850'
+                              }`}
+                              title={ef.desc}
+                            >
+                              <span>{ef.label}</span>
+                              {isSel && <Check className="w-3.5 h-3.5 text-amber-400" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* SLIDE: PROFUNDIDADE DOS BOTÕES (TELA 2) */}
+                      <div className="pt-1.5">
+                        <div className="flex items-center justify-between text-xs mb-1">
+                          <span className="font-bold text-slate-300">Profundidade / Relevo do Botão</span>
+                          <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md text-[11px]">
+                            Nível {config.btnQtdProfundidade || 5}
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min="1"
+                          max="10"
+                          step="1"
+                          value={config.btnQtdProfundidade || 5}
+                          onChange={(e) => setConfig({ ...config, btnQtdProfundidade: Number(e.target.value) })}
+                          className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                        />
+                        <div className="flex justify-between text-[9px] text-slate-500 font-mono">
+                          <span>1 (Sutil)</span>
+                          <span>5 (Padrão)</span>
+                          <span>10 (Profundidade Máxima)</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 4. SLIDE: TAMANHO DO NÚMERO DENTRO DO BOTÃO */}
                     <div className="space-y-1.5 pt-2 border-t border-slate-900">
                       <div className="flex items-center justify-between text-xs">
                         <span className="font-bold text-slate-200">Tamanho do Número no Botão</span>
@@ -2136,8 +2260,11 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                           return (
                             <div
                               key={opcao.id}
-                              style={{ minHeight: `${config.cardAltura || 82}px` }}
-                              className={`w-full text-left p-2.5 rounded-xl flex items-center justify-between transition-all ${getCardFundoClass(config.cardFundoEstilo)} ${getCardEfeitoClass(config.cardEfeitoEstilo)}`}
+                              style={{ 
+                                minHeight: `${config.cardAltura || 82}px`,
+                                ...getEfeitoStyle(config.cardEfeitoEstilo, config.cardProfundidade)
+                              }}
+                              className={`w-full text-left p-2.5 rounded-xl flex items-center justify-between transition-all ${getCardFundoClass(config.cardFundoEstilo)}`}
                             >
                               <div className="flex items-center gap-2.5 pr-1 min-w-0">
                                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${corCls}`}>
@@ -2241,8 +2368,11 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                             return (
                               <div
                                 key={opt.id}
-                                style={{ minHeight: `${config.cardAltura || 82}px` }}
-                                className={`w-full text-left p-2.5 rounded-xl flex items-center justify-between transition-all ${getCardFundoClass(config.cardFundoEstilo)} ${getCardEfeitoClass(config.cardEfeitoEstilo)}`}
+                                style={{ 
+                                  minHeight: `${config.cardAltura || 82}px`,
+                                  ...getEfeitoStyle(config.cardEfeitoEstilo, config.cardProfundidade)
+                                }}
+                                className={`w-full text-left p-2.5 rounded-xl flex items-center justify-between transition-all ${getCardFundoClass(config.cardFundoEstilo)}`}
                               >
                                 <div className="flex items-center gap-2.5 pr-1 min-w-0">
                                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${corCls}`}>
@@ -2343,8 +2473,11 @@ export default function QuestionsConfigModal({ isOpen, onClose }) {
                           return (
                             <div
                               key={num}
-                              style={{ minHeight: `${simBtnHeight}px` }}
-                              className={`py-1 px-1 rounded-xl border border-b-2 text-center flex flex-col items-center justify-center transition-all ${btnCorCls}`}
+                              style={{ 
+                                minHeight: `${simBtnHeight}px`,
+                                ...getEfeitoStyle(config.btnQtdEfeito || 'efeito_3d', Math.max(1, Math.round((config.btnQtdProfundidade || 5) * 0.7)))
+                              }}
+                              className={`py-1 px-1 rounded-xl border text-center flex flex-col items-center justify-center transition-all ${btnCorCls}`}
                             >
                               <span 
                                 style={{ fontSize: `${simNumSize}px` }}

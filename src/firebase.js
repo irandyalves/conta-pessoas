@@ -32,7 +32,8 @@ export const DEFAULT_QUESTIONS_CONFIG = {
   cardFonteSubtitulo: 12, // px (10 a 18)
   cardAltura: 82, // px (60 a 130)
   cardFundoEstilo: 'escuro', // 16 opções de cores/degradês
-  cardEfeitoEstilo: 'padrao', // 'padrao' | 'efeito_3d' | 'vidro' | 'entalhe' | 'glow'
+  cardEfeitoEstilo: 'padrao', // 'padrao' | 'efeito_3d' | 'vidro' | 'entalhe' | 'alto_relevo' | 'glow'
+  cardProfundidade: 5, // 1 a 10 (intensidade/profundidade do relevo/sombra)
   cardCorFonteTitulo: 'branco', // 'branco' | 'dourado' | 'esmeralda' | 'azul' | 'amarelo' ...
   cardCorFonteSubtitulo: 'cinza', // 'cinza' | 'cinza_claro' | 'branco_suave' | 'dourado_suave' ...
 
@@ -114,6 +115,8 @@ export const DEFAULT_QUESTIONS_CONFIG = {
   // Estilo e Dimensões dos Botões Numéricos (Tela 2 - Acompanhantes)
   btnQtdAltura: 74, // px (48 a 100)
   btnQtdCor: 'slate', // 10 cores: 'slate' | 'esmeralda' | 'azul' | 'dourado' | 'roxo' | 'vermelho' | 'ciano' | 'laranja' | 'rosa' | 'indigo'
+  btnQtdEfeito: 'efeito_3d', // 'padrao' | 'efeito_3d' | 'vidro' | 'entalhe' | 'alto_relevo' | 'glow'
+  btnQtdProfundidade: 5, // 1 a 10 (intensidade/profundidade do relevo/sombra)
   btnQtdFonteNumero: 34, // px (18 a 48)
   btnQtdCorNumero: 'branco' // 'branco' | 'dourado' | 'amarelo' | 'esmeralda' | 'azul' | 'laranja' | 'rosa' | 'preto'
 };
@@ -369,6 +372,9 @@ function normalizeQuestionsConfig(config) {
   // Fundo, efeitos e cores de fontes dos cards
   merged.cardFundoEstilo = merged.cardFundoEstilo || 'escuro';
   merged.cardEfeitoEstilo = merged.cardEfeitoEstilo || 'padrao';
+  merged.cardProfundidade = Number(merged.cardProfundidade) || 5;
+  if (merged.cardProfundidade < 1) merged.cardProfundidade = 1;
+  if (merged.cardProfundidade > 10) merged.cardProfundidade = 10;
   merged.cardCorFonteTitulo = merged.cardCorFonteTitulo || 'branco';
   merged.cardCorFonteSubtitulo = merged.cardCorFonteSubtitulo || 'cinza';
 
@@ -422,6 +428,10 @@ function normalizeQuestionsConfig(config) {
   if (merged.btnQtdAltura > 120) merged.btnQtdAltura = 120;
 
   merged.btnQtdCor = merged.btnQtdCor || 'slate';
+  merged.btnQtdEfeito = merged.btnQtdEfeito || 'efeito_3d';
+  merged.btnQtdProfundidade = Number(merged.btnQtdProfundidade) || 5;
+  if (merged.btnQtdProfundidade < 1) merged.btnQtdProfundidade = 1;
+  if (merged.btnQtdProfundidade > 10) merged.btnQtdProfundidade = 10;
 
   merged.btnQtdFonteNumero = Number(merged.btnQtdFonteNumero) || 34;
   if (merged.btnQtdFonteNumero < 16) merged.btnQtdFonteNumero = 16;
