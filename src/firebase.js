@@ -23,10 +23,13 @@ export const DEFAULT_EVENT_TITLE = 'CANTATA DE NATAL 2026';
 export const DEFAULT_EVENT_ID = 'cantata-natal-2026';
 const EVENT_ID_KEY = 'church_current_event_id';
 const EVENTOS_LISTA_KEY = 'church_eventos_lista';
+const EVENTO_ATIVO_GLOBAL_KEY = 'church_evento_ativo_global';
 
 export function sanitizeEventId(targetEventId) {
   if (typeof targetEventId === 'string' && targetEventId.trim()) {
-    return targetEventId.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+    return targetEventId
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
   }
   return getActiveEventId();
 }
@@ -36,7 +39,9 @@ export function getActiveEventId() {
     const params = new URLSearchParams(window.location.search);
     const fromUrl = params.get('e') || params.get('evento') || params.get('event');
     if (fromUrl) {
-      const clean = fromUrl.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+      const clean = fromUrl
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
       return clean;
     }
     // No painel admin (view=admin), recupera o último evento selecionado
@@ -44,15 +49,82 @@ export function getActiveEventId() {
       const saved = localStorage.getItem(EVENT_ID_KEY);
       if (saved) return saved.trim();
     }
+
+    // Se estiver no celular/público e não tiver parâmetro, checa o evento ativo global salvo
+    const globalSaved = localStorage.getItem(EVENTO_ATIVO_GLOBAL_KEY);
+    if (globalSaved) {
+      try {
+        const parsed = JSON.parse(globalSaved);
+        if (parsed?.eventId) return parsed.eventId;
+      } catch (e) {}
+    }
   } catch (e) {}
   return DEFAULT_EVENT_ID;
 }
 
 export function setActiveEventId(eventId) {
   if (!eventId) return;
-  const clean = eventId.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+  const clean = sanitizeEventId(eventId);
   localStorage.setItem(EVENT_ID_KEY, clean);
   window.dispatchEvent(new CustomEvent('church_event_id_changed', { detail: clean }));
+}
+
+export async function salvarEventoAtivoGlobal(eventId, titulo = '') {
+  if (!eventId) return;
+  const cleanId = sanitizeEventId(eventId);
+  const data = {
+    eventId: cleanId,
+    titulo: (titulo || getSavedEventTitle(cleanId) || cleanId.toUpperCase()).trim(),
+    atualizadoEm: serverTimestamp()
+  };
+
+  localStorage.setItem(EVENTO_ATIVO_GLOBAL_KEY, JSON.stringify({ eventId: cleanId, titulo: data.titulo }));
+  window.dispatchEvent(new CustomEvent('church_evento_ativo_global_changed', { detail: { eventId: cleanId, titulo: data.titulo } }));
+
+  if (isFirebaseReady()) {
+    try {
+      await setDoc(doc(db, 'configuracoes', 'evento_ativo_padrao'), data, { merge: true });
+    } catch (e) {
+      console.warn('Erro ao salvar evento ativo global no Firestore:', e);
+    }
+  }
+}
+
+export function escutarEventoAtivoGlobal(callback) {
+  try {
+    const raw = localStorage.getItem(EVENTO_ATIVO_GLOBAL_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed?.eventId) callback(parsed.eventId, parsed.titulo || '');
+    }
+  } catch (e) {}
+
+  const localHandler = (e) => {
+    if (e?.detail?.eventId) callback(e.detail.eventId, e.detail.titulo || '');
+  };
+  window.addEventListener('church_evento_ativo_global_changed', localHandler);
+
+  if (isFirebaseReady()) {
+    try {
+      const unsub = onSnapshot(doc(db, 'configuracoes', 'evento_ativo_padrao'), (snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data?.eventId) {
+            localStorage.setItem(EVENTO_ATIVO_GLOBAL_KEY, JSON.stringify({ eventId: data.eventId, titulo: data.titulo || '' }));
+            callback(data.eventId, data.titulo || '');
+          }
+        }
+      });
+      return () => {
+        unsub();
+        window.removeEventListener('church_evento_ativo_global_changed', localHandler);
+      };
+    } catch (e) {
+      console.warn('Erro ao escutar evento ativo global no Firestore:', e);
+    }
+  }
+
+  return () => window.removeEventListener('church_evento_ativo_global_changed', localHandler);
 }
 
 export function getSavedEventosLista() {
@@ -113,7 +185,7 @@ export function escutarEventosLista(callback) {
 }
 
 export async function criarNovoEvento(id, titulo, presetConfig = null) {
-  const cleanId = (id || `evento_${Date.now()}`).trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+  const cleanId = sanitizeEventId(id || (titulo ? titulo.toLowerCase() : `evento_${Date.now()}`));
   const cleanTitle = (titulo || cleanId.toUpperCase()).trim();
   const listaAtual = getSavedEventosLista();
   
@@ -125,6 +197,7 @@ export async function criarNovoEvento(id, titulo, presetConfig = null) {
   await salvarEventosLista(novaLista);
   setActiveEventId(cleanId);
   await saveEventTitle(cleanTitle, cleanId);
+  await salvarEventoAtivoGlobal(cleanId, cleanTitle);
 
   if (presetConfig) {
     await saveQuestionsConfig(presetConfig, cleanId);

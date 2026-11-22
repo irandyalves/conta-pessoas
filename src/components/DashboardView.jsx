@@ -49,7 +49,8 @@ import {
   getActiveEventId,
   setActiveEventId,
   escutarEventosLista,
-  criarNovoEvento
+  criarNovoEvento,
+  salvarEventoAtivoGlobal
 } from '../firebase';
 
 export default function DashboardView({ onOpenConfig, onChangeView }) {
@@ -155,7 +156,7 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
     };
   }, [activeEventId]);
 
-  const handleSelectEvent = (e) => {
+  const handleSelectEvent = async (e) => {
     const val = e.target.value;
     if (val === '__novo__') {
       setShowModalNovoEvento(true);
@@ -168,6 +169,8 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
       setEventoTitulo(ev.titulo);
       setInputTitulo(ev.titulo);
     }
+    // Sincroniza evento ativo global para celulares sem ?e=
+    await salvarEventoAtivoGlobal(val, ev?.titulo || '');
   };
 
   const handleCriarEvento = async (e) => {
@@ -175,8 +178,7 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
     if (!novoEventoNome.trim()) return;
     setCriandoEvento(true);
     try {
-      const slug = novoEventoNome.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-      const created = await criarNovoEvento(slug, novoEventoNome.trim());
+      const created = await criarNovoEvento(null, novoEventoNome.trim());
       setActiveEventIdState(created.id);
       setEventoTitulo(created.titulo);
       setInputTitulo(created.titulo);
@@ -197,6 +199,10 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
       const isTargetActive = cleanId === activeEventId ? sessaoAtiva : Boolean(ev?.sessaoAtiva);
       const novoStatus = typeof forceStatus === 'boolean' ? forceStatus : !isTargetActive;
       await saveSessionStatus(novoStatus, cleanId);
+      // Ao liberar a sessão, define como o evento ativo global prioritário da igreja
+      if (novoStatus === true) {
+        await salvarEventoAtivoGlobal(cleanId, ev?.titulo || eventoTitulo);
+      }
     } catch (e) {
       mostrarFeedback('Erro ao Alterar Status da Sessão', e?.message || String(e), 'erro');
     } finally {
@@ -207,6 +213,7 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
   const handleSalvarTitulo = async () => {
     if (!inputTitulo.trim()) return;
     await saveEventTitle(inputTitulo.trim(), activeEventId);
+    await salvarEventoAtivoGlobal(activeEventId, inputTitulo.trim());
     setEditandoTitulo(false);
     setSalvoFeedback(true);
     setTimeout(() => setSalvoFeedback(false), 3000);
@@ -423,12 +430,12 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
                     </button>
                   </div>
 
-                  {/* Seletor de Eventos & QR Code Fixo */}
+                  {/* Seletor de Eventos Minimalista */}
                   <div className="flex items-center gap-2">
                     <select
                       value={activeEventId}
                       onChange={handleSelectEvent}
-                      className="bg-slate-900 border border-slate-700 hover:border-amber-400 focus:border-amber-400 rounded-lg px-2 py-0.5 text-xs font-bold text-amber-300 cursor-pointer shadow-sm"
+                      className="bg-slate-900 border border-slate-700/80 hover:border-amber-400 focus:border-amber-400 rounded-xl px-2.5 py-1 text-xs font-bold text-amber-300 cursor-pointer shadow-sm transition"
                     >
                       {eventosLista.map((ev) => (
                         <option key={ev.id} value={ev.id} className="bg-slate-900 text-white">
@@ -439,15 +446,6 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
                         + Criar Novo Evento...
                       </option>
                     </select>
-
-                    <button
-                      onClick={() => setShowModalQrCode(true)}
-                      className="px-2.5 py-0.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center gap-1 transition shadow-sm active:scale-95"
-                      title="Ver e imprimir QR Code fixo e permanente deste evento"
-                    >
-                      <QrCode className="w-3.5 h-3.5" />
-                      <span>QR Code Fixo</span>
-                    </button>
                   </div>
                 </div>
               )}

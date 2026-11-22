@@ -267,6 +267,10 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
   const [salvando, setSalvando] = useState(false);
   const [salvo, setSalvo] = useState(false);
 
+  // Sub-navegações internas minimalistas para evitar poluição visual
+  const [subTabTela1, setSubTabTela1] = useState('opcoes'); // 'opcoes' | 'aparencia' | 'pergunta'
+  const [subTabTela2, setSubTabTela2] = useState('botoes'); // 'botoes' | 'pergunta' | 'individual'
+
   // Preset de Celular Ativo
   const [modeloCelularId, setModeloCelularId] = useState('iphone16pro');
 
@@ -1014,68 +1018,112 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               {/* ====================================================== */}
               {activeTab === 'tela_1' && (
                 <div className="space-y-4">
-                  
-                  {/* 1. TÍTULO 1 E TÍTULO 2 DA TELA 1 PARA QUEBRAR O TÍTULO */}
-                  <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-2.5 shadow-sm">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wide">
-                        Título da Pergunta (Tela 1)
-                      </span>
-                      <span className="text-[10px] text-slate-400">
-                        Use Título 1 e 2 para quebrar em 2 linhas
-                      </span>
-                    </div>
+                  {/* Navegação Secundária Minimalista da Tela 1 */}
+                  <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-900/90 rounded-2xl border border-slate-800 self-start">
+                    <button
+                      type="button"
+                      onClick={() => setSubTabTela1('opcoes')}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                        subTabTela1 === 'opcoes'
+                          ? 'bg-amber-400 text-slate-950 shadow-md font-black'
+                          : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                      }`}
+                    >
+                      <ListOrdered className="w-3.5 h-3.5" />
+                      <span>Opções de Resposta ({cardsAtivosP1.length})</span>
+                    </button>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Título 1 (1ª Linha)</label>
-                        <input
-                          type="text"
-                          value={config.pergunta1Titulo || ''}
-                          onChange={(e) => setConfig({ ...config, pergunta1Titulo: e.target.value })}
-                          placeholder="Ex: Como você"
-                          className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-white shadow-inner"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Título 2 (2ª Linha - Opcional)</label>
-                        <input
-                          type="text"
-                          value={config.pergunta1Titulo2 || ''}
-                          onChange={(e) => setConfig({ ...config, pergunta1Titulo2: e.target.value })}
-                          placeholder="Ex: chegou aqui?"
-                          className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-amber-300 shadow-inner"
-                        />
-                      </div>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSubTabTela1('aparencia')}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                        subTabTela1 === 'aparencia'
+                          ? 'bg-amber-400 text-slate-950 shadow-md font-black'
+                          : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                      }`}
+                    >
+                      <Palette className="w-3.5 h-3.5" />
+                      <span>Aparência & Efeitos</span>
+                    </button>
 
-                    {/* Slider de Tamanho da Fonte da Pergunta 1 */}
-                    <div className="pt-2 border-t border-slate-800/80">
-                      <div className="flex items-center justify-between text-xs mb-1">
-                        <span className="font-bold text-slate-300">Tamanho da Fonte da Pergunta 1</span>
-                        <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
-                          {config.pergunta1FonteTamanho || 18}px
-                        </span>
-                      </div>
-                      <input
-                        type="range"
-                        min="14"
-                        max="28"
-                        step="1"
-                        value={config.pergunta1FonteTamanho || 18}
-                        onChange={(e) => setConfig({ ...config, pergunta1FonteTamanho: Number(e.target.value) })}
-                        className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                      />
-                      <div className="flex justify-between text-[9px] text-slate-500 font-mono">
-                        <span>14px (Menor)</span>
-                        <span>18px (Padrão)</span>
-                        <span>28px (Maior)</span>
-                      </div>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSubTabTela1('pergunta')}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                        subTabTela1 === 'pergunta'
+                          ? 'bg-amber-400 text-slate-950 shadow-md font-black'
+                          : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                      }`}
+                    >
+                      <Type className="w-3.5 h-3.5" />
+                      <span>Título da Pergunta</span>
+                    </button>
                   </div>
 
+                  {/* 1. TÍTULO 1 E TÍTULO 2 DA TELA 1 PARA QUEBRAR O TÍTULO */}
+                  {subTabTela1 === 'pergunta' && (
+                    <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-2.5 shadow-sm animate-fade-in">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wide">
+                          Título da Pergunta (Tela 1)
+                        </span>
+                        <span className="text-[10px] text-slate-400">
+                          Use Título 1 e 2 para quebrar em 2 linhas
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Título 1 (1ª Linha)</label>
+                          <input
+                            type="text"
+                            value={config.pergunta1Titulo || ''}
+                            onChange={(e) => setConfig({ ...config, pergunta1Titulo: e.target.value })}
+                            placeholder="Ex: Como você"
+                            className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-white shadow-inner"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Título 2 (2ª Linha - Opcional)</label>
+                          <input
+                            type="text"
+                            value={config.pergunta1Titulo2 || ''}
+                            onChange={(e) => setConfig({ ...config, pergunta1Titulo2: e.target.value })}
+                            placeholder="Ex: chegou aqui?"
+                            className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-amber-300 shadow-inner"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Slider de Tamanho da Fonte da Pergunta 1 */}
+                      <div className="pt-2 border-t border-slate-800/80">
+                        <div className="flex items-center justify-between text-xs mb-1">
+                          <span className="font-bold text-slate-300">Tamanho da Fonte da Pergunta 1</span>
+                          <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
+                            {config.pergunta1FonteTamanho || 18}px
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min="14"
+                          max="28"
+                          step="1"
+                          value={config.pergunta1FonteTamanho || 18}
+                          onChange={(e) => setConfig({ ...config, pergunta1FonteTamanho: Number(e.target.value) })}
+                          className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                        />
+                        <div className="flex justify-between text-[9px] text-slate-500 font-mono">
+                          <span>14px (Menor)</span>
+                          <span>18px (Padrão)</span>
+                          <span>28px (Maior)</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* 2. CONFIGURAÇÕES VISUAIS: FUNDO, CORES DAS FONTES E DIMENSÕES DOS CARDS */}
-                  <div className="bg-slate-950 border border-amber-500/30 rounded-2xl p-4 space-y-4 shadow-lg">
+                  {subTabTela1 === 'aparencia' && (
+                    <div className="bg-slate-950 border border-amber-500/30 rounded-2xl p-4 space-y-4 shadow-lg animate-fade-in">
                     
                     {/* CABEÇALHO DO BLOCO VISUAL */}
                     <div className="flex items-center gap-2 pb-2 border-b border-slate-800">
@@ -1359,9 +1407,11 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       </div>
                     </div>
                   </div>
+                  )}
 
                   {/* 3. LISTA REFEITA DE OPÇÕES / CARDS DA TELA 1 */}
-                  <div className="space-y-3 pt-1">
+                  {subTabTela1 === 'opcoes' && (
+                  <div className="space-y-3 pt-1 animate-fade-in">
                     <div className="flex items-center justify-between">
                       <div>
                         <span className="text-xs font-black text-slate-200 uppercase tracking-wider block">
@@ -1573,6 +1623,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       })}
                     </div>
                   </div>
+                  )}
 
                 </div>
               )}
@@ -2191,67 +2242,112 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               {/* ====================================================== */}
               {activeTab === 'acompanhantes' && (
                 <div className="space-y-4">
-                  {/* Título da Tela 2 com Título 1 e Título 2 */}
-                  <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-2.5 shadow-sm">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wide">
-                        Título da Pergunta (Tela 2)
-                      </span>
-                      <span className="text-[10px] text-slate-400">
-                        Use Título 1 e 2 para quebrar em 2 linhas
-                      </span>
-                    </div>
+                  {/* Navegação Secundária Minimalista da Tela 2 */}
+                  <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-900/90 rounded-2xl border border-slate-800 self-start">
+                    <button
+                      type="button"
+                      onClick={() => setSubTabTela2('botoes')}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                        subTabTela2 === 'botoes'
+                          ? 'bg-amber-400 text-slate-950 shadow-md font-black'
+                          : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                      }`}
+                    >
+                      <SlidersHorizontal className="w-3.5 h-3.5" />
+                      <span>Botões Numéricos (2 a 10)</span>
+                    </button>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Título 1 (1ª Linha)</label>
-                        <input
-                          type="text"
-                          value={config.pergunta2Titulo || ''}
-                          onChange={(e) => setConfig({ ...config, pergunta2Titulo: e.target.value })}
-                          placeholder="Ex: Você está só ou tem mais"
-                          className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1 text-xs font-bold text-white"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Título 2 (2ª Linha - Opcional)</label>
-                        <input
-                          type="text"
-                          value={config.pergunta2Titulo2 || ''}
-                          onChange={(e) => setConfig({ ...config, pergunta2Titulo2: e.target.value })}
-                          placeholder="Ex: pessoas te acompanhando?"
-                          className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1 text-xs font-bold text-amber-300"
-                        />
-                      </div>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSubTabTela2('pergunta')}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                        subTabTela2 === 'pergunta'
+                          ? 'bg-amber-400 text-slate-950 shadow-md font-black'
+                          : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                      }`}
+                    >
+                      <Type className="w-3.5 h-3.5" />
+                      <span>Título da Pergunta</span>
+                    </button>
 
-                    {/* Slider de Tamanho da Fonte da Pergunta 2 */}
-                    <div className="pt-2 border-t border-slate-800/80">
-                      <div className="flex items-center justify-between text-xs mb-1">
-                        <span className="font-bold text-slate-300">Tamanho da Fonte da Pergunta 2</span>
-                        <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
-                          {config.pergunta2FonteTamanho || 18}px
-                        </span>
-                      </div>
-                      <input
-                        type="range"
-                        min="14"
-                        max="28"
-                        step="1"
-                        value={config.pergunta2FonteTamanho || 18}
-                        onChange={(e) => setConfig({ ...config, pergunta2FonteTamanho: Number(e.target.value) })}
-                        className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                      />
-                      <div className="flex justify-between text-[9px] text-slate-500 font-mono">
-                        <span>14px (Menor)</span>
-                        <span>18px (Padrão)</span>
-                        <span>28px (Maior)</span>
-                      </div>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSubTabTela2('individual')}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                        subTabTela2 === 'individual'
+                          ? 'bg-amber-400 text-slate-950 shadow-md font-black'
+                          : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                      }`}
+                    >
+                      <User className="w-3.5 h-3.5" />
+                      <span>Botão "Só Eu" (1 Pessoa)</span>
+                    </button>
                   </div>
 
-                  {/* DESIGN & ESTILO DOS BOTÕES NUMÉRICOS (TELA 2) */}
-                  <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-4 shadow-sm">
+                  {/* 1. TÍTULO DA PERGUNTA TELA 2 */}
+                  {subTabTela2 === 'pergunta' && (
+                    <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-2.5 shadow-sm animate-fade-in">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wide">
+                          Título da Pergunta (Tela 2)
+                        </span>
+                        <span className="text-[10px] text-slate-400">
+                          Use Título 1 e 2 para quebrar em 2 linhas
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Título 1 (1ª Linha)</label>
+                          <input
+                            type="text"
+                            value={config.pergunta2Titulo || ''}
+                            onChange={(e) => setConfig({ ...config, pergunta2Titulo: e.target.value })}
+                            placeholder="Ex: Você está só ou tem mais"
+                            className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1 text-xs font-bold text-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Título 2 (2ª Linha - Opcional)</label>
+                          <input
+                            type="text"
+                            value={config.pergunta2Titulo2 || ''}
+                            onChange={(e) => setConfig({ ...config, pergunta2Titulo2: e.target.value })}
+                            placeholder="Ex: pessoas te acompanhando?"
+                            className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1 text-xs font-bold text-amber-300"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Slider de Tamanho da Fonte da Pergunta 2 */}
+                      <div className="pt-2 border-t border-slate-800/80">
+                        <div className="flex items-center justify-between text-xs mb-1">
+                          <span className="font-bold text-slate-300">Tamanho da Fonte da Pergunta 2</span>
+                          <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
+                            {config.pergunta2FonteTamanho || 18}px
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min="14"
+                          max="28"
+                          step="1"
+                          value={config.pergunta2FonteTamanho || 18}
+                          onChange={(e) => setConfig({ ...config, pergunta2FonteTamanho: Number(e.target.value) })}
+                          className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                        />
+                        <div className="flex justify-between text-[9px] text-slate-500 font-mono">
+                          <span>14px (Menor)</span>
+                          <span>18px (Padrão)</span>
+                          <span>28px (Maior)</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 2. DESIGN & ESTILO DOS BOTÕES NUMÉRICOS (TELA 2) */}
+                  {subTabTela2 === 'botoes' && (
+                    <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-4 shadow-sm animate-fade-in">
                     <div className="flex items-center justify-between pb-2 border-b border-slate-850">
                       <div className="flex items-center gap-2">
                         <SlidersHorizontal className="w-4 h-4 text-amber-400" />
@@ -2439,47 +2535,53 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       </div>
                     </div>
                   </div>
+                  )}
 
-                  <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-2">
-                    <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wide block">
-                      Texto do Botão Individual (1 Pessoa)
-                    </span>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <div>
-                        <label className="text-[10px] text-slate-400 block mb-0.5">Texto Principal</label>
-                        <input
-                          type="text"
-                          value={config.opcaoIndividualTitulo || ''}
-                          onChange={(e) => setConfig({ ...config, opcaoIndividualTitulo: e.target.value })}
-                          placeholder="Ex: SÓ EU"
-                          className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs font-bold text-white"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] text-slate-400 block mb-0.5">Complemento</label>
-                        <input
-                          type="text"
-                          value={config.opcaoIndividualSubtitulo || ''}
-                          onChange={(e) => setConfig({ ...config, opcaoIndividualSubtitulo: e.target.value })}
-                          placeholder="Ex: , vim sozinho"
-                          className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-300"
-                        />
+                  {/* 3. BOTÃO INDIVIDUAL E DIVISOR */}
+                  {subTabTela2 === 'individual' && (
+                  <div className="space-y-3.5 animate-fade-in">
+                    <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-2 shadow-sm">
+                      <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wide block">
+                        Texto do Botão Individual (1 Pessoa)
+                      </span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-[10px] text-slate-400 block mb-0.5">Texto Principal</label>
+                          <input
+                            type="text"
+                            value={config.opcaoIndividualTitulo || ''}
+                            onChange={(e) => setConfig({ ...config, opcaoIndividualTitulo: e.target.value })}
+                            placeholder="Ex: SÓ EU"
+                            className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs font-bold text-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-slate-400 block mb-0.5">Complemento</label>
+                          <input
+                            type="text"
+                            value={config.opcaoIndividualSubtitulo || ''}
+                            onChange={(e) => setConfig({ ...config, opcaoIndividualSubtitulo: e.target.value })}
+                            placeholder="Ex: , vim sozinho"
+                            className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-300"
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-1">
-                    <label className="text-[11px] font-bold text-amber-400 uppercase tracking-wide block">
-                      Texto do Divisor das Quantidades
-                    </label>
-                    <input
-                      type="text"
-                      value={config.divisorQtdTexto || ''}
-                      onChange={(e) => setConfig({ ...config, divisorQtdTexto: e.target.value })}
-                      placeholder="Ex: Quantas pessoas vieram com você?"
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs font-bold text-white"
-                    />
+                    <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-1 shadow-sm">
+                      <label className="text-[11px] font-bold text-amber-400 uppercase tracking-wide block">
+                        Texto do Divisor das Quantidades
+                      </label>
+                      <input
+                        type="text"
+                        value={config.divisorQtdTexto || ''}
+                        onChange={(e) => setConfig({ ...config, divisorQtdTexto: e.target.value })}
+                        placeholder="Ex: Quantas pessoas vieram com você?"
+                        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs font-bold text-white"
+                      />
+                    </div>
                   </div>
+                  )}
                 </div>
               )}
 

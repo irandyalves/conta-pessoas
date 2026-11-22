@@ -30,6 +30,7 @@ import {
   escutarConfigPerguntas,
   escutarStatusSessao,
   getActiveEventId,
+  escutarEventoAtivoGlobal,
   DEFAULT_QUESTIONS_CONFIG,
   DEFAULT_EVENT_TITLE,
   DEFAULT_EVENT_ID
@@ -185,7 +186,25 @@ const BTN_NUM_CLASSES = {
 };
 
 export default function MobileForm() {
-  const [activeEventId] = useState(() => getActiveEventId());
+  const [activeEventId, setActiveEventIdState] = useState(() => getActiveEventId());
+  
+  // Detecta se a URL tem parâmetro de evento fixo (ex: lido via QR Code ?e=...)
+  const isUrlFixo = Boolean(new URLSearchParams(window.location.search).get('e') || 
+                            new URLSearchParams(window.location.search).get('evento') || 
+                            new URLSearchParams(window.location.search).get('event'));
+
+  // Se NÃO for URL fixo, escuta a transmissão em tempo real do evento ativo do admin
+  useEffect(() => {
+    if (!isUrlFixo) {
+      const unsub = escutarEventoAtivoGlobal((globalEventId) => {
+        if (globalEventId && globalEventId !== activeEventId) {
+          setActiveEventIdState(globalEventId);
+        }
+      });
+      return () => unsub && unsub();
+    }
+  }, [isUrlFixo, activeEventId]);
+
   const DISPOSITIVO_BLOQUEADO_EVENTO_KEY = `presenca_dispositivo_bloqueado_voto_${activeEventId}`;
   const DISPOSITIVO_VOTO_TIME_EVENTO_KEY = `presenca_dispositivo_hora_voto_${activeEventId}`;
 
@@ -210,6 +229,27 @@ export default function MobileForm() {
       return false;
     }
   });
+
+  // Reavalia o bloqueio e reset caso o activeEventId mude dinamicamente
+  useEffect(() => {
+    const jaVotou = localStorage.getItem(`presenca_dispositivo_bloqueado_voto_${activeEventId}`) === 'true' ||
+      (activeEventId === DEFAULT_EVENT_ID && localStorage.getItem(DISPOSITIVO_BLOQUEADO_KEY) === 'true');
+    setDispositivoBloqueado(jaVotou);
+    if (jaVotou) {
+      setCurrentStep('final');
+      setFinalizado(true);
+    } else {
+      setCurrentStep('p1');
+      setFinalizado(false);
+      setP1SlideIndex(0);
+      setComoChegou('');
+      setRespostasExtras({});
+      setGavetasAbertas({});
+      setGavetaTextos({});
+      setGavetaRespondidas({});
+      setDissertativaTextos({});
+    }
+  }, [activeEventId]);
 
   // Etapa inicial: se já votou, fica travado em 'final'; se não, começa em 'p1'
   const [currentStep, setCurrentStep] = useState(() => {
