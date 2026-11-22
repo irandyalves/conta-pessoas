@@ -30,7 +30,8 @@ import {
   escutarStatusSessao,
   getActiveEventId,
   DEFAULT_QUESTIONS_CONFIG,
-  DEFAULT_EVENT_TITLE 
+  DEFAULT_EVENT_TITLE,
+  DEFAULT_EVENT_ID
 } from '../firebase';
 
 const DISPOSITIVO_BLOQUEADO_KEY = 'presenca_dispositivo_bloqueado_voto';
