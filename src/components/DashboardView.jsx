@@ -78,6 +78,38 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
   const [novoEventoNome, setNovoEventoNome] = useState('');
   const [criandoEvento, setCriandoEvento] = useState(false);
 
+  // MODAL PADRÃO DE AVISOS, ERROS E CONFIRMAÇÕES (DESIGN SYSTEM DO SISTEMA)
+  const [modalFeedback, setModalFeedback] = useState({
+    isOpen: false,
+    tipo: 'aviso', // 'erro' | 'sucesso' | 'aviso' | 'confirm'
+    titulo: '',
+    mensagem: '',
+    onConfirm: null,
+    btnTexto: 'OK'
+  });
+
+  const mostrarFeedback = (titulo, mensagem, tipo = 'erro') => {
+    setModalFeedback({
+      isOpen: true,
+      tipo,
+      titulo,
+      mensagem,
+      onConfirm: null,
+      btnTexto: 'Entendido'
+    });
+  };
+
+  const mostrarConfirm = (titulo, mensagem, onConfirm, btnTexto = 'Confirmar') => {
+    setModalFeedback({
+      isOpen: true,
+      tipo: 'confirm',
+      titulo,
+      mensagem,
+      onConfirm,
+      btnTexto
+    });
+  };
+
   const copyToClipboard = (text, label) => {
     navigator.clipboard.writeText(text);
     setCopiedLink(label);
@@ -151,7 +183,7 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
       setShowModalNovoEvento(false);
       setNovoEventoNome('');
     } catch (err) {
-      alert('Erro ao criar evento: ' + (err?.message || err));
+      mostrarFeedback('Erro ao Criar Evento', err?.message || String(err), 'erro');
     } finally {
       setCriandoEvento(false);
     }
@@ -160,13 +192,13 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
   const handleToggleSessao = async (targetId = null, forceStatus = null) => {
     setAlternandoSessao(true);
     try {
-      const id = targetId || activeEventId;
-      const ev = eventosLista.find(e => e.id === id);
-      const isTargetActive = id === activeEventId ? sessaoAtiva : Boolean(ev?.sessaoAtiva);
-      const novoStatus = forceStatus !== null ? forceStatus : !isTargetActive;
-      await saveSessionStatus(novoStatus, id);
+      const cleanId = (typeof targetId === 'string' && targetId.trim()) ? targetId.trim() : activeEventId;
+      const ev = eventosLista.find(e => e.id === cleanId);
+      const isTargetActive = cleanId === activeEventId ? sessaoAtiva : Boolean(ev?.sessaoAtiva);
+      const novoStatus = typeof forceStatus === 'boolean' ? forceStatus : !isTargetActive;
+      await saveSessionStatus(novoStatus, cleanId);
     } catch (e) {
-      alert('Erro ao alterar status da sessão: ' + (e?.message || e));
+      mostrarFeedback('Erro ao Alterar Status da Sessão', e?.message || String(e), 'erro');
     } finally {
       setAlternandoSessao(false);
     }
@@ -188,7 +220,7 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
       setFeedbackZerar(true);
       setTimeout(() => setFeedbackZerar(false), 4500);
     } catch (e) {
-      alert("Erro ao zerar: " + (e?.message || e));
+      mostrarFeedback('Erro ao Zerar Dados', e?.message || String(e), 'erro');
     } finally {
       setZerando(false);
     }
@@ -242,7 +274,7 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
   // 1. Exportar para CSV / Excel com UTF-8
   const handleExportCSV = () => {
     if (presencasFiltradas.length === 0) {
-      alert('Não há registros no período selecionado para exportar.');
+      mostrarFeedback('Exportar CSV', 'Não há registros no período selecionado para exportar.', 'aviso');
       return;
     }
 
@@ -291,9 +323,11 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
   };
 
   const handleLimpar = () => {
-    if (confirm('Atenção: Deseja apagar os dados locais de teste?')) {
-      limparDadosLocais();
-    }
+    mostrarConfirm(
+      'Limpar Dados Locais', 
+      'Atenção: Deseja apagar os dados locais de teste armazenados neste navegador?', 
+      () => limparDadosLocais()
+    );
   };
 
   return (
@@ -734,7 +768,7 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
 
         <button
           type="button"
-          onClick={handleToggleSessao}
+          onClick={() => handleToggleSessao(activeEventId)}
           disabled={alternandoSessao}
           title={sessaoAtiva ? 'Clique para pausar a pesquisa' : 'Clique para liberar a pesquisa'}
           className={`p-3 rounded-xl border relative overflow-hidden transition-all text-left cursor-pointer group active:scale-95 ${
@@ -1303,6 +1337,68 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
         activeEventId={activeEventId}
         eventTitle={eventoTitulo}
       />
+
+      {/* ============================================================== */}
+      {/* MODAL PADRÃO DE AVISOS, ERROS E CONFIRMAÇÕES (NOVO DESIGN)    */}
+      {/* ============================================================== */}
+      {modalFeedback.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in">
+          <div className="relative w-full max-w-sm bg-slate-900 border border-slate-700/80 rounded-3xl p-6 sm:p-7 shadow-2xl text-center space-y-4">
+            <div className={`w-14 h-14 rounded-2xl mx-auto flex items-center justify-center border shadow-xl ${
+              modalFeedback.tipo === 'erro' 
+                ? 'bg-rose-500/20 text-rose-400 border-rose-500/40 shadow-rose-950/40' 
+                : modalFeedback.tipo === 'sucesso'
+                ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-emerald-950/40'
+                : 'bg-amber-500/20 text-amber-400 border-amber-500/40 shadow-amber-950/40'
+            }`}>
+              {modalFeedback.tipo === 'erro' ? (
+                <AlertTriangle className="w-7 h-7" />
+              ) : modalFeedback.tipo === 'sucesso' ? (
+                <CheckCircle2 className="w-7 h-7" />
+              ) : (
+                <HelpCircle className="w-7 h-7" />
+              )}
+            </div>
+
+            <div>
+              <h3 className="text-base sm:text-lg font-black text-white">
+                {modalFeedback.titulo}
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-300 mt-2 leading-relaxed">
+                {modalFeedback.mensagem}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 pt-2">
+              {modalFeedback.tipo === 'confirm' && (
+                <button
+                  type="button"
+                  onClick={() => setModalFeedback(prev => ({ ...prev, isOpen: false }))}
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 font-bold text-xs transition active:scale-95"
+                >
+                  Cancelar
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  if (modalFeedback.onConfirm) {
+                    modalFeedback.onConfirm();
+                  }
+                  setModalFeedback(prev => ({ ...prev, isOpen: false }));
+                }}
+                className={`flex-1 py-2.5 px-4 rounded-xl font-black text-xs transition active:scale-95 shadow-lg ${
+                  modalFeedback.tipo === 'erro'
+                    ? 'bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white shadow-rose-900/30'
+                    : 'bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 shadow-amber-900/30'
+                }`}
+              >
+                {modalFeedback.btnTexto || 'Entendido'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -21,6 +21,8 @@ export default function FirebaseConfigModal({ isOpen, onClose }) {
 
   const [rawConfig, setRawConfig] = useState('');
   const [mode, setMode] = useState('fields'); // 'fields' | 'paste'
+  const [aviso, setAviso] = useState('');
+  const [showConfirmReset, setShowConfirmReset] = useState(false);
 
   if (!isOpen) return null;
 
@@ -38,6 +40,7 @@ export default function FirebaseConfigModal({ isOpen, onClose }) {
         setMessagingSenderId(parsed.messagingSenderId || '');
         setAppId(parsed.appId || '');
         setMode('fields');
+        setAviso('');
       }
     } catch (e) {
       // Ignora erro de parse enquanto digita
@@ -46,7 +49,7 @@ export default function FirebaseConfigModal({ isOpen, onClose }) {
 
   const handleSave = () => {
     if (!apiKey.trim() || !projectId.trim()) {
-      alert('Por favor, informe pelo menos a apiKey e o projectId do Firebase.');
+      setAviso('Por favor, informe pelo menos a apiKey e o projectId do Firebase.');
       return;
     }
 
@@ -63,9 +66,7 @@ export default function FirebaseConfigModal({ isOpen, onClose }) {
   };
 
   const handleClear = () => {
-    if (confirm('Deseja remover a configuração do Firebase e voltar ao modo Demonstração Local?')) {
-      saveFirebaseConfig(null);
-    }
+    setShowConfirmReset(true);
   };
 
   return (
@@ -200,6 +201,14 @@ export default function FirebaseConfigModal({ isOpen, onClose }) {
             </div>
           )}
 
+          {/* Aviso inline */}
+          {aviso && (
+            <div className="p-3 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-300 text-xs font-bold flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+              <span>{aviso}</span>
+            </div>
+          )}
+
           {/* Dica rápida de configuração */}
           <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80 text-xs text-slate-400 space-y-1.5">
             <p className="font-semibold text-slate-300 flex items-center gap-1.5">
@@ -240,6 +249,40 @@ export default function FirebaseConfigModal({ isOpen, onClose }) {
             </button>
           </div>
         </div>
+
+        {/* Modal de Confirmação de Desconexão */}
+        {showConfirmReset && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+            <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-xs w-full text-center space-y-4">
+              <div className="w-12 h-12 rounded-xl bg-rose-500/20 text-rose-400 border border-rose-500/40 flex items-center justify-center mx-auto">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <div>
+                <h4 className="font-bold text-white text-base">Desconectar Firebase?</h4>
+                <p className="text-xs text-slate-400 mt-1">O sistema voltará a utilizar a demonstração local temporária.</p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmReset(false)}
+                  className="flex-1 py-2 text-xs font-bold text-slate-400 hover:text-white rounded-xl bg-slate-800"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowConfirmReset(false);
+                    saveFirebaseConfig(null);
+                  }}
+                  className="flex-1 py-2 text-xs font-bold text-white rounded-xl bg-rose-600 hover:bg-rose-500"
+                >
+                  Desconectar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

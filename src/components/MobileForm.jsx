@@ -19,7 +19,8 @@ import {
   MessageCircle,
   HelpCircle,
   Radio,
-  CheckCircle2
+  CheckCircle2,
+  AlertTriangle
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { 
@@ -232,6 +233,7 @@ export default function MobileForm() {
   const [gavetaTextos, setGavetaTextos] = useState({});
   const [gavetaRespondidas, setGavetaRespondidas] = useState({});
   const [dissertativaTextos, setDissertativaTextos] = useState({});
+  const [campoObrigatorioErro, setCampoObrigatorioErro] = useState(null);
   const [countdown, setCountdown] = useState(10);
   const [finalizado, setFinalizado] = useState(() => {
     try {
@@ -908,14 +910,23 @@ export default function MobileForm() {
                   </div>
                 </div>
 
+                {/* Aviso se campo obrigatório estiver vazio */}
+                {campoObrigatorioErro === tela.id && (
+                  <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-300 text-xs font-bold flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+                    <span>Por favor, digite sua resposta antes de continuar.</span>
+                  </div>
+                )}
+
                 {/* Botão de Avançar com estilo 3D */}
                 <button
                   type="button"
                   onClick={() => {
                     if (tela.obrigatorio && !(dissertativaTextos[tela.id] || '').trim()) {
-                      alert('Por favor, preencha este campo antes de continuar.');
+                      setCampoObrigatorioErro(tela.id);
                       return;
                     }
+                    setCampoObrigatorioErro(null);
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                     if (idx + 1 < telasExtrasAtivas.length) {
                       setCurrentStep(`extra_${idx + 1}`);

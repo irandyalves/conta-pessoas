@@ -39,7 +39,9 @@ import {
   UploadCloud,
   FolderUp,
   ChevronDown,
-  AlignLeft
+  AlignLeft,
+  AlertTriangle,
+  HelpCircle
 } from 'lucide-react';
 import { 
   getSavedQuestionsConfig, 
@@ -279,6 +281,38 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
   const [previewImportado, setPreviewImportado] = useState(null);
   const [showTipoNovaTelaModal, setShowTipoNovaTelaModal] = useState(false);
 
+  // Modal Padronizado de Avisos, Erros e Confirmações
+  const [modalFeedback, setModalFeedback] = useState({
+    isOpen: false,
+    tipo: 'aviso',
+    titulo: '',
+    mensagem: '',
+    onConfirm: null,
+    btnTexto: 'Entendido'
+  });
+
+  const mostrarFeedback = (titulo, mensagem, tipo = 'erro') => {
+    setModalFeedback({
+      isOpen: true,
+      tipo,
+      titulo,
+      mensagem,
+      onConfirm: null,
+      btnTexto: 'Entendido'
+    });
+  };
+
+  const mostrarConfirm = (titulo, mensagem, onConfirm, btnTexto = 'Confirmar') => {
+    setModalFeedback({
+      isOpen: true,
+      tipo: 'confirm',
+      titulo,
+      mensagem,
+      onConfirm,
+      btnTexto
+    });
+  };
+
   useEffect(() => {
     if (isOpen) {
       setConfig(getSavedQuestionsConfig(activeEventId));
@@ -351,16 +385,21 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
   // Excluir card da Tela 1
   const handleExcluirCardP1 = (index) => {
     if (config.opcoesChegada.length <= 1) {
-      alert('Você precisa manter pelo menos 1 opção na Tela 1!');
+      mostrarFeedback('Atenção', 'Você precisa manter pelo menos 1 opção na Tela 1!', 'aviso');
       return;
     }
     const cardAlvo = config.opcoesChegada[index];
-    if (confirm(`Excluir "${cardAlvo.titulo || 'esta opção'}" da Tela 1?`)) {
-      setConfig((prev) => {
-        const novas = prev.opcoesChegada.filter((_, idx) => idx !== index);
-        return { ...prev, opcoesChegada: novas };
-      });
-    }
+    mostrarConfirm(
+      'Excluir Opção',
+      `Deseja realmente excluir "${cardAlvo.titulo || 'esta opção'}" da Tela 1?`,
+      () => {
+        setConfig((prev) => {
+          const novas = prev.opcoesChegada.filter((_, idx) => idx !== index);
+          return { ...prev, opcoesChegada: novas };
+        });
+      },
+      'Excluir'
+    );
   };
 
   // ============================================================
@@ -475,7 +514,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
       }
       setPreviewImportado(imported);
     } catch (err) {
-      alert('Erro ao importar arquivo: ' + (err?.message || err));
+      mostrarFeedback('Erro ao Importar Arquivo', err?.message || String(err), 'erro');
     } finally {
       setImportando(false);
     }
@@ -484,14 +523,14 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
   // Importar texto colado do Forms ou Google Docs
   const handleImportarTextoColado = () => {
     if (!importTexto.trim()) {
-      alert('Por favor, cole o texto das perguntas ou formulário.');
+      mostrarFeedback('Campo em Branco', 'Por favor, cole o texto das perguntas ou formulário antes de prosseguir.', 'aviso');
       return;
     }
     try {
       const imported = parseJsonOrText(importTexto);
       setPreviewImportado(imported);
     } catch (err) {
-      alert('Erro ao analisar texto: ' + (err?.message || err));
+      mostrarFeedback('Erro ao Analisar Texto', err?.message || String(err), 'erro');
     }
   };
 
@@ -510,13 +549,18 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
   const handleExcluirTela = (extraIndex) => {
     const numTela = extraIndex + 3;
-    if (confirm(`Tem certeza que deseja excluir a Tela ${numTela}?`)) {
-      setConfig((prev) => {
-        const novas = (prev.telasExtras || []).filter((_, i) => i !== extraIndex);
-        return { ...prev, telasExtras: novas };
-      });
-      setActiveTab('inicio');
-    }
+    mostrarConfirm(
+      'Excluir Tela',
+      `Tem certeza que deseja excluir a Tela ${numTela}?`,
+      () => {
+        setConfig((prev) => {
+          const novas = (prev.telasExtras || []).filter((_, i) => i !== extraIndex);
+          return { ...prev, telasExtras: novas };
+        });
+        setActiveTab('inicio');
+      },
+      'Excluir'
+    );
   };
 
   const handleUpdateTelaProp = (extraIndex, field, value) => {
@@ -577,7 +621,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
       const novasTelas = [...(prev.telasExtras || [])];
       const telaAlvo = novasTelas[extraIndex];
       if ((telaAlvo.opcoes || []).length <= 1) {
-        alert('Mantenha pelo menos 1 opção nesta tela!');
+        mostrarFeedback('Atenção', 'Mantenha pelo menos 1 opção nesta tela!', 'aviso');
         return prev;
       }
       novasTelas[extraIndex] = {
@@ -602,19 +646,24 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
         onClose();
       }, 1000);
     } catch (e) {
-      alert('Erro ao salvar no Firebase: ' + (e?.message || e));
+      mostrarFeedback('Erro ao Salvar no Firebase', e?.message || String(e), 'erro');
     } finally {
       setSalvando(false);
     }
   };
 
   const handleRestaurarPadroes = () => {
-    if (confirm('Deseja restaurar todas as configurações de telas para o padrão original?')) {
-      setConfig({ ...DEFAULT_QUESTIONS_CONFIG });
-      setActiveTab('inicio');
-      setPreviewScreen('inicio');
-      setPreviewPage(0);
-    }
+    mostrarConfirm(
+      'Restaurar Padrões',
+      'Deseja restaurar todas as configurações de telas para o padrão original?',
+      () => {
+        setConfig({ ...DEFAULT_QUESTIONS_CONFIG });
+        setActiveTab('inicio');
+        setPreviewScreen('inicio');
+        setPreviewPage(0);
+      },
+      'Restaurar'
+    );
   };
 
   const getIconComponent = (iconeId) => {
@@ -3274,6 +3323,68 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                   className="px-4 py-1.5 text-xs text-slate-400 hover:text-white"
                 >
                   Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* MODAL PADRÃO DE AVISOS, ERROS E CONFIRMAÇÕES (NOVO DESIGN)    */}
+        {/* ============================================================== */}
+        {modalFeedback.isOpen && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in">
+            <div className="relative w-full max-w-sm bg-slate-900 border border-slate-700/80 rounded-3xl p-6 sm:p-7 shadow-2xl text-center space-y-4">
+              <div className={`w-14 h-14 rounded-2xl mx-auto flex items-center justify-center border shadow-xl ${
+                modalFeedback.tipo === 'erro' 
+                  ? 'bg-rose-500/20 text-rose-400 border-rose-500/40 shadow-rose-950/40' 
+                  : modalFeedback.tipo === 'sucesso'
+                  ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-emerald-950/40'
+                  : 'bg-amber-500/20 text-amber-400 border-amber-500/40 shadow-amber-950/40'
+              }`}>
+                {modalFeedback.tipo === 'erro' ? (
+                  <AlertTriangle className="w-7 h-7" />
+                ) : modalFeedback.tipo === 'sucesso' ? (
+                  <CheckCircle2 className="w-7 h-7" />
+                ) : (
+                  <HelpCircle className="w-7 h-7" />
+                )}
+              </div>
+
+              <div>
+                <h3 className="text-base sm:text-lg font-black text-white">
+                  {modalFeedback.titulo}
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-300 mt-2 leading-relaxed">
+                  {modalFeedback.mensagem}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                {modalFeedback.tipo === 'confirm' && (
+                  <button
+                    type="button"
+                    onClick={() => setModalFeedback(prev => ({ ...prev, isOpen: false }))}
+                    className="flex-1 py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 font-bold text-xs transition active:scale-95"
+                  >
+                    Cancelar
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (modalFeedback.onConfirm) {
+                      modalFeedback.onConfirm();
+                    }
+                    setModalFeedback(prev => ({ ...prev, isOpen: false }));
+                  }}
+                  className={`flex-1 py-2.5 px-4 rounded-xl font-black text-xs transition active:scale-95 shadow-lg ${
+                    modalFeedback.tipo === 'erro'
+                      ? 'bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white shadow-rose-900/30'
+                      : 'bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 shadow-amber-900/30'
+                  }`}
+                >
+                  {modalFeedback.btnTexto || 'Entendido'}
                 </button>
               </div>
             </div>

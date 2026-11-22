@@ -24,6 +24,13 @@ export const DEFAULT_EVENT_ID = 'cantata-natal-2026';
 const EVENT_ID_KEY = 'church_current_event_id';
 const EVENTOS_LISTA_KEY = 'church_eventos_lista';
 
+export function sanitizeEventId(targetEventId) {
+  if (typeof targetEventId === 'string' && targetEventId.trim()) {
+    return targetEventId.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+  }
+  return getActiveEventId();
+}
+
 export function getActiveEventId() {
   try {
     const params = new URLSearchParams(window.location.search);
@@ -294,7 +301,7 @@ export function isFirebaseReady() {
 // CONFIGURAÇÃO DO EVENTO (TÍTULO CONFIGURÁVEL)
 // ==========================================
 export function getSavedEventTitle(targetEventId = null) {
-  const eventId = targetEventId || getActiveEventId();
+  const eventId = sanitizeEventId(targetEventId);
   try {
     const specific = localStorage.getItem(`${EVENT_STORAGE_KEY}_${eventId}`);
     if (specific) return specific;
@@ -309,7 +316,7 @@ export function getSavedEventTitle(targetEventId = null) {
 }
 
 export async function saveEventTitle(title, targetEventId = null) {
-  const eventId = targetEventId || getActiveEventId();
+  const eventId = sanitizeEventId(targetEventId);
   const cleanTitle = (title || DEFAULT_EVENT_TITLE).trim();
   localStorage.setItem(`${EVENT_STORAGE_KEY}_${eventId}`, cleanTitle);
   if (eventId === DEFAULT_EVENT_ID) {
@@ -350,7 +357,7 @@ export async function saveEventTitle(title, targetEventId = null) {
 }
 
 export function escutarTituloEvento(callback, targetEventId = null) {
-  const eventId = targetEventId || getActiveEventId();
+  const eventId = sanitizeEventId(targetEventId);
   callback(getSavedEventTitle(eventId));
 
   const localHandler = (e) => callback(e.detail || getSavedEventTitle(eventId));
@@ -391,7 +398,7 @@ export function escutarTituloEvento(callback, targetEventId = null) {
 // CONTROLE DE SESSÃO / START / PAUSAR POR EVENTO
 // ==========================================
 export function getSavedSessionStatus(targetEventId = null) {
-  const eventId = targetEventId || getActiveEventId();
+  const eventId = sanitizeEventId(targetEventId);
   try {
     const val = localStorage.getItem(`${SESSION_STORAGE_KEY}_${eventId}`);
     if (val !== null) return val === 'true';
@@ -411,7 +418,7 @@ export function getSavedSessionStatus(targetEventId = null) {
 }
 
 export async function saveSessionStatus(started, targetEventId = null) {
-  const eventId = targetEventId || getActiveEventId();
+  const eventId = sanitizeEventId(targetEventId);
   const isStarted = Boolean(started);
   const now = new Date().toISOString();
   const sessaoId = isStarted ? `sessao_${eventId}_${Date.now()}` : null;
@@ -440,7 +447,7 @@ export async function saveSessionStatus(started, targetEventId = null) {
   const lista = getSavedEventosLista();
   const novaLista = lista.map(e => e.id === eventId ? { ...e, sessaoAtiva: isStarted } : e);
   if (!lista.some(e => e.id === eventId)) {
-    novaLista.push({ id: eventId, titulo: eventId.toUpperCase(), ativo: true, sessaoAtiva: isStarted });
+    novaLista.push({ id: eventId, titulo: String(eventId || '').toUpperCase(), ativo: true, sessaoAtiva: isStarted });
   }
   localStorage.setItem(EVENTOS_LISTA_KEY, JSON.stringify(novaLista));
 
@@ -486,7 +493,7 @@ export async function saveSessionStatus(started, targetEventId = null) {
 }
 
 export function escutarStatusSessao(callback, targetEventId = null) {
-  const eventId = targetEventId || getActiveEventId();
+  const eventId = sanitizeEventId(targetEventId);
   const localAtiva = getSavedSessionStatus(eventId);
   const localIniciadoEm = localStorage.getItem(`church_session_started_at_${eventId}`) || null;
   const localSessaoId = localStorage.getItem(`church_session_id_${eventId}`) || null;
@@ -722,7 +729,7 @@ function normalizeQuestionsConfig(config) {
 // CONFIGURAÇÃO DAS PERGUNTAS E SUBTÍTULOS POR EVENTO
 // ==========================================
 export function getSavedQuestionsConfig(targetEventId = null) {
-  const eventId = targetEventId || getActiveEventId();
+  const eventId = sanitizeEventId(targetEventId);
   try {
     const rawSpecific = localStorage.getItem(`${QUESTIONS_STORAGE_KEY}_${eventId}`);
     if (rawSpecific) {
@@ -741,7 +748,7 @@ export function getSavedQuestionsConfig(targetEventId = null) {
 }
 
 export async function saveQuestionsConfig(config, targetEventId = null) {
-  const eventId = targetEventId || getActiveEventId();
+  const eventId = sanitizeEventId(targetEventId);
   const normalized = normalizeQuestionsConfig(config);
   localStorage.setItem(`${QUESTIONS_STORAGE_KEY}_${eventId}`, JSON.stringify(normalized));
   if (eventId === DEFAULT_EVENT_ID) {
@@ -771,7 +778,7 @@ export async function saveQuestionsConfig(config, targetEventId = null) {
 }
 
 export function escutarConfigPerguntas(callback, targetEventId = null) {
-  const eventId = targetEventId || getActiveEventId();
+  const eventId = sanitizeEventId(targetEventId);
   callback(getSavedQuestionsConfig(eventId));
 
   const localHandler = (e) => callback(normalizeQuestionsConfig(e.detail));
@@ -814,7 +821,7 @@ export function escutarConfigPerguntas(callback, targetEventId = null) {
 // RESET DE DISPOSITIVOS POR EVENTO
 // ==========================================
 export function escutarResetGlobal(callback, targetEventId = null) {
-  const eventId = targetEventId || getActiveEventId();
+  const eventId = sanitizeEventId(targetEventId);
   if (isFirebaseReady()) {
     try {
       const unsub = onSnapshot(doc(db, 'resets_eventos', eventId), (snap) => {
@@ -911,7 +918,7 @@ export async function registrarPresenca({
 }
 
 export function escutarPresencas(callback, targetEventId = null) {
-  const eventId = targetEventId || getActiveEventId();
+  const eventId = sanitizeEventId(targetEventId);
   if (isFirebaseReady()) {
     try {
       const q = query(collection(db, 'presencas'), orderBy('timestamp', 'desc'));
@@ -958,7 +965,7 @@ export function limparDadosLocais() {
 
 // ZERA REGISTROS POR EVENTO OU GLOBAL NO FIRESTORE
 export async function zerarTudo(targetEventId = null) {
-  const eventId = targetEventId || getActiveEventId();
+  const eventId = sanitizeEventId(targetEventId);
   limparDadosLocais();
   localStorage.removeItem(`presenca_dispositivo_bloqueado_voto_${eventId}`);
   localStorage.removeItem(`presenca_dispositivo_hora_voto_${eventId}`);
