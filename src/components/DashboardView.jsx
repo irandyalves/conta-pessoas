@@ -381,72 +381,63 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
       <div className="print:hidden flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-slate-800">
         <div>
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-600 p-0.5 shadow-md shadow-amber-500/20">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-600 p-0.5 shadow-md shadow-amber-500/20 shrink-0">
               <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center text-amber-400">
                 <Church className="w-5 h-5" />
               </div>
             </div>
             <div>
-              <div className="inline-flex items-center gap-1.5 px-2 py-0.2 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[9px] font-bold tracking-wide uppercase">
-                Área Administrativa
-              </div>
-              
-              {/* CONFIGURAÇÃO DO TÍTULO DO EVENTO (EX: CANTATA DE NATAL 2026) */}
+              {/* LISTBOX PRINCIPAL DO EVENTO COM BOTÃO LÁPIS À DIREITA PARA EDITAR O NOME */}
               {editandoTitulo ? (
-                <div className="flex items-center gap-2 mt-0.5">
+                <div className="flex items-center gap-2">
                   <input
                     type="text"
                     value={inputTitulo}
                     onChange={(e) => setInputTitulo(e.target.value)}
                     placeholder="Nome do Evento"
-                    className="bg-slate-900 border border-amber-500 rounded-lg px-2.5 py-0.5 text-sm font-bold text-white focus:outline-none"
+                    className="bg-slate-900 border border-amber-500 rounded-xl px-3 py-1.5 text-sm sm:text-base font-bold text-white focus:outline-none"
+                    autoFocus
                   />
                   <button
                     onClick={handleSalvarTitulo}
-                    className="px-2 py-0.5 bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold rounded-md flex items-center gap-1"
+                    className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-lg flex items-center gap-1 shadow"
                   >
-                    <Save className="w-3 h-3" /> Salvar
+                    <Save className="w-3.5 h-3.5" /> Salvar
                   </button>
                   <button
                     onClick={() => {
                       setInputTitulo(eventoTitulo);
                       setEditandoTitulo(false);
                     }}
-                    className="p-1 text-slate-400 hover:text-white"
+                    className="p-1.5 text-slate-400 hover:text-white"
                   >
-                    <X className="w-3.5 h-3.5" />
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
               ) : (
-                <div className="space-y-1 mt-0.5">
-                  <div className="flex items-center gap-1.5">
-                    <h1 className="text-xl font-black text-white">{eventoTitulo}</h1>
-                    <button
-                      onClick={() => setEditandoTitulo(true)}
-                      title="Editar nome do evento que aparece no celular"
-                      className="p-1 text-slate-400 hover:text-amber-400 transition"
-                    >
-                      <Edit3 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-
-                  {/* Seletor de Eventos Minimalista */}
-                  <div className="flex items-center gap-2">
-                    <select
-                      value={activeEventId}
-                      onChange={handleSelectEvent}
-                      className="bg-slate-900 border border-slate-700/80 hover:border-amber-400 focus:border-amber-400 rounded-xl px-2.5 py-1 text-xs font-bold text-amber-300 cursor-pointer shadow-sm transition"
-                    >
-                      {eventosLista.map((ev) => (
-                        <option key={ev.id} value={ev.id} className="bg-slate-900 text-white">
-                          📅 {ev.titulo} ({ev.id})
-                        </option>
-                      ))}
-                      <option value="__novo__" className="bg-slate-900 text-emerald-400 font-bold">
-                        + Criar Novo Evento...
+                <div className="flex items-center gap-2">
+                  <select
+                    value={activeEventId}
+                    onChange={handleSelectEvent}
+                    className="bg-slate-900/95 border border-slate-700/80 hover:border-amber-400 focus:border-amber-400 rounded-xl px-3 py-1.5 text-base sm:text-lg font-black text-amber-300 cursor-pointer shadow-sm transition max-w-[280px] sm:max-w-md truncate"
+                  >
+                    {eventosLista.map((ev) => (
+                      <option key={ev.id} value={ev.id} className="bg-slate-900 text-white font-bold">
+                        {ev.titulo}
                       </option>
-                    </select>
-                  </div>
+                    ))}
+                    <option value="__novo__" className="bg-slate-900 text-emerald-400 font-bold">
+                      + Criar Novo Evento...
+                    </option>
+                  </select>
+
+                  <button
+                    onClick={() => setEditandoTitulo(true)}
+                    title="Editar nome deste evento"
+                    className="p-2 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-amber-400/60 text-slate-400 hover:text-amber-400 transition shadow-sm"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                  </button>
                 </div>
               )}
             </div>
@@ -545,21 +536,21 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
             <button
               onClick={() => handleToggleSessao(activeEventId, false)}
               disabled={alternandoSessao}
-              className="px-4 py-2.5 rounded-xl font-black text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-amber-900/40 shadow-xl active:scale-95 transition flex items-center justify-center gap-2 border border-amber-400/60"
+              className="px-5 py-2.5 rounded-xl font-black text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-amber-900/40 shadow-xl active:scale-95 transition flex items-center justify-center gap-2 border border-amber-400/60"
               title="Pausar este evento e voltar seus celulares para tela de espera"
             >
               <Pause className="w-4 h-4 fill-slate-950" />
-              <span>{alternandoSessao ? 'Pausando...' : 'PAUSAR ESTE EVENTO'}</span>
+              <span>{alternandoSessao ? 'Pausando...' : 'PAUSAR'}</span>
             </button>
           ) : (
             <button
               onClick={() => handleToggleSessao(activeEventId, true)}
               disabled={alternandoSessao}
-              className="px-5 py-2.5 rounded-xl font-black text-xs sm:text-sm bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 shadow-emerald-500/30 shadow-xl active:scale-95 transition flex items-center justify-center gap-2"
+              className="px-6 py-2.5 rounded-xl font-black text-xs sm:text-sm bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 shadow-emerald-500/30 shadow-xl active:scale-95 transition flex items-center justify-center gap-2"
               title="Liberar celulares para responder as perguntas deste evento"
             >
               <Play className="w-4 h-4 fill-slate-950" />
-              <span>{alternandoSessao ? 'Iniciando...' : 'LIBERAR ESTE EVENTO'}</span>
+              <span>{alternandoSessao ? 'Liberando...' : 'LIBERAR'}</span>
             </button>
           )}
 
@@ -587,90 +578,45 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
       </div>
 
       {/* ============================================================== */}
-      {/* BARRA UNIFICADA COMPACTA: NOME DO EVENTO + LINKS RÁPIDOS       */}
+      {/* SEÇÃO COMPACTA: LINKS                                          */}
       {/* ============================================================== */}
-      <div className="print:hidden grid grid-cols-1 lg:grid-cols-12 gap-2.5 items-stretch">
-        {/* LADO ESQUERDO: NOME DO EVENTO (COMPACTO) */}
-        <div className="lg:col-span-5 bg-slate-900/90 border border-amber-500/30 rounded-xl px-3 py-2 flex flex-col justify-between gap-1.5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wide flex items-center gap-1.5">
-              <Edit3 className="w-3.5 h-3.5" /> Nome do Evento (Celular / Telão)
-            </span>
-            {salvoFeedback && (
-              <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.2 rounded-full font-bold flex items-center gap-1">
-                <Check className="w-3 h-3" /> Salvo!
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              value={inputTitulo}
-              onChange={(e) => setInputTitulo(e.target.value)}
-              placeholder="Ex: CANTATA DE NATAL 2026"
-              className="flex-1 min-w-0 bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1 text-xs font-bold text-white tracking-wide"
-            />
+      <div className="print:hidden bg-slate-900/90 border border-slate-800 rounded-xl px-3.5 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shadow-sm">
+        <span className="text-[11px] font-black text-amber-400 uppercase tracking-wider flex items-center gap-1.5 shrink-0">
+          <Smartphone className="w-3.5 h-3.5 text-amber-400" /> LINKS
+        </span>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 flex-1 sm:max-w-2xl sm:ml-auto">
+          {/* Celular */}
+          <div className="bg-slate-950/80 border border-emerald-900/40 rounded-lg px-2.5 py-1.5 flex items-center justify-between gap-2">
+            <span className="text-xs font-bold text-emerald-300">📱 Celular</span>
             <button
-              onClick={handleSalvarTitulo}
-              className="px-3 py-1 bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-black text-xs rounded-lg transition flex items-center gap-1 shrink-0 shadow"
+              onClick={() => copyToClipboard(linkMobile, 'mobile')}
+              className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white rounded text-xs font-bold shrink-0 transition"
             >
-              <Save className="w-3.5 h-3.5" />
-              <span>Salvar</span>
+              {copiedLink === 'mobile' ? '✓ Copiado' : 'Copiar'}
             </button>
           </div>
-        </div>
 
-        {/* LADO DIREITO: LINKS RÁPIDOS COMPACTOS */}
-        <div className="lg:col-span-7 bg-slate-900/90 border border-slate-800 rounded-xl px-3 py-2 flex flex-col justify-between gap-1.5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wide flex items-center gap-1.5">
-              <Smartphone className="w-3.5 h-3.5 text-emerald-400" /> Links Rápidos (1 Toque para Copiar)
-            </span>
-            <span className="text-[10px] text-slate-400 hidden sm:inline">Toque para copiar</span>
+          {/* Telão */}
+          <div className="bg-slate-950/80 border border-sky-900/40 rounded-lg px-2.5 py-1.5 flex items-center justify-between gap-2">
+            <span className="text-xs font-bold text-sky-300">📺 Telão</span>
+            <button
+              onClick={() => copyToClipboard(linkTelao, 'telao')}
+              className="px-2.5 py-1 bg-sky-600 hover:bg-sky-500 active:scale-95 text-white rounded text-xs font-bold shrink-0 transition"
+            >
+              {copiedLink === 'telao' ? '✓ Copiado' : 'Copiar'}
+            </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            {/* Celular */}
-            <div className="bg-slate-950 border border-emerald-900/50 rounded-lg px-2.5 py-1 flex items-center justify-between gap-1.5">
-              <div className="min-w-0">
-                <span className="text-[10px] font-bold text-emerald-400 block truncate">📱 Celular</span>
-                <span className="text-[9px] font-mono text-slate-400 block truncate">...web.app</span>
-              </div>
-              <button
-                onClick={() => copyToClipboard(linkMobile, 'mobile')}
-                className="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white rounded text-[10px] font-bold shrink-0 transition"
-              >
-                {copiedLink === 'mobile' ? '✓ Copiado' : 'Copiar'}
-              </button>
-            </div>
-
-            {/* Telão */}
-            <div className="bg-slate-950 border border-sky-900/50 rounded-lg px-2.5 py-1 flex items-center justify-between gap-1.5">
-              <div className="min-w-0">
-                <span className="text-[10px] font-bold text-sky-400 block truncate">📺 Telão</span>
-                <span className="text-[9px] font-mono text-slate-400 block truncate">?view=telao</span>
-              </div>
-              <button
-                onClick={() => copyToClipboard(linkTelao, 'telao')}
-                className="px-2 py-0.5 bg-sky-600 hover:bg-sky-500 active:scale-95 text-white rounded text-[10px] font-bold shrink-0 transition"
-              >
-                {copiedLink === 'telao' ? '✓ Copiado' : 'Copiar'}
-              </button>
-            </div>
-
-            {/* Admin */}
-            <div className="bg-slate-950 border border-indigo-900/50 rounded-lg px-2.5 py-1 flex items-center justify-between gap-1.5">
-              <div className="min-w-0">
-                <span className="text-[10px] font-bold text-indigo-400 block truncate">📊 Admin</span>
-                <span className="text-[9px] font-mono text-slate-400 block truncate">?view=admin</span>
-              </div>
-              <button
-                onClick={() => copyToClipboard(linkAdmin, 'admin')}
-                className="px-2 py-0.5 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white rounded text-[10px] font-bold shrink-0 transition"
-              >
-                {copiedLink === 'admin' ? '✓ Copiado' : 'Copiar'}
-              </button>
-            </div>
+          {/* Admin */}
+          <div className="bg-slate-950/80 border border-indigo-900/40 rounded-lg px-2.5 py-1.5 flex items-center justify-between gap-2">
+            <span className="text-xs font-bold text-indigo-300">📊 Admin</span>
+            <button
+              onClick={() => copyToClipboard(linkAdmin, 'admin')}
+              className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white rounded text-xs font-bold shrink-0 transition"
+            >
+              {copiedLink === 'admin' ? '✓ Copiado' : 'Copiar'}
+            </button>
           </div>
         </div>
       </div>
@@ -724,75 +670,86 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
       </div>
 
       {/* ============================================================== */}
-      {/* CARDS DE RESUMO (ALTURA REDUZIDA EM 40%)                       */}
+      {/* CARDS DE RESUMO (LAYOUT REFEITO: COMPACTO, DIRETO E INTUITIVO) */}
       {/* ============================================================== */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 print:hidden">
-        <div className="bg-slate-900/90 border border-slate-800 p-3 rounded-xl relative overflow-hidden">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total de Pessoas</span>
-            <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 print:hidden">
+        {/* Total de Pessoas */}
+        <div className="bg-slate-900/90 border border-slate-800 px-3.5 py-2 rounded-xl flex items-center justify-between gap-2.5 shadow-sm">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-amber-500/15 text-amber-400 flex items-center justify-center shrink-0">
               <Users className="w-4 h-4" />
             </div>
+            <div className="min-w-0">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block truncate">Total Pessoas</span>
+              <span className="text-lg font-black text-white leading-none">{totalPessoas}</span>
+            </div>
           </div>
-          <div className="text-2xl font-black text-white">{totalPessoas}</div>
-          <p className="text-[11px] text-slate-400 mt-0.5">Soma de todos os acompanhantes</p>
         </div>
 
-        <div className="bg-slate-900/90 border border-slate-800 p-3 rounded-xl relative overflow-hidden">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Aparelhos / Respostas</span>
-            <div className="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center">
+        {/* Aparelhos / Respostas */}
+        <div className="bg-slate-900/90 border border-slate-800 px-3.5 py-2 rounded-xl flex items-center justify-between gap-2.5 shadow-sm">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-blue-500/15 text-blue-400 flex items-center justify-center shrink-0">
               <UserCheck className="w-4 h-4" />
             </div>
-          </div>
-          <div className="text-2xl font-black text-white">{totalCheckins}</div>
-          <p className="text-[11px] text-slate-400 mt-0.5">Média de {mediaPorGrupo} pessoas/grupo</p>
-        </div>
-
-        <div className="bg-slate-900/90 border border-slate-800 p-3 rounded-xl relative overflow-hidden">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">Cards Ativos</span>
-            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
-              <Sliders className="w-4 h-4" />
+            <div className="min-w-0">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block truncate">Respostas</span>
+              <div className="flex items-baseline gap-1">
+                <span className="text-lg font-black text-white leading-none">{totalCheckins}</span>
+                {totalCheckins > 0 && (
+                  <span className="text-[10px] text-slate-400 font-medium">({mediaPorGrupo}/grupo)</span>
+                )}
+              </div>
             </div>
           </div>
-          <div className="text-2xl font-black text-emerald-300">
-            {listaOpcoesConfig.filter(c => c.ativo !== false).length}
-          </div>
-          <p className="text-[11px] text-slate-400 mt-0.5">
-            Limite: {questionsConfig?.cardsPorTela || 4} cards/tela
-          </p>
         </div>
 
+        {/* Cards Ativos */}
+        <div className="bg-slate-900/90 border border-slate-800 px-3.5 py-2 rounded-xl flex items-center justify-between gap-2.5 shadow-sm">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0">
+              <Sliders className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block truncate">Cards Ativos</span>
+              <span className="text-lg font-black text-emerald-300 leading-none">
+                {listaOpcoesConfig.filter(c => c.ativo !== false).length}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Status da Pesquisa (Clique rápido para alternar) */}
         <button
           type="button"
           onClick={() => handleToggleSessao(activeEventId)}
           disabled={alternandoSessao}
           title={sessaoAtiva ? 'Clique para pausar a pesquisa' : 'Clique para liberar a pesquisa'}
-          className={`p-3 rounded-xl border relative overflow-hidden transition-all text-left cursor-pointer group active:scale-95 ${
+          className={`px-3.5 py-2 rounded-xl border flex items-center justify-between gap-2 transition active:scale-95 text-left shadow-sm cursor-pointer ${
             sessaoAtiva 
-              ? 'bg-emerald-950/40 border-emerald-500/40 hover:border-emerald-400/80 shadow-md shadow-emerald-950/30' 
-              : 'bg-amber-950/40 border-amber-500/40 hover:border-amber-400/80 shadow-md shadow-amber-950/30'
+              ? 'bg-emerald-950/40 border-emerald-500/40 hover:border-emerald-400/80 shadow-emerald-950/20' 
+              : 'bg-amber-950/40 border-amber-500/40 hover:border-amber-400/80 shadow-amber-950/20'
           }`}
         >
-          <div className="flex items-center justify-between mb-1">
-            <span className={`text-[11px] font-bold uppercase tracking-wider ${
-              sessaoAtiva ? 'text-emerald-400' : 'text-amber-400'
-            }`}>
-              Status da Pesquisa
-            </span>
-            <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110 ${
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
               sessaoAtiva ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
             }`}>
-              {sessaoAtiva ? <Pause className="w-3.5 h-3.5 fill-emerald-400" /> : <Play className="w-3.5 h-3.5 fill-amber-400" />}
+              {sessaoAtiva ? <Pause className="w-4 h-4 fill-emerald-400" /> : <Play className="w-4 h-4 fill-amber-400" />}
+            </div>
+            <div className="min-w-0">
+              <span className={`text-[10px] font-bold uppercase tracking-wider block truncate ${
+                sessaoAtiva ? 'text-emerald-400' : 'text-amber-400'
+              }`}>
+                Status
+              </span>
+              <span className={`text-base font-black leading-none ${
+                sessaoAtiva ? 'text-emerald-300' : 'text-amber-300'
+              }`}>
+                {sessaoAtiva ? 'AO VIVO' : 'EM ESPERA'}
+              </span>
             </div>
           </div>
-          <div className={`text-xl font-black tracking-tight ${sessaoAtiva ? 'text-emerald-300' : 'text-amber-300'}`}>
-            {sessaoAtiva ? 'AO VIVO' : 'EM ESPERA'}
-          </div>
-          <p className="text-[11px] text-slate-300 mt-0.5">
-            {sessaoAtiva ? 'Clique p/ pausar' : 'Clique p/ dar start'}
-          </p>
         </button>
       </div>
 
