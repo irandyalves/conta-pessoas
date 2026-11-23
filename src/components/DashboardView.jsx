@@ -1399,15 +1399,15 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
           {/* ABA 5: QR CODE FIXO DO EVENTO (ABA INLINE)                     */}
           {/* ============================================================== */}
           {activeSection === 'qrcode' && (
-            <div className="print:hidden bg-slate-900/90 border border-slate-800 rounded-2xl p-6 max-w-2xl shadow-xl space-y-6">
+            <div className="print:hidden bg-slate-900/90 border border-slate-800 rounded-2xl p-6 max-w-4xl shadow-xl space-y-6 overflow-hidden">
               <div className="flex items-center justify-between pb-4 border-b border-slate-800">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center shrink-0">
                     <QrCode className="w-5 h-5" />
                   </div>
-                  <div>
-                    <h2 className="text-base sm:text-lg font-black text-white">QR Code Fixo — {eventoTitulo}</h2>
-                    <p className="text-xs text-slate-400 font-mono">ID do Evento: {activeEventId}</p>
+                  <div className="min-w-0">
+                    <h2 className="text-base sm:text-lg font-black text-white truncate">QR Code Fixo — {eventoTitulo}</h2>
+                    <p className="text-xs text-slate-400 font-mono truncate">ID do Evento: {activeEventId}</p>
                   </div>
                 </div>
               </div>
@@ -1422,18 +1422,18 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
                   />
                 </div>
 
-                <div className="space-y-4 flex-1 w-full">
+                <div className="space-y-4 flex-1 min-w-0 w-full">
                   <div className="space-y-1.5 text-xs text-slate-300">
                     <p className="font-bold text-amber-300 text-sm">
                       🔒 QR Code 100% Permanente e Imutável
                     </p>
-                    <p className="text-slate-400 leading-relaxed">
+                    <p className="text-slate-400 leading-relaxed break-words">
                       Este QR Code aponta diretamente para o evento <strong>{eventoTitulo}</strong>. Você pode imprimir em cartazes, boletins ou projetar no telão com antecedência — o endereço nunca muda.
                     </p>
                   </div>
 
-                  <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between gap-2">
-                    <span className="text-xs font-mono text-emerald-400 truncate select-all">
+                  <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between gap-2 min-w-0">
+                    <span className="text-xs font-mono text-emerald-400 truncate select-all min-w-0 flex-1">
                       {linkMobile}
                     </span>
                     <button
