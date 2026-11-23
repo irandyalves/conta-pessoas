@@ -674,13 +674,18 @@ export default function MobileForm() {
       };
     } catch (e) {}
 
+    const rawTextos = overrideTextos || dissertativaTextos;
+    const cleanTextos = Object.fromEntries(
+      Object.entries(rawTextos || {}).filter(([k]) => !k.includes('__item_'))
+    );
+
     registrarPresenca({
       comoChegou: overrideComoChegou || comoChegou || questionsConfig?.pergunta1Titulo || 'Participante',
       qtdPessoas: qtd,
       evento: eventoTitulo,
       respostasExtras: overrideExtras || respostasExtras,
       gavetaRespostas: gavetaTextos,
-      textoRespostas: overrideTextos || dissertativaTextos,
+      textoRespostas: cleanTextos,
       eventoId: activeEventId
     });
 
@@ -1137,8 +1142,8 @@ export default function MobileForm() {
           const valKey = tela.titulo || tela.id;
           const valAtual = dissertativaTextos[valKey] ?? '';
 
-          // 1. TEXTO LONGO, TEXTO CURTO, DATA, HORA, SLIDER, RATING, DROPDOWN, RADIO, CHECKBOX
-          if (['texto', 'texto_curto', 'data', 'hora', 'slider', 'rating', 'dropdown', 'radio', 'checkbox'].includes(tela.tipo)) {
+          // 1. TEXTO LONGO, TEXTO CURTO, DATA, HORA, SLIDER, RATING, DROPDOWN, RADIO, CHECKBOX, GRADE
+          if (['texto', 'texto_curto', 'data', 'hora', 'slider', 'rating', 'dropdown', 'radio', 'checkbox', 'grade'].includes(tela.tipo)) {
             const opcoesAtivas = (tela.opcoes || []).filter(o => o.ativo !== false);
             const selectedChecks = valAtual ? String(valAtual).split(', ').filter(Boolean) : [];
             const defaultSliderVal = Math.round(((tela.sliderMin ?? 0) + (tela.sliderMax ?? 10)) / 2);
@@ -1312,6 +1317,67 @@ export default function MobileForm() {
                               </div>
                             </label>
                             {opt.temGaveta && isChecked && renderGavetaContent(opt, () => avancarParaProxima())}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {tela.tipo === 'grade' && (
+                    <div className="space-y-3">
+                      {tela.legendaEscala && (
+                        <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-200 leading-relaxed text-left">
+                          <strong className="text-amber-300">Escala:</strong> {tela.legendaEscala}
+                        </div>
+                      )}
+
+                      {opcoesAtivas.map((opt, oi) => {
+                        const cols = tela.colunasGrade || ['1', '2', '3', '4', '5', 'NA'];
+                        // Lê o valor salvo para este item a partir do mapa de respostas da grade
+                        const itemKey = `${valKey}__item_${oi}`;
+                        const currentItemVal = dissertativaTextos[itemKey] || '';
+
+                        const handleSelectGradeCol = (colVal) => {
+                          setDissertativaTextos((prev) => {
+                            const updated = { ...prev, [itemKey]: colVal };
+                            const summaryParts = opcoesAtivas
+                              .map((o, idx) => {
+                                const v = idx === oi ? colVal : updated[`${valKey}__item_${idx}`];
+                                return v ? `${o.titulo}: ${v}` : null;
+                              })
+                              .filter(Boolean);
+                            updated[valKey] = summaryParts.join(' | ');
+                            return updated;
+                          });
+                        };
+
+                        return (
+                          <div
+                            key={opt.id || oi}
+                            className="p-3.5 sm:p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2.5 text-left"
+                          >
+                            <span className="text-xs sm:text-sm font-bold text-white block leading-snug">
+                              {opt.titulo}
+                            </span>
+                            <div className="grid grid-cols-6 gap-1.5">
+                              {cols.map((col) => {
+                                const isActive = currentItemVal === col;
+                                return (
+                                  <button
+                                    key={col}
+                                    type="button"
+                                    onClick={() => handleSelectGradeCol(col)}
+                                    className={`py-2.5 rounded-xl text-xs sm:text-sm font-black border transition active:scale-95 ${
+                                      isActive
+                                        ? 'bg-emerald-500 text-slate-950 border-emerald-300 shadow-lg shadow-emerald-500/20'
+                                        : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-amber-400/60'
+                                    }`}
+                                  >
+                                    {col}
+                                  </button>
+                                );
+                              })}
+                            </div>
                           </div>
                         );
                       })}

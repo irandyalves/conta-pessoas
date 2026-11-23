@@ -50,11 +50,12 @@ import {
   saveEventTitle,
   DEFAULT_QUESTIONS_CONFIG 
 } from '../firebase';
-import { parseAnyFile, parseJsonOrText, parseGoogleFormsUrl } from '../utils/formImporter';
+import { parseAnyFile, parseJsonOrText, parseGoogleFormsUrl, TEXTO_AVALIACAO_JMU_ENAJUM } from '../utils/formImporter';
 import { PRESETS_PESQUISAS } from '../utils/presets';
 
 export const TIPOS_PERGUNTA = [
   { id: 'cards', label: '🃏 Cards Múltipla Escolha', short: 'Cards', desc: 'Cards grandes táteis com ícones e gavetas' },
+  { id: 'grade', label: '📊 Grade / Matriz de Avaliação (1 a 5 / NA)', short: 'Grade / Escala', desc: 'Tabela de itens avaliados por escala (ex: 1 a 5 e NA)' },
   { id: 'radio', label: '🔘 Radio Button (Escolha Única)', short: 'Radio Button', desc: 'Lista clássica com bolinhas de seleção única' },
   { id: 'checkbox', label: '☑️ Checkbox (Múltipla Seleção)', short: 'Checkbox', desc: 'Caixas para marcar uma ou várias opções' },
   { id: 'dropdown', label: '📋 Lista Suspensa (Dropdown)', short: 'Lista Suspensa', desc: 'Menu seletor compacto para listas de opções' },
@@ -740,6 +741,9 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
       ...prev,
       ...previewImportado
     }));
+    if (previewImportado.importedFormTitle && !eventoTitulo) {
+      setEventoTitulo(previewImportado.importedFormTitle);
+    }
     setPreviewImportado(null);
     setImportTexto('');
     setShowImportModal(false);
@@ -959,10 +963,10 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               type="button"
               onClick={() => setShowImportModal(true)}
               className="px-3 py-1.5 text-xs font-bold rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 flex items-center gap-1.5 transition active:scale-95 shadow-sm"
-              title="Importar com IA arquivos .docx, .doc, .csv, .txt ou Google Forms"
+              title="Importar com IA arquivos .pdf, .pptx, .ppt, .docx, .doc, .xlsx, .csv, .txt ou Google Forms"
             >
               <FileText className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Importar IA (.docx / .doc / .csv / .txt)</span>
+              <span className="hidden sm:inline">Importar IA (.pdf / .pptx / .docx / .txt)</span>
               <span className="sm:hidden">Importar IA</span>
             </button>
 
@@ -1062,7 +1066,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                   >
                     <Layers className="w-4 h-4" />
                     <span>Tela {numTela}</span>
-                    {['cards', 'radio', 'checkbox', 'dropdown'].includes(tela.tipo || 'cards') && (
+                    {['cards', 'radio', 'checkbox', 'dropdown', 'grade'].includes(tela.tipo || 'cards') && (
                       <span className="text-[10px] bg-slate-800 text-slate-300 px-1.5 py-0.2 rounded-full font-mono">
                         {cardsAtivos}
                       </span>
@@ -2469,18 +2473,18 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         </div>
                       </div>
                     ) : (
-                      /* CONFIGURAÇÃO ESPECÍFICA: CARDS, RADIO BUTTON, CHECKBOX OU LISTA SUSPENSA (COM GAVETAS) */
+                      /* CONFIGURAÇÃO ESPECÍFICA: CARDS, GRADE/MATRIZ, RADIO BUTTON, CHECKBOX OU LISTA SUSPENSA */
                       <div className="space-y-3">
                         {telaAlvo.tipo === 'cards' && (
                           <div className="flex items-center justify-between text-xs py-1.5 border-b border-slate-800/80">
                             <span className="text-slate-300 font-bold">Cards por tela nesta etapa:</span>
                             <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
-                              {[2, 3, 4, 5, 6].map((num) => (
+                              {[2, 3, 4, 5, 6, 8, 10].map((num) => (
                                 <button
                                   key={num}
                                   type="button"
                                   onClick={() => handleUpdateTelaProp(extraIndex, 'cardsPorTela', num)}
-                                  className={`w-6 h-6 rounded-lg font-black text-[11px] transition ${
+                                  className={`px-2 h-6 rounded-lg font-black text-[11px] transition ${
                                     limitCards === num
                                       ? 'bg-amber-400 text-slate-950 shadow'
                                       : 'text-slate-400 hover:text-white'
@@ -2493,11 +2497,43 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                           </div>
                         )}
 
-                        {/* Opções desta Tela Extra */}
+                        {telaAlvo.tipo === 'grade' && (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 py-2 border-b border-slate-800/80">
+                            <div>
+                              <label className="text-[10px] font-bold text-amber-400 uppercase tracking-wide block mb-1">
+                                Colunas da Escala (separadas por vírgula)
+                              </label>
+                              <input
+                                type="text"
+                                value={(telaAlvo.colunasGrade || ['1', '2', '3', '4', '5', 'NA']).join(', ')}
+                                onChange={(e) => {
+                                  const cols = e.target.value.split(',').map(s => s.trim()).filter(Boolean);
+                                  handleUpdateTelaProp(extraIndex, 'colunasGrade', cols.length > 0 ? cols : ['1', '2', '3', '4', '5', 'NA']);
+                                }}
+                                placeholder="Ex: 1, 2, 3, 4, 5, NA"
+                                className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-amber-300"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide block mb-1">
+                                Legenda da Escala (Exibida no topo da grade)
+                              </label>
+                              <input
+                                type="text"
+                                value={telaAlvo.legendaEscala || ''}
+                                onChange={(e) => handleUpdateTelaProp(extraIndex, 'legendaEscala', e.target.value)}
+                                placeholder="Ex: 1 = Péssimo a 5 = Ótimo | NA = Não se aplica"
+                                className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs text-slate-200"
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Opções / Itens desta Tela Extra */}
                         <div className="space-y-2.5">
                           <div className="flex items-center justify-between">
                             <span className="text-xs font-bold text-slate-300 uppercase tracking-wide">
-                              Opções Cadastradas ({telaAlvo.opcoes?.length || 0}) — {TIPOS_PERGUNTA.find(t => t.id === telaAlvo.tipo)?.short || 'Opções'}
+                              {telaAlvo.tipo === 'grade' ? 'Itens da Grade / Tabela' : 'Opções Cadastradas'} ({telaAlvo.opcoes?.length || 0}) — {TIPOS_PERGUNTA.find(t => t.id === telaAlvo.tipo)?.short || 'Opções'}
                             </span>
 
                             <button
@@ -2506,7 +2542,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                               className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg shadow active:scale-95 transition flex items-center gap-1.5"
                             >
                               <Plus className="w-3.5 h-3.5" />
-                              <span>Adicionar Opção</span>
+                              <span>{telaAlvo.tipo === 'grade' ? 'Adicionar Item' : 'Adicionar Opção'}</span>
                             </button>
                           </div>
 
@@ -4025,6 +4061,50 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                   {telaExtra.botaoTexto || 'Avançar'} →
                                 </div>
                               </div>
+                            ) : telaExtra.tipo === 'grade' ? (
+                              <div className="space-y-2" onClick={e => e.stopPropagation()}>
+                                {telaExtra.legendaEscala && (
+                                  <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-[9px] text-amber-200 leading-snug">
+                                    <strong>Escala:</strong> {telaExtra.legendaEscala}
+                                  </div>
+                                )}
+                                {cardsAtivos.map((opt, oi) => {
+                                  const cols = telaExtra.colunasGrade || ['1', '2', '3', '4', '5', 'NA'];
+                                  const selVal = previewInteractiveVal[`grd_${extraIdx}_${oi}`] ?? cols[cols.length - 2] ?? '5';
+                                  return (
+                                    <div
+                                      key={opt.id || oi}
+                                      className="p-2.5 rounded-xl bg-slate-900/95 border border-slate-800 space-y-1.5"
+                                    >
+                                      <span className="text-[11px] font-bold text-white block leading-snug">
+                                        {opt.titulo}
+                                      </span>
+                                      <div className="grid grid-cols-6 gap-1">
+                                        {cols.map((col) => {
+                                          const active = selVal === col;
+                                          return (
+                                            <button
+                                              key={col}
+                                              type="button"
+                                              onClick={() => setPreviewInteractiveVal(p => ({ ...p, [`grd_${extraIdx}_${oi}`]: col }))}
+                                              className={`py-1 rounded-lg text-[10px] font-black border transition ${
+                                                active
+                                                  ? 'bg-emerald-500 text-slate-950 border-emerald-300 shadow'
+                                                  : 'bg-slate-950 text-slate-300 border-slate-700 hover:border-amber-400/60'
+                                              }`}
+                                            >
+                                              {col}
+                                            </button>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                                <div className="w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow mt-2">
+                                  {telaExtra.botaoTexto || 'Avançar'} →
+                                </div>
+                              </div>
                             ) : telaExtra.tipo === 'radio' || telaExtra.tipo === 'checkbox' ? (
                               <div className="space-y-2" onClick={e => e.stopPropagation()}>
                                 {cardsAtivos.map((opt, oi) => (
@@ -4535,19 +4615,19 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
         )}
 
         {/* ============================================================ */}
-        {/* MODAL 3: IMPORTADOR INTELIGENTE (WORD .DOCX / FORMS / TEXTO)  */}
+        {/* MODAL 3: IMPORTADOR INTELIGENTE (.PDF / .PPTX / .DOCX / TXT)  */}
         {/* ============================================================ */}
         {showImportModal && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fade-in overflow-y-auto">
-            <div className="bg-slate-900 border border-slate-700 rounded-3xl p-5 max-w-2xl w-full shadow-2xl space-y-4 my-auto">
+            <div className="bg-slate-900 border border-slate-700 rounded-3xl p-5 max-w-2xl w-full shadow-2xl space-y-4 my-auto max-h-[92vh] overflow-y-auto custom-scrollbar">
               <div className="flex items-center justify-between pb-3 border-b border-slate-800">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center">
                     <FileText className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-base font-black text-white">Importador Inteligente de Avaliações</h3>
-                    <p className="text-xs text-slate-400">Importe arquivos Word (.docx) ou cole perguntas do Google Forms/Docs</p>
+                    <h3 className="text-base font-black text-white">Importador Inteligente IA Multi-Formato</h3>
+                    <p className="text-xs text-slate-400">Importe arquivos PDF, PowerPoint (.pptx/.ppt), Word (.docx/.doc), Excel (.xlsx/.csv) ou Texto</p>
                   </div>
                 </div>
                 <button
@@ -4559,44 +4639,39 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 </button>
               </div>
 
-              {/* 1. IMPORTAR PELO LINK DIRETO DO GOOGLE FORMS (IA) */}
-              <div className="p-3.5 rounded-2xl bg-slate-950 border border-sky-500/40 space-y-2">
-                <label className="text-xs font-black text-sky-300 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-sky-400" />
-                  <span>Importar pelo Link do Google Forms (Análise Automática IA):</span>
-                </label>
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <input
-                    type="url"
-                    value={googleFormsUrl}
-                    onChange={(e) => setGoogleFormsUrl(e.target.value)}
-                    placeholder="Cole aqui o link: https://docs.google.com/forms/d/e/.../viewform ou https://forms.gle/..."
-                    className="flex-1 bg-slate-900 border border-slate-700 focus:border-sky-400 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleImportarGoogleFormsUrl}
-                    disabled={importando || !googleFormsUrl.trim()}
-                    className="px-4 py-2 bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-400 hover:to-sky-500 text-slate-950 font-black text-xs rounded-xl shadow active:scale-95 transition disabled:opacity-40 shrink-0"
-                  >
-                    {importando ? 'Analisando Link...' : 'Analisar Link Forms'}
-                  </button>
+              {/* Atalho 1-Clique: Carregar Avaliação Oficial do I Encontro Nacional JMU / ENAJUM */}
+              <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-emerald-500/15 to-sky-500/15 border border-amber-500/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <span className="text-xs font-black text-amber-300 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Avaliação I Encontro Nacional Diretores de Secretaria JMU (ENAJUM)</span>
+                  </span>
+                  <p className="text-[11px] text-slate-300">
+                    15 telas estruturadas: Perfil (Instituição, Cargo, Nome), Grades 1 a 5 + NA (Conteúdo, Palestras, Metodologia, Organização), Escala 0-10 e Dissertativas.
+                  </p>
                 </div>
-                <p className="text-[10px] text-slate-400">
-                  Lê todas as perguntas, múltipla escolha, checkboxes, lista suspensa, escalas 0-10 e textos do Google Forms e distribui nas Telas 1, 2, 3...
-                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const parsed = parseJsonOrText(TEXTO_AVALIACAO_JMU_ENAJUM);
+                    setPreviewImportado(parsed);
+                  }}
+                  className="px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs shrink-0 shadow active:scale-95 transition"
+                >
+                  ⚡ Carregar Avaliação JMU
+                </button>
               </div>
 
-              {/* 2. Upload de Arquivo Word (.docx, .doc), Planilha (.csv) ou Texto (.txt, .json) */}
-              <div className="p-4 rounded-2xl bg-slate-950 border-2 border-dashed border-slate-800 hover:border-emerald-500/50 transition text-center space-y-2">
+              {/* 1. Upload de Arquivo (.pdf, .pptx, .ppt, .docx, .doc, .xlsx, .csv, .txt, .json) */}
+              <div className="p-4 rounded-2xl bg-slate-950 border-2 border-dashed border-emerald-500/40 hover:border-emerald-400 transition text-center space-y-2">
                 <UploadCloud className="w-7 h-7 text-emerald-400 mx-auto" />
                 <div>
                   <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 font-bold text-xs hover:bg-emerald-500/25 active:scale-95 transition">
                     <FolderUp className="w-4 h-4" />
-                    <span>Selecionar Arquivo (.docx, .doc, .csv, .txt, .json)</span>
+                    <span>Selecionar Arquivo (.pdf, .pptx, .ppt, .docx, .doc, .xlsx, .csv, .txt)</span>
                     <input
                       type="file"
-                      accept=".docx,.doc,.csv,.txt,.json"
+                      accept=".pdf,.pptx,.ppt,.docx,.doc,.xlsx,.csv,.txt,.json"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) handleImportarArquivo(file);
@@ -4605,26 +4680,46 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     />
                   </label>
                 </div>
-                <p className="text-[11px] text-slate-500">
-                  A IA analisa o arquivo e monta automaticamente Cards, Checkboxes, Radio Buttons, Slides 0-10, Datas, Horas e Gavetas!
+                <p className="text-[11px] text-slate-400">
+                  A IA lê automaticamente tabelas de avaliação (1 a 5 / NA), caixas ☐, opções com "Outro: ____" (cria gaveta), escalas 0 a 10 e perguntas abertas!
                 </p>
               </div>
 
-              {/* Ou Colar Texto */}
+              {/* 2. IMPORTAR PELO LINK DIRETO DO GOOGLE FORMS (IA) */}
+              <div className="p-3 rounded-2xl bg-slate-950 border border-sky-500/30 space-y-2">
+                <label className="text-xs font-black text-sky-300 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-sky-400" />
+                  <span>Ou Importar pelo Link do Google Forms:</span>
+                </label>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input
+                    type="url"
+                    value={googleFormsUrl}
+                    onChange={(e) => setGoogleFormsUrl(e.target.value)}
+                    placeholder="https://docs.google.com/forms/d/e/.../viewform ou https://forms.gle/..."
+                    className="flex-1 bg-slate-900 border border-slate-700 focus:border-sky-400 rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleImportarGoogleFormsUrl}
+                    disabled={importando || !googleFormsUrl.trim()}
+                    className="px-4 py-1.5 bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-400 hover:to-sky-500 text-slate-950 font-black text-xs rounded-xl shadow active:scale-95 transition disabled:opacity-40 shrink-0"
+                  >
+                    {importando ? 'Analisando...' : 'Analisar Link'}
+                  </button>
+                </div>
+              </div>
+
+              {/* 3. Ou Colar Texto */}
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-300 block">
-                  Ou cole o texto copiado do Google Forms / Word aqui:
+                  Ou cole o texto copiado do PDF / Word / PowerPoint / Forms aqui:
                 </label>
                 <textarea
-                  rows={5}
+                  rows={4}
                   value={importTexto}
                   onChange={(e) => setImportTexto(e.target.value)}
-                  placeholder={`Exemplo:
-1. Você precisa de apoio ou ajuda?
-- Sim (Gaveta: Qual tipo de ajuda você precisa?)
-- Não
-
-2. O que você achou do evento? [texto]`}
+                  placeholder="Cole aqui todo o conteúdo do documento (incluindo títulos, opções com ☐, tabelas | Item | 1 | 2 | 3 | 4 | 5 | NA | e perguntas abertas)..."
                   className="w-full bg-slate-950 border border-slate-800 focus:border-emerald-400 rounded-xl p-3 text-xs text-white placeholder-slate-600 focus:outline-none transition resize-none font-mono"
                 />
 
@@ -4640,33 +4735,65 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 </div>
               </div>
 
-              {/* Preview da Importação */}
+              {/* Preview Estruturado da Importação */}
               {previewImportado && (
-                <div className="p-3.5 rounded-2xl bg-emerald-950/40 border border-emerald-500/50 space-y-3 animate-fade-in text-left">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-black text-emerald-300 uppercase tracking-wide flex items-center gap-1.5">
-                      <Check className="w-4 h-4 text-emerald-400" />
-                      Formulário Analisado com Sucesso!
-                    </span>
-                    <span className="text-[11px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-bold">
-                      1 Tela Principal + {(previewImportado.telasExtras || []).length} Telas Extras
+                <div className="p-4 rounded-2xl bg-emerald-950/40 border border-emerald-500/50 space-y-3 animate-fade-in text-left">
+                  <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-emerald-500/30">
+                    <div>
+                      <span className="text-xs font-black text-emerald-300 uppercase tracking-wide flex items-center gap-1.5">
+                        <Check className="w-4 h-4 text-emerald-400" />
+                        Estrutura Identificada pela IA com Sucesso!
+                      </span>
+                      {previewImportado.importedFormTitle && (
+                        <p className="text-[11px] text-amber-300 font-bold mt-0.5">
+                          Evento detectado: {previewImportado.importedFormTitle}
+                        </p>
+                      )}
+                    </div>
+                    <span className="text-[11px] bg-emerald-500/20 text-emerald-300 px-2.5 py-0.5 rounded-full font-black border border-emerald-500/40">
+                      {1 + (previewImportado.telasExtras || []).length} Telas Prontas
                     </span>
                   </div>
 
-                  <div className="space-y-1 text-xs text-slate-300">
-                    <p><strong>Tela 1:</strong> {previewImportado.pergunta1Titulo} ({previewImportado.opcoesChegada?.length || 0} opções)</p>
-                    {(previewImportado.telasExtras || []).map((t, i) => (
-                      <p key={i}><strong>Tela {i + 2}:</strong> {t.titulo} ({t.tipo === 'texto' ? '✍️ Campo Aberto' : `${t.opcoes?.length || 0} opções`})</p>
-                    ))}
+                  <div className="max-h-56 overflow-y-auto space-y-1.5 pr-1 custom-scrollbar text-xs">
+                    <div className="p-2 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <span className="text-amber-400 font-black mr-1.5">Tela 1:</span>
+                        <span className="text-white font-bold">{previewImportado.pergunta1Titulo}</span>
+                      </div>
+                      <span className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                        {previewImportado.opcoesChegada?.length || 0} opções
+                      </span>
+                    </div>
+
+                    {(previewImportado.telasExtras || []).map((t, i) => {
+                      const badgeLabel =
+                        t.tipo === 'grade' ? `📊 Grade (${t.opcoes?.length || 0} itens)` :
+                        t.tipo === 'slider' ? `🎚️ Escala ${t.sliderMin ?? 0} a ${t.sliderMax ?? 10}` :
+                        t.tipo === 'texto' ? '📝 Texto Dissertativo' :
+                        t.tipo === 'texto_curto' ? '🔤 Texto Curto' :
+                        `🃏 ${t.opcoes?.length || 0} opções`;
+                      return (
+                        <div key={i} className="p-2 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between gap-2">
+                          <div className="min-w-0">
+                            <span className="text-emerald-400 font-black mr-1.5">Tela {i + 2}:</span>
+                            <span className="text-slate-200 font-bold">{t.titulo}</span>
+                          </div>
+                          <span className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-lg bg-slate-900 text-emerald-300 border border-slate-700">
+                            {badgeLabel}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
 
                   <button
                     type="button"
                     onClick={handleConfirmarImportacao}
-                    className="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-xs sm:text-sm rounded-xl shadow-lg active:scale-95 transition flex items-center justify-center gap-2"
+                    className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-xs sm:text-sm rounded-xl shadow-lg active:scale-95 transition flex items-center justify-center gap-2"
                   >
                     <Check className="w-4 h-4" />
-                    <span>Aplicar Este Formulário à Pesquisa</span>
+                    <span>Aplicar Todas as {1 + (previewImportado.telasExtras || []).length} Telas Agora</span>
                   </button>
                 </div>
               )}

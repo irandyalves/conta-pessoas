@@ -727,10 +727,10 @@ function normalizeQuestionsConfig(config) {
   if (!config) return DEFAULT_QUESTIONS_CONFIG;
   const merged = { ...DEFAULT_QUESTIONS_CONFIG, ...config };
   
-  // Garantir que cardsPorTela seja um número válido entre 2 e 6
+  // Garantir que cardsPorTela seja um número válido entre 2 e 15
   merged.cardsPorTela = Number(merged.cardsPorTela) || 4;
   if (merged.cardsPorTela < 2) merged.cardsPorTela = 2;
-  if (merged.cardsPorTela > 8) merged.cardsPorTela = 8;
+  if (merged.cardsPorTela > 15) merged.cardsPorTela = 15;
 
   // Garantir fontes e tamanhos dos cards
   merged.cardFonteTitulo = Number(merged.cardFonteTitulo) || 16;
@@ -878,6 +878,8 @@ function normalizeQuestionsConfig(config) {
         titulo1: tela.titulo1 || tela.titulo || `Pergunta da Tela ${idx + 2}`,
         titulo2: tela.titulo2 || '',
         subtitulo: tela.subtitulo || '',
+        legendaEscala: tela.legendaEscala || '',
+        colunasGrade: Array.isArray(tela.colunasGrade) && tela.colunasGrade.length > 0 ? tela.colunasGrade : ['1', '2', '3', '4', '5', 'NA'],
         placeholder: tela.placeholder || 'Digite sua resposta aqui...',
         multiline: tela.tipo === 'texto_curto' ? false : (tela.multiline !== false),
         linhas: Number(tela.linhas) || 4,

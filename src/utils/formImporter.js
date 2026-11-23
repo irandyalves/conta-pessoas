@@ -1,24 +1,15 @@
 import mammoth from 'mammoth';
+import JSZip from 'jszip';
 
 /**
- * Motor Inteligente (IA Heurística & Semântica) de Importação de Formulários
+ * Motor Inteligente (IA Semântica & Estrutural) de Importação de Formulários e Questionários
  * Suporta:
- * 1. Arquivos Word (.docx e .doc)
- * 2. Planilhas e listas (.csv)
- * 3. Arquivos de texto e JSON (.txt, .json)
- * 4. Texto colado de Google Forms, Typeform, Jotform, SurveyMonkey ou Microsoft Forms
- *
- * Detecta automaticamente o melhor componente:
- * - Cards Múltipla Escolha ('cards')
- * - Radio Button ('radio')
- * - Checkbox / Caixas de Seleção ('checkbox')
- * - Lista Suspensa / Dropdown ('dropdown')
- * - Slide / Escala Numérica 0-10 ('slider')
- * - Avaliação por Estrelas 1-5 ('rating')
- * - Texto Pequeno / Resposta Curta ('texto_curto')
- * - Campo Longo / Dissertativo ('texto')
- * - Data ('data') e Hora ('hora')
- * - Gavetas Condicionais (com suporte interno a Texto, Radio Button, Checkbox, Slide, Data/Hora)
+ * 1. Arquivos PDF (.pdf)
+ * 2. Apresentações PowerPoint (.pptx, .ppt)
+ * 3. Documentos Word (.docx, .doc) — incluindo tabelas, grades de avaliação e caixas de seleção nativas
+ * 4. Planilhas (.xlsx, .csv)
+ * 5. Arquivos de texto e JSON (.txt, .json, .md)
+ * 6. Texto colado diretamente ou link do Google Forms
  */
 
 export async function parseAnyFile(file) {
@@ -26,21 +17,50 @@ export async function parseAnyFile(file) {
 
   if (name.endsWith('.docx')) {
     const arrayBuffer = await file.arrayBuffer();
-    const result = await mammoth.extractRawText({ arrayBuffer });
-    return parseTextToQuestions(result.value || '');
+    const text = await extractTextFromDocxBuffer(arrayBuffer);
+    return parseTextToQuestions(text, file.name);
   }
 
   if (name.endsWith('.doc')) {
     const arrayBuffer = await file.arrayBuffer();
-    // Tenta extrair via mammoth caso seja docx renomeado; senão extrai strings legíveis do binário .doc
     try {
-      const result = await mammoth.extractRawText({ arrayBuffer });
-      if (result.value && result.value.trim().length > 10) {
-        return parseTextToQuestions(result.value);
+      const docxText = await extractTextFromDocxBuffer(arrayBuffer);
+      if (docxText && docxText.trim().length > 20) {
+        return parseTextToQuestions(docxText, file.name);
       }
     } catch (e) {}
-    const text = extractReadableTextFromBinaryDoc(arrayBuffer);
-    return parseTextToQuestions(text);
+    const text = extractReadableTextFromBinaryBuffer(arrayBuffer);
+    return parseTextToQuestions(text, file.name);
+  }
+
+  if (name.endsWith('.pptx')) {
+    const arrayBuffer = await file.arrayBuffer();
+    const text = await extractTextFromPptxBuffer(arrayBuffer);
+    return parseTextToQuestions(text, file.name);
+  }
+
+  if (name.endsWith('.ppt')) {
+    const arrayBuffer = await file.arrayBuffer();
+    try {
+      const pptxText = await extractTextFromPptxBuffer(arrayBuffer);
+      if (pptxText && pptxText.trim().length > 20) {
+        return parseTextToQuestions(pptxText, file.name);
+      }
+    } catch (e) {}
+    const text = extractReadableTextFromBinaryBuffer(arrayBuffer);
+    return parseTextToQuestions(text, file.name);
+  }
+
+  if (name.endsWith('.pdf')) {
+    const arrayBuffer = await file.arrayBuffer();
+    const text = await extractTextFromPdfBuffer(arrayBuffer);
+    return parseTextToQuestions(text, file.name);
+  }
+
+  if (name.endsWith('.xlsx')) {
+    const arrayBuffer = await file.arrayBuffer();
+    const text = await extractTextFromXlsxBuffer(arrayBuffer);
+    return parseTextToQuestions(text, file.name);
   }
 
   if (name.endsWith('.csv')) {
@@ -49,24 +69,406 @@ export async function parseAnyFile(file) {
   }
 
   const rawText = await file.text();
-  return parseJsonOrText(rawText);
+  return parseJsonOrText(rawText, file.name);
 }
 
 export async function parseDocxFile(file) {
   return parseAnyFile(file);
 }
 
-function extractReadableTextFromBinaryDoc(arrayBuffer) {
-  const decoder = new TextDecoder('utf-8', { fatal: false });
-  const raw = decoder.decode(arrayBuffer);
-  // Filtra sequências de texto legíveis
-  const cleaned = raw
-    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]+/g, '\n')
-    .split(/\r?\n/)
-    .map(l => l.replace(/[^\x20-\x7E\xA0-\xFF]/g, '').trim())
-    .filter(l => l.length > 3 && /[a-zA-ZÀ-ÿ]{3,}/.test(l))
-    .join('\n');
-  return cleaned;
+/**
+ * Extrai texto estruturado de .DOCX preservando parágrafos, listas, checkboxes nativos do Word e Tabelas (| col1 | col2 |)
+ */
+async function extractTextFromDocxBuffer(arrayBuffer) {
+  // 1. Tenta extrair direto do XML word/document.xml via JSZip para preservar checkboxes nativos (<w:checkBox>, <w14:checkbox>, <w:sym>) e tabelas (<w:tbl>)
+  try {
+    const zip = await JSZip.loadAsync(arrayBuffer);
+    const docXmlFile = zip.file('word/document.xml');
+    if (docXmlFile) {
+      const xmlStr = await docXmlFile.async('string');
+      const parsedFromXml = parseWordDocumentXml(xmlStr);
+      if (parsedFromXml && parsedFromXml.trim().length > 20) {
+        return parsedFromXml;
+      }
+    }
+  } catch (e) {
+    // Continua para o Mammoth caso não seja um zip padrão
+  }
+
+  // 2. Fallback para Mammoth convertToHtml (preservando <table>, <tr>, <td>, <p>, <li>)
+  try {
+    const htmlResult = await mammoth.convertToHtml({ arrayBuffer });
+    if (htmlResult.value && htmlResult.value.trim().length > 0) {
+      return convertHtmlToStructuredText(htmlResult.value);
+    }
+  } catch (e) {}
+
+  const rawResult = await mammoth.extractRawText({ arrayBuffer });
+  return rawResult.value || '';
+}
+
+function parseWordDocumentXml(xmlStr) {
+  const parser = new DOMParser();
+  const xmlDoc = parser.parseFromString(xmlStr, 'application/xml');
+  const body = xmlDoc.getElementsByTagName('w:body')[0] || xmlDoc.documentElement;
+  if (!body) return '';
+
+  const outputLines = [];
+
+  const extractParagraphText = (pNode) => {
+    let text = '';
+    const walk = (node) => {
+      if (!node) return;
+      const nodeName = node.nodeName || '';
+      if (nodeName === 'w:t') {
+        text += node.textContent || '';
+      } else if (nodeName === 'w:tab') {
+        text += '   ';
+      } else if (nodeName === 'w:br' || nodeName === 'w:cr') {
+        text += '\n';
+      } else if (
+        nodeName === 'w:checkBox' ||
+        nodeName === 'w14:checkbox' ||
+        (nodeName === 'w:fldSimple' && /FORMCHECKBOX/i.test(node.getAttribute?.('w:instr') || ''))
+      ) {
+        text += '☐ ';
+      } else if (nodeName === 'w:instrText' && /FORMCHECKBOX/i.test(node.textContent || '')) {
+        text += '☐ ';
+      } else if (nodeName === 'w:sym') {
+        const charCode = (node.getAttribute?.('w:char') || '').toUpperCase();
+        // Wingdings / Webdings códigos clássicos de checkbox
+        if (['F06F', 'F0FE', 'F0A8', 'F071', 'F072', '00A8', '006F'].includes(charCode)) {
+          text += '☐ ';
+        }
+      } else if (node.childNodes && node.childNodes.length > 0) {
+        for (let i = 0; i < node.childNodes.length; i++) {
+          walk(node.childNodes[i]);
+        }
+      }
+    };
+    walk(pNode);
+    return text.replace(/\s+/g, ' ').trim();
+  };
+
+  for (let i = 0; i < body.childNodes.length; i++) {
+    const child = body.childNodes[i];
+    const name = child.nodeName || '';
+
+    if (name === 'w:p') {
+      const pText = extractParagraphText(child);
+      if (pText) outputLines.push(pText);
+    } else if (name === 'w:tbl') {
+      const rows = child.getElementsByTagName('w:tr');
+      for (let r = 0; r < rows.length; r++) {
+        const tr = rows[r];
+        // Garante que estamos pegando apenas células diretas desta linha
+        const cells = [];
+        for (let c = 0; c < tr.childNodes.length; c++) {
+          if (tr.childNodes[c].nodeName === 'w:tc') {
+            const tc = tr.childNodes[c];
+            const pNodes = tc.getElementsByTagName('w:p');
+            const cellTexts = [];
+            for (let p = 0; p < pNodes.length; p++) {
+              const t = extractParagraphText(pNodes[p]);
+              if (t) cellTexts.push(t);
+            }
+            const cellStr = cellTexts.join(' ').trim();
+            cells.push(cellStr || (c > 0 ? '☐' : ''));
+          }
+        }
+        if (cells.some(c => c && c !== '☐')) {
+          outputLines.push(`| ${cells.join(' | ')} |`);
+        }
+      }
+    }
+  }
+
+  return outputLines.join('\n');
+}
+
+function convertHtmlToStructuredText(html) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+  const lines = [];
+
+  const walk = (node) => {
+    if (!node) return;
+    const tag = (node.tagName || '').toLowerCase();
+
+    if (tag === 'table') {
+      const trs = node.querySelectorAll('tr');
+      trs.forEach(tr => {
+        const tds = Array.from(tr.querySelectorAll('th, td'));
+        const cells = tds.map((td, idx) => {
+          const txt = (td.textContent || '').replace(/\s+/g, ' ').trim();
+          return txt || (idx > 0 ? '☐' : '');
+        });
+        if (cells.some(c => c && c !== '☐')) {
+          lines.push(`| ${cells.join(' | ')} |`);
+        }
+      });
+      return;
+    }
+
+    if (['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'li'].includes(tag)) {
+      const txt = (node.textContent || '').replace(/\s+/g, ' ').trim();
+      if (txt) {
+        if (tag === 'li' && !/^[☐☑☒□○•\-*]|\d+[\.\)]/.test(txt)) {
+          lines.push(`☐ ${txt}`);
+        } else {
+          lines.push(txt);
+        }
+      }
+      return;
+    }
+
+    if (node.childNodes && node.childNodes.length > 0) {
+      node.childNodes.forEach(child => walk(child));
+    }
+  };
+
+  walk(doc.body);
+  return lines.join('\n');
+}
+
+/**
+ * Extrai texto de apresentações PowerPoint (.PPTX) via JSZip lendo todos os slides e tabelas
+ */
+async function extractTextFromPptxBuffer(arrayBuffer) {
+  const zip = await JSZip.loadAsync(arrayBuffer);
+  const slideFiles = Object.keys(zip.files)
+    .filter(path => /^ppt\/slides\/slide\d+\.xml$/i.test(path))
+    .sort((a, b) => {
+      const numA = parseInt(a.match(/slide(\d+)\.xml/i)?.[1] || '0', 10);
+      const numB = parseInt(b.match(/slide(\d+)\.xml/i)?.[1] || '0', 10);
+      return numA - numB;
+    });
+
+  const parser = new DOMParser();
+  const lines = [];
+
+  for (const slidePath of slideFiles) {
+    const xmlStr = await zip.file(slidePath).async('string');
+    const xmlDoc = parser.parseFromString(xmlStr, 'application/xml');
+
+    // Extrai tabelas (<a:tbl>)
+    const tables = xmlDoc.getElementsByTagName('a:tbl');
+    const tableNodes = new Set();
+    for (let t = 0; t < tables.length; t++) {
+      const tbl = tables[t];
+      tableNodes.add(tbl);
+      const rows = tbl.getElementsByTagName('a:tr');
+      for (let r = 0; r < rows.length; r++) {
+        const cells = rows[r].getElementsByTagName('a:tc');
+        const rowCells = [];
+        for (let c = 0; c < cells.length; c++) {
+          const tNodes = cells[c].getElementsByTagName('a:t');
+          let cellText = '';
+          for (let k = 0; k < tNodes.length; k++) {
+            cellText += (tNodes[k].textContent || '') + ' ';
+          }
+          rowCells.push(cellText.replace(/\s+/g, ' ').trim() || (c > 0 ? '☐' : ''));
+        }
+        if (rowCells.some(c => c && c !== '☐')) {
+          lines.push(`| ${rowCells.join(' | ')} |`);
+        }
+      }
+    }
+
+    // Extrai parágrafos fora de tabelas (<a:p>)
+    const paragraphs = xmlDoc.getElementsByTagName('a:p');
+    for (let p = 0; p < paragraphs.length; p++) {
+      const pNode = paragraphs[p];
+      // Verifica se está dentro de uma tabela já processada
+      let insideTable = false;
+      let parent = pNode.parentNode;
+      while (parent) {
+        if (parent.nodeName === 'a:tbl') {
+          insideTable = true;
+          break;
+        }
+        parent = parent.parentNode;
+      }
+      if (insideTable) continue;
+
+      const tNodes = pNode.getElementsByTagName('a:t');
+      let pText = '';
+      for (let k = 0; k < tNodes.length; k++) {
+        pText += tNodes[k].textContent || '';
+      }
+      pText = pText.replace(/\s+/g, ' ').trim();
+      if (pText) lines.push(pText);
+    }
+  }
+
+  return lines.join('\n');
+}
+
+/**
+ * Extrai texto de Planilhas Excel (.XLSX) via JSZip
+ */
+async function extractTextFromXlsxBuffer(arrayBuffer) {
+  const zip = await JSZip.loadAsync(arrayBuffer);
+  const parser = new DOMParser();
+  const sharedStrings = [];
+
+  const ssFile = zip.file('xl/sharedStrings.xml');
+  if (ssFile) {
+    const ssXml = await ssFile.async('string');
+    const ssDoc = parser.parseFromString(ssXml, 'application/xml');
+    const siNodes = ssDoc.getElementsByTagName('si');
+    for (let i = 0; i < siNodes.length; i++) {
+      const tNodes = siNodes[i].getElementsByTagName('t');
+      let val = '';
+      for (let k = 0; k < tNodes.length; k++) {
+        val += tNodes[k].textContent || '';
+      }
+      sharedStrings.push(val.trim());
+    }
+  }
+
+  const sheetFiles = Object.keys(zip.files)
+    .filter(p => /^xl\/worksheets\/sheet\d+\.xml$/i.test(p))
+    .sort();
+
+  const lines = [];
+  for (const sheetPath of sheetFiles) {
+    const sheetXml = await zip.file(sheetPath).async('string');
+    const sheetDoc = parser.parseFromString(sheetXml, 'application/xml');
+    const rows = sheetDoc.getElementsByTagName('row');
+    for (let r = 0; r < rows.length; r++) {
+      const cNodes = rows[r].getElementsByTagName('c');
+      const rowVals = [];
+      for (let c = 0; c < cNodes.length; c++) {
+        const cell = cNodes[c];
+        const type = cell.getAttribute('t');
+        const vNode = cell.getElementsByTagName('v')[0];
+        let val = vNode ? vNode.textContent : '';
+        if (type === 's' && val !== '') {
+          val = sharedStrings[parseInt(val, 10)] || val;
+        }
+        if (val) rowVals.push(val.trim());
+      }
+      if (rowVals.length === 1) {
+        lines.push(rowVals[0]);
+      } else if (rowVals.length > 1) {
+        lines.push(`| ${rowVals.join(' | ')} |`);
+      }
+    }
+  }
+
+  return lines.join('\n');
+}
+
+/**
+ * Extrai texto de arquivos PDF (.PDF) agrupando fragmentos por coordenada Y (linhas) e X (colunas/tabelas)
+ */
+async function extractTextFromPdfBuffer(arrayBuffer) {
+  try {
+    const pdfjsLib = await import('pdfjs-dist');
+    if (pdfjsLib.GlobalWorkerOptions && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
+      const version = pdfjsLib.version || '4.10.38';
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${version}/pdf.worker.min.mjs`;
+    }
+
+    const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) });
+    const pdf = await loadingTask.promise;
+    const allLines = [];
+
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      const page = await pdf.getPage(pageNum);
+      const textContent = await page.getTextContent();
+      const items = textContent.items || [];
+
+      // Agrupa fragmentos de texto pela coordenada Y (tolerância de 3.5 unidades para mesma linha)
+      const rowBuckets = [];
+      items.forEach(item => {
+        const str = (item.str || '').trim();
+        if (!str) return;
+        const x = item.transform ? item.transform[4] : 0;
+        const y = item.transform ? item.transform[5] : 0;
+
+        let bucket = rowBuckets.find(b => Math.abs(b.y - y) <= 3.5);
+        if (!bucket) {
+          bucket = { y, items: [] };
+          rowBuckets.push(bucket);
+        }
+        bucket.items.push({ x, str });
+      });
+
+      // Ordena de cima para baixo (Y decrescente no PDF)
+      rowBuckets.sort((a, b) => b.y - a.y);
+
+      rowBuckets.forEach(bucket => {
+        bucket.items.sort((a, b) => a.x - b.x);
+        // Verifica se parece linha de tabela com múltiplas colunas espaçadas
+        const parts = [];
+        let lastX = null;
+        let hasWideGaps = 0;
+
+        bucket.items.forEach(it => {
+          if (lastX !== null && (it.x - lastX) > 45) {
+            hasWideGaps++;
+            parts.push('|');
+          }
+          parts.push(it.str);
+          lastX = it.x + (it.str.length * 4.5);
+        });
+
+        const joined = parts.join(' ').replace(/\s+\|\s+/g, ' | ').replace(/\s+/g, ' ').trim();
+        if (hasWideGaps >= 2 && !joined.startsWith('|')) {
+          allLines.push(`| ${joined} |`);
+        } else {
+          allLines.push(joined.replace(/\s*\|\s*/g, ' '));
+        }
+      });
+    }
+
+    if (allLines.length > 0) {
+      return allLines.join('\n');
+    }
+  } catch (err) {
+    console.warn('Fallback de extração PDF acionado:', err);
+  }
+
+  // Fallback caso o worker CDN esteja offline: extrai strings de texto dos streams do PDF
+  return extractReadableTextFromBinaryBuffer(arrayBuffer);
+}
+
+/**
+ * Extrator binário universal (UTF-16LE e UTF-8/Latin1) para arquivos .DOC e .PPT legados
+ */
+function extractReadableTextFromBinaryBuffer(arrayBuffer) {
+  const results = [];
+
+  // 1. Tenta extrair blocos UTF-16LE (usado pelo Word 97-2003 .doc e PowerPoint .ppt para textos com acentos e ☐)
+  try {
+    const utf16Decoder = new TextDecoder('utf-16le', { fatal: false });
+    const raw16 = utf16Decoder.decode(arrayBuffer);
+    const lines16 = raw16
+      .split(/[\r\n\x00-\x08\x0B\x0C\x0E-\x1F]+/)
+      .map(l => l.replace(/[^\x20-\x7E\xA0-\xFF☐☑☒✓✔□■○●—–]/g, '').trim())
+      .filter(l => l.length >= 3 && /[a-zA-ZÀ-ÿ]{3,}/.test(l));
+    if (lines16.length > 5) {
+      results.push(...lines16);
+    }
+  } catch (e) {}
+
+  // 2. Extrai blocos UTF-8 / Windows-1252
+  try {
+    const utf8Decoder = new TextDecoder('utf-8', { fatal: false });
+    const raw8 = utf8Decoder.decode(arrayBuffer);
+    const lines8 = raw8
+      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]+/g, '\n')
+      .split(/\r?\n/)
+      .map(l => l.replace(/[^\x20-\x7E\xA0-\xFF☐☑☒✓✔□■○●—–]/g, '').trim())
+      .filter(l => l.length >= 3 && /[a-zA-ZÀ-ÿ]{3,}/.test(l) && !/^(?:Root Entry|WordDocument|SummaryInformation|Microsoft|Normal\.dot|Times New Roman|Calibri|Arial|obj|endobj|stream|endstream|xref)/i.test(l));
+    if (lines8.length > results.length) {
+      return lines8.join('\n');
+    }
+  } catch (e) {}
+
+  return results.join('\n');
 }
 
 export function parseCsvToQuestions(csvText) {
@@ -84,12 +486,13 @@ export function parseCsvToQuestions(csvText) {
     line.split(sep).map(cell => cell.replace(/^["']|["']$/g, '').trim())
   );
 
-  // Verifica se tem cabeçalho tipo: Pergunta; Tipo; Opcoes; Gaveta
   const header = rows[0].map(h => h.toLowerCase());
   const hasHeader = header.some(h => h.includes('pergunta') || h.includes('titulo') || h.includes('question'));
   const dataRows = hasHeader ? rows.slice(1) : rows;
 
   const screens = [];
+  const icones = ['Tag', 'Church', 'HeartHandshake', 'Share2', 'Compass', 'Smile', 'Star', 'Sparkles'];
+  const cores = ['amber', 'emerald', 'sky', 'purple', 'indigo', 'rose'];
 
   dataRows.forEach((cols, idx) => {
     const titulo = cols[0];
@@ -103,9 +506,6 @@ export function parseCsvToQuestions(csvText) {
     const opcoesStrings = rawOpcoes
       ? rawOpcoes.split(/[|\/,]/).map(s => s.trim()).filter(Boolean)
       : (cols.slice(2).filter(Boolean));
-
-    const icones = ['Tag', 'Church', 'HeartHandshake', 'Share2', 'Compass', 'Smile', 'Star', 'Sparkles'];
-    const cores = ['amber', 'emerald', 'sky', 'purple', 'indigo', 'rose'];
 
     const opcoes = opcoesStrings.map((optStr, oIdx) => {
       const parsedOpt = parseOptionWithDrawerAI(optStr, oIdx === 0 ? rawGaveta : '');
@@ -134,6 +534,7 @@ export function parseCsvToQuestions(csvText) {
       sliderMin: 0,
       sliderMax: 10,
       sliderStep: 1,
+      cardsPorTela: Math.min(10, Math.max(4, opcoes.length)),
       opcoes: opcoes.length > 0 ? opcoes : getDefaultOptionsForType(detectedType)
     });
   });
@@ -145,7 +546,7 @@ export function parseCsvToQuestions(csvText) {
   return buildConfigFromParsedScreens(screens);
 }
 
-export function parseJsonOrText(content) {
+export function parseJsonOrText(content, fileName = '') {
   if (typeof content === 'string' && content.trim().startsWith('{')) {
     try {
       const parsed = JSON.parse(content);
@@ -155,12 +556,11 @@ export function parseJsonOrText(content) {
     } catch (e) {}
   }
 
-  return parseTextToQuestions(String(content || ''));
+  return parseTextToQuestions(String(content || ''), fileName);
 }
 
 /**
- * Importa diretamente a partir do Link Público de um Google Forms (docs.google.com/forms/d/e/.../viewform ou forms.gle/...)
- * Extrai a estrutura real das perguntas (FB_PUBLIC_LOAD_DATA_) via proxies públicos de leitura HTML
+ * Importa diretamente a partir do Link Público de um Google Forms
  */
 export async function parseGoogleFormsUrl(url) {
   const cleanUrl = String(url || '').trim();
@@ -185,20 +585,17 @@ export async function parseGoogleFormsUrl(url) {
           break;
         }
       }
-    } catch (e) {
-      // Tenta o próximo proxy
-    }
+    } catch (e) {}
   }
 
   if (!html) {
-    throw new Error('Não foi possível acessar o link diretamente pelo navegador (o formulário pode estar restrito ou privado). Dica: Abra o Google Forms, pressione Ctrl+A e Ctrl+C e cole o texto na caixa abaixo!');
+    throw new Error('Não foi possível acessar o link diretamente pelo navegador. Dica: Abra o formulário, pressione Ctrl+A e Ctrl+C e cole o texto na caixa abaixo!');
   }
 
   return parseGoogleFormsHtml(html);
 }
 
 export function parseGoogleFormsHtml(html) {
-  // 1. Tenta extrair o JSON nativo do Google Forms: var FB_PUBLIC_LOAD_DATA_ = [...];
   const match = html.match(/FB_PUBLIC_LOAD_DATA_\s*=\s*(\[[\s\S]*?\]);\s*<\/script>/i) ||
                 html.match(/FB_PUBLIC_LOAD_DATA_\s*=\s*(\[[\s\S]*?\]);/i);
 
@@ -214,10 +611,6 @@ export function parseGoogleFormsHtml(html) {
       const icones = ['Tag', 'Church', 'HeartHandshake', 'Share2', 'Compass', 'Smile', 'Star', 'Sparkles'];
       const cores = ['amber', 'emerald', 'sky', 'purple', 'indigo', 'rose'];
 
-      // Tipos internos do Google Forms:
-      // 0 = Texto Curto, 1 = Parágrafo (Texto Longo), 2 = Múltipla Escolha (Radio/Cards),
-      // 3 = Lista Suspensa (Dropdown), 4 = Caixas de Seleção (Checkbox), 5 = Escala Linear (Slider),
-      // 7 = Grade, 8 = Quebra de Seção/Página, 9 = Data, 10 = Hora
       rawItems.forEach((item, idx) => {
         if (!Array.isArray(item)) return;
         const qTitle = (item[1] || '').trim();
@@ -225,21 +618,20 @@ export function parseGoogleFormsHtml(html) {
         const gType = item[3];
         const qDetails = item[4]?.[0];
 
-        if (!qTitle || gType === 8 || gType === 6) return; // Ignora cabeçalhos puros sem pergunta
+        if (!qTitle || gType === 8 || gType === 6) return;
 
         let tipo = 'cards';
         let opcoes = [];
-        let sliderMin = 1;
-        let sliderMax = 5;
+        let sliderMin = 0;
+        let sliderMax = 10;
 
         if (gType === 0) {
           tipo = 'texto_curto';
         } else if (gType === 1) {
           tipo = 'texto';
         } else if (gType === 2) {
-          // Múltipla escolha única
           const rawChoices = qDetails?.[1] || [];
-          tipo = rawChoices.length <= 6 ? 'cards' : 'radio';
+          tipo = 'cards';
           opcoes = rawChoices.map((c, oIdx) => ({
             id: `gf_opt_${idx}_${oIdx}`,
             titulo: String(c?.[0] || `Opção ${oIdx + 1}`).trim(),
@@ -247,10 +639,10 @@ export function parseGoogleFormsHtml(html) {
             ativo: true,
             icone: icones[oIdx % icones.length],
             cor: cores[oIdx % cores.length],
-            temGaveta: Boolean(c?.[4]), // Opção "Outro" no Google Forms vira Gaveta!
+            temGaveta: Boolean(c?.[4]),
             gaveta: c?.[4] ? {
               tipo: 'texto_curto',
-              pergunta: 'Especifique:',
+              pergunta: 'Qual? Especifique:',
               placeholder: 'Digite aqui...',
               obrigatorio: false,
               botaoConfirmar: 'Confirmar & Avançar'
@@ -282,9 +674,21 @@ export function parseGoogleFormsHtml(html) {
           tipo = 'slider';
           const rawScale = qDetails?.[1] || [];
           if (rawScale.length >= 2) {
-            sliderMin = Number(rawScale[0]?.[0] ?? 1);
+            sliderMin = Number(rawScale[0]?.[0] ?? 0);
             sliderMax = Number(rawScale[rawScale.length - 1]?.[0] ?? 10);
           }
+        } else if (gType === 7) {
+          // Grade no Google Forms!
+          tipo = 'grade';
+          const allRows = item[4] || [];
+          opcoes = allRows.map((r, rIdx) => ({
+            id: `gf_grd_${idx}_${rIdx}`,
+            titulo: String(r?.[3]?.[0] || `Item ${rIdx + 1}`).trim(),
+            subtitulo: '',
+            ativo: true,
+            icone: icones[rIdx % icones.length],
+            cor: cores[rIdx % cores.length]
+          }));
         } else if (gType === 9) {
           tipo = 'data';
         } else if (gType === 10) {
@@ -306,24 +710,22 @@ export function parseGoogleFormsHtml(html) {
           sliderMin,
           sliderMax,
           sliderStep: 1,
+          cardsPorTela: Math.min(10, Math.max(4, opcoes.length)),
           opcoes: opcoes.length > 0 ? opcoes : getDefaultOptionsForType(tipo)
         });
       });
 
       if (screens.length > 0) {
-        const built = buildConfigFromParsedScreens(screens);
-        if (formDescription) {
-          built.pergunta1TextoAbaixo = formDescription;
-        }
-        built.importedFormTitle = formTitle;
-        return built;
+        return buildConfigFromParsedScreens(screens, {
+          eventTitle: formTitle,
+          introText: formDescription
+        });
       }
     } catch (err) {
       console.warn('Falha ao decodificar FB_PUBLIC_LOAD_DATA_:', err);
     }
   }
 
-  // Fallback: Extrai textos visíveis do HTML caso o script tenha formato diferente
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, 'text/html');
   const extractedLines = [];
@@ -336,19 +738,21 @@ export function parseGoogleFormsHtml(html) {
     return parseTextToQuestions(extractedLines.join('\n'));
   }
 
-  throw new Error('Não encontramos perguntas públicas neste link. Verifique se o link está aberto para "Qualquer pessoa com o link".');
+  throw new Error('Não encontramos perguntas públicas neste link.');
 }
 
 /**
  * Classificador Inteligente (IA Semântica) que identifica o tipo de componente ideal
- * baseado no enunciado da pergunta, tags colchetes [checkbox], [slide], [data], etc.
  */
 export function detectQuestionTypeAI(questionText, explicitTag = '', optionsHint = '') {
   const combined = `${questionText} ${explicitTag} ${optionsHint}`.toLowerCase();
 
-  // Tags explícitas ou palavras-chave diretas
+  if (/\[(?:grade|matriz|tabela)\]/i.test(combined)) {
+    return 'grade';
+  }
+
   if (/\[(?:checkbox|caixas|multipla|múltipla|marque todas|várias)\]/i.test(combined) ||
-      /\b(?:marque todas|selecione todas|mais de uma opção|quais dos|quais áreas|quais ministérios)\b/i.test(combined)) {
+      /\b(?:marque todas|selecione todas|mais de uma opção|quais das opções)\b/i.test(combined)) {
     return 'checkbox';
   }
 
@@ -357,12 +761,12 @@ export function detectQuestionTypeAI(questionText, explicitTag = '', optionsHint
   }
 
   if (/\[(?:dropdown|lista|select|suspensa)\]/i.test(combined) ||
-      /\b(?:lista suspensa|selecione na lista|escolha seu estado|escolha sua cidade|qual sua faixa etária|qual seu departamento)\b/i.test(combined)) {
+      /\b(?:lista suspensa|selecione na lista|escolha seu estado)\b/i.test(combined)) {
     return 'dropdown';
   }
 
   if (/\[(?:slide|slider|escala|nps|0-10|nota)\]/i.test(combined) ||
-      /\b(?:de 0 a 10|de 1 a 10|escala de|qual a probabilidade|nível de satisfação|nota para)\b/i.test(combined)) {
+      /\b(?:escala de 0 a 10|de 0 a 10|de 1 a 10|qual a probabilidade|grau de satisfação geral)\b/i.test(combined)) {
     return 'slider';
   }
 
@@ -372,22 +776,22 @@ export function detectQuestionTypeAI(questionText, explicitTag = '', optionsHint
   }
 
   if (/\[(?:data|date|calendario|calendário)\]/i.test(combined) ||
-      /\b(?:qual a data|data de nascimento|data do evento|que dia|aniversário)\b/i.test(combined)) {
+      /\b(?:qual a data|data de nascimento|data do evento)\b/i.test(combined)) {
     return 'data';
   }
 
   if (/\[(?:hora|time|horário|horario)\]/i.test(combined) ||
-      /\b(?:qual o horário|que horas|melhor horário|hora de chegada)\b/i.test(combined)) {
+      /\b(?:qual o horário|que horas|hora de chegada)\b/i.test(combined)) {
     return 'hora';
   }
 
   if (/\[(?:texto curto|curto|nome|telefone|whatsapp|email|e-mail)\]/i.test(combined) ||
-      /\b(?:seu nome|seu telefone|seu whatsapp|seu e-mail|seu bairro|sua cidade|qual seu nome)\b/i.test(combined)) {
+      /^(?:nome|nome completo|seu nome|telefone|whatsapp|celular|e-?mail|cpf|matrícula|matricula)\s*:?\s*$/i.test(questionText.replace(/_+/g, '').trim())) {
     return 'texto_curto';
   }
 
   if (/\[(?:texto|texto longo|campo longo|dissertativa|parágrafo|paragrafo|digitar)\]/i.test(combined) ||
-      /\b(?:deixe sua mensagem|sua sugestão|seu comentário|escreva abaixo|descreva|pedido de oração|o que podemos melhorar)\b/i.test(combined)) {
+      /\b(?:que conhecimentos|quais temas|quais aspectos|quais oportunidades|deixe sua mensagem|sua sugestão|sugestões|seu comentário|comentários|escreva abaixo|descreva|pedido de oração|o que podemos melhorar|incorporar à sua atuação|priorizados nos próximos)\b/i.test(combined)) {
     return 'texto';
   }
 
@@ -397,13 +801,13 @@ export function detectQuestionTypeAI(questionText, explicitTag = '', optionsHint
 function getSmartPlaceholder(tipo, titulo = '') {
   const t = titulo.toLowerCase();
   if (tipo === 'texto_curto') {
-    if (t.includes('nome')) return 'Digite seu nome completo...';
+    if (t.includes('nome')) return 'Digite seu nome (opcional)...';
     if (t.includes('whatsapp') || t.includes('telefone') || t.includes('celular')) return '(00) 00000-0000';
     if (t.includes('email') || t.includes('e-mail')) return 'seuemail@exemplo.com';
     return 'Digite sua resposta curta...';
   }
   if (tipo === 'texto') {
-    return 'Escreva aqui sua resposta detalhada, comentário ou sugestão...';
+    return 'Escreva aqui sua resposta, reflexão, comentário ou sugestão...';
   }
   return 'Digite sua resposta aqui...';
 }
@@ -420,20 +824,34 @@ function getDefaultOptionsForType(tipo) {
 }
 
 /**
- * Analisa uma linha de opção e detecta se há Gaveta Condicional e qual o tipo da gaveta:
- * Ex: "Sim (Gaveta Radio: Manhã | Tarde | Noite)"
- * Ex: "Quero participar (Gaveta Checkbox: Louvor | Recepção | Mídia)"
- * Ex: "Sim (Gaveta Slide: Qual sua disponibilidade de 0 a 10?)"
- * Ex: "Sim (Gaveta: Qual seu pedido de oração?)"
+ * Analisa uma opção individual e detecta automaticamente Gavetas Condicionais
+ * Inclui detecção automática de "Outro: _____________" ou "Qual? _____"
  */
 function parseOptionWithDrawerAI(cleanOption, extraGavetaHint = '') {
-  let optionTitle = cleanOption;
+  let optionTitle = String(cleanOption || '').trim();
   let temGaveta = false;
-  let gavetaTipo = 'texto_longo';
-  let gavetaPergunta = 'Por favor, detalhe sua resposta:';
+  let gavetaTipo = 'texto_curto';
+  let gavetaPergunta = 'Qual? Especifique:';
   let gavetaOpcoes = ['Opção 1', 'Opção 2', 'Opção 3'];
 
-  const fullStr = extraGavetaHint ? `${cleanOption} (Gaveta: ${extraGavetaHint})` : cleanOption;
+  // 1. Detecta padrão "Outro: _______________" ou "Outro (especifique): ____"
+  if (/^(?:outro|outra|outros|outras)\b/i.test(optionTitle) && (optionTitle.includes(':') || /_{2,}/.test(optionTitle))) {
+    temGaveta = true;
+    gavetaTipo = 'texto_curto';
+    gavetaPergunta = 'Qual? Especifique abaixo:';
+    optionTitle = optionTitle
+      .replace(/[:\-–—]\s*_*.*$/i, '')
+      .replace(/_+/g, '')
+      .trim() || 'Outro';
+  } else if (/_{3,}/.test(optionTitle)) {
+    // Qualquer opção que tenha linha de preenchimento "______" ganha gaveta de texto curto
+    temGaveta = true;
+    gavetaTipo = 'texto_curto';
+    gavetaPergunta = 'Especifique:';
+    optionTitle = optionTitle.replace(/[:\-–—]?\s*_{3,}.*$/, '').trim() || 'Outro';
+  }
+
+  const fullStr = extraGavetaHint ? `${optionTitle} (Gaveta: ${extraGavetaHint})` : optionTitle;
 
   const gavetaMatch =
     fullStr.match(/\((?:gaveta|subpergunta|se sim|condição|detalhe|especifique)([^:)]*):\s*(.*?)\)/i) ||
@@ -441,25 +859,26 @@ function parseOptionWithDrawerAI(cleanOption, extraGavetaHint = '') {
 
   if (gavetaMatch) {
     temGaveta = true;
-    const修饰 = (gavetaMatch[1] || '').toLowerCase();
+    const mod = (gavetaMatch[1] || '').toLowerCase();
     const conteudo = (gavetaMatch[2] || '').trim();
-    optionTitle = cleanOption.replace(gavetaMatch[0], '').trim();
+    optionTitle = optionTitle.replace(gavetaMatch[0], '').trim();
 
-    if (修饰.includes('radio') || 修饰.includes('única')) {
+    if (mod.includes('radio') || mod.includes('única')) {
       gavetaTipo = 'radio';
-    } else if (修饰.includes('check') || 修饰.includes('múltipla')) {
+    } else if (mod.includes('check') || mod.includes('múltipla')) {
       gavetaTipo = 'checkbox';
-    } else if (修饰.includes('slide') || 修饰.includes('escala')) {
+    } else if (mod.includes('slide') || mod.includes('escala')) {
       gavetaTipo = 'slider';
-    } else if (修饰.includes('curto') || 修饰.includes('nome') || 修饰.includes('whats')) {
-      gavetaTipo = 'texto_curto';
-    } else if (修饰.includes('data')) {
+    } else if (mod.includes('longo') || mod.includes('dissertat')) {
+      gavetaTipo = 'texto_longo';
+    } else if (mod.includes('data')) {
       gavetaTipo = 'data';
-    } else if (修饰.includes('hora')) {
+    } else if (mod.includes('hora')) {
       gavetaTipo = 'hora';
+    } else {
+      gavetaTipo = 'texto_curto';
     }
 
-    // Se o conteúdo tiver barras "|" ou "/", extrai pergunta e opções para radio/checkbox
     if (conteudo.includes('|') || (conteudo.includes('/') && !conteudo.includes('?'))) {
       const parts = conteudo.split('?');
       if (parts.length > 1) {
@@ -469,19 +888,9 @@ function parseOptionWithDrawerAI(cleanOption, extraGavetaHint = '') {
         gavetaPergunta = 'Selecione uma opção:';
         gavetaOpcoes = conteudo.split(/[|\/]/).map(s => s.trim()).filter(Boolean);
       }
-      if (gavetaTipo === 'texto_longo') gavetaTipo = 'radio';
-    } else {
-      gavetaPergunta = conteudo || 'Por favor, detalhe sua resposta:';
-    }
-  } else if (/^(?:sim|quero|desejo|preciso|outro)\b/i.test(cleanOption) && (cleanOption.includes(':') || cleanOption.includes('?'))) {
-    const parts = cleanOption.split(/[:\?]/);
-    if (parts.length > 1 && parts[1].trim().length > 0) {
-      temGaveta = true;
-      optionTitle = parts[0].trim();
-      gavetaPergunta = parts.slice(1).join(' ').trim();
-      if (/whatsapp|telefone|nome|celular/i.test(gavetaPergunta)) {
-        gavetaTipo = 'texto_curto';
-      }
+      if (gavetaTipo === 'texto_curto' || gavetaTipo === 'texto_longo') gavetaTipo = 'radio';
+    } else if (conteudo) {
+      gavetaPergunta = conteudo;
     }
   }
 
@@ -504,105 +913,404 @@ function parseOptionWithDrawerAI(cleanOption, extraGavetaHint = '') {
   };
 }
 
-export function parseTextToQuestions(rawText) {
-  const lines = String(rawText || '')
+/**
+ * PARSER ESTRUTURAL E SEMÂNTICO COMPLETO PARA TEXTOS, DOCUMENTOS WORD, PDF E POWERPOINT
+ */
+export function parseTextToQuestions(rawText, fileName = '') {
+  const rawLines = String(rawText || '')
     .split(/\r?\n/)
-    .map(l => l.trim())
+    .map(l => l.replace(/\u00A0/g, ' ').trim())
     .filter(l => l.length > 0);
 
-  if (lines.length === 0) {
+  if (rawLines.length === 0) {
     throw new Error('O arquivo ou texto está vazio.');
   }
 
-  const screens = [];
-  let currentScreen = null;
+  const icones = ['Tag', 'Church', 'HeartHandshake', 'Share2', 'Compass', 'Smile', 'Star', 'Sparkles'];
+  const cores = ['amber', 'emerald', 'sky', 'purple', 'indigo', 'rose'];
 
-  const isQuestionLine = (line) => {
-    return /^(?:(?:Pergunta|Questão|Tela)\s*)?\d+[\.\)\-:]\s*|\bQ\d+[\.\)\-:]\s*/i.test(line) ||
-      (line.endsWith('?') && !line.startsWith('-') && !line.startsWith('*') && !line.startsWith('[') && !line.startsWith('('));
+  // Expressões auxiliares
+  const CHECKBOX_CHARS = /^[☐☑☒✓✔□■○●◯🔘☑️]\s*/;
+  const BULLET_OPTION_REGEX = /^(?:[☐☑☒✓✔□■○●◯🔘☑️]|[-*•–—\+]|\[\s*[xX]?\s*\]|\(\s*[oO•]?\s*\)|[a-hA-H][\.\)])\s*(.+)$/i;
+  const NUMBERED_SECTION_REGEX = /^(\d+)[\.\)\-]\s+(.+)$/;
+  const PURE_UNDERSCORES_REGEX = /^[_\-\s]{4,}$/;
+  const SCALE_LEGEND_REGEX = /^(?:escala\s*:|\d+\s*=\s*[^;|]+[;|]\s*\d+\s*=|0\s*=\s*totalmente)/i;
+  const SCALE_CONTINUATION_REGEX = /^\d+\s*=\s*[^;|]+(?:;\s*NA\s*=|\s*\|\s*\d+\s*=)/i;
+
+  const isTableLine = (line) => {
+    return (line.startsWith('|') && line.endsWith('|') && (line.match(/\|/g) || []).length >= 3) ||
+           ((line.match(/\|/g) || []).length >= 3 && !SCALE_LEGEND_REGEX.test(line));
   };
 
-  const isOptionLine = (line) => {
-    return /^[-*•–—\+]\s+/i.test(line) ||
-      /^(?:\[\s*[xX]?\s*\]|\(\s*[oO•]?\s*\)|[a-hA-H][\.\)\-])\s+/i.test(line);
+  const parseTableCells = (line) => {
+    const raw = line.split('|').map(c => c.trim());
+    if (raw[0] === '') raw.shift();
+    if (raw[raw.length - 1] === '') raw.pop();
+    return raw;
   };
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
+  // Verifica se uma linha de tabela é uma régua 0 a 10 (ex: | 0☐ | 1☐ | ... | 10☐ |)
+  const isZeroToTenScaleTableLine = (cells) => {
+    if (cells.length < 5) return false;
+    const numericMatches = cells.filter(c => /^\d{1,2}\s*[☐☑☒□○]?$/.test(c));
+    return numericMatches.length >= 6;
+  };
 
-    if (isQuestionLine(line)) {
-      if (currentScreen) {
-        screens.push(currentScreen);
-      }
+  // Verifica se é cabeçalho de tabela (ex: | Item | 1 | 2 | 3 | 4 | 5 | NA |)
+  const isTableHeaderCells = (cells) => {
+    if (cells.length < 3) return false;
+    const first = cells[0].toLowerCase().replace(/[☐☑☒□○]/g, '').trim();
+    const rest = cells.slice(1);
+    const restAreScaleCols = rest.every(c => /^(?:[1-5]|10|na|n\/a|sim|não|nao|ruim|regular|bom|ótimo|otimo|péssimo|pessimo)$/i.test(c));
+    return restAreScaleCols || /^(?:item|itens|aspecto|aspectos|critério|criterio|eixo|tema|afirmação|afirmacao|avaliação|avaliacao|pergunta)$/i.test(first);
+  };
 
-      const detectedType = detectQuestionTypeAI(line);
-      const cleanTitle = line
-        .replace(/^(?:(?:Pergunta|Questão|Tela)\s*)?\d+[\.\)\-:]\s*|\bQ\d+[\.\)\-:]\s*/i, '')
-        .replace(/\[.*?\]/g, '')
-        .trim();
+  // Verifica se uma linha comum tem múltiplos checkboxes inline (ex: ☐ 1 = Nada  ☐ 2 = Pouco  ☐ 3 = Moderadamente...)
+  const extractInlineCheckboxOptions = (line) => {
+    if (isTableLine(line)) return null;
+    const matches = line.split(/[☐☑☒□○◯🔘☑️]/).map(s => s.trim()).filter(Boolean);
+    const checkboxCount = (line.match(/[☐☑☒□○◯🔘☑️]/g) || []).length;
+    if (checkboxCount >= 2 && matches.length >= 2) {
+      return matches;
+    }
+    return null;
+  };
 
-      currentScreen = {
-        id: `tela_import_${Date.now()}_${screens.length + 1}`,
-        tipo: detectedType,
-        titulo: cleanTitle || 'Pergunta',
-        titulo1: cleanTitle || 'Pergunta',
-        titulo2: '',
-        subtitulo: '',
-        placeholder: getSmartPlaceholder(detectedType, cleanTitle),
-        multiline: detectedType === 'texto',
-        linhas: detectedType === 'texto' ? 4 : 1,
-        sliderMin: 0,
-        sliderMax: 10,
-        sliderStep: 1,
-        opcoes: []
-      };
-    } else if (currentScreen && isOptionLine(line)) {
-      // Se a opção começa com [ ], sugere checkbox; se começa com ( ), sugere radio
-      if (/^\[\s*[xX]?\s*\]/.test(line) && currentScreen.tipo === 'cards') {
-        currentScreen.tipo = 'checkbox';
-      } else if (/^\(\s*[oO•]?\s*\)/.test(line) && currentScreen.tipo === 'cards') {
-        currentScreen.tipo = 'radio';
-      }
+  // Verifica se a linha tem um item seguido de 3+ checkboxes no final (tabela extraída sem pipes)
+  const extractTrailingCheckboxesRow = (line) => {
+    const m = line.match(/^(.+?)\s+(?:[☐☑☒□○]\s*){3,}$/);
+    if (m && m[1] && m[1].trim().length > 2) {
+      return m[1].trim();
+    }
+    return null;
+  };
 
-      const cleanOption = line
-        .replace(/^[-*•–—\+]\s+|^\[\s*[xX]?\s*\]\s*|^\(\s*[oO•]?\s*\)\s*|^[a-hA-H][\.\)\-]\s+/i, '')
-        .trim();
+  // 1. Extração de Cabeçalho do Documento (Título do Evento, Subtítulo e Texto de Boas-vindas)
+  let eventTitle = '';
+  let eventSubtitle = '';
+  let introText = '';
+  let startIndex = 0;
 
-      const parsedOpt = parseOptionWithDrawerAI(cleanOption);
-      const icones = ['Tag', 'Church', 'HeartHandshake', 'Share2', 'Compass', 'Smile', 'Star', 'Sparkles'];
-      const cores = ['amber', 'emerald', 'sky', 'purple', 'indigo', 'rose'];
-      const optIdx = currentScreen.opcoes.length;
+  const firstLines = [];
+  for (let i = 0; i < Math.min(6, rawLines.length); i++) {
+    const l = rawLines[i];
+    if (
+      NUMBERED_SECTION_REGEX.test(l) ||
+      BULLET_OPTION_REGEX.test(l) ||
+      isTableLine(l) ||
+      l.endsWith('?') ||
+      l.endsWith(':') ||
+      /_{4,}/.test(l)
+    ) {
+      break;
+    }
+    firstLines.push(l);
+    startIndex = i + 1;
+  }
 
-      currentScreen.opcoes.push({
-        id: `opt_import_${Date.now()}_${optIdx + 1}`,
-        titulo: parsedOpt.titulo,
-        subtitulo: '',
-        ativo: true,
-        icone: icones[optIdx % icones.length],
-        cor: cores[optIdx % cores.length],
-        temGaveta: parsedOpt.temGaveta,
-        gaveta: parsedOpt.gaveta
-      });
-    } else if (currentScreen && !currentScreen.subtitulo && !isOptionLine(line)) {
-      currentScreen.subtitulo = line;
+  if (firstLines.length >= 1) {
+    eventTitle = firstLines[0];
+  }
+  if (firstLines.length >= 2) {
+    if (firstLines[1].length <= 110 && firstLines.length >= 3) {
+      eventSubtitle = firstLines[1];
+      introText = firstLines.slice(2).join(' ');
+    } else {
+      introText = firstLines.slice(1).join(' ');
     }
   }
 
-  if (currentScreen) {
-    screens.push(currentScreen);
+  // 2. Percorre as linhas construindo Seções e Telas de Pergunta
+  const screens = [];
+  let currentSectionPrefix = '';
+  let currentScreen = null;
+  let pendingScaleLegend = '';
+
+  const pushCurrentScreenIfValid = () => {
+    if (!currentScreen) return;
+
+    // Se a tela tem opções ou é de tipo aberto/slider/grade, é uma tela válida
+    const hasOptions = currentScreen.opcoes && currentScreen.opcoes.length > 0;
+    const isInputOrScale = ['texto', 'texto_curto', 'slider', 'rating', 'data', 'hora', 'grade'].includes(currentScreen.tipo);
+
+    if (hasOptions || isInputOrScale || currentScreen.wasExplicitQuestion) {
+      if (pendingScaleLegend && !currentScreen.legendaEscala) {
+        currentScreen.legendaEscala = pendingScaleLegend;
+        pendingScaleLegend = '';
+      }
+      // Ajusta cardsPorTela para exibir todas as opções sem esconder
+      if (currentScreen.opcoes && currentScreen.opcoes.length > 0) {
+        currentScreen.cardsPorTela = Math.min(12, Math.max(4, currentScreen.opcoes.length));
+      }
+      screens.push(currentScreen);
+    }
+    currentScreen = null;
+  };
+
+  const createNewScreen = (rawTitle, sectionPrefix = '', forcedType = null) => {
+    const cleanQ = rawTitle
+      .replace(/[:\-–—]?\s*_{3,}.*$/, (m) => (m.trim().startsWith(':') ? ':' : ''))
+      .replace(/_+/g, '')
+      .trim();
+
+    const detectedType = forcedType || detectQuestionTypeAI(cleanQ);
+    const shortPrefix = sectionPrefix
+      ? sectionPrefix.replace(/\s*\(opcional\)\s*/i, '').trim()
+      : '';
+
+    const fullTitle = (shortPrefix && !cleanQ.toLowerCase().startsWith(shortPrefix.toLowerCase()))
+      ? `${shortPrefix} — ${cleanQ}`
+      : cleanQ;
+
+    return {
+      id: `tela_imp_${Date.now()}_${screens.length + 1}_${Math.random().toString(36).slice(2, 6)}`,
+      tipo: detectedType,
+      titulo: fullTitle || 'Pergunta',
+      titulo1: fullTitle || 'Pergunta',
+      titulo2: '',
+      subtitulo: '',
+      legendaEscala: pendingScaleLegend || '',
+      colunasGrade: ['1', '2', '3', '4', '5', 'NA'],
+      placeholder: getSmartPlaceholder(detectedType, cleanQ),
+      multiline: detectedType === 'texto',
+      linhas: detectedType === 'texto' ? 4 : 1,
+      sliderMin: 0,
+      sliderMax: 10,
+      sliderStep: 1,
+      cardsPorTela: 6,
+      opcoes: [],
+      wasExplicitQuestion: cleanQ.endsWith('?') || /_{3,}/.test(rawTitle)
+    };
+  };
+
+  const addOptionToCurrentScreen = (optText) => {
+    if (!currentScreen) {
+      currentScreen = createNewScreen(currentSectionPrefix || 'Selecione uma opção:');
+    }
+    const parsedOpt = parseOptionWithDrawerAI(optText);
+    const optIdx = currentScreen.opcoes.length;
+    currentScreen.opcoes.push({
+      id: `opt_imp_${Date.now()}_${screens.length}_${optIdx + 1}`,
+      titulo: parsedOpt.titulo,
+      subtitulo: '',
+      ativo: true,
+      icone: icones[optIdx % icones.length],
+      cor: cores[optIdx % cores.length],
+      temGaveta: parsedOpt.temGaveta,
+      gaveta: parsedOpt.gaveta
+    });
+  };
+
+  for (let i = startIndex; i < rawLines.length; i++) {
+    const line = rawLines[i];
+
+    // A) Ignora linhas puras de sublinhado "________________" (mas marca a pergunta atual como campo aberto!)
+    if (PURE_UNDERSCORES_REGEX.test(line)) {
+      if (currentScreen && currentScreen.opcoes.length === 0) {
+        if (!['texto', 'texto_curto', 'slider', 'grade'].includes(currentScreen.tipo)) {
+          const isShortField = /^(?:.*—\s*)?(?:nome|nome completo|e-?mail|telefone|celular|whatsapp|cpf|cargo)\s*:?$/i.test(currentScreen.titulo);
+          currentScreen.tipo = isShortField ? 'texto_curto' : 'texto';
+          currentScreen.multiline = currentScreen.tipo === 'texto';
+          currentScreen.linhas = currentScreen.tipo === 'texto' ? 4 : 1;
+          currentScreen.placeholder = getSmartPlaceholder(currentScreen.tipo, currentScreen.titulo);
+        }
+        currentScreen.wasExplicitQuestion = true;
+      }
+      continue;
+    }
+
+    // B) Linhas de Legenda de Escala ("Escala: 1 = Nada relevante...", "0 = Totalmente insatisfeito | 10 = ...")
+    if (SCALE_LEGEND_REGEX.test(line) || SCALE_CONTINUATION_REGEX.test(line)) {
+      const cleanLegend = line.replace(/^escala\s*:\s*/i, '').trim();
+      if (currentScreen) {
+        currentScreen.legendaEscala = currentScreen.legendaEscala
+          ? `${currentScreen.legendaEscala} ${cleanLegend}`
+          : cleanLegend;
+        if (!currentScreen.subtitulo) {
+          currentScreen.subtitulo = currentScreen.legendaEscala;
+        }
+      } else {
+        pendingScaleLegend = pendingScaleLegend ? `${pendingScaleLegend} ${cleanLegend}` : cleanLegend;
+      }
+      continue;
+    }
+
+    // C) Linhas de Tabela (| Item | 1 | 2 | 3 | 4 | 5 | NA | ou | 0☐ | 1☐ | ... | 10☐ |)
+    if (isTableLine(line)) {
+      const cells = parseTableCells(line);
+      if (cells.length === 0) continue;
+
+      // Ignora separador markdown |---|---|
+      if (cells.every(c => /^[-:]+$/.test(c))) continue;
+
+      // C.1) Régua de 0 a 10 (| 0☐ | 1☐ | ... | 10☐ |)
+      if (isZeroToTenScaleTableLine(cells)) {
+        if (!currentScreen) {
+          currentScreen = createNewScreen(currentSectionPrefix || 'Satisfação Geral', '', 'slider');
+        }
+        currentScreen.tipo = 'slider';
+        currentScreen.sliderMin = 0;
+        currentScreen.sliderMax = 10;
+        currentScreen.sliderStep = 1;
+        currentScreen.wasExplicitQuestion = true;
+        continue;
+      }
+
+      // C.2) Cabeçalho de Tabela (| Item | 1 | 2 | 3 | 4 | 5 | NA |)
+      if (isTableHeaderCells(cells)) {
+        // Se já havia uma grade com itens preenchidos, fecha a anterior e abre nova grade
+        if (currentScreen && currentScreen.opcoes.length > 0) {
+          pushCurrentScreenIfValid();
+        }
+        if (!currentScreen) {
+          currentScreen = createNewScreen(currentSectionPrefix || 'Avaliação de Itens', '', 'grade');
+        }
+        currentScreen.tipo = 'grade';
+        const scaleCols = cells.slice(1).map(c => c.replace(/[☐☑☒□○]/g, '').trim()).filter(Boolean);
+        if (scaleCols.length >= 2) {
+          currentScreen.colunasGrade = scaleCols;
+        }
+        continue;
+      }
+
+      // C.3) Linha de Item da Tabela (| 24/11 — Inovação e Tecnologia Judiciária | ☐ | ☐ | ... |)
+      const itemLabel = cells[0].replace(/^[☐☑☒□○]\s*/, '').trim();
+      if (itemLabel && itemLabel.toLowerCase() !== 'item') {
+        if (!currentScreen) {
+          currentScreen = createNewScreen(currentSectionPrefix || 'Avaliação', '', 'grade');
+        }
+        currentScreen.tipo = 'grade';
+        addOptionToCurrentScreen(itemLabel);
+      }
+      continue;
+    }
+
+    // D) Linha com item de tabela e 3+ checkboxes no final (sem pipes)
+    const trailingRowItem = extractTrailingCheckboxesRow(line);
+    if (trailingRowItem) {
+      if (!currentScreen) {
+        currentScreen = createNewScreen(currentSectionPrefix || 'Avaliação', '', 'grade');
+      }
+      currentScreen.tipo = 'grade';
+      addOptionToCurrentScreen(trailingRowItem);
+      continue;
+    }
+
+    // E) Linha com múltiplos checkboxes inline (ex: ☐ 1 = Nada  ☐ 2 = Pouco  ☐ 3 = Moderadamente...)
+    const inlineOptions = extractInlineCheckboxOptions(line);
+    if (inlineOptions) {
+      // Verifica se são números de 0 a 10
+      const allZeroToTen = inlineOptions.length >= 7 && inlineOptions.every(o => /^\d{1,2}$/.test(o));
+      if (allZeroToTen) {
+        if (!currentScreen) {
+          currentScreen = createNewScreen(currentSectionPrefix || 'Escala 0 a 10', '', 'slider');
+        }
+        currentScreen.tipo = 'slider';
+        currentScreen.sliderMin = 0;
+        currentScreen.sliderMax = 10;
+        currentScreen.wasExplicitQuestion = true;
+      } else {
+        if (!currentScreen) {
+          currentScreen = createNewScreen(currentSectionPrefix || 'Selecione uma opção:', '', 'cards');
+        }
+        inlineOptions.forEach(opt => addOptionToCurrentScreen(opt));
+      }
+      continue;
+    }
+
+    // F) Linha de Opção Individual (começa com ☐, ☑, -, *, [ ], ( ), a), etc.)
+    const bulletMatch = line.match(BULLET_OPTION_REGEX);
+    if (bulletMatch && !NUMBERED_SECTION_REGEX.test(line)) {
+      const optContent = bulletMatch[1].trim();
+      if (optContent) {
+        addOptionToCurrentScreen(optContent);
+      }
+      continue;
+    }
+
+    // G) Seção Numerada de Topo (ex: "1. Perfil do participante (opcional)", "2. Conteúdo programático", "6. Satisfação geral")
+    const numberedMatch = line.match(NUMBERED_SECTION_REGEX);
+    if (numberedMatch) {
+      pushCurrentScreenIfValid();
+      pendingScaleLegend = '';
+
+      const secNum = numberedMatch[1];
+      const secRest = numberedMatch[2].trim();
+      currentSectionPrefix = `${secNum}. ${secRest.replace(/\s*\(opcional\)\s*/i, '').trim()}`;
+
+      // Se a própria linha numerada já termina com "?" ou tem "____", ela já é uma pergunta direta
+      if (secRest.endsWith('?') || /_{3,}/.test(secRest)) {
+        currentScreen = createNewScreen(`${secNum}. ${secRest}`, '');
+        currentScreen.wasExplicitQuestion = true;
+      } else {
+        // Caso contrário, pode ser um cabeçalho de seção (que receberá subperguntas ou uma tabela logo abaixo)
+        currentScreen = createNewScreen(`${secNum}. ${secRest}`, '');
+      }
+      continue;
+    }
+
+    // H) Pergunta ou Sub-pergunta (termina com "?", termina com ":", ou possui linha de resposta "_____")
+    const hasInlineUnderscore = /_{3,}/.test(line);
+    const cleanWithoutUnderscore = line.replace(/\s*_{3,}.*$/, '').trim();
+    const endsWithQuestionOrColon =
+      cleanWithoutUnderscore.endsWith('?') ||
+      (cleanWithoutUnderscore.endsWith(':') && !/^escala\s*:/i.test(cleanWithoutUnderscore));
+
+    if (endsWithQuestionOrColon || hasInlineUnderscore) {
+      const isShortInputLabel = /^(?:nome|nome completo|e-?mail|telefone|celular|whatsapp|cpf|matrícula|matricula)\s*:?$/i.test(cleanWithoutUnderscore);
+      const forcedType = hasInlineUnderscore
+        ? (isShortInputLabel ? 'texto_curto' : 'texto')
+        : (isShortInputLabel ? 'texto_curto' : null);
+
+      // Se a tela atual era apenas um cabeçalho de seção recém-aberto (sem opções e não era pergunta explícita),
+      // funde o cabeçalho da seção com esta pergunta!
+      if (
+        currentScreen &&
+        currentScreen.opcoes.length === 0 &&
+        !currentScreen.wasExplicitQuestion &&
+        currentScreen.tipo !== 'grade'
+      ) {
+        const mergedScreen = createNewScreen(cleanWithoutUnderscore, currentSectionPrefix, forcedType);
+        if (currentScreen.subtitulo && !mergedScreen.subtitulo) {
+          mergedScreen.subtitulo = currentScreen.subtitulo;
+        }
+        currentScreen = mergedScreen;
+        currentScreen.wasExplicitQuestion = true;
+      } else {
+        // Fecha a pergunta anterior e abre uma nova pergunta dentro da mesma seção
+        pushCurrentScreenIfValid();
+        currentScreen = createNewScreen(cleanWithoutUnderscore, currentSectionPrefix, forcedType);
+        currentScreen.wasExplicitQuestion = true;
+      }
+      continue;
+    }
+
+    // I) Linha de instrução / subtítulo (ex: "Avalie a relevância de cada eixo temático para sua atuação profissional.")
+    if (currentScreen && currentScreen.opcoes.length === 0) {
+      currentScreen.subtitulo = currentScreen.subtitulo
+        ? `${currentScreen.subtitulo} ${line}`
+        : line;
+    } else if (currentScreen && currentScreen.opcoes.length > 0) {
+      // Se já tinha opções e apareceu um novo enunciado antes de outra tabela/opções, abre nova tela
+      pushCurrentScreenIfValid();
+      currentScreen = createNewScreen(line, currentSectionPrefix);
+    }
   }
 
+  pushCurrentScreenIfValid();
+
+  // Fallback caso o texto seja uma lista simples sem numeração
   if (screens.length === 0) {
-    const detectedType = detectQuestionTypeAI(lines[0]);
-    const fallbackOpcoes = lines.slice(1).map((l, idx) => {
-      const parsedOpt = parseOptionWithDrawerAI(l.replace(/^[-*•]\s*/, '').trim());
+    const detectedType = detectQuestionTypeAI(rawLines[0]);
+    const fallbackOpcoes = rawLines.slice(1).map((l, idx) => {
+      const parsedOpt = parseOptionWithDrawerAI(l.replace(/^[☐☑☒□○•\-*]\s*/, '').trim());
       return {
         id: `opt_fb_${idx + 1}`,
         titulo: parsedOpt.titulo,
         subtitulo: '',
         ativo: true,
-        icone: 'Tag',
-        cor: 'amber',
+        icone: icones[idx % icones.length],
+        cor: cores[idx % cores.length],
         temGaveta: parsedOpt.temGaveta,
         gaveta: parsedOpt.gaveta
       };
@@ -611,29 +1319,41 @@ export function parseTextToQuestions(rawText) {
     screens.push({
       id: `tela_import_fallback`,
       tipo: detectedType,
-      titulo: lines[0] || 'Pergunta Importada',
-      titulo1: lines[0] || 'Pergunta Importada',
+      titulo: rawLines[0] || 'Pergunta Importada',
+      titulo1: rawLines[0] || 'Pergunta Importada',
       titulo2: '',
       subtitulo: '',
+      cardsPorTela: Math.min(10, Math.max(4, fallbackOpcoes.length)),
       opcoes: fallbackOpcoes.length > 0 ? fallbackOpcoes : getDefaultOptionsForType(detectedType)
     });
   }
 
-  return buildConfigFromParsedScreens(screens);
+  return buildConfigFromParsedScreens(screens, {
+    eventTitle: eventTitle || fileName.replace(/\.[^.]+$/, ''),
+    eventSubtitle,
+    introText
+  });
 }
 
-function buildConfigFromParsedScreens(screens) {
+function buildConfigFromParsedScreens(screens, meta = {}) {
   const tela1 = screens[0];
   const telasExtras = screens.slice(1);
 
   return {
     isBlankEvent: false,
-    pergunta1Titulo: tela1?.titulo || '',
+    importedFormTitle: meta.eventTitle || '',
+    importedFormSubtitle: meta.eventSubtitle || '',
+    importedIntroText: meta.introText || '',
+    capaTitulo1: meta.eventSubtitle || meta.eventTitle || '',
+    capaTitulo2: '',
+    pergunta1Titulo: tela1?.titulo || 'Pergunta 1',
     pergunta1Titulo2: tela1?.titulo2 || '',
-    pergunta1TextoAbaixo: tela1?.subtitulo || '',
+    pergunta1Subtitulo: tela1?.subtitulo || '',
+    pergunta1TextoAbaixo: meta.introText || tela1?.subtitulo || '',
     pergunta1BotaoComecarTexto: 'COMEÇAR',
     mostrarBotaoComecar: true,
     pergunta1FonteTamanho: 18,
+    cardsPorTela: tela1?.cardsPorTela || Math.min(12, Math.max(4, (tela1?.opcoes || []).length)),
     tela1Tipo: tela1?.tipo || 'cards',
     tela1TextoPlaceholder: tela1?.placeholder || 'Digite sua resposta...',
     opcoesChegada: (tela1?.opcoes && tela1.opcoes.length > 0) ? tela1.opcoes : [],
@@ -646,12 +1366,14 @@ function buildConfigFromParsedScreens(screens) {
       titulo1: t.titulo1 || t.titulo || `Pergunta ${idx + 2}`,
       titulo2: t.titulo2 || '',
       subtitulo: t.subtitulo || '',
+      legendaEscala: t.legendaEscala || '',
+      colunasGrade: t.colunasGrade || ['1', '2', '3', '4', '5', 'NA'],
       placeholder: t.placeholder || 'Digite sua resposta...',
       multiline: t.tipo === 'texto',
       linhas: t.linhas || 4,
       obrigatorio: false,
       botaoTexto: 'Avançar',
-      cardsPorTela: 4,
+      cardsPorTela: t.cardsPorTela || Math.min(12, Math.max(4, (t.opcoes || []).length)),
       sliderMin: t.sliderMin ?? 0,
       sliderMax: t.sliderMax ?? 10,
       sliderStep: t.sliderStep ?? 1,
@@ -662,9 +1384,107 @@ function buildConfigFromParsedScreens(screens) {
 
 function normalizeImportedConfig(data) {
   return {
+    importedFormTitle: data.importedFormTitle || data.titulo || '',
     pergunta1Titulo: data.pergunta1Titulo || data.titulo || 'Pergunta Principal',
     pergunta1Titulo2: data.pergunta1Titulo2 || '',
     opcoesChegada: Array.isArray(data.opcoesChegada) ? data.opcoesChegada : [],
     telasExtras: Array.isArray(data.telasExtras) ? data.telasExtras : []
   };
 }
+
+/**
+ * Texto oficial da Avaliação do I Encontro Nacional dos Diretores de Secretaria da JMU (ENAJUM)
+ * Pronta para uso imediato ou teste de importação IA
+ */
+export const TEXTO_AVALIACAO_JMU_ENAJUM = `AVALIAÇÃO DO I ENCONTRO NACIONAL DOS DIRETORES DE SECRETARIA DA JUSTIÇA MILITAR DA UNIÃO
+Competências, Inovação, Gestão e Eficiência Processual na JMU
+Sua participação é importante para o aperfeiçoamento dos cursos e eventos promovidos pela ENAJUM. Responda às questões considerando sua experiência no Encontro. As respostas serão utilizadas para avaliar a atividade e orientar o planejamento de futuras ações educacionais.
+1. Perfil do participante (opcional)
+Instituição ou órgão de vínculo:
+☐  Justiça Militar da União
+☐  Justiça Militar Estadual
+☐  Justiça Federal
+☐  Justiça Estadual
+☐  Ministério Público / Ministério Público Militar
+☐  Forças Armadas
+☐  Defensoria Pública
+☐  Advocacia
+☐  Outro: __________________________
+Cargo ou função:
+☐  Magistrado(a)
+☐  Membro do Ministério Público
+☐  Servidor(a) do Poder Judiciário
+☐  Oficial das Forças Armadas
+☐  Praça das Forças Armadas
+☐  Defensor(a) público(a)
+☐  Advogado(a)
+☐  Outro: __________________________
+Nome: __________________________________________________________________________________________________
+2. Conteúdo programático
+Avalie a relevância de cada eixo temático para sua atuação profissional. 
+Escala: 1 = Nada relevante; 2 = Pouco relevante; 3 = Moderadamente relevante; 4 = Relevante; 5 = Muito relevante; NA = Não se aplica / Não sei avaliar.
+| Item   | 1   | 2   | 3   | 4   | 5   | NA   |
+| 24/11 — Inovação e Tecnologia Judiciária   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
+| 24/11 — Gestão Processual e Cartorária   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
+| 24/11 — Direito Administrativo    | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
+| 24/11 — Liderança e Gestão de Conflitos    | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
+| 25/11 — Segurança Cibernética e Integridade de Dados   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
+| 25/11 — Direito e Jurisdição   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
+| 25/11 — Atuação e Desenvolvimento do Diretor de Secretaria   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
+| 25/11 — Boas Práticas de Gestão Processual   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
+3. Palestras, mesas-redondas e oficina
+Considerando o conjunto das atividades, avalie os seguintes aspectos.
+| Item   | 1   | 2   | 3   | 4   | 5   | NA   |
+| Clareza e organização das exposições   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
+| Domínio do conteúdo pelos(as) formadores(as)   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
+| Atualidade e profundidade dos conteúdos   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
+| Relevância dos temas para a prática profissional   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
+| Articulação entre fundamentos e situações práticas   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
+| Adequação do tempo destinado às atividades   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
+| Qualidade da mediação e das respostas às perguntas   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
+Escala: 1 = Péssimo(a); 2 = Ruim; 3 = Regular; 4 = Bom/Boa; 5 = Ótimo(a); NA = Não foi possível avaliar.
+4. Metodologia e participação
+| Item   | 1   | 2   | 3   | 4   | 5   | NA   |
+| Adequação da metodologia aos objetivos do Encontro   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
+| Equilíbrio entre exposições e debates   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
+| Oportunidades de interação e esclarecimento de dúvidas   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
+Escala: 1 = Péssimo(a); 2 = Ruim; 3 = Regular; 4 = Bom/Boa; 5 = Ótimo(a); NA = Não foi possível avaliar.
+Como você avalia a carga horária total do Encontro?
+☐  Insuficiente
+☐  Adequada
+☐  Excessiva
+5. Organização e infraestrutura
+| Item   | 1   | 2   | 3   | 4   | 5   | NA   |
+| Organização geral e cumprimento da programação   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
+| Clareza e tempestividade das informações antes e durante o Encontro   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
+| Disponibilização de materiais e informações de apoio   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
+| Apoio prestado pela equipe organizadora   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
+| Estrutura física e conforto do ambiente   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
+| Qualidade dos recursos audiovisuais e projeção das apresentações   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
+| Condições de acessibilidade do local   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
+Escala: 1 = Péssimo(a); 2 = Ruim; 3 = Regular; 4 = Bom/Boa; 5 = Ótimo(a); NA = Não foi possível avaliar.
+Indique seu grau de concordância com as afirmações:
+| Item   | 1   | 2   | 3   | 4   | 5   | NA   |
+| O local e a cidade-sede foram adequados para a realização do evento.   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
+| A realização do Encontro e a hospedagem no mesmo local facilitaram minha participação.   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
+Escala: 1 = Discordo totalmente; 2 = Discordo parcialmente; 3 = Nem concordo nem discordo; 4 = Concordo parcialmente;
+5 = Concordo totalmente; NA = Não se aplica.
+6. Satisfação geral
+Em uma escala de 0 a 10, qual é o seu grau de satisfação geral com o Encontro?
+0 = Totalmente insatisfeito(a) | 10 = Totalmente satisfeito(a)
+| 0☐   | 1☐   | 2☐   | 3☐   | 4☐   | 5☐   | 6☐   | 7☐   | 8☐   | 9☐   | 10☐   |
+7. Contribuição para a atuação profissional
+Em que medida o Encontro ampliou sua compreensão sobre os desafios contemporâneos da Justiça Militar?
+☐ 1 = Nada  ☐ 2 = Pouco  ☐ 3 = Moderadamente  ☐ 4 = Bastante  ☐ 5 = Muito  ☐ Não sei avaliar
+Que conhecimentos, reflexão ou prática discutida no Encontro você pretende incorporar à sua atuação profissional? 
+___________________________________________________________________________________________________________
+___________________________________________________________________________________________________________
+8. Sugestões e comentários
+Quais temas, questões jurídicas ou desafios profissionais deveriam ser priorizados nos próximos Encontros de Diretores? ___________________________________________________________________________________________________________
+___________________________________________________________________________________________________________
+Quais aspectos do Encontro você considera que ocorreram de modo excelente?
+___________________________________________________________________________________________________________
+___________________________________________________________________________________________________________
+Quais oportunidades de melhoria você sugere para as próximas edições?
+___________________________________________________________________________________________________________
+___________________________________________________________________________________________________________`;

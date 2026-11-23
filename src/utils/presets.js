@@ -1,8 +1,17 @@
 // ==========================================
 // PRESETS / MODELOS DE PESQUISAS MUNDIAIS (GOOGLE FORMS, TYPEFORM, JOTFORM, SURVEYMONKEY)
 // ==========================================
+import { parseTextToQuestions, TEXTO_AVALIACAO_JMU_ENAJUM } from './formImporter';
 
 export const PRESETS_PESQUISAS = [
+  {
+    id: 'avaliacao_jmu_enajum',
+    nome: 'Avaliação I Encontro Nacional Diretores de Secretaria JMU (ENAJUM)',
+    descricao: '15 telas completas: Perfil (Instituição, Cargo, Nome), Grades de Avaliação 1 a 5 + NA (Conteúdo, Palestras, Metodologia, Organização), Escala 0-10 e Dissertativas.',
+    tag: 'Oficial JMU / ENAJUM',
+    icone: 'Award',
+    config: parseTextToQuestions(TEXTO_AVALIACAO_JMU_ENAJUM)
+  },
   {
     id: 'culto_recepcao',
     nome: 'Recepção de Culto / Visitantes',

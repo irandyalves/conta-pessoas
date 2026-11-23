@@ -33,11 +33,15 @@ import {
   Menu,
   Share2,
   Radio,
-  ExternalLink
+  ExternalLink,
+  UploadCloud,
+  FolderUp,
+  Sparkles
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import QuestionsConfigModal from './QuestionsConfigModal';
 import FirebaseConfigModal from './FirebaseConfigModal';
+import { parseAnyFile, parseJsonOrText, TEXTO_AVALIACAO_JMU_ENAJUM } from '../utils/formImporter';
 import { 
   escutarPresencas, 
   limparDadosLocais, 
@@ -82,6 +86,9 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
   const [activeEventId, setActiveEventIdState] = useState(() => getActiveEventId());
   const [eventosLista, setEventosLista] = useState([]);
   const [novoEventoNome, setNovoEventoNome] = useState('');
+  const [novoEventoConfigIA, setNovoEventoConfigIA] = useState(null);
+  const [novoEventoTextoIA, setNovoEventoTextoIA] = useState('');
+  const [importandoNovoEventoIA, setImportandoNovoEventoIA] = useState(false);
   const [criandoEvento, setCriandoEvento] = useState(false);
   const [confirmDeleteEventId, setConfirmDeleteEventId] = useState(null);
   const [excluindoEvento, setExcluindoEvento] = useState(false);
@@ -155,18 +162,68 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
     await salvarEventoAtivoGlobal(val, ev?.titulo || '');
   };
 
+  const handleArquivoNovoEventoIA = async (file) => {
+    if (!file) return;
+    try {
+      setImportandoNovoEventoIA(true);
+      const parsed = await parseAnyFile(file);
+      setNovoEventoConfigIA(parsed);
+      if (!novoEventoNome.trim()) {
+        setNovoEventoNome(parsed.importedFormTitle || file.name.replace(/\.[^.]+$/, ''));
+      }
+      mostrarAvisoInline(
+        'Arquivo Analisado pela IA!',
+        `Identificamos ${1 + (parsed.telasExtras?.length || 0)} telas de perguntas automaticamente.`,
+        'sucesso'
+      );
+    } catch (err) {
+      mostrarAvisoInline('Erro ao Ler Arquivo', err?.message || String(err), 'erro');
+    } finally {
+      setImportandoNovoEventoIA(false);
+    }
+  };
+
+  const handleTextoNovoEventoIA = () => {
+    if (!novoEventoTextoIA.trim()) return;
+    try {
+      const parsed = parseJsonOrText(novoEventoTextoIA);
+      setNovoEventoConfigIA(parsed);
+      if (!novoEventoNome.trim() && parsed.importedFormTitle) {
+        setNovoEventoNome(parsed.importedFormTitle);
+      }
+      mostrarAvisoInline(
+        'Texto Analisado pela IA!',
+        `Identificamos ${1 + (parsed.telasExtras?.length || 0)} telas de perguntas automaticamente.`,
+        'sucesso'
+      );
+    } catch (err) {
+      mostrarAvisoInline('Erro ao Analisar Texto', err?.message || String(err), 'erro');
+    }
+  };
+
   const handleCriarEvento = async (e) => {
     e?.preventDefault();
-    if (!novoEventoNome.trim()) return;
+    const finalName = novoEventoNome.trim() || novoEventoConfigIA?.importedFormTitle || '';
+    if (!finalName) return;
     setCriandoEvento(true);
     try {
-      const created = await criarNovoEvento(null, novoEventoNome.trim());
+      const hadIAConfig = Boolean(novoEventoConfigIA);
+      const totalTelasIA = hadIAConfig ? (1 + (novoEventoConfigIA.telasExtras?.length || 0)) : 0;
+      const created = await criarNovoEvento(null, finalName, novoEventoConfigIA);
       setActiveEventIdState(created.id);
       setEventoTitulo(created.titulo);
       setInputTitulo(created.titulo);
       setNovoEventoNome('');
-      setActiveSection('dashboard');
-      mostrarAvisoInline('Evento Criado!', `"${created.titulo}" foi criado e ativado no painel.`, 'sucesso');
+      setNovoEventoConfigIA(null);
+      setNovoEventoTextoIA('');
+      setActiveSection(hadIAConfig ? 'perguntas' : 'dashboard');
+      mostrarAvisoInline(
+        'Evento Criado com Sucesso!',
+        hadIAConfig
+          ? `"${created.titulo}" foi criado e ativado com ${totalTelasIA} telas geradas pela IA!`
+          : `"${created.titulo}" foi criado e ativado no painel.`,
+        'sucesso'
+      );
     } catch (err) {
       mostrarAvisoInline('Erro ao Criar Evento', err?.message || String(err), 'erro');
     } finally {
@@ -1271,37 +1328,39 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
           )}
 
           {/* ============================================================== */}
-          {/* ABA 3: CRIAR NOVO EVENTO (ABA INLINE)                          */}
+          {/* ABA 3: CRIAR NOVO EVENTO COM IMPORTAÇÃO IA AUTOMÁTICA          */}
           {/* ============================================================== */}
           {activeSection === 'novo_evento' && (
-            <div className="print:hidden bg-slate-900/90 border border-slate-800 rounded-2xl p-6 w-full max-w-3xl shadow-xl space-y-5">
-              <div className="flex items-center gap-3 pb-4 border-b border-slate-800">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center shrink-0">
-                  <Plus className="w-5 h-5" />
-                </div>
-                <div>
-                  <h2 className="text-base sm:text-lg font-black text-white">Criar Novo Evento</h2>
-                  <p className="text-xs text-slate-400">Gera um link e um QR Code fixo exclusivo para este evento ou culto</p>
+            <div className="print:hidden bg-slate-900/90 border border-slate-800 rounded-2xl p-6 w-full max-w-4xl shadow-xl space-y-5">
+              <div className="flex items-center justify-between gap-3 pb-4 border-b border-slate-800">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center shrink-0">
+                    <Plus className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-base sm:text-lg font-black text-white">Criar Novo Evento (Manual ou com IA)</h2>
+                    <p className="text-xs text-slate-400">Gera um link exclusivo, QR Code fixo e pode montar todas as telas automaticamente a partir de um arquivo (.pdf, .pptx, .docx, .doc, .txt)</p>
+                  </div>
                 </div>
               </div>
 
               <form onSubmit={handleCriarEvento} className="space-y-4">
                 <div>
                   <label className="text-xs font-bold text-amber-300 block mb-1.5">
-                    Nome do Evento / Culto / Programa
+                    1. Nome do Evento / Encontro / Avaliação
                   </label>
                   <input
                     type="text"
                     autoFocus
                     value={novoEventoNome}
                     onChange={(e) => setNovoEventoNome(e.target.value)}
-                    placeholder="Ex: Culto de Jovens, Retiro Espiritual, Avaliação Restinga..."
+                    placeholder="Digite o nome ou envie o arquivo abaixo para a IA preencher automaticamente..."
                     className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-4 py-2.5 text-sm text-white font-bold placeholder-slate-500 focus:outline-none"
                   />
                 </div>
 
                 {novoEventoNome && (
-                  <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-xs space-y-1.5">
+                  <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs space-y-1">
                     <span className="text-slate-400 block font-mono">
                       ID Fixo do Evento: <strong className="text-amber-300">{novoEventoNome.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')}</strong>
                     </span>
@@ -1310,6 +1369,129 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
                     </span>
                   </div>
                 )}
+
+                {/* SEÇÃO DE IMPORTAÇÃO AUTOMÁTICA DE PERGUNTAS COM IA */}
+                <div className="pt-3 border-t border-slate-800 space-y-3.5">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <label className="text-xs font-black text-emerald-300 uppercase tracking-wide flex items-center gap-1.5">
+                      <Sparkles className="w-4 h-4 text-emerald-400" />
+                      <span>2. Inserir Perguntas Automaticamente com IA (Opcional — PDF, PPTX, DOCX, DOC, XLSX, TXT)</span>
+                    </label>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const parsed = parseJsonOrText(TEXTO_AVALIACAO_JMU_ENAJUM);
+                        setNovoEventoConfigIA(parsed);
+                        if (!novoEventoNome.trim()) {
+                          setNovoEventoNome(parsed.importedFormTitle || 'Avaliação I Encontro Nacional Diretores de Secretaria JMU');
+                        }
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-black flex items-center gap-1.5 transition active:scale-95"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>⚡ Carregar Avaliação Encontro JMU / ENAJUM</span>
+                    </button>
+                  </div>
+
+                  {/* Caixa de Upload Multi-Formato */}
+                  <div className="p-4 rounded-2xl bg-slate-950 border-2 border-dashed border-emerald-500/40 hover:border-emerald-400 transition text-center space-y-2">
+                    <UploadCloud className="w-7 h-7 text-emerald-400 mx-auto" />
+                    <div>
+                      <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 font-bold text-xs hover:bg-emerald-500/25 active:scale-95 transition">
+                        <FolderUp className="w-4 h-4" />
+                        <span>{importandoNovoEventoIA ? 'Analisando arquivo com IA...' : 'Selecionar Arquivo (.pdf, .pptx, .ppt, .docx, .doc, .xlsx, .csv, .txt)'}</span>
+                        <input
+                          type="file"
+                          accept=".pdf,.pptx,.ppt,.docx,.doc,.xlsx,.csv,.txt,.json"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleArquivoNovoEventoIA(file);
+                          }}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+                    <p className="text-[11px] text-slate-400">
+                      A IA detecta o título do evento, opções com ☐, gavetas automáticas em "Outro: ____", tabelas/grades de avaliação (1 a 5 e NA), escalas 0 a 10 e perguntas dissertativas!
+                    </p>
+                  </div>
+
+                  {/* Ou Colar Texto */}
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold text-slate-400 block">
+                      Ou cole o texto copiado do seu documento (.pdf / .docx / .pptx / .txt) abaixo:
+                    </label>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <textarea
+                        rows={3}
+                        value={novoEventoTextoIA}
+                        onChange={(e) => setNovoEventoTextoIA(e.target.value)}
+                        placeholder="Cole aqui o conteúdo do formulário ou avaliação e clique em 'Analisar com IA'..."
+                        className="flex-1 bg-slate-950 border border-slate-800 focus:border-emerald-400 rounded-xl p-2.5 text-xs text-white placeholder-slate-600 focus:outline-none resize-none font-mono"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleTextoNovoEventoIA}
+                        disabled={!novoEventoTextoIA.trim()}
+                        className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-emerald-300 font-bold text-xs rounded-xl border border-emerald-500/30 active:scale-95 transition disabled:opacity-40 shrink-0 self-end sm:self-stretch"
+                      >
+                        Analisar com IA
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Preview das Perguntas Detectadas pela IA */}
+                  {novoEventoConfigIA && (
+                    <div className="p-4 rounded-2xl bg-emerald-950/35 border border-emerald-500/50 space-y-3 animate-fade-in">
+                      <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-emerald-500/30">
+                        <span className="text-xs font-black text-emerald-300 uppercase tracking-wide flex items-center gap-1.5">
+                          <Check className="w-4 h-4 text-emerald-400" />
+                          {1 + (novoEventoConfigIA.telasExtras?.length || 0)} Telas Prontas para Inserção Automática no Novo Evento!
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setNovoEventoConfigIA(null)}
+                          className="text-[11px] text-rose-300 hover:text-rose-200 underline"
+                        >
+                          Limpar importação (Criar em branco)
+                        </button>
+                      </div>
+
+                      <div className="max-h-52 overflow-y-auto space-y-1.5 pr-1 custom-scrollbar text-xs">
+                        <div className="p-2 rounded-xl bg-slate-950/90 border border-slate-800 flex items-center justify-between gap-2">
+                          <div className="min-w-0">
+                            <span className="text-amber-400 font-black mr-1.5">Tela 1:</span>
+                            <span className="text-white font-bold">{novoEventoConfigIA.pergunta1Titulo}</span>
+                          </div>
+                          <span className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                            🃏 {novoEventoConfigIA.opcoesChegada?.length || 0} opções
+                          </span>
+                        </div>
+
+                        {(novoEventoConfigIA.telasExtras || []).map((t, i) => {
+                          const badgeLabel =
+                            t.tipo === 'grade' ? `📊 Grade (${t.opcoes?.length || 0} itens)` :
+                            t.tipo === 'slider' ? `🎚️ Escala ${t.sliderMin ?? 0} a ${t.sliderMax ?? 10}` :
+                            t.tipo === 'texto' ? '📝 Texto Dissertativo' :
+                            t.tipo === 'texto_curto' ? '🔤 Texto Curto' :
+                            `🃏 ${t.opcoes?.length || 0} opções`;
+                          return (
+                            <div key={i} className="p-2 rounded-xl bg-slate-950/90 border border-slate-800 flex items-center justify-between gap-2">
+                              <div className="min-w-0">
+                                <span className="text-emerald-400 font-black mr-1.5">Tela {i + 2}:</span>
+                                <span className="text-slate-200 font-bold">{t.titulo}</span>
+                              </div>
+                              <span className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-lg bg-slate-900 text-emerald-300 border border-slate-700">
+                                {badgeLabel}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
 
                 <div className="flex items-center gap-3 pt-2">
                   <button
@@ -1321,10 +1503,14 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
                   </button>
                   <button
                     type="submit"
-                    disabled={criandoEvento || !novoEventoNome.trim()}
+                    disabled={criandoEvento || (!novoEventoNome.trim() && !novoEventoConfigIA?.importedFormTitle)}
                     className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-xs shadow-lg active:scale-95 transition disabled:opacity-50"
                   >
-                    {criandoEvento ? 'Criando Evento...' : 'Criar & Ativar Evento'}
+                    {criandoEvento
+                      ? 'Criando Evento...'
+                      : novoEventoConfigIA
+                        ? `Criar Evento & Inserir ${1 + (novoEventoConfigIA.telasExtras?.length || 0)} Telas IA`
+                        : 'Criar & Ativar Evento'}
                   </button>
                 </div>
               </form>
