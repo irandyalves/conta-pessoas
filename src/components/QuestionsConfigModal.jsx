@@ -294,6 +294,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
   });
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef(null);
+  const previewColRef = useRef(null);
+  const configColRef = useRef(null);
 
   useEffect(() => {
     const handleMouseMove = (e) => {
@@ -405,6 +407,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
   useEffect(() => {
     setPreviewScreen(activeTab);
     setPreviewPage(0);
+    // Configurações da tela escolhida começam do topo
+    if (configColRef.current) configColRef.current.scrollTop = 0;
   }, [activeTab]);
 
   if (!isOpen && !inline) return null;
@@ -867,7 +871,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
   return (
     <div className={inline ? "w-full animate-fade-in" : "fixed inset-0 z-50 flex items-start justify-center pt-2 sm:pt-4 p-2 sm:p-4 bg-black/85 backdrop-blur-md overflow-y-auto animate-fade-in"}>
-      <div className={inline ? "relative w-full bg-slate-900 border border-slate-800 rounded-r-2xl rounded-l-none border-l-0 shadow-xl flex flex-col overflow-hidden" : "relative w-[96vw] max-w-7xl bg-slate-900 border border-slate-700 rounded-3xl shadow-2xl flex flex-col max-h-[94vh] overflow-hidden shrink-0"}>
+      <div className={inline ? "relative w-full h-[calc(100vh-1.5rem)] bg-slate-900 border border-slate-800 rounded-r-2xl rounded-l-none border-l-0 shadow-xl flex flex-col overflow-hidden" : "relative w-[96vw] max-w-7xl bg-slate-900 border border-slate-700 rounded-3xl shadow-2xl flex flex-col max-h-[94vh] overflow-hidden shrink-0"}>
         
         {/* ============================================================ */}
         {/* CABEÇALHO DO MODAL (FIXO NO TOPO)                            */}
@@ -942,7 +946,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
           {/* ========================================================== */}
           <div 
             style={{ width: typeof window !== 'undefined' && window.innerWidth >= 1024 ? `${splitPercent}%` : '100%' }} 
-            className="flex flex-col min-h-0 bg-slate-900/50 shrink-0 border-b lg:border-b-0 border-slate-800"
+            className="flex flex-col min-h-0 max-h-[50%] lg:max-h-none overflow-hidden bg-slate-900/50 shrink-0 border-b lg:border-b-0 border-slate-800"
           >
             
             {/* BARRA DE ABAS: BOAS-VINDAS, INÍCIO, TELA 1..X, FIM + BOTÃO + ADD TAB EM VERDE */}
@@ -1083,7 +1087,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
             </div>
 
             {/* CONTEÚDO ROLÁVEL DA ESQUERDA */}
-            <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 text-left custom-scrollbar">
+            <div ref={configColRef} className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 space-y-4 text-left custom-scrollbar">
               
               {/* ====================================================== */}
               {/* ABA: BOAS-VINDAS (ESPERA / START DO ADMIN)             */}
@@ -4566,7 +4570,17 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
           {/* ========================================================== */}
           {/* COLUNA DIREITA: PREVIEW DOS CELULARES (GRID 3 EM 3 COMPACTO) */}
           {/* ========================================================== */}
-          <div className="flex-1 min-w-0 bg-slate-950/90 flex flex-col min-h-0 p-2 sm:p-3 relative overflow-y-auto custom-scrollbar">
+          <div
+            ref={previewColRef}
+            onClickCapture={(e) => {
+              const card = e.target.closest('[data-preview]');
+              const col = previewColRef.current;
+              if (!card || !col) return;
+              const topo = card.getBoundingClientRect().top - col.getBoundingClientRect().top + col.scrollTop - 8;
+              col.scrollTo({ top: Math.max(0, topo), behavior: 'smooth' });
+            }}
+            className="flex-1 min-w-0 min-h-0 bg-slate-950/90 flex flex-col p-2 sm:p-3 relative overflow-y-auto custom-scrollbar"
+          >
             
             {/* GRID DOS CELULARES: 3 POR LINHA FLUIDO E RESPONSIVO */}
             <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 pb-6 place-items-center mt-1">
@@ -4576,6 +4590,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 return (
                   <div
                     key="prev_inicio"
+                    data-preview="1"
                     onClick={() => setActiveTab('inicio')}
                     className="w-full flex justify-center items-start cursor-pointer p-0.5"
                   >
@@ -4648,6 +4663,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 return (
                   <div
                     key="prev_inicio_comecar"
+                    data-preview="1"
                     onClick={() => setActiveTab('inicio_comecar')}
                     className="w-full flex justify-center items-start cursor-pointer p-0.5"
                   >
@@ -4751,6 +4767,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 return (
                   <div
                     key="prev_tela_1"
+                    data-preview="1"
                     onClick={() => setActiveTab('tela_1')}
                     className="w-full flex justify-center items-start cursor-pointer p-0.5"
                   >
@@ -5041,6 +5058,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 return (
                   <div
                     key={`prev_${tabKey}`}
+                    data-preview="1"
                     onClick={() => setActiveTab(tabKey)}
                     className="w-full flex justify-center items-start cursor-pointer p-0.5"
                   >
@@ -5471,6 +5489,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 return (
                   <div
                     key="prev_acompanhantes"
+                    data-preview="1"
                     onClick={() => setActiveTab('acompanhantes')}
                     className="w-full flex justify-center items-start cursor-pointer p-0.5"
                   >
@@ -5597,6 +5616,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 return (
                   <div
                     key="prev_fim"
+                    data-preview="1"
                     onClick={() => setActiveTab('fim')}
                     className="w-full flex justify-center items-start cursor-pointer p-0.5"
                   >
