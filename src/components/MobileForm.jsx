@@ -382,6 +382,17 @@ export default function MobileForm() {
   const telasExtrasAtivas = (questionsConfig?.telasExtras || []).filter((t) => t.ativa !== false);
 
   // Renderizador universal de conteúdo de Gaveta (Texto, Radio, Checkbox, Slide, Data, Hora)
+  // ---------- páginas com várias perguntas ----------
+  const TIPOS_CAMPO = ['texto', 'texto_curto', 'data', 'hora', 'slider', 'rating', 'dropdown', 'radio', 'checkbox', 'grade'];
+  const ehTelaCampo = (t) => Boolean(t) && TIPOS_CAMPO.includes(t.tipo);
+  // Texto longo seguido de texto longo fica na mesma página por padrão; outros tipos só se marcado no editor
+  const continuaNaMesmaPagina = (anterior, atual) => {
+    if (!ehTelaCampo(anterior) || !ehTelaCampo(atual)) return false;
+    if (atual.mesmaPagina === true) return true;
+    if (atual.mesmaPagina === false) return false;
+    return atual.tipo === 'texto' && anterior.tipo === 'texto';
+  };
+
   // ---------- utilitários de respostas ----------
   const gavetaKey = (scope, opcao) => `${scope}::${opcao.id}`;
   const paraLista = (v) => (Array.isArray(v) ? v : (v ? String(v).split(', ').filter(Boolean) : []));
@@ -1231,14 +1242,20 @@ export default function MobileForm() {
           const tela = telasExtrasAtivas[idx];
           if (!tela) return null;
 
+          // Telas de campo que continuam na MESMA página da anterior (rola com o dedo e responde)
+          let fimGrupo = idx;
+          while (fimGrupo + 1 < telasExtrasAtivas.length && continuaNaMesmaPagina(telasExtrasAtivas[fimGrupo], telasExtrasAtivas[fimGrupo + 1])) fimGrupo++;
+          const grupo = ehTelaCampo(tela) ? telasExtrasAtivas.slice(idx, fimGrupo + 1) : [tela];
+          const proximoIdx = idx + grupo.length;
+
           const avancarParaProxima = (valorSalvo = null) => {
             if (valorSalvo !== null) {
               setTextos((prev) => ({ ...prev, [tela.id]: valorSalvo }));
             }
             setCampoObrigatorioErro(null);
             window.scrollTo({ top: 0, behavior: 'smooth' });
-            if (idx + 1 < telasExtrasAtivas.length) {
-              setCurrentStep(`extra_${idx + 1}`);
+            if (proximoIdx < telasExtrasAtivas.length) {
+              setCurrentStep(`extra_${proximoIdx}`);
             } else if (questionsConfig?.mostrarTelaAcompanhantes !== false) {
               setCurrentStep('acompanhantes');
             } else {
@@ -1250,8 +1267,19 @@ export default function MobileForm() {
             if (idx === 0) {
               setCurrentStep('p1');
             } else {
-              setCurrentStep(`extra_${idx - 1}`);
+              // volta para o INÍCIO da página anterior
+              let alvo = idx - 1;
+              while (alvo > 0 && continuaNaMesmaPagina(telasExtrasAtivas[alvo - 1], telasExtrasAtivas[alvo])) alvo--;
+              setCurrentStep(`extra_${alvo}`);
             }
+          };
+
+          const confirmarDentro = (t, v) => {
+            if (grupo.length > 1) {
+              if (v !== null) setTextos((prev) => ({ ...prev, [t.id]: v }));
+              return;
+            }
+            avancarParaProxima(v);
           };
 
           const valKey = tela.id;
@@ -1259,12 +1287,26 @@ export default function MobileForm() {
 
           // 1. TEXTO LONGO, TEXTO CURTO, DATA, HORA, SLIDER, RATING, DROPDOWN, RADIO, CHECKBOX, GRADE
           if (['texto', 'texto_curto', 'data', 'hora', 'slider', 'rating', 'dropdown', 'radio', 'checkbox', 'grade'].includes(tela.tipo)) {
+            const renderCampoTela = (tela, mostrarTitulo) => {
+            const valKey = tela.id;
+            const valAtual = dissertativaTextos[valKey] ?? '';
             const opcoesAtivas = (tela.opcoes || []).filter(o => o.ativo !== false);
             const selectedChecks = paraLista(valAtual);
             const defaultSliderVal = Math.round(((tela.sliderMin ?? 0) + (tela.sliderMax ?? 10)) / 2);
-
             return (
-              <div className="space-y-4 fade-in py-2">
+              <div key={tela.id} id={`campo_${tela.id}`} className="space-y-3 scroll-mt-4">
+                {mostrarTitulo && (
+                  <div className={`pt-3 border-t border-slate-800/60 space-y-1 ${getAlinhamentoClass(estiloLinhas(tela).tituloAl)}`}>
+                    <h3 style={{ fontSize: `${tela.titulo1Tamanho || 18}px` }} className={`${pesoFonte(tela.tituloBold)} leading-tight ${getCorTextoLinhaClass(tela.titulo1Cor, 'text-white')}`}>
+                      {[tela.titulo1 || tela.titulo, tela.titulo2, tela.titulo3].filter(Boolean).join(' ')}
+                    </h3>
+                    {tela.subtitulo && (
+                      <p style={{ fontSize: `${tela.subtituloTamanho || 13}px` }} className={`leading-snug ${getAlinhamentoClass(estiloLinhas(tela).subAl)} ${tela.subBold ? 'font-bold' : ''} ${getCorTextoLinhaClass(tela.subtituloCor, 'text-slate-300')}`}>
+                        {tela.subtitulo}
+                      </p>
+                    )}
+                  </div>
+                )}
                 <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
                   <div className="flex items-center justify-between">
                     <label className="text-xs sm:text-sm font-black text-amber-300 uppercase tracking-wider flex items-center gap-2">
@@ -1405,7 +1447,7 @@ export default function MobileForm() {
                                 {opt.subtitulo && <span className="text-xs text-slate-400 block mt-0.5">{opt.subtitulo}</span>}
                               </div>
                             </label>
-                            {isGavetaAberta && renderGavetaContent(opt, () => avancarParaProxima(opt.titulo), tela.id)}
+                            {isGavetaAberta && renderGavetaContent(opt, () => confirmarDentro(tela, opt.titulo), tela.id)}
                           </div>
                         );
                       })}
@@ -1447,7 +1489,7 @@ export default function MobileForm() {
                                 setCampoObrigatorioErro(tela.id);
                                 return;
                               }
-                              avancarParaProxima();
+                              confirmarDentro(tela, null);
                             }, tela.id)}
                           </div>
                         );
@@ -1528,13 +1570,25 @@ export default function MobileForm() {
                     </div>
                   )}
                 </div>
-
                 {campoObrigatorioErro === tela.id && (
                   <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-300 text-xs font-bold flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
                     <span>Por favor, preencha ou selecione uma resposta antes de continuar.</span>
                   </div>
                 )}
+              </div>
+            );
+            };
+
+            const valorFinal = (t) => {
+              const v = dissertativaTextos[t.id] ?? '';
+              const dsv = Math.round(((t.sliderMin ?? 0) + (t.sliderMax ?? 10)) / 2);
+              return t.tipo === 'slider' && v === '' ? `${dsv}${t.sliderUnidade || ''}` : v;
+            };
+
+            return (
+              <div className="space-y-4 fade-in py-2">
+                {grupo.map((t, gi) => renderCampoTela(t, gi > 0))}
 
                 {/* Espaço para o rodapé fixo não cobrir o conteúdo */}
                 <div className="h-28" />
@@ -1543,16 +1597,19 @@ export default function MobileForm() {
                 <button
                   type="button"
                   onClick={() => {
-                    const finalValue = tela.tipo === 'slider' && valAtual === ''
-                      ? `${defaultSliderVal}${tela.sliderUnidade || ''}`
-                      : valAtual;
-
-                    // Estrelas não tocadas NÃO são mais gravadas como "5 estrelas"
-                    if (tela.obrigatorio && !temValor(finalValue)) {
-                      setCampoObrigatorioErro(tela.id);
+                    // Valida TODAS as perguntas desta página (estrelas não tocadas não viram "5 estrelas")
+                    const faltando = grupo.find((t) => t.obrigatorio && !temValor(valorFinal(t)));
+                    if (faltando) {
+                      setCampoObrigatorioErro(faltando.id);
+                      document.getElementById(`campo_${faltando.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                       return;
                     }
-                    avancarParaProxima(finalValue);
+                    setTextos((prev) => {
+                      const novo = { ...prev };
+                      grupo.forEach((t) => { novo[t.id] = valorFinal(t); });
+                      return novo;
+                    });
+                    avancarParaProxima(null);
                   }}
                   className="w-full py-4 px-6 rounded-2xl font-black text-base bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-slate-950 shadow-xl shadow-amber-950/60 active:scale-[0.98] transition border border-amber-300 flex items-center justify-center gap-2"
                 >

@@ -399,6 +399,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, inline, activeEventId]);
 
+  const TIPOS_CAMPO_PAGINA = ['texto', 'texto_curto', 'data', 'hora', 'slider', 'rating', 'dropdown', 'radio', 'checkbox', 'grade'];
+
   // COPIAR / COLAR / REPLICAR FORMATAÇÃO ENTRE TELAS
   const [estiloCopiado, setEstiloCopiado] = useState(null);
   const copiarEstilo = (ehP1, extraIndex) => {
@@ -547,10 +549,12 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
       id: `extra_${Date.now()}`,
       ativa: true,
       tipo: 'cards',
-      titulo: vaoParaNovaTela[0]?.titulo || `Pergunta da Tela ${totalExtras + 2}`,
-      titulo1: vaoParaNovaTela[0]?.titulo || `Pergunta da Tela ${totalExtras + 2}`,
-      titulo2: '',
-      subtitulo: '',
+      // mantém o MESMO título e subtítulo da Tela 1
+      titulo: [config.pergunta1Titulo, config.pergunta1Titulo2].filter(Boolean).join(' ') || `Pergunta da Tela ${totalExtras + 2}`,
+      titulo1: config.pergunta1Titulo || '',
+      titulo2: config.pergunta1Titulo2 || '',
+      titulo3: config.pergunta1Titulo3 || '',
+      subtitulo: config.pergunta1TextoAbaixo || config.pergunta1Subtitulo || '',
       cardsPorTela: config.cardsPorTela || 4,
       obrigatorio: false,
       botaoTexto: 'Avançar',
@@ -580,11 +584,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
       ...telaAtual,
       id: `extra_${Date.now()}`,
       ativa: true,
-      titulo: vao[0]?.titulo || `Nova Tela`,
-      titulo1: vao[0]?.titulo || `Nova Tela`,
-      titulo2: '',
-      titulo3: '',
-      subtitulo: telaAtual.subtitulo || '',
+      // mantém o MESMO título e subtítulo da tela anterior
       opcoes: vao
     };
 
@@ -3173,6 +3173,22 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             })()}
                           />
                           <BarraFormatacao ehP1={false} extraIndex={extraIndex} />
+                          {extraIndex > 0 && TIPOS_CAMPO_PAGINA.includes(telaAlvo.tipo) && TIPOS_CAMPO_PAGINA.includes((config.telasExtras || [])[extraIndex - 1]?.tipo) && (() => {
+                            const anterior = (config.telasExtras || [])[extraIndex - 1];
+                            const ativo = telaAlvo.mesmaPagina ?? (telaAlvo.tipo === 'texto' && anterior?.tipo === 'texto');
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateTelaProp(extraIndex, 'mesmaPagina', !ativo)}
+                                className={`mt-2 w-full p-2.5 rounded-xl border text-left text-[11px] font-bold flex items-center gap-2 transition ${ativo ? 'bg-emerald-500/15 border-emerald-500/50 text-emerald-200' : 'bg-slate-950 border-slate-800 text-slate-400'}`}
+                              >
+                                <span className={`w-8 h-4 rounded-full relative transition ${ativo ? 'bg-emerald-500' : 'bg-slate-700'}`}>
+                                  <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${ativo ? 'left-4' : 'left-0.5'}`} />
+                                </span>
+                                Continuar na mesma página da tela anterior (o participante rola a tela e responde em sequência)
+                              </button>
+                            );
+                          })()}
                           {telaAlvo.tipo === 'grade' && (
                             <EstiloLinhasTitulo
                               linhas={[
