@@ -1,19 +1,39 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { 
-  getFirestore, 
-  collection, 
-  addDoc, 
-  onSnapshot, 
-  query, 
-  orderBy, 
+import {
+  getFirestore,
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  collection,
+  onSnapshot,
+  query,
   serverTimestamp,
   doc,
   setDoc,
   getDoc,
   getDocs,
-  deleteDoc,
-  where
+  where,
+  writeBatch
 } from 'firebase/firestore';
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
+  onAuthStateChanged,
+  signOut
+} from 'firebase/auth';
+
+// ==========================================
+// ADMINISTRADOR AUTORIZADO (LOGIN GOOGLE)
+// Deve ser o MESMO e-mail usado em firestore.rules
+// ==========================================
+export const ADMIN_EMAILS = ['irandyalves@gmail.com'];
+
+export function isAdminEmail(email) {
+  return Boolean(email) && ADMIN_EMAILS.includes(String(email).trim().toLowerCase());
+}
 
 const STORAGE_KEY = 'church_firebase_config';
 const LOCAL_DATA_KEY = 'church_local_attendance_data';
@@ -282,13 +302,13 @@ export async function excluirEvento(id) {
   localStorage.removeItem(`${QUESTIONS_STORAGE_KEY}_${cleanId}`);
 
   if (isFirebaseReady()) {
-    try {
-      await deleteDoc(doc(db, 'eventos_titulos', cleanId));
-      await deleteDoc(doc(db, 'sessoes_eventos', cleanId));
-      await deleteDoc(doc(db, 'eventos_perguntas', cleanId));
-    } catch (e) {
-      console.warn('Erro ao limpar documentos do evento excluído:', e);
-    }
+    // Apaga também as presenças do evento (antes ficavam órfãs no banco)
+    await apagarPresencasDoEvento(cleanId);
+    const batch = writeBatch(db);
+    ['eventos_titulos', 'sessoes_eventos', 'eventos_perguntas', 'resets_eventos'].forEach((col) => {
+      batch.delete(doc(db, col, cleanId));
+    });
+    await batch.commit();
   }
 
   return novaLista;
@@ -442,13 +462,26 @@ export function saveFirebaseConfig(config) {
 
 let db = null;
 let app = null;
+let auth = null;
 
 const currentConfig = getSavedFirebaseConfig();
 if (currentConfig && currentConfig.apiKey && currentConfig.projectId) {
   try {
-    app = getApps().length === 0 ? initializeApp(currentConfig) : getApp();
-    db = getFirestore(app);
-    console.log('🔥 Firebase conectado ao projeto:', currentConfig.projectId);
+    const isNewApp = getApps().length === 0;
+    app = isNewApp ? initializeApp(currentConfig) : getApp();
+    try {
+      // Cache persistente: gravações feitas sem internet ficam guardadas no aparelho
+      // e são enviadas automaticamente quando a conexão voltar (mesmo após recarregar).
+      db = isNewApp
+        ? initializeFirestore(app, {
+            localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+          })
+        : getFirestore(app);
+    } catch (cacheErr) {
+      console.warn('Cache persistente indisponível, usando padrão:', cacheErr);
+      db = getFirestore(app);
+    }
+    auth = getAuth(app);
   } catch (err) {
     console.warn('Erro ao inicializar Firebase:', err);
   }
@@ -456,6 +489,44 @@ if (currentConfig && currentConfig.apiKey && currentConfig.projectId) {
 
 export function isFirebaseReady() {
   return db !== null;
+}
+
+// ==========================================
+// AUTENTICAÇÃO DO ADMIN (GOOGLE)
+// ==========================================
+export function escutarUsuarioAdmin(callback) {
+  if (!auth) {
+    callback(null);
+    return () => {};
+  }
+  // Conclui login iniciado por redirecionamento (fallback do celular)
+  getRedirectResult(auth).catch((e) => console.warn('Login por redirecionamento falhou:', e));
+  return onAuthStateChanged(auth, (user) => callback(user || null));
+}
+
+export async function entrarComGoogle() {
+  if (!auth) throw new Error('Firebase não está configurado.');
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: 'select_account' });
+  try {
+    const cred = await signInWithPopup(auth, provider);
+    if (!isAdminEmail(cred.user?.email)) {
+      await signOut(auth);
+      throw new Error(`A conta ${cred.user?.email || ''} não tem permissão de administrador.`);
+    }
+    return cred.user;
+  } catch (e) {
+    // Popup bloqueado (comum em celulares): usa redirecionamento
+    if (e?.code === 'auth/popup-blocked' || e?.code === 'auth/operation-not-supported-in-this-environment') {
+      await signInWithRedirect(auth, provider);
+      return null;
+    }
+    throw e;
+  }
+}
+
+export async function sairAdmin() {
+  if (auth) await signOut(auth);
 }
 
 // ==========================================
@@ -510,9 +581,13 @@ export async function saveEventTitle(title, targetEventId = null) {
         }, { merge: true });
       }
 
-      await salvarEventosLista(novaLista);
+      await setDoc(doc(db, 'configuracoes', 'eventos_lista'), {
+        lista: novaLista,
+        atualizadoEm: serverTimestamp()
+      }, { merge: true });
     } catch (e) {
       console.warn('Erro ao salvar título no Firestore:', e);
+      throw e;
     }
   }
 }
@@ -741,11 +816,12 @@ function normalizeQuestionsConfig(config) {
   if (merged.cardFonteSubtitulo < 9) merged.cardFonteSubtitulo = 9;
   if (merged.cardFonteSubtitulo > 20) merged.cardFonteSubtitulo = 20;
 
-  merged.cardAltura = Number(merged.cardAltura) || 68;
-  if (merged.cardAltura < 32) merged.cardAltura = 32;
+  merged.cardAltura = Number(merged.cardAltura) || 48;
+  if (merged.cardAltura < 16) merged.cardAltura = 16;
   if (merged.cardAltura > 150) merged.cardAltura = 150;
 
-  // Fundo, efeitos e cores de fontes dos cards
+  // Fundo, efeitos, ícones e cores de fontes dos cards
+  merged.mostrarIconesCards = config.mostrarIconesCards !== undefined ? Boolean(config.mostrarIconesCards) : true;
   merged.cardFundoEstilo = merged.cardFundoEstilo || 'escuro';
   merged.cardEfeitoEstilo = merged.cardEfeitoEstilo || 'padrao';
   merged.cardProfundidade = Number(merged.cardProfundidade) || 5;
@@ -809,6 +885,8 @@ function normalizeQuestionsConfig(config) {
   merged.capaTitulo2Cor = config.capaTitulo2Cor || 'dourado';
   merged.capaTitulo3Cor = config.capaTitulo3Cor || 'verde';
   merged.capaTextoAbaixoCor = config.capaTextoAbaixoCor || 'cinza';
+  merged.capaAlinhamento = config.capaAlinhamento || 'center';
+  merged.capaCaptionFundo = config.capaCaptionFundo || 'transparente';
 
   merged.pergunta1Titulo = config.pergunta1Titulo !== undefined ? config.pergunta1Titulo : (isBlank ? '' : 'Como você chegou aqui?');
   merged.pergunta1Titulo2 = config.pergunta1Titulo2 || '';
@@ -825,6 +903,8 @@ function normalizeQuestionsConfig(config) {
   merged.pergunta1Titulo2Cor = config.pergunta1Titulo2Cor || 'dourado';
   merged.pergunta1Titulo3Cor = config.pergunta1Titulo3Cor || 'verde';
   merged.pergunta1TextoAbaixoCor = config.pergunta1TextoAbaixoCor || 'cinza';
+  merged.pergunta1Alinhamento = config.pergunta1Alinhamento || 'center';
+  merged.pergunta1CaptionFundo = config.pergunta1CaptionFundo || 'transparente';
 
   merged.mostrarTelaAcompanhantes = config.mostrarTelaAcompanhantes !== undefined ? Boolean(config.mostrarTelaAcompanhantes) : !isBlank;
   merged.pergunta2Titulo = config.pergunta2Titulo !== undefined ? config.pergunta2Titulo : (isBlank ? '' : 'Você está só ou tem mais pessoas te acompanhando?');
@@ -894,16 +974,38 @@ function normalizeQuestionsConfig(config) {
     merged.telasExtras = [];
   } else {
     merged.telasExtras = merged.telasExtras
-      .filter(t => t && t.id !== 'extra_1') // remove tela fantasma antiga
+      // Remove apenas a "tela fantasma" antiga (id extra_1 SEM nenhum conteúdo próprio)
+      .filter(t => t && !(t.id === 'extra_1' && !t.titulo && !(Array.isArray(t.opcoes) && t.opcoes.length)))
       .map((tela, idx) => ({
-        id: tela.id || `extra_${idx + 1}`,
-        ativa: true,
-        // Tipos: 'cards' | 'radio' | 'checkbox' | 'dropdown' | 'slider' | 'rating' | 'texto_curto' | 'texto' | 'data' | 'hora'
+        // id estável e que nunca colide com o filtro acima
+        id: tela.id || `tela_auto_${idx + 1}`,
+        ativa: tela.ativa !== false,
+        // Tipos: 'cards' | 'grade' | 'radio' | 'checkbox' | 'dropdown' | 'slider' | 'rating' | 'texto_curto' | 'texto' | 'data' | 'hora'
         tipo: tela.tipo || 'cards',
         titulo: tela.titulo || `Pergunta da Tela ${idx + 2}`,
-        titulo1: tela.titulo1 || tela.titulo || `Pergunta da Tela ${idx + 2}`,
+        titulo1: tela.titulo1 !== undefined ? tela.titulo1 : (tela.titulo || `Pergunta da Tela ${idx + 2}`),
         titulo2: tela.titulo2 || '',
+        titulo3: tela.titulo3 || '',
         subtitulo: tela.subtitulo || '',
+        titulo1Tamanho: Number(tela.titulo1Tamanho) || 18,
+        titulo2Tamanho: Number(tela.titulo2Tamanho) || 15,
+        titulo3Tamanho: Number(tela.titulo3Tamanho) || 14,
+        subtituloTamanho: Number(tela.subtituloTamanho) || 12,
+        escalaTamanho: Number(tela.escalaTamanho) || 11,
+        titulo1Cor: tela.titulo1Cor || 'branco',
+        titulo2Cor: tela.titulo2Cor || 'dourado',
+        titulo3Cor: tela.titulo3Cor || 'verde',
+        subtituloCor: tela.subtituloCor || 'cinza',
+        alinhamento: tela.alinhamento || 'center',
+        captionFundo: tela.captionFundo || 'transparente',
+        mostrarIcones: tela.mostrarIcones !== undefined ? Boolean(tela.mostrarIcones) : true,
+        cardFonteTitulo: Number(tela.cardFonteTitulo) || merged.cardFonteTitulo || 15,
+        cardFonteSubtitulo: Number(tela.cardFonteSubtitulo) || merged.cardFonteSubtitulo || 11,
+        cardCorFonteTitulo: tela.cardCorFonteTitulo || merged.cardCorFonteTitulo || 'branco',
+        cardCorFonteSubtitulo: tela.cardCorFonteSubtitulo || merged.cardCorFonteSubtitulo || 'cinza',
+        cardFundoEstilo: tela.cardFundoEstilo || merged.cardFundoEstilo || 'escuro',
+        cardEfeitoEstilo: tela.cardEfeitoEstilo || merged.cardEfeitoEstilo || 'padrao',
+        cardProfundidade: Number(tela.cardProfundidade) || merged.cardProfundidade || 5,
         legendaEscala: tela.legendaEscala || '',
         colunasGrade: Array.isArray(tela.colunasGrade) && tela.colunasGrade.length > 0 ? tela.colunasGrade : ['1', '2', '3', '4', '5', 'NA'],
         placeholder: tela.placeholder || 'Digite sua resposta aqui...',
@@ -911,7 +1013,7 @@ function normalizeQuestionsConfig(config) {
         linhas: Number(tela.linhas) || 4,
         obrigatorio: Boolean(tela.obrigatorio),
         botaoTexto: tela.botaoTexto || 'Avançar',
-        cardAltura: Number(tela.cardAltura) || merged.cardAltura || 60,
+        cardAltura: Math.max(16, Number(tela.cardAltura) || merged.cardAltura || 36),
         cardsPorTela: Number(tela.cardsPorTela) || 4,
         sliderMin: Number(tela.sliderMin ?? 0),
         sliderMax: Number(tela.sliderMax ?? 10),
@@ -983,8 +1085,30 @@ export async function saveQuestionsConfig(config, targetEventId = null) {
       }
     } catch (e) {
       console.warn(`Erro ao salvar perguntas de ${eventId} no Firestore:`, e);
+      throw e;
     }
   }
+}
+
+// Lê a configuração direto do servidor (usado pelo editor para não editar uma cópia antiga)
+export async function buscarConfigPerguntasRemota(targetEventId = null) {
+  const eventId = sanitizeEventId(targetEventId);
+  if (!isFirebaseReady()) return null;
+  try {
+    const snap = await getDoc(doc(db, 'eventos_perguntas', eventId));
+    if (snap.exists()) {
+      const normalized = normalizeQuestionsConfig(snap.data());
+      localStorage.setItem(`${QUESTIONS_STORAGE_KEY}_${eventId}`, JSON.stringify(normalized));
+      return normalized;
+    }
+    if (eventId === DEFAULT_EVENT_ID) {
+      const leg = await getDoc(doc(db, 'configuracoes', 'perguntas'));
+      if (leg.exists()) return normalizeQuestionsConfig(leg.data());
+    }
+  } catch (e) {
+    console.warn('Erro ao buscar configuração remota:', e);
+  }
+  return null;
 }
 
 export function escutarConfigPerguntas(callback, targetEventId = null) {
@@ -1086,86 +1210,105 @@ export async function registrarPresenca({
   respostasExtras = {}, 
   gavetaRespostas = {},
   textoRespostas = {},
+  respostas = [],
   eventoId = '' 
 }) {
   const activeEventId = eventoId || getActiveEventId();
   const nomeEvento = evento || getSavedEventTitle(activeEventId);
+  const agora = new Date();
   const payload = {
     eventoId: activeEventId,
-    comoChegou: comoChegou || '',
-    qtdPessoas: Number(qtdPessoas) || 1,
-    evento: nomeEvento,
+    comoChegou: String(comoChegou || '').slice(0, 500),
+    qtdPessoas: Math.max(1, Math.min(100, Number(qtdPessoas) || 1)),
+    evento: String(nomeEvento || '').slice(0, 300),
     respostasExtras: respostasExtras || {},
     gavetaRespostas: gavetaRespostas || {},
     textoRespostas: textoRespostas || {},
-    criadoEm: new Date().toISOString(),
-    dataCulto: new Date().toLocaleDateString('pt-BR'),
-    hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+    // Lista estruturada (pergunta → resposta), na ordem das telas. Usada pelo relatório.
+    respostas: Array.isArray(respostas) ? respostas.slice(0, 200) : [],
+    criadoEm: agora.toISOString(),
+    dataCulto: agora.toLocaleDateString('pt-BR'),
+    hora: agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
   };
 
-  if (isFirebaseReady()) {
-    try {
-      const docRef = await addDoc(collection(db, 'presencas'), {
-        ...payload,
-        timestamp: serverTimestamp(),
-      });
-      return { id: docRef.id, ...payload };
-    } catch (error) {
-      console.error('Erro ao salvar no Firestore, usando fallback local:', error);
-      const local = getLocalData();
-      const localItem = { id: 'loc_' + Date.now(), ...payload };
-      local.unshift(localItem);
-      saveLocalData(local);
-      return localItem;
-    }
-  } else {
+  if (!isFirebaseReady()) {
+    // Modo de teste sem Firebase configurado (somente neste navegador)
     const local = getLocalData();
-    const localItem = { id: 'loc_' + Date.now(), ...payload };
+    const localItem = { id: 'loc_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8), ...payload };
     local.unshift(localItem);
     saveLocalData(local);
-    return localItem;
+    return { ...localItem, pendente: false };
   }
+
+  // Gera o ID antes de gravar: a gravação fica no cache persistente do aparelho
+  // e é reenviada sozinha se a internet cair. Erros reais (ex.: permissão) rejeitam.
+  const ref = doc(collection(db, 'presencas'));
+  const gravacao = setDoc(ref, { ...payload, timestamp: serverTimestamp() });
+
+  const TIMEOUT_MS = 8000;
+  const resultado = await Promise.race([
+    gravacao.then(() => 'ok'),
+    new Promise((resolve) => setTimeout(() => resolve('pendente'), TIMEOUT_MS))
+  ]);
+
+  if (resultado === 'pendente') {
+    // Internet lenta/offline: o Firestore continua tentando em segundo plano.
+    gravacao.catch((e) => console.error('Falha ao sincronizar presença pendente:', e));
+  }
+  return { id: ref.id, ...payload, pendente: resultado === 'pendente' };
 }
 
 export function escutarPresencas(callback, targetEventId = null) {
   const eventId = sanitizeEventId(targetEventId);
   if (isFirebaseReady()) {
     try {
-      const q = query(collection(db, 'presencas'), orderBy('timestamp', 'desc'));
+      // Busca SOMENTE as presenças deste evento (antes baixava a coleção inteira)
+      const q = query(collection(db, 'presencas'), where('eventoId', '==', eventId));
       const unsubscribe = onSnapshot(
         q, 
         (snapshot) => {
           const items = [];
-          snapshot.forEach((doc) => {
-            const data = doc.data();
-            // Se targetEventId for especificado, filtra estritamente por eventoId
-            if (!eventId || !data.eventoId || data.eventoId === eventId) {
-              items.push({
-                id: doc.id,
-                ...data,
-                criadoEm: data.criadoEm || new Date().toISOString(),
-              });
-            }
+          snapshot.forEach((d) => {
+            const data = d.data();
+            items.push({
+              id: d.id,
+              ...data,
+              criadoEm: data.criadoEm || new Date().toISOString(),
+            });
           });
+          // Ordena no cliente (evita exigir índice composto no Firestore)
+          items.sort((x, y) => String(y.criadoEm).localeCompare(String(x.criadoEm)));
           callback(items);
         },
         (error) => {
           console.error('Erro no listener do Firestore:', error);
-          callback(getLocalData());
+          callback([]);
         }
       );
       return unsubscribe;
     } catch (e) {
       console.error('Falha ao registrar listener Firestore:', e);
-      callback(getLocalData());
+      callback([]);
       return () => {};
     }
   } else {
-    const handler = () => callback(getLocalData());
+    const handler = () => callback(getLocalData().filter((i) => !i.eventoId || i.eventoId === eventId));
     window.addEventListener('church_local_data_changed', handler);
-    callback(getLocalData());
+    handler();
     return () => window.removeEventListener('church_local_data_changed', handler);
   }
+}
+
+async function apagarPresencasDoEvento(eventId) {
+  const snap = await getDocs(query(collection(db, 'presencas'), where('eventoId', '==', eventId)));
+  const refs = snap.docs.map((d) => d.ref);
+  // writeBatch aceita até 500 operações; usa lotes de 400
+  for (let i = 0; i < refs.length; i += 400) {
+    const batch = writeBatch(db);
+    refs.slice(i, i + 400).forEach((r) => batch.delete(r));
+    await batch.commit();
+  }
+  return refs.length;
 }
 
 export function limparDadosLocais() {
@@ -1173,66 +1316,33 @@ export function limparDadosLocais() {
   window.dispatchEvent(new Event('church_local_data_changed'));
 }
 
-// ZERA REGISTROS POR EVENTO OU GLOBAL NO FIRESTORE
+// ZERA OS REGISTROS DE UM EVENTO NO FIRESTORE
 export async function zerarTudo(targetEventId = null) {
   const eventId = sanitizeEventId(targetEventId);
   limparDadosLocais();
   localStorage.removeItem(`presenca_dispositivo_bloqueado_voto_${eventId}`);
   localStorage.removeItem(`presenca_dispositivo_hora_voto_${eventId}`);
-  localStorage.removeItem('presenca_dispositivo_bloqueado_voto');
-  localStorage.removeItem('presenca_dispositivo_hora_voto');
-  localStorage.removeItem('presenca_finalizada_cantata_2026');
-  localStorage.removeItem('presenca_hora_registro');
-  localStorage.removeItem('presenca_votou_sessao_id');
-
-  if (isFirebaseReady()) {
-    try {
-      // Se targetEventId informado, apaga somente presenças deste evento
-      let snap;
-      if (eventId) {
-        snap = await getDocs(query(collection(db, 'presencas'), where('eventoId', '==', eventId)));
-      } else {
-        snap = await getDocs(collection(db, 'presencas'));
-      }
-
-      const promises = [];
-      snap.forEach((d) => {
-        promises.push(deleteDoc(doc(db, 'presencas', d.id)));
-      });
-      await Promise.all(promises);
-
-      const resetEm = new Date().toISOString();
-      const resetId = `reset_${eventId}_${Date.now()}`;
-      
-      // Marca o reset específico deste evento
-      await setDoc(doc(db, 'resets_eventos', eventId), {
-        resetEm,
-        resetId,
-        eventId
-      }, { merge: true });
-
-      if (eventId === DEFAULT_EVENT_ID) {
-        await setDoc(doc(db, 'configuracoes', 'reset'), {
-          resetEm,
-          resetId
-        }, { merge: true });
-      }
-
-      // Atualiza também a sessão com novo sessaoId para destravar imediatamente
-      const novaSessaoId = `sessao_${eventId}_${Date.now()}`;
-      await setDoc(doc(db, 'sessoes_eventos', eventId), {
-        sessaoId: novaSessaoId,
-        iniciadoEm: resetEm
-      }, { merge: true });
-
-      if (eventId === DEFAULT_EVENT_ID) {
-        await setDoc(doc(db, 'configuracoes', 'sessao'), {
-          sessaoId: novaSessaoId,
-          iniciadoEm: resetEm
-        }, { merge: true });
-      }
-    } catch (e) {
-      console.error('Erro ao zerar banco Firestore:', e);
-    }
+  if (eventId === DEFAULT_EVENT_ID) {
+    localStorage.removeItem('presenca_dispositivo_bloqueado_voto');
+    localStorage.removeItem('presenca_dispositivo_hora_voto');
   }
+
+  if (!isFirebaseReady()) return 0;
+
+  // Erros sobem para a tela (antes ficavam só no console e o admin via "sucesso")
+  const apagados = await apagarPresencasDoEvento(eventId);
+
+  const resetEm = new Date().toISOString();
+  const resetId = `reset_${eventId}_${Date.now()}`;
+  const novaSessaoId = `sessao_${eventId}_${Date.now()}`;
+
+  const batch = writeBatch(db);
+  batch.set(doc(db, 'resets_eventos', eventId), { resetEm, resetId, eventId }, { merge: true });
+  batch.set(doc(db, 'sessoes_eventos', eventId), { sessaoId: novaSessaoId, iniciadoEm: resetEm }, { merge: true });
+  if (eventId === DEFAULT_EVENT_ID) {
+    batch.set(doc(db, 'configuracoes', 'reset'), { resetEm, resetId }, { merge: true });
+    batch.set(doc(db, 'configuracoes', 'sessao'), { sessaoId: novaSessaoId, iniciadoEm: resetEm }, { merge: true });
+  }
+  await batch.commit();
+  return apagados;
 }

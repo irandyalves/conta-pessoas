@@ -1,17 +1,67 @@
 rules_version = '2';
 
+// =====================================================================
+// RESPONDER - Regras de segurança
+// - Público (celular): só LÊ a configuração dos eventos e só CRIA presença.
+// - Admin (login Google irandyalves@gmail.com): lê e altera tudo.
+// Para adicionar outro admin, inclua o e-mail na lista abaixo E em
+// ADMIN_EMAILS (src/firebase.js).
+// =====================================================================
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Permite leitura e escrita para presenças e configurações em tempo real
-    match /presencas/{document=**} {
-      allow read, write: if true;
+
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.lower() in ['irandyalves@gmail.com'];
     }
-    match /configuracoes/{document=**} {
-      allow read, write: if true;
+
+    // Validação de uma nova presença enviada pelo celular
+    function presencaValida() {
+      let d = request.resource.data;
+      return d.keys().hasOnly([
+          'eventoId', 'comoChegou', 'qtdPessoas', 'evento', 'respostasExtras',
+          'gavetaRespostas', 'textoRespostas', 'respostas', 'criadoEm',
+          'dataCulto', 'hora', 'timestamp'
+        ])
+        && d.eventoId is string && d.eventoId.size() > 0 && d.eventoId.size() <= 120
+        && d.qtdPessoas is int && d.qtdPessoas >= 1 && d.qtdPessoas <= 100
+        && d.comoChegou is string && d.comoChegou.size() <= 500
+        && d.evento is string && d.evento.size() <= 300
+        && (!('respostas' in d) || (d.respostas is list && d.respostas.size() <= 200))
+        && d.timestamp == request.time;
     }
-    // Fallback permissivo para qualquer outra coleção de apoio
+
+    match /presencas/{id} {
+      allow create: if presencaValida() || isAdmin();
+      allow read, update, delete: if isAdmin();
+    }
+
+    // Configuração que o celular e o telão precisam ler
+    match /configuracoes/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /eventos_titulos/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /eventos_perguntas/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /sessoes_eventos/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /resets_eventos/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Qualquer outra coleção: somente admin
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if isAdmin();
     }
   }
 }

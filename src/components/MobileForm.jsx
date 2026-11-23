@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Church, 
   Users, 
@@ -35,6 +35,7 @@ import {
   DEFAULT_EVENT_TITLE,
   DEFAULT_EVENT_ID
 } from '../firebase';
+import { getEfeitoStyle, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems } from '../utils/estilos';
 
 const DISPOSITIVO_BLOQUEADO_KEY = 'presenca_dispositivo_bloqueado_voto';
 const DISPOSITIVO_VOTO_TIME_KEY = 'presenca_dispositivo_hora_voto';
@@ -86,56 +87,6 @@ const CARD_FUNDO_CLASSES = {
   sunset_laranja: 'bg-gradient-to-r from-slate-950 via-orange-950 to-amber-950',
 };
 
-const CARD_EFEITO_CLASSES = {
-  padrao: 'border border-slate-700/80 hover:border-slate-600 shadow-md',
-  efeito_3d: 'border border-slate-700/80 border-b-[5px] border-b-black/90 active:translate-y-1 active:border-b-2 shadow-xl',
-  vidro: 'backdrop-blur-md bg-opacity-70 border border-white/20 hover:border-white/35 shadow-lg',
-  entalhe: 'shadow-[inset_0_2px_6px_rgba(0,0,0,0.85),0_1px_2px_rgba(255,255,255,0.06)] border border-slate-800 border-t-white/10 border-b-black/80',
-  alto_relevo: 'border border-slate-700 shadow-lg',
-  glow: 'border border-amber-400/50 hover:border-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.25)] hover:shadow-[0_0_22px_rgba(245,158,11,0.45)]',
-};
-
-function getEfeitoStyle(efeito = 'padrao', profundidade = 5) {
-  const p = Math.max(1, Math.min(10, Number(profundidade) || 5));
-  
-  switch (efeito) {
-    case 'efeito_3d':
-      return {
-        borderBottomWidth: `${p}px`,
-        borderBottomColor: 'rgba(0, 0, 0, 0.95)',
-        boxShadow: `0 ${p * 1.5}px ${p * 2.5}px rgba(0, 0, 0, 0.6)`,
-      };
-    case 'entalhe':
-      return {
-        boxShadow: `inset 0 ${p * 1.2}px ${p * 2}px rgba(0, 0, 0, 0.9), inset 0 -${Math.round(p * 0.5)}px ${p}px rgba(255, 255, 255, 0.08)`,
-        borderTopColor: 'rgba(255, 255, 255, 0.1)',
-        borderBottomColor: 'rgba(0, 0, 0, 0.9)',
-      };
-    case 'alto_relevo':
-      return {
-        boxShadow: `0 ${p * 1.5}px ${p * 2.5}px rgba(0, 0, 0, 0.7), inset 0 ${Math.max(1, Math.round(p * 0.4))}px ${Math.max(1, Math.round(p * 0.4))}px rgba(255, 255, 255, 0.25), inset 0 -${Math.max(1, Math.round(p * 0.4))}px ${Math.max(1, Math.round(p * 0.4))}px rgba(0, 0, 0, 0.6)`,
-        borderTopColor: 'rgba(255, 255, 255, 0.3)',
-        borderBottomColor: 'rgba(0, 0, 0, 0.8)',
-      };
-    case 'vidro':
-      return {
-        backdropFilter: `blur(${p * 2.5}px)`,
-        WebkitBackdropFilter: `blur(${p * 2.5}px)`,
-        boxShadow: `0 ${p * 1.2}px ${p * 2.5}px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, ${0.1 + p * 0.02})`,
-        borderColor: `rgba(255, 255, 255, ${0.15 + p * 0.025})`,
-      };
-    case 'glow':
-      return {
-        boxShadow: `0 0 ${p * 2.5}px rgba(245, 158, 11, ${0.2 + p * 0.04}), inset 0 0 ${p * 1.2}px rgba(245, 158, 11, 0.15)`,
-        borderColor: 'rgba(251, 191, 36, 0.6)',
-      };
-    case 'padrao':
-    default:
-      return {
-        boxShadow: `0 ${p}px ${p * 1.5}px rgba(0, 0, 0, 0.35)`,
-      };
-  }
-}
 
 const CARD_FONTE_TITULO_CLASSES = {
   branco: 'text-white',
@@ -226,14 +177,6 @@ export default function MobileForm() {
   // BLOQUEIO PERMANENTE DO DISPOSITIVO APÓS O VOTO POR EVENTO
   const [dispositivoBloqueado, setDispositivoBloqueado] = useState(() => {
     try {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('novo') === '1' || params.get('reset') === '1') {
-        localStorage.removeItem(DISPOSITIVO_BLOQUEADO_EVENTO_KEY);
-        localStorage.removeItem(DISPOSITIVO_VOTO_TIME_EVENTO_KEY);
-        localStorage.removeItem(DISPOSITIVO_BLOQUEADO_KEY);
-        localStorage.removeItem(DISPOSITIVO_VOTO_TIME_KEY);
-        return false;
-      }
       return localStorage.getItem(DISPOSITIVO_BLOQUEADO_EVENTO_KEY) === 'true' ||
         (activeEventId === DEFAULT_EVENT_ID && localStorage.getItem(DISPOSITIVO_BLOQUEADO_KEY) === 'true');
     } catch (e) {
@@ -253,12 +196,12 @@ export default function MobileForm() {
       setCurrentStep('p1');
       setFinalizado(false);
       setP1SlideIndex(0);
-      setComoChegou('');
-      setRespostasExtras({});
+      setMotivo('');
+      setExtras({});
       setGavetasAbertas({});
-      setGavetaTextos({});
+      setGavetas({});
       setGavetaRespondidas({});
-      setDissertativaTextos({});
+      setTextos({});
       setJaClicouComecar(false);
     }
   }, [activeEventId]);
@@ -266,10 +209,6 @@ export default function MobileForm() {
   // Etapa inicial: se já votou, fica travado em 'final'; se não, começa em 'p1'
   const [currentStep, setCurrentStep] = useState(() => {
     try {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('novo') === '1' || params.get('reset') === '1') {
-        return 'p1';
-      }
       const travado = localStorage.getItem(DISPOSITIVO_BLOQUEADO_EVENTO_KEY) === 'true' ||
         (activeEventId === DEFAULT_EVENT_ID && localStorage.getItem(DISPOSITIVO_BLOQUEADO_KEY) === 'true');
       return travado ? 'final' : 'p1';
@@ -287,6 +226,28 @@ export default function MobileForm() {
   const [dissertativaTextos, setDissertativaTextos] = useState({});
   const [campoObrigatorioErro, setCampoObrigatorioErro] = useState(null);
   const [jaClicouComecar, setJaClicouComecar] = useState(false);
+  const [extraSlideIndex, setExtraSlideIndex] = useState(0);
+  const [enviando, setEnviando] = useState(false);
+  const [erroEnvio, setErroEnvio] = useState('');
+  const [envioPendente, setEnvioPendente] = useState(false);
+  const enviandoRef = useRef(false);
+  const ultimoEnvioRef = useRef(null);
+
+  // Refs espelham o estado para que o envio final use SEMPRE os valores mais recentes
+  // (antes o envio podia sair com respostas antigas por causa de closures).
+  const motivoRef = useRef('');
+  const extrasRef = useRef({});
+  const gavetasRef = useRef({});
+  const textosRef = useRef({});
+  const aplicar = (ref, setter) => (upd) => {
+    const next = typeof upd === 'function' ? upd(ref.current) : upd;
+    ref.current = next;
+    setter(next);
+  };
+  const setMotivo = aplicar(motivoRef, setComoChegou);
+  const setExtras = aplicar(extrasRef, setRespostasExtras);
+  const setGavetas = aplicar(gavetasRef, setGavetaTextos);
+  const setTextos = aplicar(textosRef, setDissertativaTextos);
   const [countdown, setCountdown] = useState(10);
   const [finalizado, setFinalizado] = useState(() => {
     try {
@@ -309,12 +270,12 @@ export default function MobileForm() {
         setDispositivoBloqueado(false);
         setCurrentStep('p1');
         setP1SlideIndex(0);
-        setComoChegou('');
-        setRespostasExtras({});
+        setMotivo('');
+        setExtras({});
         setGavetasAbertas({});
-        setGavetaTextos({});
+        setGavetas({});
         setGavetaRespondidas({});
-        setDissertativaTextos({});
+        setTextos({});
         setJaClicouComecar(false);
         setFinalizado(false);
         setCountdown(10);
@@ -324,8 +285,12 @@ export default function MobileForm() {
   }, [activeEventId]);
 
   // 2. ESCUTA O STATUS DA SESSÃO (START / PAUSAR DESTE EVENTO) EM TEMPO REAL
+  const sessaoAnteriorRef = useRef(null);
   useEffect(() => {
+    sessaoAnteriorRef.current = null;
     const unsub = escutarStatusSessao((ativa) => {
+      const anterior = sessaoAnteriorRef.current;
+      sessaoAnteriorRef.current = ativa;
       setSessaoAtiva(ativa);
 
       // SE ESTE DISPOSITIVO JÁ VOTOU NESTE EVENTO, NUNCA SAI DA TELA FINAL
@@ -338,12 +303,21 @@ export default function MobileForm() {
         return;
       }
 
-      if (ativa) {
+      // Só volta para a Tela 1 quando a pesquisa ACABOU de ser liberada.
+      // Outras atualizações da sessão (zerar, novo sessaoId, resposta atrasada do servidor)
+      // não podem mais jogar quem está respondendo de volta para o início.
+      if (ativa && anterior === false) {
         setCurrentStep('p1');
       }
     }, activeEventId);
     return () => unsub && unsub();
   }, [activeEventId]);
+
+  // Cada tela extra começa na primeira página de opções
+  useEffect(() => {
+    setExtraSlideIndex(0);
+    setCampoObrigatorioErro(null);
+  }, [currentStep]);
 
   // 4. BLOQUEIO DO BOTÃO "VOLTAR" DO NAVEGADOR
   useEffect(() => {
@@ -407,12 +381,24 @@ export default function MobileForm() {
   const telasExtrasAtivas = (questionsConfig?.telasExtras || []).filter((t) => t.ativa !== false);
 
   // Renderizador universal de conteúdo de Gaveta (Texto, Radio, Checkbox, Slide, Data, Hora)
-  const renderGavetaContent = (opcao, onConfirmar) => {
+  // ---------- utilitários de respostas ----------
+  const gavetaKey = (scope, opcao) => `${scope}::${opcao.id}`;
+  const paraLista = (v) => (Array.isArray(v) ? v : (v ? String(v).split(', ').filter(Boolean) : []));
+  const temValor = (v) => (Array.isArray(v) ? v.length > 0 : String(v ?? '').trim().length > 0);
+  const textoResposta = (v) => (Array.isArray(v) ? v.join(', ') : String(v ?? ''));
+  const isGavetaAbertaDe = (scope, opcao) => {
+    if (!opcao.temGaveta) return false;
+    const k = gavetaKey(scope, opcao);
+    return Boolean(gavetasAbertas[k] || gavetaRespondidas[k] || temValor(gavetaTextos[k]));
+  };
+
+  const renderGavetaContent = (opcao, onConfirmar, scope = 'p1') => {
+    const gk = gavetaKey(scope, opcao);
     const g = opcao.gaveta || {};
     const gTipo = g.tipo || 'texto_longo';
-    const valAtual = gavetaTextos[opcao.id] || '';
+    const valAtual = gavetaTextos[gk] ?? '';
     const opcoesLista = Array.isArray(g.opcoes) && g.opcoes.length > 0 ? g.opcoes : ['Opção 1', 'Opção 2'];
-    const selectedChecks = valAtual ? valAtual.split(', ').filter(Boolean) : [];
+    const selectedChecks = paraLista(valAtual);
 
     return (
       <div className="p-4 rounded-2xl bg-slate-900/95 border-2 border-amber-500/50 shadow-xl space-y-3 animate-fade-in text-left">
@@ -421,7 +407,7 @@ export default function MobileForm() {
             <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
             <span>{g.pergunta || 'Por favor, detalhe sua resposta:'}</span>
           </p>
-          {gavetaRespondidas[opcao.id] && (
+          {gavetaRespondidas[gk] && (
             <span className="text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
               <CheckCircle2 className="w-3 h-3" /> Respondido
             </span>
@@ -433,7 +419,7 @@ export default function MobileForm() {
             {opcoesLista.map((itemStr, i) => (
               <label
                 key={i}
-                onClick={() => setGavetaTextos((prev) => ({ ...prev, [opcao.id]: itemStr }))}
+                onClick={() => setGavetas((prev) => ({ ...prev, [gk]: itemStr }))}
                 className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition ${
                   valAtual === itemStr
                     ? 'bg-amber-500/15 border-amber-400 text-white'
@@ -442,9 +428,9 @@ export default function MobileForm() {
               >
                 <input
                   type="radio"
-                  name={`gav_radio_${opcao.id}`}
+                  name={`gav_radio_${gk}`}
                   checked={valAtual === itemStr}
-                  onChange={() => setGavetaTextos((prev) => ({ ...prev, [opcao.id]: itemStr }))}
+                  onChange={() => setGavetas((prev) => ({ ...prev, [gk]: itemStr }))}
                   className="w-4 h-4 accent-amber-400"
                 />
                 <span className="text-xs sm:text-sm font-bold">{itemStr}</span>
@@ -471,7 +457,7 @@ export default function MobileForm() {
                       const next = isChecked
                         ? selectedChecks.filter(x => x !== itemStr)
                         : [...selectedChecks, itemStr];
-                      setGavetaTextos((prev) => ({ ...prev, [opcao.id]: next.join(', ') }));
+                      setGavetas((prev) => ({ ...prev, [gk]: next }));
                     }}
                     className="w-4 h-4 accent-amber-400 rounded"
                   />
@@ -483,7 +469,7 @@ export default function MobileForm() {
         ) : gTipo === 'slider' ? (
           <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2 text-center">
             <div className="text-3xl font-black text-amber-400">
-              {valAtual || g.sliderMax || 10}{g.sliderUnidade || ''}
+              {valAtual !== '' ? valAtual : (g.sliderMax ?? 10)}{g.sliderUnidade || ''}
             </div>
             <input
               type="range"
@@ -491,7 +477,7 @@ export default function MobileForm() {
               max={g.sliderMax ?? 10}
               step={g.sliderStep ?? 1}
               value={valAtual !== '' ? Number(valAtual) : (g.sliderMax ?? 10)}
-              onChange={(e) => setGavetaTextos((prev) => ({ ...prev, [opcao.id]: e.target.value }))}
+              onChange={(e) => setGavetas((prev) => ({ ...prev, [gk]: e.target.value }))}
               className="w-full h-2.5 bg-slate-800 rounded-lg accent-amber-400 cursor-pointer"
             />
             <div className="flex justify-between text-xs font-mono text-slate-400">
@@ -503,21 +489,21 @@ export default function MobileForm() {
           <input
             type="date"
             value={valAtual}
-            onChange={(e) => setGavetaTextos((prev) => ({ ...prev, [opcao.id]: e.target.value }))}
+            onChange={(e) => setGavetas((prev) => ({ ...prev, [gk]: e.target.value }))}
             className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl p-3 text-sm text-white focus:outline-none"
           />
         ) : gTipo === 'hora' ? (
           <input
             type="time"
             value={valAtual}
-            onChange={(e) => setGavetaTextos((prev) => ({ ...prev, [opcao.id]: e.target.value }))}
+            onChange={(e) => setGavetas((prev) => ({ ...prev, [gk]: e.target.value }))}
             className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl p-3 text-sm text-white focus:outline-none"
           />
         ) : gTipo === 'texto_curto' ? (
           <input
             type="text"
             value={valAtual}
-            onChange={(e) => setGavetaTextos((prev) => ({ ...prev, [opcao.id]: e.target.value }))}
+            onChange={(e) => setGavetas((prev) => ({ ...prev, [gk]: e.target.value }))}
             placeholder={g.placeholder || 'Digite sua resposta...'}
             className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl p-3 text-sm text-white placeholder-slate-500 focus:outline-none"
           />
@@ -525,19 +511,34 @@ export default function MobileForm() {
           <textarea
             rows={g.linhas || 3}
             value={valAtual}
-            onChange={(e) => setGavetaTextos((prev) => ({ ...prev, [opcao.id]: e.target.value }))}
+            onChange={(e) => setGavetas((prev) => ({ ...prev, [gk]: e.target.value }))}
             placeholder={g.placeholder || 'Digite aqui sua resposta, pedido ou comentário...'}
             className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl p-3 text-sm text-white placeholder-slate-500 focus:outline-none transition resize-none shadow-inner"
           />
         )}
 
+        {campoObrigatorioErro === gk && (
+          <p className="text-[11px] font-bold text-rose-300">Por favor, responda antes de continuar.</p>
+        )}
+
         <div className="flex items-center justify-between pt-1">
           <span className="text-[11px] text-slate-400">
-            {valAtual ? `Selecionado: ${valAtual}` : (g.obrigatorio ? '* Obrigatório' : 'Opcional')}
+            {temValor(valAtual) ? `Selecionado: ${textoResposta(valAtual)}` : (g.obrigatorio ? '* Obrigatório' : 'Opcional')}
           </span>
           <button
             type="button"
-            onClick={onConfirmar}
+            onClick={() => {
+              // Slider não tocado: grava o valor que está sendo mostrado
+              if (gTipo === 'slider' && !temValor(gavetasRef.current[gk])) {
+                setGavetas((prev) => ({ ...prev, [gk]: String(g.sliderMax ?? 10) }));
+              }
+              if (g.obrigatorio && gTipo !== 'slider' && !temValor(gavetasRef.current[gk])) {
+                setCampoObrigatorioErro(gk);
+                return;
+              }
+              setCampoObrigatorioErro(null);
+              onConfirmar();
+            }}
             className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-xl shadow-lg active:scale-95 transition flex items-center gap-1.5"
           >
             <span>{g.botaoConfirmar || 'Confirmar & Avançar'}</span>
@@ -562,7 +563,7 @@ export default function MobileForm() {
   // Avançar após Tela 1 (seja clicando num card ou no botão COMEÇAR)
   const avancarDeP1 = (motivoEscolhido = '') => {
     const finalMotivo = motivoEscolhido || comoChegou || questionsConfig?.pergunta1Titulo || 'Participante';
-    setComoChegou(finalMotivo);
+    setMotivo(finalMotivo);
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
     if (telasExtrasAtivas.length > 0) {
@@ -576,13 +577,13 @@ export default function MobileForm() {
 
   // Avançar após selecionar um card na Pergunta 1
   const handleSelectComoChegou = (opcao) => {
-    setComoChegou(opcao.titulo);
+    setMotivo(opcao.titulo);
 
     // Se o card tem gaveta condicional (campo para digitar ou sub-pergunta), expande a gaveta
     if (opcao.temGaveta) {
       setGavetasAbertas((prev) => ({
         ...prev,
-        [opcao.id]: true
+        [gavetaKey('p1', opcao)]: true
       }));
       return;
     }
@@ -592,25 +593,22 @@ export default function MobileForm() {
 
   // Confirmar resposta da gaveta na Pergunta 1 e avançar
   const handleConfirmarGavetaP1 = (opcao) => {
-    setComoChegou(opcao.titulo);
-    setGavetaRespondidas((prev) => ({ ...prev, [opcao.id]: true }));
+    setMotivo(opcao.titulo);
+    setGavetaRespondidas((prev) => ({ ...prev, [gavetaKey('p1', opcao)]: true }));
     avancarDeP1(opcao.titulo);
   };
 
   // Avançar após selecionar opção em tela extra
   const handleSelectOpcaoExtra = (telaIndex, opcao) => {
     const tela = telasExtrasAtivas[telaIndex];
-    const nextExtras = {
-      ...respostasExtras,
-      [tela.titulo || `Pergunta_${telaIndex + 1}`]: opcao.titulo
-    };
-    setRespostasExtras(nextExtras);
+    const nextExtras = { ...extrasRef.current, [tela.id]: opcao.titulo };
+    setExtras(nextExtras);
 
     // Se o card tem gaveta condicional, abre a gaveta para o respondente digitar
     if (opcao.temGaveta) {
       setGavetasAbertas((prev) => ({
         ...prev,
-        [opcao.id]: true
+        [gavetaKey(tela.id, opcao)]: true
       }));
       return;
     }
@@ -621,19 +619,16 @@ export default function MobileForm() {
     } else if (questionsConfig?.mostrarTelaAcompanhantes !== false) {
       setCurrentStep('acompanhantes');
     } else {
-      handleSelectQtd(1, comoChegou || opcao.titulo, nextExtras);
+      handleSelectQtd(1, motivoRef.current || opcao.titulo);
     }
   };
 
   // Confirmar resposta da gaveta em tela extra e avançar
   const handleConfirmarGavetaExtra = (telaIndex, opcao) => {
     const tela = telasExtrasAtivas[telaIndex];
-    const nextExtras = {
-      ...respostasExtras,
-      [tela.titulo || `Pergunta_${telaIndex + 1}`]: opcao.titulo
-    };
-    setRespostasExtras(nextExtras);
-    setGavetaRespondidas((prev) => ({ ...prev, [opcao.id]: true }));
+    const nextExtras = { ...extrasRef.current, [tela.id]: opcao.titulo };
+    setExtras(nextExtras);
+    setGavetaRespondidas((prev) => ({ ...prev, [gavetaKey(tela.id, opcao)]: true }));
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
     if (telaIndex + 1 < telasExtrasAtivas.length) {
@@ -641,22 +636,64 @@ export default function MobileForm() {
     } else if (questionsConfig?.mostrarTelaAcompanhantes !== false) {
       setCurrentStep('acompanhantes');
     } else {
-      handleSelectQtd(1, comoChegou || opcao.titulo, nextExtras);
+      handleSelectQtd(1, motivoRef.current || opcao.titulo);
     }
   };
 
-  // Ao escolher quantidade de acompanhantes (ou finalizar na última tela): registra e trava definitivamente este dispositivo
-  const handleSelectQtd = (qtd, overrideComoChegou = null, overrideExtras = null, overrideTextos = null) => {
-    // Se já votou ou já está bloqueado, barra qualquer nova tentativa
-    const estaBloqueadoAntes = dispositivoBloqueado || currentStep === 'final' || 
-      localStorage.getItem(DISPOSITIVO_BLOQUEADO_EVENTO_KEY) === 'true' || 
-      (activeEventId === DEFAULT_EVENT_ID && localStorage.getItem(DISPOSITIVO_BLOQUEADO_KEY) === 'true');
+  // Monta as respostas com NOMES legíveis (título da pergunta), na ordem das telas.
+  // Internamente tudo é guardado pelo ID da tela/opção, então telas com o mesmo
+  // título ou opções com o mesmo id não se sobrescrevem mais.
+  const montarRespostas = (motivo) => {
+    const extras = extrasRef.current;
+    const textos = textosRef.current;
+    const gavetas = gavetasRef.current;
+    const usados = {};
+    const rotuloUnico = (base) => {
+      const r = String(base || 'Pergunta').trim() || 'Pergunta';
+      usados[r] = (usados[r] || 0) + 1;
+      return usados[r] > 1 ? `${r} (${usados[r]})` : r;
+    };
 
-    if (estaBloqueadoAntes) {
-      return;
+    const respostas = [];
+    const respostasExtras = {};
+    const textoRespostas = {};
+    const gavetaRespostas = {};
+
+    const tituloP1 = [questionsConfig?.pergunta1Titulo, questionsConfig?.pergunta1Titulo2].filter(Boolean).join(' ') || 'Tela 1';
+    const rotuloP1 = rotuloUnico(tituloP1);
+    if (cardsAtivosP1.length > 0 && motivo) {
+      respostas.push({ telaId: 'p1', pergunta: rotuloP1, resposta: motivo });
     }
+    // Só grava a gaveta da(s) opção(ões) realmente escolhida(s)
+    const addGavetas = (scope, rotulo, opcoes, escolhida) => {
+      (opcoes || []).forEach((op) => {
+        const v = gavetas[gavetaKey(scope, op)];
+        if (op.temGaveta && temValor(v) && escolhida(op)) {
+          const r = rotuloUnico(`${rotulo} › ${op.titulo}`);
+          gavetaRespostas[r] = textoResposta(v);
+          respostas.push({ telaId: scope, pergunta: r, resposta: textoResposta(v) });
+        }
+      });
+    };
+    addGavetas('p1', rotuloP1, cardsAtivosP1, (op) => op.titulo === motivo);
 
-    // Grava bloqueio definitivo no navegador deste celular para este evento
+    telasExtrasAtivas.forEach((tela, i) => {
+      const titulo = tela.titulo || [tela.titulo1, tela.titulo2].filter(Boolean).join(' ') || `Tela ${i + 2}`;
+      const rotulo = rotuloUnico(titulo);
+      const isCards = !['texto', 'texto_curto', 'data', 'hora', 'slider', 'rating', 'dropdown', 'radio', 'checkbox', 'grade'].includes(tela.tipo);
+      const valor = isCards ? extras[tela.id] : textos[tela.id];
+      if (temValor(valor)) {
+        if (isCards) respostasExtras[rotulo] = textoResposta(valor);
+        else textoRespostas[rotulo] = textoResposta(valor);
+        respostas.push({ telaId: tela.id, pergunta: rotulo, resposta: textoResposta(valor) });
+      }
+      addGavetas(tela.id, rotulo, tela.opcoes, (op) => paraLista(valor).includes(op.titulo) || valor === op.titulo);
+    });
+
+    return { respostas, respostasExtras, textoRespostas, gavetaRespostas };
+  };
+
+  const travarDispositivo = () => {
     const agoraIso = new Date().toISOString();
     localStorage.setItem(DISPOSITIVO_BLOQUEADO_EVENTO_KEY, 'true');
     localStorage.setItem(DISPOSITIVO_VOTO_TIME_EVENTO_KEY, agoraIso);
@@ -666,37 +703,80 @@ export default function MobileForm() {
     }
     setDispositivoBloqueado(true);
     setCurrentStep('final');
+  };
 
+  const enviarRegistro = async (registro) => {
+    enviandoRef.current = true;
+    setEnviando(true);
+    setErroEnvio('');
     try {
-      window.history.pushState(null, '', window.location.href);
-      window.onpopstate = function() {
-        window.history.pushState(null, '', window.location.href);
-      };
-    } catch (e) {}
+      const resultado = await registrarPresenca(registro);
+      // Só trava o celular DEPOIS que a resposta foi aceita (ou ficou guardada para envio automático)
+      setEnvioPendente(Boolean(resultado?.pendente));
+      travarDispositivo();
+      try {
+        confetti({ particleCount: 80, spread: 70, origin: { y: 0.5 } });
+      } catch (e) {}
+    } catch (e) {
+      console.error('Erro ao enviar resposta:', e);
+      setErroEnvio('Não conseguimos enviar sua resposta. Verifique a internet e toque em "Tentar novamente".');
+    } finally {
+      enviandoRef.current = false;
+      setEnviando(false);
+    }
+  };
 
-    const rawTextos = overrideTextos || dissertativaTextos;
-    const cleanTextos = Object.fromEntries(
-      Object.entries(rawTextos || {}).filter(([k]) => !k.includes('__item_'))
-    );
+  // Ao escolher quantidade de acompanhantes (ou finalizar na última tela): registra e trava este dispositivo
+  const handleSelectQtd = (qtd, overrideComoChegou = null) => {
+    const estaBloqueadoAntes = enviandoRef.current || dispositivoBloqueado || currentStep === 'final' || 
+      localStorage.getItem(DISPOSITIVO_BLOQUEADO_EVENTO_KEY) === 'true' || 
+      (activeEventId === DEFAULT_EVENT_ID && localStorage.getItem(DISPOSITIVO_BLOQUEADO_KEY) === 'true');
+    if (estaBloqueadoAntes) return;
 
-    registrarPresenca({
-      comoChegou: overrideComoChegou || comoChegou || questionsConfig?.pergunta1Titulo || 'Participante',
+    const motivo = overrideComoChegou || motivoRef.current || comoChegou || '';
+    const montadas = montarRespostas(motivo);
+    const registro = {
+      comoChegou: motivo || questionsConfig?.pergunta1Titulo || 'Participante',
       qtdPessoas: qtd,
       evento: eventoTitulo,
-      respostasExtras: overrideExtras || respostasExtras,
-      gavetaRespostas: gavetaTextos,
-      textoRespostas: cleanTextos,
+      ...montadas,
       eventoId: activeEventId
-    });
-
-    try {
-      confetti({
-        particleCount: 80,
-        spread: 70,
-        origin: { y: 0.5 }
-      });
-    } catch (e) {}
+    };
+    ultimoEnvioRef.current = registro;
+    enviarRegistro(registro);
   };
+
+  // ==============================================================
+  // ENVIANDO / ERRO NO ENVIO (o celular só trava depois que a resposta foi aceita)
+  // ==============================================================
+  if (enviando || erroEnvio) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-6 text-center select-none">
+        <div className="w-full max-w-sm bg-slate-900/95 border border-slate-800 rounded-3xl p-8 shadow-2xl space-y-5">
+          {enviando ? (
+            <>
+              <div className="w-14 h-14 mx-auto rounded-full border-4 border-slate-700 border-t-amber-400 animate-spin" />
+              <p className="font-black text-white text-lg">Enviando sua resposta...</p>
+              <p className="text-xs text-slate-400">Não feche esta tela.</p>
+            </>
+          ) : (
+            <>
+              <AlertTriangle className="w-12 h-12 text-rose-400 mx-auto" />
+              <p className="font-black text-white text-lg">Ops! Não foi enviado</p>
+              <p className="text-sm text-slate-300">{erroEnvio}</p>
+              <button
+                type="button"
+                onClick={() => ultimoEnvioRef.current && enviarRegistro(ultimoEnvioRef.current)}
+                className="w-full py-4 rounded-2xl bg-amber-400 text-slate-950 font-black text-sm uppercase tracking-wider"
+              >
+                Tentar novamente
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   // ==============================================================
   // PRIORIDADE 1: SE O APARELHO JÁ VOTOU NESTE EVENTO, FICA BLOQUEADO NA TELA FINAL!
@@ -754,6 +834,11 @@ export default function MobileForm() {
               >
                 {questionsConfig.finalInstrucao || 'pode guardar seu celular'}
               </p>
+              {envioPendente && (
+                <p className="text-[11px] text-amber-300/90 pt-1">
+                  Internet lenta: sua resposta foi guardada e será enviada automaticamente. Mantenha esta página aberta por alguns instantes.
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -794,43 +879,19 @@ export default function MobileForm() {
           <div className="space-y-1 text-center">
             <h2 
               style={{ fontSize: `${questionsConfig.esperaLinha1Tamanho || questionsConfig.esperaFonteTamanho || 26}px` }}
-              className={`font-black tracking-wide uppercase leading-tight drop-shadow-sm ${
-                questionsConfig.esperaLinha1Cor === 'dourado' ? 'text-amber-300' :
-                questionsConfig.esperaLinha1Cor === 'verde' ? 'text-emerald-400' :
-                questionsConfig.esperaLinha1Cor === 'azul' ? 'text-sky-300' :
-                questionsConfig.esperaLinha1Cor === 'cinza' ? 'text-slate-300' :
-                questionsConfig.esperaLinha1Cor === 'laranja' ? 'text-orange-300' :
-                questionsConfig.esperaLinha1Cor === 'roxo' ? 'text-purple-300' :
-                questionsConfig.esperaLinha1Cor === 'rosa' ? 'text-rose-300' : 'text-white'
-              }`}
+              className={`font-black tracking-wide uppercase leading-tight drop-shadow-sm ${getCorTextoLinhaClass(questionsConfig.esperaLinha1Cor, 'text-white')}`}
             >
               {questionsConfig.esperaLinha1 || 'DENTRO DE INSTANTES'}
             </h2>
             <h2 
               style={{ fontSize: `${questionsConfig.esperaLinha2Tamanho || questionsConfig.esperaFonteTamanho || 26}px` }}
-              className={`font-black tracking-wide uppercase leading-tight drop-shadow-sm ${
-                questionsConfig.esperaLinha2Cor === 'branco' ? 'text-white' :
-                questionsConfig.esperaLinha2Cor === 'verde' ? 'text-emerald-400' :
-                questionsConfig.esperaLinha2Cor === 'azul' ? 'text-sky-300' :
-                questionsConfig.esperaLinha2Cor === 'cinza' ? 'text-slate-300' :
-                questionsConfig.esperaLinha2Cor === 'laranja' ? 'text-orange-300' :
-                questionsConfig.esperaLinha2Cor === 'roxo' ? 'text-purple-300' :
-                questionsConfig.esperaLinha2Cor === 'rosa' ? 'text-rose-300' : 'text-amber-300'
-              }`}
+              className={`font-black tracking-wide uppercase leading-tight drop-shadow-sm ${getCorTextoLinhaClass(questionsConfig.esperaLinha2Cor, 'text-amber-300')}`}
             >
               {questionsConfig.esperaLinha2 || 'ESTARÁ LIBERADO'}
             </h2>
             <h2 
               style={{ fontSize: `${questionsConfig.esperaLinha3Tamanho || questionsConfig.esperaFonteTamanho || 26}px` }}
-              className={`font-black tracking-wide uppercase leading-tight drop-shadow-sm ${
-                questionsConfig.esperaLinha3Cor === 'branco' ? 'text-white' :
-                questionsConfig.esperaLinha3Cor === 'dourado' ? 'text-amber-300' :
-                questionsConfig.esperaLinha3Cor === 'azul' ? 'text-sky-300' :
-                questionsConfig.esperaLinha3Cor === 'cinza' ? 'text-slate-300' :
-                questionsConfig.esperaLinha3Cor === 'laranja' ? 'text-orange-300' :
-                questionsConfig.esperaLinha3Cor === 'roxo' ? 'text-purple-300' :
-                questionsConfig.esperaLinha3Cor === 'rosa' ? 'text-rose-300' : 'text-emerald-400'
-              }`}
+              className={`font-black tracking-wide uppercase leading-tight drop-shadow-sm ${getCorTextoLinhaClass(questionsConfig.esperaLinha3Cor, 'text-emerald-400')}`}
             >
               {questionsConfig.esperaLinha3 || 'PARA RESPONDER.'}
             </h2>
@@ -865,19 +926,11 @@ export default function MobileForm() {
         {currentStep === 'p1' && questionsConfig.mostrarBotaoComecar !== false && !jaClicouComecar && (
           <div className="mt-2 pt-2 space-y-3">
             {(questionsConfig.capaTitulo1 || questionsConfig.capaTitulo2 || questionsConfig.capaTitulo3) && (
-              <div className="space-y-1">
+              <div className={`space-y-1 ${getAlinhamentoClass(questionsConfig.capaAlinhamento)} ${getCaptionFundoClass(questionsConfig.capaCaptionFundo)}`}>
                 {questionsConfig.capaTitulo1 && (
                   <h2
                     style={{ fontSize: `${questionsConfig.capaTitulo1Tamanho || questionsConfig.capaFonteTamanho || 20}px` }}
-                    className={`font-black leading-tight ${
-                      questionsConfig.capaTitulo1Cor === 'dourado' ? 'text-amber-300' :
-                      questionsConfig.capaTitulo1Cor === 'verde' ? 'text-emerald-400' :
-                      questionsConfig.capaTitulo1Cor === 'azul' ? 'text-sky-300' :
-                      questionsConfig.capaTitulo1Cor === 'cinza' ? 'text-slate-300' :
-                      questionsConfig.capaTitulo1Cor === 'laranja' ? 'text-orange-300' :
-                      questionsConfig.capaTitulo1Cor === 'roxo' ? 'text-purple-300' :
-                      questionsConfig.capaTitulo1Cor === 'rosa' ? 'text-rose-300' : 'text-white'
-                    }`}
+                    className={`font-black leading-tight ${getCorTextoLinhaClass(questionsConfig.capaTitulo1Cor, 'text-white')}`}
                   >
                     {questionsConfig.capaTitulo1}
                   </h2>
@@ -885,15 +938,7 @@ export default function MobileForm() {
                 {questionsConfig.capaTitulo2 && (
                   <h2
                     style={{ fontSize: `${questionsConfig.capaTitulo2Tamanho || 18}px` }}
-                    className={`font-black leading-tight ${
-                      questionsConfig.capaTitulo2Cor === 'branco' ? 'text-white' :
-                      questionsConfig.capaTitulo2Cor === 'verde' ? 'text-emerald-400' :
-                      questionsConfig.capaTitulo2Cor === 'azul' ? 'text-sky-300' :
-                      questionsConfig.capaTitulo2Cor === 'cinza' ? 'text-slate-300' :
-                      questionsConfig.capaTitulo2Cor === 'laranja' ? 'text-orange-300' :
-                      questionsConfig.capaTitulo2Cor === 'roxo' ? 'text-purple-300' :
-                      questionsConfig.capaTitulo2Cor === 'rosa' ? 'text-rose-300' : 'text-amber-300'
-                    }`}
+                    className={`font-black leading-tight ${getCorTextoLinhaClass(questionsConfig.capaTitulo2Cor, 'text-amber-300')}`}
                   >
                     {questionsConfig.capaTitulo2}
                   </h2>
@@ -901,15 +946,7 @@ export default function MobileForm() {
                 {questionsConfig.capaTitulo3 && (
                   <h2
                     style={{ fontSize: `${questionsConfig.capaTitulo3Tamanho || 16}px` }}
-                    className={`font-black leading-tight ${
-                      questionsConfig.capaTitulo3Cor === 'branco' ? 'text-white' :
-                      questionsConfig.capaTitulo3Cor === 'dourado' ? 'text-amber-300' :
-                      questionsConfig.capaTitulo3Cor === 'azul' ? 'text-sky-300' :
-                      questionsConfig.capaTitulo3Cor === 'cinza' ? 'text-slate-300' :
-                      questionsConfig.capaTitulo3Cor === 'laranja' ? 'text-orange-300' :
-                      questionsConfig.capaTitulo3Cor === 'roxo' ? 'text-purple-300' :
-                      questionsConfig.capaTitulo3Cor === 'rosa' ? 'text-rose-300' : 'text-emerald-400'
-                    }`}
+                    className={`font-black leading-tight ${getCorTextoLinhaClass(questionsConfig.capaTitulo3Cor, 'text-emerald-400')}`}
                   >
                     {questionsConfig.capaTitulo3}
                   </h2>
@@ -919,15 +956,7 @@ export default function MobileForm() {
             {(questionsConfig.capaTextoAbaixo || questionsConfig.pergunta1TextoAbaixo) && (
               <div
                 style={{ fontSize: `${questionsConfig.capaTextoAbaixoTamanho || 14}px` }}
-                className={`p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 leading-relaxed whitespace-pre-line shadow-inner ${
-                  questionsConfig.capaTextoAbaixoCor === 'branco' ? 'text-white' :
-                  questionsConfig.capaTextoAbaixoCor === 'dourado' ? 'text-amber-300' :
-                  questionsConfig.capaTextoAbaixoCor === 'verde' ? 'text-emerald-400' :
-                  questionsConfig.capaTextoAbaixoCor === 'azul' ? 'text-sky-300' :
-                  questionsConfig.capaTextoAbaixoCor === 'laranja' ? 'text-orange-300' :
-                  questionsConfig.capaTextoAbaixoCor === 'roxo' ? 'text-purple-300' :
-                  questionsConfig.capaTextoAbaixoCor === 'rosa' ? 'text-rose-300' : 'text-slate-200'
-                }`}
+                className={`p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 leading-relaxed whitespace-pre-line shadow-inner ${getCorTextoLinhaClass(questionsConfig.capaTextoAbaixoCor, 'text-slate-200')}`}
               >
                 {questionsConfig.capaTextoAbaixo || questionsConfig.pergunta1TextoAbaixo}
               </div>
@@ -939,19 +968,11 @@ export default function MobileForm() {
         {currentStep === 'p1' && (questionsConfig.mostrarBotaoComecar === false || jaClicouComecar) && (
           <div className="mt-2 pt-2 space-y-2">
             {(questionsConfig.pergunta1Titulo || questionsConfig.pergunta1Titulo2 || questionsConfig.pergunta1Titulo3) && (
-              <div className="space-y-1">
+              <div className={`space-y-1 ${getAlinhamentoClass(questionsConfig.pergunta1Alinhamento)} ${getCaptionFundoClass(questionsConfig.pergunta1CaptionFundo)}`}>
                 {questionsConfig.pergunta1Titulo && (
                   <h2 
                     style={{ fontSize: `${questionsConfig.pergunta1FonteTamanho || 22}px` }}
-                    className={`font-black leading-tight ${
-                      questionsConfig.pergunta1TituloCor === 'dourado' ? 'text-amber-300' :
-                      questionsConfig.pergunta1TituloCor === 'verde' ? 'text-emerald-400' :
-                      questionsConfig.pergunta1TituloCor === 'azul' ? 'text-sky-300' :
-                      questionsConfig.pergunta1TituloCor === 'cinza' ? 'text-slate-300' :
-                      questionsConfig.pergunta1TituloCor === 'laranja' ? 'text-orange-300' :
-                      questionsConfig.pergunta1TituloCor === 'roxo' ? 'text-purple-300' :
-                      questionsConfig.pergunta1TituloCor === 'rosa' ? 'text-rose-300' : 'text-white'
-                    }`}
+                    className={`font-black leading-tight ${getCorTextoLinhaClass(questionsConfig.pergunta1TituloCor, 'text-white')}`}
                   >
                     {questionsConfig.pergunta1Titulo}
                   </h2>
@@ -959,15 +980,7 @@ export default function MobileForm() {
                 {questionsConfig.pergunta1Titulo2 && (
                   <h2 
                     style={{ fontSize: `${questionsConfig.pergunta1Titulo2Tamanho || 18}px` }}
-                    className={`font-black leading-tight ${
-                      questionsConfig.pergunta1Titulo2Cor === 'branco' ? 'text-white' :
-                      questionsConfig.pergunta1Titulo2Cor === 'verde' ? 'text-emerald-400' :
-                      questionsConfig.pergunta1Titulo2Cor === 'azul' ? 'text-sky-300' :
-                      questionsConfig.pergunta1Titulo2Cor === 'cinza' ? 'text-slate-300' :
-                      questionsConfig.pergunta1Titulo2Cor === 'laranja' ? 'text-orange-300' :
-                      questionsConfig.pergunta1Titulo2Cor === 'roxo' ? 'text-purple-300' :
-                      questionsConfig.pergunta1Titulo2Cor === 'rosa' ? 'text-rose-300' : 'text-amber-300'
-                    }`}
+                    className={`font-black leading-tight ${getCorTextoLinhaClass(questionsConfig.pergunta1Titulo2Cor, 'text-amber-300')}`}
                   >
                     {questionsConfig.pergunta1Titulo2}
                   </h2>
@@ -975,15 +988,7 @@ export default function MobileForm() {
                 {questionsConfig.pergunta1Titulo3 && (
                   <h2 
                     style={{ fontSize: `${questionsConfig.pergunta1Titulo3Tamanho || 16}px` }}
-                    className={`font-black leading-tight ${
-                      questionsConfig.pergunta1Titulo3Cor === 'branco' ? 'text-white' :
-                      questionsConfig.pergunta1Titulo3Cor === 'dourado' ? 'text-amber-300' :
-                      questionsConfig.pergunta1Titulo3Cor === 'azul' ? 'text-sky-300' :
-                      questionsConfig.pergunta1Titulo3Cor === 'cinza' ? 'text-slate-300' :
-                      questionsConfig.pergunta1Titulo3Cor === 'laranja' ? 'text-orange-300' :
-                      questionsConfig.pergunta1Titulo3Cor === 'roxo' ? 'text-purple-300' :
-                      questionsConfig.pergunta1Titulo3Cor === 'rosa' ? 'text-rose-300' : 'text-emerald-400'
-                    }`}
+                    className={`font-black leading-tight ${getCorTextoLinhaClass(questionsConfig.pergunta1Titulo3Cor, 'text-emerald-400')}`}
                   >
                     {questionsConfig.pergunta1Titulo3}
                   </h2>
@@ -999,15 +1004,7 @@ export default function MobileForm() {
             {questionsConfig.pergunta1TextoAbaixo && (
               <div
                 style={{ fontSize: `${questionsConfig.pergunta1TextoAbaixoTamanho || 14}px` }}
-                className={`p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 leading-relaxed whitespace-pre-line shadow-inner ${
-                  questionsConfig.pergunta1TextoAbaixoCor === 'branco' ? 'text-white' :
-                  questionsConfig.pergunta1TextoAbaixoCor === 'dourado' ? 'text-amber-300' :
-                  questionsConfig.pergunta1TextoAbaixoCor === 'verde' ? 'text-emerald-400' :
-                  questionsConfig.pergunta1TextoAbaixoCor === 'azul' ? 'text-sky-300' :
-                  questionsConfig.pergunta1TextoAbaixoCor === 'laranja' ? 'text-orange-300' :
-                  questionsConfig.pergunta1TextoAbaixoCor === 'roxo' ? 'text-purple-300' :
-                  questionsConfig.pergunta1TextoAbaixoCor === 'rosa' ? 'text-rose-300' : 'text-slate-200'
-                }`}
+                className={`p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 leading-relaxed whitespace-pre-line shadow-inner ${getCorTextoLinhaClass(questionsConfig.pergunta1TextoAbaixoCor, 'text-slate-200')}`}
               >
                 {questionsConfig.pergunta1TextoAbaixo}
               </div>
@@ -1015,25 +1012,29 @@ export default function MobileForm() {
           </div>
         )}
 
-        {/* TELA EXTRA (SE HOUVER) */}
+        {/* TELA EXTRA (SE HOUVER) — mesmos títulos, cores, tamanhos e alinhamento do preview */}
         {currentStep.startsWith('extra_') && (() => {
           const idx = parseInt(currentStep.split('_')[1], 10);
           const tela = telasExtrasAtivas[idx];
           if (!tela) return null;
+          const linha1 = tela.titulo1 || tela.titulo || `Pergunta da Tela ${idx + 2}`;
           return (
-            <div className="mt-2 pt-2 border-t border-slate-800/60">
-              <h2 className="text-xl sm:text-2xl font-black text-white leading-tight">
-                {tela.titulo1 && tela.titulo2 ? (
-                  <>
-                    <span className="block">{tela.titulo1}</span>
-                    <span className="block">{tela.titulo2}</span>
-                  </>
-                ) : (
-                  tela.titulo || `Pergunta da Tela ${idx + 3}`
-                )}
+            <div className={`mt-2 pt-2 border-t border-slate-800/60 space-y-1 ${getAlinhamentoClass(tela.alinhamento)} ${getCaptionFundoClass(tela.captionFundo)}`}>
+              <h2 style={{ fontSize: `${tela.titulo1Tamanho || 20}px` }} className={`font-black leading-tight ${getCorTextoLinhaClass(tela.titulo1Cor, 'text-white')}`}>
+                {linha1}
               </h2>
+              {tela.titulo2 && (
+                <h2 style={{ fontSize: `${tela.titulo2Tamanho || 15}px` }} className={`font-black leading-tight ${getCorTextoLinhaClass(tela.titulo2Cor, 'text-amber-300')}`}>
+                  {tela.titulo2}
+                </h2>
+              )}
+              {tela.titulo3 && (
+                <h2 style={{ fontSize: `${tela.titulo3Tamanho || 14}px` }} className={`font-black leading-tight ${getCorTextoLinhaClass(tela.titulo3Cor, 'text-emerald-400')}`}>
+                  {tela.titulo3}
+                </h2>
+              )}
               {tela.subtitulo && (
-                <p className="text-xs sm:text-sm text-slate-400 mt-1">
+                <p style={{ fontSize: `${tela.subtituloTamanho || 13}px` }} className={`leading-snug mt-1 ${getCorTextoLinhaClass(tela.subtituloCor, 'text-slate-300')}`}>
                   {tela.subtitulo}
                 </p>
               )}
@@ -1135,13 +1136,7 @@ export default function MobileForm() {
                     const cardFonteSubtituloCls = CARD_FONTE_SUBTITULO_CLASSES[questionsConfig?.cardCorFonteSubtitulo] || 'text-slate-400';
                     const cardEfeitoInline = getEfeitoStyle(questionsConfig?.cardEfeitoEstilo, questionsConfig?.cardProfundidade);
 
-                    const isGavetaAberta = Boolean(
-                      opcao.temGaveta && (
-                        gavetasAbertas[opcao.id] || 
-                        gavetaRespondidas[opcao.id] || 
-                        (gavetaTextos[opcao.id] && gavetaTextos[opcao.id].trim().length > 0)
-                      )
-                    );
+                    const isGavetaAberta = isGavetaAbertaDe('p1', opcao);
 
                     return (
                       <div key={opcao.id} className="space-y-2">
@@ -1154,9 +1149,11 @@ export default function MobileForm() {
                           }`}
                         >
                           <div className="flex items-center gap-4 pr-2 min-w-0">
-                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border shadow-sm transition-transform group-hover:scale-105 ${corCls}`}>
-                              <IconComponent className="w-6 h-6" />
-                            </div>
+                            {questionsConfig?.mostrarIconesCards !== false && (
+                              <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border shadow-sm transition-transform group-hover:scale-105 ${corCls}`}>
+                                <IconComponent className="w-6 h-6" />
+                              </div>
+                            )}
                             <div className="min-w-0">
                               <h3 
                                 style={{ fontSize: `${questionsConfig.cardFonteTitulo || 16}px` }}
@@ -1184,7 +1181,7 @@ export default function MobileForm() {
                         </button>
 
                         {/* GAVETA ACCORDION MULTI-COMPONENTE NA TELA 1 */}
-                        {opcao.temGaveta && isGavetaAberta && renderGavetaContent(opcao, () => handleConfirmarGavetaP1(opcao))}
+                        {opcao.temGaveta && isGavetaAberta && renderGavetaContent(opcao, () => handleConfirmarGavetaP1(opcao), 'p1')}
                       </div>
                     );
                   })}
@@ -1242,11 +1239,8 @@ export default function MobileForm() {
           if (!tela) return null;
 
           const avancarParaProxima = (valorSalvo = null) => {
-            const nextTextos = valorSalvo !== null
-              ? { ...dissertativaTextos, [tela.titulo || tela.id]: valorSalvo }
-              : dissertativaTextos;
             if (valorSalvo !== null) {
-              setDissertativaTextos(nextTextos);
+              setTextos((prev) => ({ ...prev, [tela.id]: valorSalvo }));
             }
             setCampoObrigatorioErro(null);
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1255,7 +1249,7 @@ export default function MobileForm() {
             } else if (questionsConfig?.mostrarTelaAcompanhantes !== false) {
               setCurrentStep('acompanhantes');
             } else {
-              handleSelectQtd(1, comoChegou || valorSalvo || 'Participante', respostasExtras, nextTextos);
+              handleSelectQtd(1, motivoRef.current || 'Participante');
             }
           };
 
@@ -1267,13 +1261,13 @@ export default function MobileForm() {
             }
           };
 
-          const valKey = tela.titulo || tela.id;
+          const valKey = tela.id;
           const valAtual = dissertativaTextos[valKey] ?? '';
 
           // 1. TEXTO LONGO, TEXTO CURTO, DATA, HORA, SLIDER, RATING, DROPDOWN, RADIO, CHECKBOX, GRADE
           if (['texto', 'texto_curto', 'data', 'hora', 'slider', 'rating', 'dropdown', 'radio', 'checkbox', 'grade'].includes(tela.tipo)) {
             const opcoesAtivas = (tela.opcoes || []).filter(o => o.ativo !== false);
-            const selectedChecks = valAtual ? String(valAtual).split(', ').filter(Boolean) : [];
+            const selectedChecks = paraLista(valAtual);
             const defaultSliderVal = Math.round(((tela.sliderMin ?? 0) + (tela.sliderMax ?? 10)) / 2);
 
             return (
@@ -1282,9 +1276,9 @@ export default function MobileForm() {
                   <div className="flex items-center justify-between">
                     <label className="text-xs sm:text-sm font-black text-amber-300 uppercase tracking-wider flex items-center gap-2">
                       <Sparkles className="w-4 h-4 text-amber-400" />
-                      <span>{tela.subtitulo || 'Responda abaixo:'}</span>
+                      <span>Responda abaixo:</span>
                     </label>
-                    {valAtual !== '' && (
+                    {temValor(valAtual) && (
                       <span className="text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full flex items-center gap-1">
                         <CheckCircle2 className="w-3 h-3" /> Preenchido
                       </span>
@@ -1295,7 +1289,7 @@ export default function MobileForm() {
                     <textarea
                       rows={tela.linhas || 4}
                       value={valAtual}
-                      onChange={(e) => setDissertativaTextos((prev) => ({ ...prev, [valKey]: e.target.value }))}
+                      onChange={(e) => setTextos((prev) => ({ ...prev, [valKey]: e.target.value }))}
                       placeholder={tela.placeholder || 'Digite sua resposta aqui...'}
                       className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-2xl p-4 text-sm sm:text-base text-white placeholder-slate-500 focus:outline-none transition resize-none shadow-inner"
                     />
@@ -1305,7 +1299,7 @@ export default function MobileForm() {
                     <input
                       type="text"
                       value={valAtual}
-                      onChange={(e) => setDissertativaTextos((prev) => ({ ...prev, [valKey]: e.target.value }))}
+                      onChange={(e) => setTextos((prev) => ({ ...prev, [valKey]: e.target.value }))}
                       placeholder={tela.placeholder || 'Digite sua resposta curta...'}
                       className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-2xl p-4 text-sm sm:text-base text-white placeholder-slate-500 focus:outline-none transition shadow-inner"
                     />
@@ -1315,7 +1309,7 @@ export default function MobileForm() {
                     <input
                       type="date"
                       value={valAtual}
-                      onChange={(e) => setDissertativaTextos((prev) => ({ ...prev, [valKey]: e.target.value }))}
+                      onChange={(e) => setTextos((prev) => ({ ...prev, [valKey]: e.target.value }))}
                       className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-2xl p-4 text-base text-white focus:outline-none"
                     />
                   )}
@@ -1324,7 +1318,7 @@ export default function MobileForm() {
                     <input
                       type="time"
                       value={valAtual}
-                      onChange={(e) => setDissertativaTextos((prev) => ({ ...prev, [valKey]: e.target.value }))}
+                      onChange={(e) => setTextos((prev) => ({ ...prev, [valKey]: e.target.value }))}
                       className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-2xl p-4 text-base text-white focus:outline-none"
                     />
                   )}
@@ -1340,28 +1334,38 @@ export default function MobileForm() {
                         max={tela.sliderMax ?? 10}
                         step={tela.sliderStep ?? 1}
                         value={valAtual !== '' ? Number(valAtual) : defaultSliderVal}
-                        onChange={(e) => setDissertativaTextos((prev) => ({ ...prev, [valKey]: e.target.value }))}
+                        onChange={(e) => setTextos((prev) => ({ ...prev, [valKey]: e.target.value }))}
                         className="w-full h-3 bg-slate-800 rounded-lg accent-amber-400 cursor-pointer"
                       />
                       <div className="flex justify-between text-xs font-mono text-slate-400">
-                        <span>{tela.sliderMin ?? 0}</span>
-                        <span>{tela.sliderMax ?? 10}</span>
+                        <span>{tela.sliderMin ?? 0}{tela.sliderLabelMin && tela.sliderLabelMin !== 'Mínimo' ? ` · ${tela.sliderLabelMin}` : ''}</span>
+                        <span>{tela.sliderLabelMax && tela.sliderLabelMax !== 'Máximo' ? `${tela.sliderLabelMax} · ` : ''}{tela.sliderMax ?? 10}</span>
                       </div>
+                      {tela.legendaEscala && (
+                        <div className="flex flex-wrap items-center justify-center gap-1.5 pt-1">
+                          {parseScaleLegendItems(tela.legendaEscala).map((item, li) => (
+                            <span key={li} style={{ fontSize: `${tela.escalaTamanho || 11}px` }} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-900 border border-amber-500/30 text-amber-200 leading-tight">
+                              {item.code && <strong className="text-amber-400 font-black">{item.code}:</strong>}
+                              <span>{item.label}</span>
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
 
                   {tela.tipo === 'rating' && (
                     <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-center gap-3">
                       {[1, 2, 3, 4, 5].map((st) => {
-                        const activeStars = Number(valAtual || 5);
+                        const activeStars = parseInt(String(valAtual), 10) || 0;
                         return (
                           <button
                             key={st}
                             type="button"
-                            onClick={() => setDissertativaTextos((prev) => ({ ...prev, [valKey]: `${st} estrelas` }))}
+                            onClick={() => setTextos((prev) => ({ ...prev, [valKey]: `${st} estrelas` }))}
                             className="p-1.5 transition active:scale-90"
                           >
-                            <Star className={`w-9 h-9 ${st <= parseInt(activeStars, 10) ? 'text-amber-400 fill-amber-400' : 'text-slate-700'}`} />
+                            <Star className={`w-9 h-9 ${st <= activeStars ? 'text-amber-400 fill-amber-400' : 'text-slate-700'}`} />
                           </button>
                         );
                       })}
@@ -1371,7 +1375,7 @@ export default function MobileForm() {
                   {tela.tipo === 'dropdown' && (
                     <select
                       value={valAtual}
-                      onChange={(e) => setDissertativaTextos((prev) => ({ ...prev, [valKey]: e.target.value }))}
+                      onChange={(e) => setTextos((prev) => ({ ...prev, [valKey]: e.target.value }))}
                       className="w-full bg-slate-950 border border-amber-500/50 focus:border-amber-400 rounded-2xl p-4 text-sm sm:text-base font-bold text-white focus:outline-none"
                     >
                       <option value="">Toque para selecionar na lista...</option>
@@ -1389,7 +1393,7 @@ export default function MobileForm() {
                         return (
                           <div key={opt.id} className="space-y-2">
                             <label
-                              onClick={() => setDissertativaTextos((prev) => ({ ...prev, [valKey]: opt.titulo }))}
+                              onClick={() => setTextos((prev) => ({ ...prev, [valKey]: opt.titulo }))}
                               className={`flex items-center gap-3.5 p-4 rounded-2xl border cursor-pointer transition ${
                                 isSel
                                   ? 'bg-amber-500/15 border-amber-400 text-white shadow-md'
@@ -1400,7 +1404,7 @@ export default function MobileForm() {
                                 type="radio"
                                 name={`extra_radio_${tela.id}`}
                                 checked={isSel}
-                                onChange={() => setDissertativaTextos((prev) => ({ ...prev, [valKey]: opt.titulo }))}
+                                onChange={() => setTextos((prev) => ({ ...prev, [valKey]: opt.titulo }))}
                                 className="w-5 h-5 accent-amber-400"
                               />
                               <div className="min-w-0 flex-1 text-left">
@@ -1408,7 +1412,7 @@ export default function MobileForm() {
                                 {opt.subtitulo && <span className="text-xs text-slate-400 block mt-0.5">{opt.subtitulo}</span>}
                               </div>
                             </label>
-                            {isGavetaAberta && renderGavetaContent(opt, () => avancarParaProxima(opt.titulo))}
+                            {isGavetaAberta && renderGavetaContent(opt, () => avancarParaProxima(opt.titulo), tela.id)}
                           </div>
                         );
                       })}
@@ -1435,7 +1439,7 @@ export default function MobileForm() {
                                   const next = isChecked
                                     ? selectedChecks.filter(x => x !== opt.titulo)
                                     : [...selectedChecks, opt.titulo];
-                                  setDissertativaTextos((prev) => ({ ...prev, [valKey]: next.join(', ') }));
+                                  setTextos((prev) => ({ ...prev, [valKey]: next }));
                                 }}
                                 className="w-5 h-5 accent-amber-400 rounded"
                               />
@@ -1444,7 +1448,14 @@ export default function MobileForm() {
                                 {opt.subtitulo && <span className="text-xs text-slate-400 block mt-0.5">{opt.subtitulo}</span>}
                               </div>
                             </label>
-                            {opt.temGaveta && isChecked && renderGavetaContent(opt, () => avancarParaProxima())}
+                            {opt.temGaveta && isChecked && renderGavetaContent(opt, () => {
+                              // Respeita "obrigatório" da tela também ao confirmar pela gaveta
+                              if (tela.obrigatorio && !temValor(textosRef.current[valKey])) {
+                                setCampoObrigatorioErro(tela.id);
+                                return;
+                              }
+                              avancarParaProxima();
+                            }, tela.id)}
                           </div>
                         );
                       })}
@@ -1454,7 +1465,7 @@ export default function MobileForm() {
                   {tela.tipo === 'grade' && (
                     <div className="space-y-3">
                       {tela.legendaEscala && (
-                        <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-200 leading-relaxed text-left">
+                        <div style={{ fontSize: `${tela.escalaTamanho || 12}px` }} className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 leading-relaxed text-left">
                           <strong className="text-amber-300">Escala:</strong> {tela.legendaEscala}
                         </div>
                       )}
@@ -1466,7 +1477,7 @@ export default function MobileForm() {
                         const currentItemVal = dissertativaTextos[itemKey] || '';
 
                         const handleSelectGradeCol = (colVal) => {
-                          setDissertativaTextos((prev) => {
+                          setTextos((prev) => {
                             const updated = { ...prev, [itemKey]: colVal };
                             const summaryParts = opcoesAtivas
                               .map((o, idx) => {
@@ -1487,7 +1498,7 @@ export default function MobileForm() {
                             <span className="text-xs sm:text-sm font-bold text-white block leading-snug">
                               {opt.titulo}
                             </span>
-                            <div className="grid grid-cols-6 gap-1.5">
+                            <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${Math.max(1, cols.length)}, minmax(0, 1fr))` }}>
                               {cols.map((col) => {
                                 const isActive = currentItemVal === col;
                                 return (
@@ -1525,11 +1536,10 @@ export default function MobileForm() {
                   onClick={() => {
                     const finalValue = tela.tipo === 'slider' && valAtual === ''
                       ? `${defaultSliderVal}${tela.sliderUnidade || ''}`
-                      : tela.tipo === 'rating' && valAtual === ''
-                      ? '5 estrelas'
                       : valAtual;
 
-                    if (tela.obrigatorio && !String(finalValue || '').trim()) {
+                    // Estrelas não tocadas NÃO são mais gravadas como "5 estrelas"
+                    if (tela.obrigatorio && !temValor(finalValue)) {
                       setCampoObrigatorioErro(tela.id);
                       return;
                     }
@@ -1555,25 +1565,41 @@ export default function MobileForm() {
             );
           }
 
+          // Estilo próprio da tela (definido no editor) com fallback para o estilo geral
+          const opcoesTela = (tela.opcoes || []).filter(o => o.ativo !== false);
+          const porPagina = Math.max(1, Number(tela.cardsPorTela) || opcoesTela.length || 1);
+          const totalPaginas = Math.max(1, Math.ceil(opcoesTela.length / porPagina));
+          const paginaAtual = Math.min(extraSlideIndex, totalPaginas - 1);
+          const opcoesPagina = opcoesTela.slice(paginaAtual * porPagina, (paginaAtual + 1) * porPagina);
+          const mostrarIcones = tela.mostrarIcones !== undefined ? tela.mostrarIcones !== false : questionsConfig?.mostrarIconesCards !== false;
+          const estiloFundo = tela.cardFundoEstilo || questionsConfig?.cardFundoEstilo;
+          const estiloEfeito = tela.cardEfeitoEstilo || questionsConfig?.cardEfeitoEstilo;
+          const estiloProf = tela.cardProfundidade || questionsConfig?.cardProfundidade;
+          const fonteTitulo = tela.cardFonteTitulo || questionsConfig.cardFonteTitulo || 16;
+          const fonteSub = tela.cardFonteSubtitulo || questionsConfig.cardFonteSubtitulo || 12;
+
           return (
             <div className="space-y-3.5 fade-in">
+              {totalPaginas > 1 && (
+                <div className="flex items-center justify-between px-1 text-xs">
+                  <span className="font-bold text-amber-300">Opções (Página {paginaAtual + 1} de {totalPaginas})</span>
+                  <div className="flex items-center gap-1.5">
+                    {Array.from({ length: totalPaginas }).map((_, i) => (
+                      <button key={i} type="button" onClick={() => setExtraSlideIndex(i)} className={`h-2 rounded-full transition-all ${paginaAtual === i ? 'w-6 bg-amber-400' : 'w-2 bg-slate-700'}`} />
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="space-y-3">
-                {(tela.opcoes || []).filter(o => o.ativo !== false).map((opt) => {
+                {opcoesPagina.map((opt) => {
                   const IconComp = ICON_COMPONENTS[opt.icone] || Sparkles;
                   const corCls = COR_CLASSES[opt.cor] || COR_CLASSES.emerald;
-                  const cardFundoCls = CARD_FUNDO_CLASSES[questionsConfig?.cardFundoEstilo] || CARD_FUNDO_CLASSES.escuro;
-                  const cardEfeitoCls = CARD_EFEITO_CLASSES[questionsConfig?.cardEfeitoEstilo] || CARD_EFEITO_CLASSES.padrao;
-                  const cardFonteTituloCls = CARD_FONTE_TITULO_CLASSES[questionsConfig?.cardCorFonteTitulo] || 'text-white';
-                  const cardFonteSubtituloCls = CARD_FONTE_SUBTITULO_CLASSES[questionsConfig?.cardCorFonteSubtitulo] || 'text-slate-400';
-                  const cardEfeitoInline = getEfeitoStyle(questionsConfig?.cardEfeitoEstilo, questionsConfig?.cardProfundidade);
+                  const cardFundoCls = CARD_FUNDO_CLASSES[estiloFundo] || CARD_FUNDO_CLASSES.escuro;
+                  const cardFonteTituloCls = CARD_FONTE_TITULO_CLASSES[tela.cardCorFonteTitulo || questionsConfig?.cardCorFonteTitulo] || 'text-white';
+                  const cardFonteSubtituloCls = CARD_FONTE_SUBTITULO_CLASSES[tela.cardCorFonteSubtitulo || questionsConfig?.cardCorFonteSubtitulo] || 'text-slate-400';
+                  const cardEfeitoInline = getEfeitoStyle(estiloEfeito, estiloProf);
 
-                  const isGavetaAberta = Boolean(
-                    opt.temGaveta && (
-                      gavetasAbertas[opt.id] || 
-                      gavetaRespondidas[opt.id] || 
-                      (gavetaTextos[opt.id] && gavetaTextos[opt.id].trim().length > 0)
-                    )
-                  );
+                  const isGavetaAberta = isGavetaAbertaDe(tela.id, opt);
 
                   return (
                     <div key={opt.id} className="space-y-2">
@@ -1586,19 +1612,21 @@ export default function MobileForm() {
                         }`}
                       >
                         <div className="flex items-center gap-4 pr-2 min-w-0">
-                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border shadow-sm transition-transform group-hover:scale-105 ${corCls}`}>
-                            <IconComp className="w-6 h-6" />
-                          </div>
+                          {mostrarIcones && (
+                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border shadow-sm transition-transform group-hover:scale-105 ${corCls}`}>
+                              <IconComp className="w-6 h-6" />
+                            </div>
+                          )}
                           <div className="min-w-0">
                             <h3 
-                              style={{ fontSize: `${questionsConfig.cardFonteTitulo || 16}px` }}
+                              style={{ fontSize: `${fonteTitulo}px` }}
                               className={`font-bold transition leading-snug truncate ${cardFonteTituloCls}`}
                             >
                               {opt.titulo}
                             </h3>
                             {opt.subtitulo && (
                               <p 
-                                style={{ fontSize: `${questionsConfig.cardFonteSubtitulo || 12}px` }}
+                                style={{ fontSize: `${fonteSub}px` }}
                                 className={`mt-1 line-clamp-2 leading-snug ${cardFonteSubtituloCls}`}
                               >
                                 {opt.subtitulo}
@@ -1616,11 +1644,22 @@ export default function MobileForm() {
                       </button>
 
                       {/* GAVETA ACCORDION MULTI-COMPONENTE EM TELA EXTRA */}
-                      {opt.temGaveta && isGavetaAberta && renderGavetaContent(opt, () => handleConfirmarGavetaExtra(idx, opt))}
+                      {opt.temGaveta && isGavetaAberta && renderGavetaContent(opt, () => handleConfirmarGavetaExtra(idx, opt), tela.id)}
                     </div>
                   );
                 })}
               </div>
+
+              {totalPaginas > 1 && (
+                <div className="flex items-center justify-between pt-1">
+                  <button type="button" onClick={() => setExtraSlideIndex(Math.max(0, paginaAtual - 1))} disabled={paginaAtual === 0} className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-300 bg-slate-900 border border-slate-800 disabled:opacity-30 flex items-center gap-1.5">
+                    <ChevronLeft className="w-4 h-4" /><span>Anterior</span>
+                  </button>
+                  <button type="button" onClick={() => setExtraSlideIndex(Math.min(totalPaginas - 1, paginaAtual + 1))} disabled={paginaAtual >= totalPaginas - 1} className="px-4 py-2 rounded-xl text-xs font-bold text-amber-300 bg-amber-500/15 border border-amber-500/30 disabled:opacity-30 flex items-center gap-1.5">
+                    <span>Ver mais opções</span><ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
 
               {/* Botão para voltar à etapa anterior */}
               <div className="pt-2">

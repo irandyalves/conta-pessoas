@@ -19,13 +19,19 @@ Desenvolvido com foco total na experiência no smartphone:
   - 👥 Grid rápido: **2, 3, 4, 5, 6, 7, 8, 9 e +10 pessoas**
 - **Tela de Sucesso:**
   - Animação de confetes, resumo do que foi registrado e mensagem de bênção para a família.
-- **Segurança:** O visitante comum **NÃO vê** a barra de admin, mantendo a tela 100% limpa.
+- **Segurança:** O visitante comum **NÃO vê** a barra de admin. Cada celular responde 1 vez por evento e só é travado depois que a resposta foi aceita pelo servidor.
 
 ---
 
 ## 📊 2. Painel Admin & Extração de Relatórios
 
-Acessível via link `?view=admin` ou tocando em *"Acesso da Liderança"* no rodapé do celular (PIN padrão: `1234`).
+Acessível via link `?view=admin`. O acesso é feito com **login Google** e só a conta autorizada entra
+(definida em `ADMIN_EMAILS` no `src/firebase.js` **e** em `firestore.rules` — mantenha as duas iguais).
+
+### Primeira configuração do login (uma vez só)
+1. Firebase Console → **Authentication** → **Sign-in method** → ative **Google**.
+2. Authentication → **Settings → Authorized domains**: confirme `localhost` e o domínio do site (ex.: `conta-pessoas-iasd.web.app`).
+3. Publique as regras de segurança: `npm run deploy:regras`.
 
 ### Formas de Extrair o Relatório:
 1. **Exportar Excel (CSV):**
@@ -55,7 +61,7 @@ npx firebase use --add
 ```
 *(Selecione o projeto que você criou no console do Firebase)*
 
-### Passo 3: Publicar com 1 comando
+### Passo 3: Publicar com 1 comando (site + regras do Firestore)
 ```bash
 npm run deploy
 ```
@@ -72,4 +78,4 @@ npm run dev
 
 - **No Telão da Igreja:** `http://localhost:3000/?view=telao`
 - **No Celular das Pessoas:** `http://localhost:3000/?view=form` *(ou o link do Firebase Hosting)*
-- **No Painel Admin:** `http://localhost:3000/?view=admin` (PIN: `1234`)
+- **No Painel Admin:** `http://localhost:3000/?view=admin` (login Google)

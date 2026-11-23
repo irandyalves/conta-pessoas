@@ -45,11 +45,13 @@ import {
 } from 'lucide-react';
 import { 
   getSavedQuestionsConfig, 
+  buscarConfigPerguntasRemota,
   saveQuestionsConfig, 
   getSavedEventTitle,
   saveEventTitle,
   DEFAULT_QUESTIONS_CONFIG 
 } from '../firebase';
+import { getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems, getEfeitoStyle, CORES_TEXTO_LINHAS, ALINHAMENTOS_TEXTO, FUNDOS_CAPTION } from '../utils/estilos';
 import { parseAnyFile, parseJsonOrText, parseGoogleFormsUrl, TEXTO_AVALIACAO_JMU_ENAJUM } from '../utils/formImporter';
 import { PRESETS_PESQUISAS } from '../utils/presets';
 
@@ -77,20 +79,7 @@ export const TIPOS_GAVETA = [
   { id: 'hora', label: '⏰ Seletor de Hora' }
 ];
 
-export const CORES_TEXTO_LINHAS = [
-  { id: 'branco', label: 'Branco', bg: 'bg-white', textClass: 'text-white' },
-  { id: 'dourado', label: 'Dourado', bg: 'bg-amber-400', textClass: 'text-amber-300' },
-  { id: 'verde', label: 'Verde', bg: 'bg-emerald-400', textClass: 'text-emerald-400' },
-  { id: 'azul', label: 'Azul', bg: 'bg-sky-400', textClass: 'text-sky-300' },
-  { id: 'cinza', label: 'Cinza Claro', bg: 'bg-slate-300', textClass: 'text-slate-300' },
-  { id: 'laranja', label: 'Laranja', bg: 'bg-orange-400', textClass: 'text-orange-300' },
-  { id: 'roxo', label: 'Roxo', bg: 'bg-purple-400', textClass: 'text-purple-300' },
-  { id: 'rosa', label: 'Rosa', bg: 'bg-rose-400', textClass: 'text-rose-300' }
-];
-
-export const getCorTextoLinhaClass = (corId, defaultClass = 'text-white') => {
-  return CORES_TEXTO_LINHAS.find(c => c.id === corId)?.textClass || defaultClass;
-};
+export { CORES_TEXTO_LINHAS, getCorTextoLinhaClass, ALINHAMENTOS_TEXTO, getAlinhamentoClass, FUNDOS_CAPTION, getCaptionFundoClass, parseScaleLegendItems, getEfeitoStyle } from '../utils/estilos';
 
 // Lista de ícones amigáveis
 const ICONES = [
@@ -145,48 +134,6 @@ export const EFEITOS_CARDS = [
   { id: 'alto_relevo', label: 'Alto-Relevo', desc: 'Relevo saltado para fora (emboss)' },
   { id: 'glow', label: 'Glow Neon', desc: 'Iluminação de contorno' },
 ];
-
-export function getEfeitoStyle(efeito = 'padrao', profundidade = 5) {
-  const p = Math.max(1, Math.min(10, Number(profundidade) || 5));
-  
-  switch (efeito) {
-    case 'efeito_3d':
-      return {
-        borderBottomWidth: `${p}px`,
-        borderBottomColor: 'rgba(0, 0, 0, 0.95)',
-        boxShadow: `0 ${p * 1.5}px ${p * 2.5}px rgba(0, 0, 0, 0.6)`,
-      };
-    case 'entalhe':
-      return {
-        boxShadow: `inset 0 ${p * 1.2}px ${p * 2}px rgba(0, 0, 0, 0.9), inset 0 -${Math.round(p * 0.5)}px ${p}px rgba(255, 255, 255, 0.08)`,
-        borderTopColor: 'rgba(255, 255, 255, 0.1)',
-        borderBottomColor: 'rgba(0, 0, 0, 0.9)',
-      };
-    case 'alto_relevo':
-      return {
-        boxShadow: `0 ${p * 1.5}px ${p * 2.5}px rgba(0, 0, 0, 0.7), inset 0 ${Math.max(1, Math.round(p * 0.4))}px ${Math.max(1, Math.round(p * 0.4))}px rgba(255, 255, 255, 0.25), inset 0 -${Math.max(1, Math.round(p * 0.4))}px ${Math.max(1, Math.round(p * 0.4))}px rgba(0, 0, 0, 0.6)`,
-        borderTopColor: 'rgba(255, 255, 255, 0.3)',
-        borderBottomColor: 'rgba(0, 0, 0, 0.8)',
-      };
-    case 'vidro':
-      return {
-        backdropFilter: `blur(${p * 2.5}px)`,
-        WebkitBackdropFilter: `blur(${p * 2.5}px)`,
-        boxShadow: `0 ${p * 1.2}px ${p * 2.5}px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, ${0.1 + p * 0.02})`,
-        borderColor: `rgba(255, 255, 255, ${0.15 + p * 0.025})`,
-      };
-    case 'glow':
-      return {
-        boxShadow: `0 0 ${p * 2.5}px rgba(245, 158, 11, ${0.2 + p * 0.04}), inset 0 0 ${p * 1.2}px rgba(245, 158, 11, 0.15)`,
-        borderColor: 'rgba(251, 191, 36, 0.6)',
-      };
-    case 'padrao':
-    default:
-      return {
-        boxShadow: `0 ${p}px ${p * 1.5}px rgba(0, 0, 0, 0.35)`,
-      };
-  }
-}
 
 // OPÇÕES DE CORES DA FONTE DO TÍTULO DOS CARDS (EM BOLINHAS)
 export const CORES_FONTE_TITULO = [
@@ -320,6 +267,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
   // Sub-navegações internas minimalistas para evitar poluição visual
   const [subTabTela1, setSubTabTela1] = useState('opcoes'); // 'opcoes' | 'aparencia' | 'pergunta'
+  const [subTabExtra, setSubTabExtra] = useState('opcoes'); // 'opcoes' | 'aparencia' | 'pergunta'
   const [subTabTela2, setSubTabTela2] = useState('botoes'); // 'botoes' | 'pergunta' | 'individual'
 
   // Preset de Celular Ativo
@@ -421,16 +369,41 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
     });
   };
 
+  // Config carregada do banco; se "config" ainda é este mesmo objeto, o admin não editou nada
+  const configBaseRef = useRef(null);
+  const configAtualRef = useRef(config);
+  configAtualRef.current = config;
+
   useEffect(() => {
-    if (isOpen || inline) {
-      setConfig(getSavedQuestionsConfig(activeEventId));
-      setEventoTitulo(eventTitle || getSavedEventTitle(activeEventId) || 'CANTATA DE NATAL 2026');
-      setSalvo(false);
-      setActiveTab('inicio');
-      setPreviewScreen('inicio');
-      setPreviewPage(0);
+    if (!(isOpen || inline)) return;
+    let cancelado = false;
+    const local = getSavedQuestionsConfig(activeEventId);
+    configBaseRef.current = local;
+    setConfig(local);
+    setEventoTitulo(eventTitle || getSavedEventTitle(activeEventId) || '');
+    setSalvo(false);
+    setActiveTab('inicio');
+    setPreviewScreen('inicio');
+    setPreviewPage(0);
+
+    // Busca a versão do servidor: evita editar (e depois salvar por cima) uma cópia antiga/padrão
+    buscarConfigPerguntasRemota(activeEventId).then((remota) => {
+      if (cancelado || !remota) return;
+      if (configAtualRef.current === configBaseRef.current) {
+        configBaseRef.current = remota;
+        setConfig(remota);
+      }
+    });
+    return () => { cancelado = true; };
+    // eventTitle fora das dependências: mudar o título não pode apagar edições não salvas
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, inline, activeEventId]);
+
+  useEffect(() => {
+    if (eventTitle && configAtualRef.current === configBaseRef.current) {
+      setEventoTitulo(eventTitle);
     }
-  }, [isOpen, inline, activeEventId, eventTitle]);
+  }, [eventTitle]);
 
   // Alinha a tela do preview sempre que a aba ativa mudar
   useEffect(() => {
@@ -766,7 +739,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
   };
 
   const handleExcluirTela = (extraIndex) => {
-    const numTela = extraIndex + 3;
+    const numTela = extraIndex + 2;
     mostrarConfirm(
       'Excluir Tela',
       `Tem certeza que deseja excluir a Tela ${numTela}?`,
@@ -835,13 +808,13 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
   };
 
   const handleExcluirCardExtra = (extraIndex, cardIndex) => {
+    if (((config.telasExtras || [])[extraIndex]?.opcoes || []).length <= 1) {
+      mostrarFeedback('Atenção', 'Mantenha pelo menos 1 opção nesta tela!', 'aviso');
+      return;
+    }
     setConfig((prev) => {
       const novasTelas = [...(prev.telasExtras || [])];
       const telaAlvo = novasTelas[extraIndex];
-      if ((telaAlvo.opcoes || []).length <= 1) {
-        mostrarFeedback('Atenção', 'Mantenha pelo menos 1 opção nesta tela!', 'aviso');
-        return prev;
-      }
       novasTelas[extraIndex] = {
         ...telaAlvo,
         opcoes: telaAlvo.opcoes.filter((_, i) => i !== cardIndex)
@@ -855,6 +828,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
     setSalvando(true);
     try {
       await saveQuestionsConfig(config, activeEventId);
+      configBaseRef.current = config;
       if (eventoTitulo.trim()) {
         await saveEventTitle(eventoTitulo.trim(), activeEventId);
       }
@@ -1519,6 +1493,58 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     </div>
                   </div>
 
+                  {/* ALINHAMENTO DOS TÍTULOS & FUNDO DOS CAPTIONS (INÍCIO) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-2.5 border-b border-slate-800/70">
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">
+                        Alinhamento dos Títulos & Texto
+                      </span>
+                      <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
+                        {ALINHAMENTOS_TEXTO.map((al) => (
+                          <button
+                            key={al.id}
+                            type="button"
+                            onClick={() => setConfig({ ...config, capaAlinhamento: al.id })}
+                            className={`flex-1 py-1 rounded-lg text-[11px] font-bold transition ${
+                              (config.capaAlinhamento || 'center') === al.id
+                                ? 'bg-amber-400 text-slate-950 font-black shadow'
+                                : 'text-slate-400 hover:text-white'
+                            }`}
+                          >
+                            {al.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase">
+                          Fundo debaixo dos Captions
+                        </span>
+                        <span className="text-[10px] font-bold text-amber-300">
+                          {FUNDOS_CAPTION.find(f => f.id === (config.capaCaptionFundo || 'transparente'))?.label}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 bg-slate-900 p-1.5 rounded-xl border border-slate-800">
+                        {FUNDOS_CAPTION.map((fc) => {
+                          const isSel = (config.capaCaptionFundo || 'transparente') === fc.id;
+                          return (
+                            <button
+                              key={fc.id}
+                              type="button"
+                              onClick={() => setConfig({ ...config, capaCaptionFundo: fc.id })}
+                              title={`Fundo: ${fc.label}`}
+                              className={`w-5 h-5 rounded-full transition-all ${fc.dot} ${
+                                isSel ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110' : 'opacity-65 hover:opacity-100'
+                              }`}
+                            />
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Botão COMEÇAR */}
                   <div className="space-y-2">
                     <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -1807,6 +1833,58 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         </div>
                       </div>
 
+                      {/* ALINHAMENTO & FUNDO DEBAIXO DOS CAPTIONS (TELA 1) */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-2.5 border-b border-slate-800/70">
+                        <div>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">
+                            Alinhamento dos Títulos & Subtítulo
+                          </span>
+                          <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
+                            {ALINHAMENTOS_TEXTO.map((al) => (
+                              <button
+                                key={al.id}
+                                type="button"
+                                onClick={() => setConfig({ ...config, pergunta1Alinhamento: al.id })}
+                                className={`flex-1 py-1 rounded-lg text-[11px] font-bold transition ${
+                                  (config.pergunta1Alinhamento || 'center') === al.id
+                                    ? 'bg-amber-400 text-slate-950 font-black shadow'
+                                    : 'text-slate-400 hover:text-white'
+                                }`}
+                              >
+                                {al.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase">
+                              Fundo debaixo dos Captions
+                            </span>
+                            <span className="text-[10px] font-bold text-amber-300">
+                              {FUNDOS_CAPTION.find(f => f.id === (config.pergunta1CaptionFundo || 'transparente'))?.label}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 bg-slate-900 p-1.5 rounded-xl border border-slate-800">
+                            {FUNDOS_CAPTION.map((fc) => {
+                              const isSel = (config.pergunta1CaptionFundo || 'transparente') === fc.id;
+                              return (
+                                <button
+                                  key={fc.id}
+                                  type="button"
+                                  onClick={() => setConfig({ ...config, pergunta1CaptionFundo: fc.id })}
+                                  title={`Fundo: ${fc.label}`}
+                                  className={`w-5 h-5 rounded-full transition-all ${fc.dot} ${
+                                    isSel ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110' : 'opacity-65 hover:opacity-100'
+                                  }`}
+                                />
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+
                       {/* BOTÃO COMEÇAR */}
                       <div className="space-y-2">
                         <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -2071,28 +2149,45 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                           </div>
                         </div>
 
-                        {/* Slider Altura do Card */}
+                        {/* Slider Altura do Card (Permite esmagar até 16px = 70% menor) */}
                         <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-2.5 space-y-1.5">
                           <div className="flex items-center justify-between text-xs">
                             <span className="font-bold text-slate-300">Altura do Card</span>
                             <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
-                              {config.cardAltura || 82}px
+                              {config.cardAltura || 48}px {(config.cardAltura || 48) < 46 ? '(Auto-Fonte)' : ''}
                             </span>
                           </div>
                           <input
                             type="range"
-                            min="60"
-                            max="130"
-                            step="2"
-                            value={config.cardAltura || 82}
+                            min="16"
+                            max="120"
+                            step="1"
+                            value={config.cardAltura || 48}
                             onChange={(e) => setConfig({ ...config, cardAltura: Number(e.target.value) })}
                             className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
                           />
                           <div className="flex justify-between text-[9px] text-slate-500 font-mono">
-                            <span>60px</span>
-                            <span>130px</span>
+                            <span>16px (Ultra-Compacto)</span>
+                            <span>120px</span>
                           </div>
                         </div>
+                      </div>
+
+                      {/* Opção para Retirar ou Exibir Ícones */}
+                      <div className="flex items-center justify-between bg-slate-900/80 border border-slate-800 rounded-xl p-2.5">
+                        <span className="text-xs font-bold text-slate-300">Exibir Ícones nos Cards:</span>
+                        <button
+                          type="button"
+                          onClick={() => setConfig({ ...config, mostrarIconesCards: config.mostrarIconesCards === false ? true : false })}
+                          className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 border ${
+                            config.mostrarIconesCards !== false
+                              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                              : 'bg-slate-800 text-slate-400 border-slate-700'
+                          }`}
+                        >
+                          {config.mostrarIconesCards !== false ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                          <span>{config.mostrarIconesCards !== false ? 'Com Ícones' : 'Sem Ícones (Retirados)'}</span>
+                        </button>
                       </div>
                     </div>
 
@@ -2182,30 +2277,46 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         </div>
                       </div>
 
-                      {/* Slider de Altura dos Cards diretamente na Aba Tela 1 */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-800/70 items-center">
+                      {/* Slider de Altura dos Cards, Ícones, Alinhamento e Fundo debaixo dos Captions na Aba Tela 1 */}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-800/70 items-center">
                         <div>
                           <div className="flex items-center justify-between text-xs mb-1">
-                            <span className="font-bold text-slate-300">Altura dos Cards (Tela 1)</span>
-                            <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
-                              {config.cardAltura || 68}px
+                            <span className="font-bold text-slate-300">Altura dos Cards</span>
+                            <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[10px]">
+                              {config.cardAltura || 48}px {(config.cardAltura || 48) < 46 ? '• Auto-Fonte' : ''}
                             </span>
                           </div>
                           <input
                             type="range"
-                            min="32"
-                            max="130"
-                            step="2"
-                            value={config.cardAltura || 68}
+                            min="16"
+                            max="120"
+                            step="1"
+                            value={config.cardAltura || 48}
                             onChange={(e) => setConfig({ ...config, cardAltura: Number(e.target.value) })}
                             className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
                           />
                         </div>
 
+                        <div className="flex items-center justify-between text-xs bg-slate-900/90 px-2.5 py-1.5 rounded-xl border border-slate-800">
+                          <span className="text-slate-300 font-bold">Ícones:</span>
+                          <button
+                            type="button"
+                            onClick={() => setConfig({ ...config, mostrarIconesCards: config.mostrarIconesCards === false ? true : false })}
+                            className={`px-2.5 py-0.5 rounded-lg text-[11px] font-bold transition flex items-center gap-1 border ${
+                              config.mostrarIconesCards !== false
+                                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                                : 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                            }`}
+                          >
+                            {config.mostrarIconesCards !== false ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                            <span>{config.mostrarIconesCards !== false ? 'Com Ícones' : 'Sem Ícones'}</span>
+                          </button>
+                        </div>
+
                         <div className="flex items-center justify-between text-xs">
-                          <span className="text-slate-300 font-bold">Cards por página:</span>
+                          <span className="text-slate-300 font-bold">Por pág:</span>
                           <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
-                            {[3, 4, 5, 6, 8, 10, 12].map((num) => (
+                            {[4, 5, 6, 8, 10, 12, 15].map((num) => (
                               <button
                                 key={num}
                                 type="button"
@@ -2219,6 +2330,49 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                 {num}
                               </button>
                             ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Alinhamento Rápido e Fundo dos Captions na Aba Principal da Tela 1 */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-800/70 items-center">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[11px] font-bold text-slate-400">Alinhar Títulos:</span>
+                          <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
+                            {ALINHAMENTOS_TEXTO.map((al) => (
+                              <button
+                                key={al.id}
+                                type="button"
+                                onClick={() => setConfig({ ...config, pergunta1Alinhamento: al.id })}
+                                className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition ${
+                                  (config.pergunta1Alinhamento || 'center') === al.id
+                                    ? 'bg-amber-400 text-slate-950 font-black shadow'
+                                    : 'text-slate-400 hover:text-white'
+                                }`}
+                              >
+                                {al.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[11px] font-bold text-slate-400">Fundo Captions:</span>
+                          <div className="flex items-center gap-1.5 bg-slate-900 px-2 py-1 rounded-xl border border-slate-800">
+                            {FUNDOS_CAPTION.map((fc) => {
+                              const isSel = (config.pergunta1CaptionFundo || 'transparente') === fc.id;
+                              return (
+                                <button
+                                  key={fc.id}
+                                  type="button"
+                                  onClick={() => setConfig({ ...config, pergunta1CaptionFundo: fc.id })}
+                                  title={`Fundo: ${fc.label}`}
+                                  className={`w-4 h-4 rounded-full transition-all ${fc.dot} ${
+                                    isSel ? 'ring-2 ring-amber-400 ring-offset-1 ring-offset-slate-950 scale-110' : 'opacity-60 hover:opacity-100'
+                                  }`}
+                                />
+                              );
+                            })}
                           </div>
                         </div>
                       </div>
@@ -2627,13 +2781,74 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       </button>
                     </div>
 
-                    {/* Título e Subtítulo da Tela Extra com Título 1 e Título 2 */}
-                    <div className="space-y-3 pt-1">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <div>
-                          <label className="text-[10px] font-bold text-amber-400 uppercase tracking-wide block mb-1">
-                            Título 1 (Linha 1)
-                          </label>
+                    {/* SUB-NAVEGAÇÃO PADRONIZADA DA TELA EXTRA (MESMO PADRÃO DA TELA 1 PARA TODOS OS TIPOS) */}
+                    <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-900/90 rounded-2xl border border-slate-800 self-start">
+                      <button
+                        type="button"
+                        onClick={() => setSubTabExtra('opcoes')}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                          subTabExtra === 'opcoes'
+                            ? 'bg-amber-400 text-slate-950 shadow-md font-black'
+                            : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                        }`}
+                      >
+                        <ListOrdered className="w-3.5 h-3.5" />
+                        <span>
+                          {['texto', 'texto_curto', 'data', 'hora', 'slider', 'rating'].includes(telaAlvo.tipo)
+                            ? 'Campo & Resposta'
+                            : telaAlvo.tipo === 'grade'
+                            ? `Itens da Grade (${cardsAtivos.length})`
+                            : `Opções de Resposta (${cardsAtivos.length})`}
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setSubTabExtra('aparencia')}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                          subTabExtra === 'aparencia'
+                            ? 'bg-amber-400 text-slate-950 shadow-md font-black'
+                            : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                        }`}
+                      >
+                        <Palette className="w-3.5 h-3.5" />
+                        <span>Aparência & Efeitos</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setSubTabExtra('pergunta')}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                          subTabExtra === 'pergunta'
+                            ? 'bg-amber-400 text-slate-950 shadow-md font-black'
+                            : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                        }`}
+                      >
+                        <Type className="w-3.5 h-3.5" />
+                        <span>Títulos 1, 2, 3, Orientações & Escala</span>
+                      </button>
+                    </div>
+
+                    {/* ABA 3: TÍTULOS 1, 2, 3, TEXTO ABAIXO / ORIENTAÇÃO, LEGENDA DA ESCALA, ALINHAMENTO E FUNDO DOS CAPTIONS */}
+                    {subTabExtra === 'pergunta' && (
+                      <div className="space-y-3.5 animate-fade-in">
+                        <div className="flex items-center justify-between pb-1 border-b border-slate-800">
+                          <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wide">
+                            Títulos 1, 2, 3, Orientações & Alinhamento (Tela {numTela})
+                          </span>
+                          <span className="text-[10px] text-slate-400">
+                            Abaixo de cada campo há um slide e bolinhas de cores
+                          </span>
+                        </div>
+
+                        {/* TÍTULO 1 */}
+                        <div className="space-y-1.5 pb-2.5 border-b border-slate-800/70">
+                          <div className="flex items-center justify-between">
+                            <label className="text-[11px] font-bold text-slate-200">Título 1 (1ª Linha)</label>
+                            <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[10px]">
+                              {telaAlvo.titulo1Tamanho || 18}px
+                            </span>
+                          </div>
                           <input
                             type="text"
                             value={telaAlvo.titulo1 ?? telaAlvo.titulo ?? ''}
@@ -2641,15 +2856,50 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                               handleUpdateTelaProp(extraIndex, 'titulo1', e.target.value);
                               handleUpdateTelaProp(extraIndex, 'titulo', `${e.target.value} ${telaAlvo.titulo2 || ''}`.trim());
                             }}
-                            placeholder={`Ex: Pergunta da Tela ${numTela}`}
-                            className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-3 py-1.5 text-xs font-bold text-white"
+                            placeholder={`Digite o Título 1 da Tela ${numTela}...`}
+                            className={`w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold shadow-inner ${getCorTextoLinhaClass(telaAlvo.titulo1Cor, 'text-white')}`}
                           />
+                          <div className="flex flex-wrap items-center justify-between gap-3 pt-0.5">
+                            <div className="flex-1 flex items-center gap-2 min-w-[140px]">
+                              <span className="text-[9px] text-slate-500 font-mono">11px</span>
+                              <input
+                                type="range"
+                                min="11"
+                                max="36"
+                                step="1"
+                                value={telaAlvo.titulo1Tamanho || 18}
+                                onChange={(e) => handleUpdateTelaProp(extraIndex, 'titulo1Tamanho', Number(e.target.value))}
+                                className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                              />
+                              <span className="text-[9px] text-slate-500 font-mono">36px</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              {CORES_TEXTO_LINHAS.map((c) => {
+                                const isSel = (telaAlvo.titulo1Cor || 'branco') === c.id;
+                                return (
+                                  <button
+                                    key={c.id}
+                                    type="button"
+                                    onClick={() => handleUpdateTelaProp(extraIndex, 'titulo1Cor', c.id)}
+                                    title={`Cor: ${c.label}`}
+                                    className={`w-4 h-4 rounded-full transition-all ${c.bg} ${
+                                      isSel ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110' : 'opacity-55 hover:opacity-100'
+                                    }`}
+                                  />
+                                );
+                              })}
+                            </div>
+                          </div>
                         </div>
 
-                        <div>
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide block mb-1">
-                            Título 2 (Linha 2 - Opcional)
-                          </label>
+                        {/* TÍTULO 2 */}
+                        <div className="space-y-1.5 pb-2.5 border-b border-slate-800/70">
+                          <div className="flex items-center justify-between">
+                            <label className="text-[11px] font-bold text-slate-200">Título 2 (2ª Linha - Opcional)</label>
+                            <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[10px]">
+                              {telaAlvo.titulo2Tamanho || 15}px
+                            </span>
+                          </div>
                           <input
                             type="text"
                             value={telaAlvo.titulo2 ?? ''}
@@ -2657,25 +2907,529 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                               handleUpdateTelaProp(extraIndex, 'titulo2', e.target.value);
                               handleUpdateTelaProp(extraIndex, 'titulo', `${telaAlvo.titulo1 || telaAlvo.titulo || ''} ${e.target.value}`.trim());
                             }}
-                            placeholder="Ex: Quebra do título"
-                            className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-3 py-1.5 text-xs font-bold text-amber-300"
+                            placeholder="Digite o Título 2 (opcional)..."
+                            className={`w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold shadow-inner ${getCorTextoLinhaClass(telaAlvo.titulo2Cor, 'text-amber-300')}`}
                           />
+                          <div className="flex flex-wrap items-center justify-between gap-3 pt-0.5">
+                            <div className="flex-1 flex items-center gap-2 min-w-[140px]">
+                              <span className="text-[9px] text-slate-500 font-mono">11px</span>
+                              <input
+                                type="range"
+                                min="11"
+                                max="36"
+                                step="1"
+                                value={telaAlvo.titulo2Tamanho || 15}
+                                onChange={(e) => handleUpdateTelaProp(extraIndex, 'titulo2Tamanho', Number(e.target.value))}
+                                className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                              />
+                              <span className="text-[9px] text-slate-500 font-mono">36px</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              {CORES_TEXTO_LINHAS.map((c) => {
+                                const isSel = (telaAlvo.titulo2Cor || 'dourado') === c.id;
+                                return (
+                                  <button
+                                    key={c.id}
+                                    type="button"
+                                    onClick={() => handleUpdateTelaProp(extraIndex, 'titulo2Cor', c.id)}
+                                    title={`Cor: ${c.label}`}
+                                    className={`w-4 h-4 rounded-full transition-all ${c.bg} ${
+                                      isSel ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110' : 'opacity-55 hover:opacity-100'
+                                    }`}
+                                  />
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* TÍTULO 3 */}
+                        <div className="space-y-1.5 pb-2.5 border-b border-slate-800/70">
+                          <div className="flex items-center justify-between">
+                            <label className="text-[11px] font-bold text-slate-200">Título 3 (3ª Linha - Opcional)</label>
+                            <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[10px]">
+                              {telaAlvo.titulo3Tamanho || 14}px
+                            </span>
+                          </div>
+                          <input
+                            type="text"
+                            value={telaAlvo.titulo3 ?? ''}
+                            onChange={(e) => handleUpdateTelaProp(extraIndex, 'titulo3', e.target.value)}
+                            placeholder="Digite o Título 3 (opcional)..."
+                            className={`w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold shadow-inner ${getCorTextoLinhaClass(telaAlvo.titulo3Cor, 'text-emerald-400')}`}
+                          />
+                          <div className="flex flex-wrap items-center justify-between gap-3 pt-0.5">
+                            <div className="flex-1 flex items-center gap-2 min-w-[140px]">
+                              <span className="text-[9px] text-slate-500 font-mono">11px</span>
+                              <input
+                                type="range"
+                                min="11"
+                                max="36"
+                                step="1"
+                                value={telaAlvo.titulo3Tamanho || 14}
+                                onChange={(e) => handleUpdateTelaProp(extraIndex, 'titulo3Tamanho', Number(e.target.value))}
+                                className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                              />
+                              <span className="text-[9px] text-slate-500 font-mono">36px</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              {CORES_TEXTO_LINHAS.map((c) => {
+                                const isSel = (telaAlvo.titulo3Cor || 'verde') === c.id;
+                                return (
+                                  <button
+                                    key={c.id}
+                                    type="button"
+                                    onClick={() => handleUpdateTelaProp(extraIndex, 'titulo3Cor', c.id)}
+                                    title={`Cor: ${c.label}`}
+                                    className={`w-4 h-4 rounded-full transition-all ${c.bg} ${
+                                      isSel ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110' : 'opacity-55 hover:opacity-100'
+                                    }`}
+                                  />
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* TEXTO ABAIXO / SUBTÍTULO / ORIENTAÇÃO */}
+                        <div className="space-y-1.5 pb-2.5 border-b border-slate-800/70">
+                          <div className="flex items-center justify-between">
+                            <label className="text-[11px] font-bold text-emerald-300">
+                              Texto Abaixo / Orientação da Pergunta
+                            </label>
+                            <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[10px]">
+                              {telaAlvo.subtituloTamanho || 12}px
+                            </span>
+                          </div>
+                          <textarea
+                            rows={2}
+                            value={telaAlvo.subtitulo || ''}
+                            onChange={(e) => handleUpdateTelaProp(extraIndex, 'subtitulo', e.target.value)}
+                            placeholder="Ex: Avalie a relevância de cada eixo temático para sua atuação profissional."
+                            className={`w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-lg px-3 py-1.5 text-xs placeholder-slate-500 shadow-inner resize-none ${getCorTextoLinhaClass(telaAlvo.subtituloCor, 'text-slate-300')}`}
+                          />
+                          <div className="flex flex-wrap items-center justify-between gap-3 pt-0.5">
+                            <div className="flex-1 flex items-center gap-2 min-w-[140px]">
+                              <span className="text-[9px] text-slate-500 font-mono">9px</span>
+                              <input
+                                type="range"
+                                min="9"
+                                max="26"
+                                step="1"
+                                value={telaAlvo.subtituloTamanho || 12}
+                                onChange={(e) => handleUpdateTelaProp(extraIndex, 'subtituloTamanho', Number(e.target.value))}
+                                className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                              />
+                              <span className="text-[9px] text-slate-500 font-mono">26px</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              {CORES_TEXTO_LINHAS.map((c) => {
+                                const isSel = (telaAlvo.subtituloCor || 'cinza') === c.id;
+                                return (
+                                  <button
+                                    key={c.id}
+                                    type="button"
+                                    onClick={() => handleUpdateTelaProp(extraIndex, 'subtituloCor', c.id)}
+                                    title={`Cor: ${c.label}`}
+                                    className={`w-4 h-4 rounded-full transition-all ${c.bg} ${
+                                      isSel ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110' : 'opacity-55 hover:opacity-100'
+                                    }`}
+                                  />
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* LEGENDA DA ESCALA (PARA GRADE / SLIDER OU QUALQUER TELA QUE TENHA ESCALA) */}
+                        {(telaAlvo.tipo === 'grade' || telaAlvo.tipo === 'slider' || telaAlvo.legendaEscala) && (
+                          <div className="space-y-1.5 pb-2.5 border-b border-slate-800/70">
+                            <div className="flex items-center justify-between">
+                              <label className="text-[11px] font-bold text-amber-300">
+                                Legenda de Escala (Pílulas Compactas: separe por ; ou |)
+                              </label>
+                              <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[10px]">
+                                {telaAlvo.escalaTamanho || 11}px
+                              </span>
+                            </div>
+                            <input
+                              type="text"
+                              value={telaAlvo.legendaEscala || ''}
+                              onChange={(e) => handleUpdateTelaProp(extraIndex, 'legendaEscala', e.target.value)}
+                              placeholder="Ex: 1 = Nada relevante; 2 = Pouco; 3 = Moderado; 4 = Relevante; 5 = Muito relevante; NA = Não se aplica"
+                              className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs text-amber-200"
+                            />
+                            <div className="flex items-center gap-2 pt-0.5">
+                              <span className="text-[10px] text-slate-400 font-bold">Tamanho da Legenda da Escala:</span>
+                              <span className="text-[9px] text-slate-500 font-mono">8px</span>
+                              <input
+                                type="range"
+                                min="8"
+                                max="18"
+                                step="1"
+                                value={telaAlvo.escalaTamanho || 11}
+                                onChange={(e) => handleUpdateTelaProp(extraIndex, 'escalaTamanho', Number(e.target.value))}
+                                className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                              />
+                              <span className="text-[9px] text-slate-500 font-mono">18px</span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* ALINHAMENTO DOS TÍTULOS & FUNDO DEBAIXO DOS CAPTIONS */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">
+                              Alinhamento dos Títulos & Subtítulos
+                            </span>
+                            <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
+                              {ALINHAMENTOS_TEXTO.map((al) => (
+                                <button
+                                  key={al.id}
+                                  type="button"
+                                  onClick={() => handleUpdateTelaProp(extraIndex, 'alinhamento', al.id)}
+                                  className={`flex-1 py-1 rounded-lg text-[11px] font-bold transition ${
+                                    (telaAlvo.alinhamento || 'center') === al.id
+                                      ? 'bg-amber-400 text-slate-950 font-black shadow'
+                                      : 'text-slate-400 hover:text-white'
+                                  }`}
+                                >
+                                  {al.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-[10px] font-bold text-slate-400 uppercase">
+                                Fundo debaixo dos Captions
+                              </span>
+                              <span className="text-[10px] font-bold text-amber-300">
+                                {FUNDOS_CAPTION.find(f => f.id === (telaAlvo.captionFundo || 'transparente'))?.label}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5 bg-slate-900 p-1.5 rounded-xl border border-slate-800">
+                              {FUNDOS_CAPTION.map((fc) => {
+                                const isSel = (telaAlvo.captionFundo || 'transparente') === fc.id;
+                                return (
+                                  <button
+                                    key={fc.id}
+                                    type="button"
+                                    onClick={() => handleUpdateTelaProp(extraIndex, 'captionFundo', fc.id)}
+                                    title={`Fundo: ${fc.label}`}
+                                    className={`w-5 h-5 rounded-full transition-all ${fc.dot} ${
+                                      isSel ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110' : 'opacity-65 hover:opacity-100'
+                                    }`}
+                                  />
+                                );
+                              })}
+                            </div>
+                          </div>
                         </div>
                       </div>
+                    )}
 
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-400 block mb-1">
-                          Subtítulo ou Instrução (Opcional)
-                        </label>
-                        <input
-                          type="text"
-                          value={telaAlvo.subtitulo || ''}
-                          onChange={(e) => handleUpdateTelaProp(extraIndex, 'subtitulo', e.target.value)}
-                          placeholder="Ex: Queremos te dar as boas-vindas com muito carinho"
-                          className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-3 py-1.5 text-xs text-slate-300"
-                        />
+                    {/* ABA 2: APARÊNCIA & EFEITOS (PADRONIZADO EM TODAS AS ABAS IGUAL À TELA 1) */}
+                    {subTabExtra === 'aparencia' && (
+                      <div className="bg-slate-950 border border-amber-500/30 rounded-2xl p-4 space-y-4 shadow-lg animate-fade-in">
+                        <div className="flex items-center gap-2 pb-2 border-b border-slate-800">
+                          <Palette className="w-4 h-4 text-amber-400" />
+                          <span className="text-xs font-black text-white uppercase tracking-wider">
+                            Personalização Visual dos Cards / Itens (Tela {numTela})
+                          </span>
+                        </div>
+
+                        {/* FUNDO DOS CARDS / ITENS (16 OPÇÕES) */}
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <label className="text-[11px] font-bold text-amber-300 block">
+                              Fundo dos Cards / Itens (16 Opções)
+                            </label>
+                            <span className="text-[10px] text-amber-200/90 font-bold bg-slate-900 px-2 py-0.5 rounded-full border border-slate-800">
+                              {FUNDOS_CARDS.find(f => f.id === (telaAlvo.cardFundoEstilo || config.cardFundoEstilo || 'escuro'))?.label}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2 p-2.5 bg-slate-900/90 rounded-2xl border border-slate-800/80">
+                            {FUNDOS_CARDS.map((fundo) => {
+                              const isSel = (telaAlvo.cardFundoEstilo || config.cardFundoEstilo || 'escuro') === fundo.id;
+                              return (
+                                <button
+                                  key={fundo.id}
+                                  type="button"
+                                  onClick={() => handleUpdateTelaProp(extraIndex, 'cardFundoEstilo', fundo.id)}
+                                  className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl transition-all relative flex items-center justify-center border shadow-md ${fundo.classe} ${
+                                    isSel
+                                      ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110 shadow-lg z-10'
+                                      : 'opacity-75 hover:opacity-100 hover:scale-105'
+                                  }`}
+                                  title={fundo.label}
+                                >
+                                  {isSel && <Check className="w-4 h-4 text-white drop-shadow stroke-[3]" />}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* EFEITOS 3D / VIDRO / RELEVO */}
+                        <div className="space-y-2 pt-2 border-t border-slate-850">
+                          <span className="text-[11px] font-bold text-amber-300 block">
+                            Efeito & Acabamento (3D, Vidro, Entalhe, Alto-Relevo)
+                          </span>
+                          <div className="flex flex-wrap items-center gap-2">
+                            {EFEITOS_CARDS.map((ef) => {
+                              const isSel = (telaAlvo.cardEfeitoEstilo || config.cardEfeitoEstilo || 'padrao') === ef.id;
+                              return (
+                                <button
+                                  key={ef.id}
+                                  type="button"
+                                  onClick={() => handleUpdateTelaProp(extraIndex, 'cardEfeitoEstilo', ef.id)}
+                                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border ${
+                                    isSel
+                                      ? 'bg-amber-500/20 text-amber-300 border-amber-400 shadow-md ring-1 ring-amber-400'
+                                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                                  }`}
+                                >
+                                  <span>{ef.label}</span>
+                                  {isSel && <Check className="w-3.5 h-3.5 text-amber-400" />}
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          <div className="pt-1.5">
+                            <div className="flex items-center justify-between text-xs mb-1">
+                              <span className="font-bold text-slate-300">Profundidade do Efeito</span>
+                              <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md text-[11px]">
+                                Nível {telaAlvo.cardProfundidade || config.cardProfundidade || 5}
+                              </span>
+                            </div>
+                            <input
+                              type="range"
+                              min="1"
+                              max="10"
+                              step="1"
+                              value={telaAlvo.cardProfundidade || config.cardProfundidade || 5}
+                              onChange={(e) => handleUpdateTelaProp(extraIndex, 'cardProfundidade', Number(e.target.value))}
+                              className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                            />
+                          </div>
+                        </div>
+
+                        {/* CORES DAS FONTES DO ITEM / CARD */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-850">
+                          <div className="bg-slate-900/90 border border-slate-800/80 rounded-xl p-2.5 space-y-2">
+                            <span className="text-[11px] font-bold text-slate-200 block">
+                              Cor da Fonte do Item / Card
+                            </span>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {CORES_FONTE_TITULO.map((cf) => {
+                                const isSel = (telaAlvo.cardCorFonteTitulo || config.cardCorFonteTitulo || 'branco') === cf.id;
+                                return (
+                                  <button
+                                    key={cf.id}
+                                    type="button"
+                                    onClick={() => handleUpdateTelaProp(extraIndex, 'cardCorFonteTitulo', cf.id)}
+                                    className={`w-7 h-7 rounded-full ${cf.dot} shadow-md transition-all flex items-center justify-center ${
+                                      isSel ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110' : 'opacity-70 hover:opacity-100'
+                                    }`}
+                                    title={cf.label}
+                                  >
+                                    {isSel && <Check className={`w-3.5 h-3.5 stroke-[3] ${cf.id === 'branco' ? 'text-slate-950' : 'text-white'}`} />}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+
+                          <div className="bg-slate-900/90 border border-slate-800/80 rounded-xl p-2.5 space-y-2">
+                            <span className="text-[11px] font-bold text-slate-200 block">
+                              Cor da Descrição / Subtexto
+                            </span>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {CORES_FONTE_SUBTITULO.map((cf) => {
+                                const isSel = (telaAlvo.cardCorFonteSubtitulo || config.cardCorFonteSubtitulo || 'cinza') === cf.id;
+                                return (
+                                  <button
+                                    key={cf.id}
+                                    type="button"
+                                    onClick={() => handleUpdateTelaProp(extraIndex, 'cardCorFonteSubtitulo', cf.id)}
+                                    className={`w-7 h-7 rounded-full ${cf.dot} shadow-md transition-all flex items-center justify-center ${
+                                      isSel ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110' : 'opacity-70 hover:opacity-100'
+                                    }`}
+                                    title={cf.label}
+                                  >
+                                    {isSel && <Check className={`w-3.5 h-3.5 stroke-[3] ${cf.id === 'branco_suave' ? 'text-slate-950' : 'text-white'}`} />}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* DIMENSÕES: FONTE DO ITEM, SUBTÍTULO, ALTURA ULTRA-COMPACTA (16px a 120px) E ÍCONES */}
+                        <div className="pt-2 border-t border-slate-855 space-y-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-2.5 space-y-1.5">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="font-bold text-slate-300">Fonte Item</span>
+                                <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
+                                  {telaAlvo.cardFonteTitulo || config.cardFonteTitulo || 15}px
+                                </span>
+                              </div>
+                              <input
+                                type="range"
+                                min="9"
+                                max="24"
+                                step="1"
+                                value={telaAlvo.cardFonteTitulo || config.cardFonteTitulo || 15}
+                                onChange={(e) => handleUpdateTelaProp(extraIndex, 'cardFonteTitulo', Number(e.target.value))}
+                                className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                              />
+                            </div>
+
+                            <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-2.5 space-y-1.5">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="font-bold text-slate-300">Fonte Subtítulo</span>
+                                <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
+                                  {telaAlvo.cardFonteSubtitulo || config.cardFonteSubtitulo || 11}px
+                                </span>
+                              </div>
+                              <input
+                                type="range"
+                                min="8"
+                                max="18"
+                                step="1"
+                                value={telaAlvo.cardFonteSubtitulo || config.cardFonteSubtitulo || 11}
+                                onChange={(e) => handleUpdateTelaProp(extraIndex, 'cardFonteSubtitulo', Number(e.target.value))}
+                                className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                              />
+                            </div>
+
+                            <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-2.5 space-y-1.5">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="font-bold text-slate-300">Altura Card/Item</span>
+                                <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
+                                  {telaAlvo.cardAltura || config.cardAltura || 36}px
+                                </span>
+                              </div>
+                              <input
+                                type="range"
+                                min="16"
+                                max="120"
+                                step="1"
+                                value={telaAlvo.cardAltura || config.cardAltura || 36}
+                                onChange={(e) => handleUpdateTelaProp(extraIndex, 'cardAltura', Number(e.target.value))}
+                                className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between bg-slate-900/80 border border-slate-800 rounded-xl p-2.5">
+                            <span className="text-xs font-bold text-slate-300">Exibir Ícones nos Cards:</span>
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateTelaProp(extraIndex, 'mostrarIcones', telaAlvo.mostrarIcones === false ? true : false)}
+                              className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 border ${
+                                telaAlvo.mostrarIcones !== false
+                                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                                  : 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                              }`}
+                            >
+                              {telaAlvo.mostrarIcones !== false ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                              <span>{telaAlvo.mostrarIcones !== false ? 'Com Ícones' : 'Sem Ícones'}</span>
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    )}
+
+                    {/* ABA 1: OPÇÕES / ITENS / CAMPO COM BARRA RÁPIDA DE ALTURA, ÍCONES, ALINHAMENTO E FUNDO */}
+                    {subTabExtra === 'opcoes' && (
+                      <div className="space-y-3 animate-fade-in">
+                        {/* Barra rápida de Títulos, Alinhamento e Fundo visível direto na aba de Opções */}
+                        <div className="space-y-2 pb-2 border-b border-slate-800/80">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div>
+                              <label className="text-[10px] font-bold text-amber-400 uppercase tracking-wide block mb-0.5">
+                                Título 1 (Linha 1)
+                              </label>
+                              <input
+                                type="text"
+                                value={telaAlvo.titulo1 ?? telaAlvo.titulo ?? ''}
+                                onChange={(e) => {
+                                  handleUpdateTelaProp(extraIndex, 'titulo1', e.target.value);
+                                  handleUpdateTelaProp(extraIndex, 'titulo', `${e.target.value} ${telaAlvo.titulo2 || ''}`.trim());
+                                }}
+                                placeholder={`Ex: Pergunta da Tela ${numTela}`}
+                                className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-white"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide block mb-0.5">
+                                Título 2 / Subtítulo
+                              </label>
+                              <input
+                                type="text"
+                                value={telaAlvo.titulo2 || telaAlvo.subtitulo || ''}
+                                onChange={(e) => {
+                                  if (telaAlvo.titulo2 || !telaAlvo.subtitulo) {
+                                    handleUpdateTelaProp(extraIndex, 'titulo2', e.target.value);
+                                    handleUpdateTelaProp(extraIndex, 'titulo', `${telaAlvo.titulo1 || telaAlvo.titulo || ''} ${e.target.value}`.trim());
+                                  } else {
+                                    handleUpdateTelaProp(extraIndex, 'subtitulo', e.target.value);
+                                  }
+                                }}
+                                placeholder="Subtítulo ou 2ª linha..."
+                                className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-amber-300"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-[11px] font-bold text-slate-400">Alinhar Títulos:</span>
+                              <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
+                                {ALINHAMENTOS_TEXTO.map((al) => (
+                                  <button
+                                    key={al.id}
+                                    type="button"
+                                    onClick={() => handleUpdateTelaProp(extraIndex, 'alinhamento', al.id)}
+                                    className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition ${
+                                      (telaAlvo.alinhamento || 'center') === al.id
+                                        ? 'bg-amber-400 text-slate-950 font-black shadow'
+                                        : 'text-slate-400 hover:text-white'
+                                    }`}
+                                  >
+                                    {al.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-[11px] font-bold text-slate-400">Fundo Captions:</span>
+                              <div className="flex items-center gap-1.5 bg-slate-900 px-2 py-1 rounded-xl border border-slate-800">
+                                {FUNDOS_CAPTION.map((fc) => {
+                                  const isSel = (telaAlvo.captionFundo || 'transparente') === fc.id;
+                                  return (
+                                    <button
+                                      key={fc.id}
+                                      type="button"
+                                      onClick={() => handleUpdateTelaProp(extraIndex, 'captionFundo', fc.id)}
+                                      title={`Fundo: ${fc.label}`}
+                                      className={`w-4 h-4 rounded-full transition-all ${fc.dot} ${
+                                        isSel ? 'ring-2 ring-amber-400 ring-offset-1 ring-offset-slate-950 scale-110' : 'opacity-60 hover:opacity-100'
+                                      }`}
+                                    />
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
 
                     {/* CONFIGURAÇÃO ESPECÍFICA CONFORME O TIPO DA TELA EXTRA */}
                     {['texto', 'texto_curto', 'data', 'hora', 'slider', 'rating'].includes(telaAlvo.tipo) ? (
@@ -2799,36 +3553,54 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     ) : (
                       /* CONFIGURAÇÃO ESPECÍFICA: CARDS, GRADE/MATRIZ, RADIO BUTTON, CHECKBOX OU LISTA SUSPENSA */
                       <div className="space-y-3">
-                        {/* CONTROLE DE ALTURA DOS CARDS / ITENS EM CADA ABA */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 py-2 border-b border-slate-800/80 items-center">
+                        {/* CONTROLE DE ALTURA DOS CARDS / ITENS (16px a 120px) + ÍCONES EM CADA ABA */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 py-2 border-b border-slate-800/80 items-center">
                           <div>
                             <div className="flex items-center justify-between text-xs mb-1">
-                              <span className="font-bold text-slate-300">Altura dos Cards / Itens (Tela {numTela})</span>
-                              <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
-                                {telaAlvo.cardAltura || config.cardAltura || 60}px
+                              <span className="font-bold text-slate-300">Altura Cards/Itens</span>
+                              <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[10px]">
+                                {telaAlvo.cardAltura || config.cardAltura || 36}px {(telaAlvo.cardAltura || config.cardAltura || 36) < 46 ? '• Auto-Fonte' : ''}
                               </span>
                             </div>
                             <input
                               type="range"
-                              min="32"
-                              max="130"
-                              step="2"
-                              value={telaAlvo.cardAltura || config.cardAltura || 60}
+                              min="16"
+                              max="120"
+                              step="1"
+                              value={telaAlvo.cardAltura || config.cardAltura || 36}
                               onChange={(e) => handleUpdateTelaProp(extraIndex, 'cardAltura', Number(e.target.value))}
                               className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
                             />
                           </div>
 
                           {telaAlvo.tipo === 'cards' && (
+                            <div className="flex items-center justify-between text-xs bg-slate-900/90 px-2.5 py-1.5 rounded-xl border border-slate-800">
+                              <span className="text-slate-300 font-bold">Ícones:</span>
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateTelaProp(extraIndex, 'mostrarIcones', telaAlvo.mostrarIcones === false ? true : false)}
+                                className={`px-2.5 py-0.5 rounded-lg text-[11px] font-bold transition flex items-center gap-1 border ${
+                                  telaAlvo.mostrarIcones !== false
+                                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                                    : 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                                }`}
+                              >
+                                {telaAlvo.mostrarIcones !== false ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                                <span>{telaAlvo.mostrarIcones !== false ? 'Com Ícones' : 'Sem Ícones'}</span>
+                              </button>
+                            </div>
+                          )}
+
+                          {telaAlvo.tipo === 'cards' && (
                             <div className="flex items-center justify-between text-xs">
-                              <span className="text-slate-300 font-bold">Cards por tela:</span>
+                              <span className="text-slate-300 font-bold">Por pág:</span>
                               <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
-                                {[2, 3, 4, 5, 6, 8, 10].map((num) => (
+                                {[3, 4, 5, 6, 8, 10, 12].map((num) => (
                                   <button
                                     key={num}
                                     type="button"
                                     onClick={() => handleUpdateTelaProp(extraIndex, 'cardsPorTela', num)}
-                                    className={`px-2 h-6 rounded-lg font-black text-[11px] transition ${
+                                    className={`px-1.5 h-6 rounded-lg font-black text-[10px] transition ${
                                       limitCards === num
                                         ? 'bg-amber-400 text-slate-950 shadow'
                                         : 'text-slate-400 hover:text-white'
@@ -3160,6 +3932,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             })}
                           </div>
                         </div>
+                      </div>
+                    )}
                       </div>
                     )}
                   </div>
@@ -3940,9 +4714,9 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         </div>
                       </div>
 
-                      <div className="h-[374px] overflow-y-auto p-3 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between text-center select-none custom-scrollbar">
+                      <div className="h-[374px] overflow-y-auto p-3 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between select-none custom-scrollbar">
                         <div className="flex flex-col justify-between h-full space-y-2">
-                          <div className="shrink-0 space-y-1.5 pt-2">
+                          <div className={`shrink-0 space-y-1.5 pt-1 ${getAlinhamentoClass(config.capaAlinhamento)} ${getCaptionFundoClass(config.capaCaptionFundo)}`}>
                             {(config.capaTitulo1 || config.capaTitulo2 || config.capaTitulo3) ? (
                               <div className="space-y-1">
                                 {config.capaTitulo1 && (
@@ -3979,7 +4753,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             {(config.capaTextoAbaixo || config.pergunta1TextoAbaixo) && (
                               <p
                                 style={{ fontSize: `${(config.capaTextoAbaixoTamanho || 14) * 0.78}px` }}
-                                className={`mt-1.5 leading-relaxed whitespace-pre-line bg-slate-900/60 border border-slate-800/80 rounded-xl p-2.5 ${getCorTextoLinhaClass(config.capaTextoAbaixoCor, 'text-slate-300')}`}
+                                className={`mt-1 leading-relaxed whitespace-pre-line bg-slate-900/60 border border-slate-800/80 rounded-xl p-2 ${getCorTextoLinhaClass(config.capaTextoAbaixoCor, 'text-slate-300')}`}
                               >
                                 {config.capaTextoAbaixo || config.pergunta1TextoAbaixo}
                               </p>
@@ -4043,10 +4817,10 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         </div>
                       </div>
 
-                      <div className="h-[374px] overflow-y-auto p-3 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between text-center select-none custom-scrollbar">
-                        <div className="flex flex-col justify-between h-full space-y-2">
+                      <div className="h-[374px] overflow-y-auto p-2.5 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between select-none custom-scrollbar">
+                        <div className="flex flex-col justify-between h-full space-y-1.5">
                           <div className="shrink-0 space-y-1">
-                            <div className="pt-0.5">
+                            <div className={`pt-0.5 ${getAlinhamentoClass(config.pergunta1Alinhamento)} ${getCaptionFundoClass(config.pergunta1CaptionFundo)}`}>
                               {(config.pergunta1Titulo || config.pergunta1Titulo2 || config.pergunta1Titulo3) ? (
                                 <div className="space-y-0.5">
                                   {config.pergunta1Titulo && (
@@ -4079,10 +4853,18 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                   (Sem título)
                                 </h3>
                               )}
+                              {config.pergunta1TextoAbaixo && (
+                                <p
+                                  style={{ fontSize: `${(config.pergunta1TextoAbaixoTamanho || 14) * 0.72}px` }}
+                                  className={`mt-0.5 leading-snug ${getCorTextoLinhaClass(config.pergunta1TextoAbaixoCor, 'text-slate-300')}`}
+                                >
+                                  {config.pergunta1TextoAbaixo}
+                                </p>
+                              )}
                             </div>
 
                             {totalPaginasPreviewP1 > 1 && (
-                              <div className="flex items-center justify-between pt-1 px-1">
+                              <div className="flex items-center justify-between pt-0.5 px-1">
                                 <span className="text-[9px] font-bold text-amber-300">
                                   Página {safePreviewPageP1 + 1} de {totalPaginasPreviewP1}
                                 </span>
@@ -4102,7 +4884,10 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             )}
                           </div>
 
-                          <div className="flex-1 my-auto space-y-2 py-1">
+                          <div
+                            style={{ gap: `${Math.max(2, Math.min(8, Math.round(((config.cardAltura || 48) - 14) * 0.2)))}px` }}
+                            className="flex-1 my-auto flex flex-col justify-center py-0.5"
+                          >
                                 {cardsNaPaginaAtualP1.length === 0 ? (
                                   <div className="py-8 text-center text-xs text-slate-500">
                                     Nenhum card ativo nesta tela.
@@ -4112,9 +4897,20 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                     const IconComp = getIconComponent(opcao.icone);
                                     const corCls = getCorBadge(opcao.cor);
                                     const isGavetaOpen = Boolean(opcao.temGaveta && previewOpenGavetaId === opcao.id);
+                                    const h = Number(config.cardAltura) || 48;
+                                    const showIcon = config.mostrarIconesCards !== false;
+                                    const baseFontT = Number(config.cardFonteTitulo) || 15;
+                                    const baseFontS = Number(config.cardFonteSubtitulo) || 11;
+                                    const autoFontT = h < 46 ? Math.max(8, Math.round(baseFontT * (0.48 + (h / 46) * 0.42))) : Math.round(baseFontT * 0.85);
+                                    const autoFontS = h < 46 ? Math.max(7, Math.round(baseFontS * (0.48 + (h / 46) * 0.42))) : Math.round(baseFontS * 0.85);
+                                    const padY = h < 26 ? 1 : h < 36 ? 3 : h < 48 ? 5 : 9;
+                                    const padX = h < 30 ? 6 : 10;
+                                    const iconBoxSz = h < 24 ? 14 : h < 34 ? 18 : h < 46 ? 24 : 30;
+                                    const iconInnerSz = Math.max(9, Math.round(iconBoxSz * 0.54));
+                                    const arrowBoxSz = h < 28 ? 14 : 18;
 
                                     return (
-                                      <div key={opcao.id} className="space-y-1.5">
+                                      <div key={opcao.id} className="space-y-1">
                                         <div
                                           onClick={(e) => {
                                             if (opcao.temGaveta) {
@@ -4123,39 +4919,51 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                             }
                                           }}
                                           style={{ 
-                                            minHeight: `${config.cardAltura || 82}px`,
+                                            minHeight: `${h}px`,
+                                            paddingTop: `${padY}px`,
+                                            paddingBottom: `${padY}px`,
+                                            paddingLeft: `${padX}px`,
+                                            paddingRight: `${padX}px`,
                                             ...getEfeitoStyle(config.cardEfeitoEstilo, config.cardProfundidade)
                                           }}
-                                          className={`w-full text-left p-2.5 rounded-xl flex items-center justify-between transition-all cursor-pointer ${getCardFundoClass(config.cardFundoEstilo)} ${
+                                          className={`w-full text-left rounded-xl flex items-center justify-between transition-all cursor-pointer ${getCardFundoClass(config.cardFundoEstilo)} ${
                                             isGavetaOpen ? 'ring-1 ring-amber-400 border-amber-400/70' : ''
                                           }`}
                                         >
-                                          <div className="flex items-center gap-2.5 pr-1 min-w-0">
-                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${corCls}`}>
-                                              <IconComp className="w-4 h-4" />
-                                            </div>
+                                          <div className="flex items-center gap-2 pr-1 min-w-0">
+                                            {showIcon && (
+                                              <div
+                                                style={{ width: `${iconBoxSz}px`, height: `${iconBoxSz}px` }}
+                                                className={`rounded-lg flex items-center justify-center shrink-0 border ${corCls}`}
+                                              >
+                                                <IconComp style={{ width: `${iconInnerSz}px`, height: `${iconInnerSz}px` }} />
+                                              </div>
+                                            )}
                                             <div className="min-w-0">
                                               <h4 
-                                                style={{ fontSize: `${config.cardFonteTitulo || 16}px` }}
-                                                className={`font-bold truncate leading-snug ${getCardFonteTituloClass(config.cardCorFonteTitulo)}`}
+                                                style={{ fontSize: `${autoFontT}px` }}
+                                                className={`font-bold truncate leading-tight ${getCardFonteTituloClass(config.cardCorFonteTitulo)}`}
                                               >
                                                 {opcao.titulo || 'Opção sem título'}
                                               </h4>
-                                              {opcao.subtitulo && (
+                                              {opcao.subtitulo && h >= 26 && (
                                                 <p 
-                                                  style={{ fontSize: `${config.cardFonteSubtitulo || 12}px` }}
-                                                  className={`truncate mt-0.5 leading-snug ${getCardFonteSubtituloClass(config.cardCorFonteSubtitulo)}`}
+                                                  style={{ fontSize: `${autoFontS}px` }}
+                                                  className={`truncate leading-tight ${getCardFonteSubtituloClass(config.cardCorFonteSubtitulo)}`}
                                                 >
                                                   {opcao.subtitulo}
                                                 </p>
                                               )}
                                             </div>
                                           </div>
-                                          <div className="w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center shrink-0 text-slate-400">
+                                          <div
+                                            style={{ width: `${arrowBoxSz}px`, height: `${arrowBoxSz}px` }}
+                                            className="rounded-full bg-slate-800/90 flex items-center justify-center shrink-0 text-slate-400"
+                                          >
                                             {opcao.temGaveta ? (
-                                              <ChevronDown className={`w-3 h-3 transition-transform ${isGavetaOpen ? 'rotate-180 text-amber-400' : ''}`} />
+                                              <ChevronDown className={`w-2.5 h-2.5 transition-transform ${isGavetaOpen ? 'rotate-180 text-amber-400' : ''}`} />
                                             ) : (
-                                              <ChevronRight className="w-3 h-3" />
+                                              <ChevronRight className="w-2.5 h-2.5" />
                                             )}
                                           </div>
                                         </div>
@@ -4299,27 +5107,47 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         </div>
                       </div>
 
-                      <div className="h-[374px] overflow-y-auto p-3 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between text-center select-none custom-scrollbar">
-                        <div className="flex flex-col justify-between h-full space-y-2">
-                          <div className="shrink-0 space-y-1 pt-0.5">
-                            <h3 className="text-xs sm:text-sm font-black text-white leading-tight">
-                              {telaExtra.titulo1 && telaExtra.titulo2 ? (
-                                <>
-                                  <span className="block">{telaExtra.titulo1}</span>
-                                  <span className="block">{telaExtra.titulo2}</span>
-                                </>
-                              ) : (
-                                telaExtra.titulo || 'Pergunta'
-                              )}
-                            </h3>
+                      <div className="h-[374px] overflow-y-auto p-2.5 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between select-none custom-scrollbar">
+                        <div className="flex flex-col justify-between h-full space-y-1.5">
+                          <div className={`shrink-0 space-y-0.5 pt-0.5 ${getAlinhamentoClass(telaExtra.alinhamento)} ${getCaptionFundoClass(telaExtra.captionFundo)}`}>
+                            {(telaExtra.titulo1 || telaExtra.titulo) && (
+                              <h3
+                                style={{ fontSize: `${(telaExtra.titulo1Tamanho || 18) * 0.68}px` }}
+                                className={`font-black leading-tight ${getCorTextoLinhaClass(telaExtra.titulo1Cor, 'text-white')}`}
+                              >
+                                {telaExtra.titulo1 || telaExtra.titulo}
+                              </h3>
+                            )}
+                            {telaExtra.titulo2 && (
+                              <h3
+                                style={{ fontSize: `${(telaExtra.titulo2Tamanho || 15) * 0.68}px` }}
+                                className={`font-black leading-tight ${getCorTextoLinhaClass(telaExtra.titulo2Cor, 'text-amber-300')}`}
+                              >
+                                {telaExtra.titulo2}
+                              </h3>
+                            )}
+                            {telaExtra.titulo3 && (
+                              <h3
+                                style={{ fontSize: `${(telaExtra.titulo3Tamanho || 14) * 0.68}px` }}
+                                className={`font-black leading-tight ${getCorTextoLinhaClass(telaExtra.titulo3Cor, 'text-emerald-400')}`}
+                              >
+                                {telaExtra.titulo3}
+                              </h3>
+                            )}
                             {telaExtra.subtitulo && (
-                              <p className="text-[10px] text-slate-400">
+                              <p
+                                style={{ fontSize: `${(telaExtra.subtituloTamanho || 12) * 0.75}px` }}
+                                className={`leading-snug ${getCorTextoLinhaClass(telaExtra.subtituloCor, 'text-slate-300')}`}
+                              >
                                 {telaExtra.subtitulo}
                               </p>
                             )}
                           </div>
 
-                          <div className="flex-1 my-auto space-y-2 py-1 text-left">
+                          <div
+                            style={{ gap: `${Math.max(2, Math.min(8, Math.round(((telaExtra.cardAltura || config.cardAltura || 36) - 14) * 0.18)))}px` }}
+                            className="flex-1 my-auto flex flex-col justify-center py-0.5 text-left"
+                          >
                             {telaExtra.tipo === 'texto' ? (
                               <div className="p-3 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2.5" onClick={e => e.stopPropagation()}>
                                 <textarea
@@ -4327,7 +5155,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                   placeholder={telaExtra.placeholder || 'Digite sua resposta aqui...'}
                                   className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white placeholder-slate-500 resize-none"
                                 />
-                                <div className="w-full py-2.5 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
+                                <div className="w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
                                   {telaExtra.botaoTexto || 'Avançar'} →
                                 </div>
                               </div>
@@ -4338,13 +5166,27 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                   placeholder={telaExtra.placeholder || 'Digite sua resposta curta...'}
                                   className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white placeholder-slate-500"
                                 />
-                                <div className="w-full py-2.5 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
+                                <div className="w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
                                   {telaExtra.botaoTexto || 'Avançar'} →
                                 </div>
                               </div>
                             ) : telaExtra.tipo === 'slider' ? (
-                              <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3 text-center" onClick={e => e.stopPropagation()}>
-                                <div className="text-3xl font-black text-amber-400">
+                              <div className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2.5 text-center" onClick={e => e.stopPropagation()}>
+                                {telaExtra.legendaEscala && (
+                                  <div className="flex flex-wrap items-center justify-center gap-1 pb-1">
+                                    {parseScaleLegendItems(telaExtra.legendaEscala).map((item, li) => (
+                                      <span
+                                        key={li}
+                                        style={{ fontSize: `${(telaExtra.escalaTamanho || 11) * 0.72}px` }}
+                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-950 border border-amber-500/30 text-amber-200 leading-none"
+                                      >
+                                        {item.code && <strong className="text-amber-400 font-black">{item.code}:</strong>}
+                                        <span>{item.label}</span>
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                                <div className="text-2xl font-black text-amber-400">
                                   {previewInteractiveVal[`extra_sl_${extraIdx}`] ?? Math.round(((telaExtra.sliderMin ?? 0) + (telaExtra.sliderMax ?? 10)) / 2)}{telaExtra.sliderUnidade || ''}
                                 </div>
                                 <input
@@ -4360,7 +5202,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                   <span>{telaExtra.sliderMin ?? 0}</span>
                                   <span>{telaExtra.sliderMax ?? 10}</span>
                                 </div>
-                                <div className="w-full py-2.5 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
+                                <div className="w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
                                   {telaExtra.botaoTexto || 'Avançar'} →
                                 </div>
                               </div>
@@ -4381,7 +5223,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                     );
                                   })}
                                 </div>
-                                <div className="w-full py-2.5 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
+                                <div className="w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
                                   {telaExtra.botaoTexto || 'Avançar'} →
                                 </div>
                               </div>
@@ -4391,7 +5233,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                   type="date"
                                   className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white"
                                 />
-                                <div className="w-full py-2.5 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
+                                <div className="w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
                                   {telaExtra.botaoTexto || 'Avançar'} →
                                 </div>
                               </div>
@@ -4401,7 +5243,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                   type="time"
                                   className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white"
                                 />
-                                <div className="w-full py-2.5 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
+                                <div className="w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
                                   {telaExtra.botaoTexto || 'Avançar'} →
                                 </div>
                               </div>
@@ -4413,27 +5255,58 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                     <option key={opt.id} value={opt.titulo}>{opt.titulo}</option>
                                   ))}
                                 </select>
-                                <div className="w-full py-2.5 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
+                                <div className="w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
                                   {telaExtra.botaoTexto || 'Avançar'} →
                                 </div>
                               </div>
                             ) : telaExtra.tipo === 'grade' ? (
-                              <div className="space-y-2" onClick={e => e.stopPropagation()}>
+                              <div
+                                style={{ gap: `${Math.max(2, Math.min(6, Math.round(((telaExtra.cardAltura || config.cardAltura || 34) - 14) * 0.16)))}px` }}
+                                className="flex flex-col"
+                                onClick={e => e.stopPropagation()}
+                              >
                                 {telaExtra.legendaEscala && (
-                                  <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-[9px] text-amber-200 leading-snug">
-                                    <strong>Escala:</strong> {telaExtra.legendaEscala}
+                                  <div className="p-1.5 rounded-lg bg-slate-900/95 border border-amber-500/30 flex flex-wrap items-center justify-center gap-1">
+                                    {parseScaleLegendItems(telaExtra.legendaEscala).map((item, li) => (
+                                      <span
+                                        key={li}
+                                        style={{ fontSize: `${(telaExtra.escalaTamanho || 11) * 0.68}px` }}
+                                        className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-slate-950/90 border border-slate-800 text-slate-200 leading-none"
+                                      >
+                                        {item.code && <strong className="text-amber-400 font-black">{item.code}</strong>}
+                                        {item.code && <span className="text-slate-500">=</span>}
+                                        <span>{item.label}</span>
+                                      </span>
+                                    ))}
                                   </div>
                                 )}
                                 {cardsAtivos.map((opt, oi) => {
                                   const cols = telaExtra.colunasGrade || ['1', '2', '3', '4', '5', 'NA'];
                                   const selVal = previewInteractiveVal[`grd_${extraIdx}_${oi}`] ?? cols[cols.length - 2] ?? '5';
+                                  const h = Number(telaExtra.cardAltura) || Number(config.cardAltura) || 34;
+                                  const baseFontT = Number(telaExtra.cardFonteTitulo) || Number(config.cardFonteTitulo) || 14;
+                                  const autoFontT = h < 42 ? Math.max(7.5, Math.round(baseFontT * (0.45 + (h / 42) * 0.35))) : Math.round(baseFontT * 0.78);
+                                  const btnFont = h < 28 ? 7.5 : h < 38 ? 8.5 : 10;
+                                  const padY = h < 24 ? 1.5 : h < 34 ? 3 : h < 46 ? 5 : 8;
+                                  const btnPadY = h < 24 ? 1 : h < 34 ? 2 : 3.5;
+
                                   return (
                                     <div
                                       key={opt.id || oi}
-                                      style={{ minHeight: `${telaExtra.cardAltura || config.cardAltura || 60}px` }}
-                                      className="p-2.5 rounded-xl bg-slate-900/95 border border-slate-800 space-y-1.5 flex flex-col justify-center"
+                                      style={{
+                                        minHeight: `${h}px`,
+                                        paddingTop: `${padY}px`,
+                                        paddingBottom: `${padY}px`,
+                                        paddingLeft: '7px',
+                                        paddingRight: '7px',
+                                        ...getEfeitoStyle(telaExtra.cardEfeitoEstilo || config.cardEfeitoEstilo, telaExtra.cardProfundidade || config.cardProfundidade)
+                                      }}
+                                      className={`rounded-xl border flex flex-col justify-center gap-1 ${getCardFundoClass(telaExtra.cardFundoEstilo || config.cardFundoEstilo)}`}
                                     >
-                                      <span className="text-[11px] font-bold text-white block leading-snug">
+                                      <span
+                                        style={{ fontSize: `${autoFontT}px` }}
+                                        className={`font-bold block leading-tight truncate ${getCardFonteTituloClass(telaExtra.cardCorFonteTitulo || config.cardCorFonteTitulo)}`}
+                                      >
                                         {opt.titulo}
                                       </span>
                                       <div className="grid grid-cols-6 gap-1">
@@ -4444,7 +5317,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                               key={col}
                                               type="button"
                                               onClick={() => setPreviewInteractiveVal(p => ({ ...p, [`grd_${extraIdx}_${oi}`]: col }))}
-                                              className={`py-1 rounded-lg text-[10px] font-black border transition ${
+                                              style={{ fontSize: `${btnFont}px`, paddingTop: `${btnPadY}px`, paddingBottom: `${btnPadY}px` }}
+                                              className={`rounded-md font-black border transition leading-none ${
                                                 active
                                                   ? 'bg-emerald-500 text-slate-950 border-emerald-300 shadow'
                                                   : 'bg-slate-950 text-slate-300 border-slate-700 hover:border-amber-400/60'
@@ -4458,31 +5332,55 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                     </div>
                                   );
                                 })}
-                                <div className="w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow mt-2">
+                                <div className="w-full py-1.5 rounded-xl bg-amber-400 text-slate-950 font-black text-[11px] text-center shadow mt-1">
                                   {telaExtra.botaoTexto || 'Avançar'} →
                                 </div>
                               </div>
                             ) : telaExtra.tipo === 'radio' || telaExtra.tipo === 'checkbox' ? (
-                              <div className="space-y-2" onClick={e => e.stopPropagation()}>
-                                {cardsAtivos.map((opt, oi) => (
-                                  <label
-                                    key={opt.id || oi}
-                                    style={{ minHeight: `${telaExtra.cardAltura || config.cardAltura || 52}px` }}
-                                    className="flex items-center gap-2.5 p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-amber-400/50 cursor-pointer"
-                                  >
-                                    <input
-                                      type={telaExtra.tipo === 'radio' ? 'radio' : 'checkbox'}
-                                      name={`prev_extra_${extraIdx}`}
-                                      defaultChecked={oi === 0}
-                                      className="w-4 h-4 accent-amber-400"
-                                    />
-                                    <div className="min-w-0 flex-1">
-                                      <span className="text-xs font-bold text-white block truncate">{opt.titulo}</span>
-                                      {opt.subtitulo && <span className="text-[10px] text-slate-400 block truncate">{opt.subtitulo}</span>}
-                                    </div>
-                                  </label>
-                                ))}
-                                <div className="w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow mt-2">
+                              <div
+                                style={{ gap: `${Math.max(2, Math.min(8, Math.round(((telaExtra.cardAltura || config.cardAltura || 36) - 14) * 0.18)))}px` }}
+                                className="flex flex-col"
+                                onClick={e => e.stopPropagation()}
+                              >
+                                {cardsAtivos.map((opt, oi) => {
+                                  const h = Number(telaExtra.cardAltura) || Number(config.cardAltura) || 36;
+                                  const baseFontT = Number(telaExtra.cardFonteTitulo) || Number(config.cardFonteTitulo) || 14;
+                                  const autoFontT = h < 44 ? Math.max(8, Math.round(baseFontT * (0.48 + (h / 44) * 0.38))) : Math.round(baseFontT * 0.82);
+                                  const padY = h < 26 ? 2 : h < 38 ? 4 : 8;
+                                  return (
+                                    <label
+                                      key={opt.id || oi}
+                                      style={{
+                                        minHeight: `${h}px`,
+                                        paddingTop: `${padY}px`,
+                                        paddingBottom: `${padY}px`,
+                                        ...getEfeitoStyle(telaExtra.cardEfeitoEstilo || config.cardEfeitoEstilo, telaExtra.cardProfundidade || config.cardProfundidade)
+                                      }}
+                                      className={`flex items-center gap-2 px-2.5 rounded-xl border hover:border-amber-400/50 cursor-pointer ${getCardFundoClass(telaExtra.cardFundoEstilo || config.cardFundoEstilo)}`}
+                                    >
+                                      <input
+                                        type={telaExtra.tipo === 'radio' ? 'radio' : 'checkbox'}
+                                        name={`prev_extra_${extraIdx}`}
+                                        defaultChecked={oi === 0}
+                                        className="w-3.5 h-3.5 accent-amber-400 shrink-0"
+                                      />
+                                      <div className="min-w-0 flex-1">
+                                        <span
+                                          style={{ fontSize: `${autoFontT}px` }}
+                                          className={`font-bold block truncate leading-tight ${getCardFonteTituloClass(telaExtra.cardCorFonteTitulo || config.cardCorFonteTitulo)}`}
+                                        >
+                                          {opt.titulo}
+                                        </span>
+                                        {opt.subtitulo && h >= 28 && (
+                                          <span className={`text-[9px] block truncate ${getCardFonteSubtituloClass(telaExtra.cardCorFonteSubtitulo || config.cardCorFonteSubtitulo)}`}>
+                                            {opt.subtitulo}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </label>
+                                  );
+                                })}
+                                <div className="w-full py-1.5 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow mt-1">
                                   {telaExtra.botaoTexto || 'Avançar'} →
                                 </div>
                               </div>
@@ -4495,9 +5393,20 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                 const IconComp = getIconComponent(opt.icone);
                                 const corCls = getCorBadge(opt.cor);
                                 const isGavetaOpen = Boolean(opt.temGaveta && previewOpenGavetaId === opt.id);
+                                const h = Number(telaExtra.cardAltura) || Number(config.cardAltura) || 36;
+                                const showIcon = telaExtra.mostrarIcones !== undefined ? telaExtra.mostrarIcones !== false : config.mostrarIconesCards !== false;
+                                const baseFontT = Number(telaExtra.cardFonteTitulo) || Number(config.cardFonteTitulo) || 15;
+                                const baseFontS = Number(telaExtra.cardFonteSubtitulo) || Number(config.cardFonteSubtitulo) || 11;
+                                const autoFontT = h < 46 ? Math.max(8, Math.round(baseFontT * (0.48 + (h / 46) * 0.42))) : Math.round(baseFontT * 0.85);
+                                const autoFontS = h < 46 ? Math.max(7, Math.round(baseFontS * (0.48 + (h / 46) * 0.42))) : Math.round(baseFontS * 0.85);
+                                const padY = h < 26 ? 1 : h < 36 ? 3 : h < 48 ? 5 : 9;
+                                const padX = h < 30 ? 6 : 10;
+                                const iconBoxSz = h < 24 ? 14 : h < 34 ? 18 : h < 46 ? 24 : 30;
+                                const iconInnerSz = Math.max(9, Math.round(iconBoxSz * 0.54));
+                                const arrowBoxSz = h < 28 ? 14 : 18;
 
                                 return (
-                                  <div key={opt.id} className="space-y-1.5">
+                                  <div key={opt.id} className="space-y-1">
                                     <div
                                       onClick={(e) => {
                                         if (opt.temGaveta) {
@@ -4506,37 +5415,49 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                         }
                                       }}
                                       style={{ 
-                                        minHeight: `${telaExtra.cardAltura || config.cardAltura || 60}px`,
-                                        ...getEfeitoStyle(config.cardEfeitoEstilo, config.cardProfundidade)
+                                        minHeight: `${h}px`,
+                                        paddingTop: `${padY}px`,
+                                        paddingBottom: `${padY}px`,
+                                        paddingLeft: `${padX}px`,
+                                        paddingRight: `${padX}px`,
+                                        ...getEfeitoStyle(telaExtra.cardEfeitoEstilo || config.cardEfeitoEstilo, telaExtra.cardProfundidade || config.cardProfundidade)
                                       }}
-                                      className={`w-full text-left p-2.5 rounded-xl flex items-center justify-between transition-all cursor-pointer ${getCardFundoClass(config.cardFundoEstilo)}`}
+                                      className={`w-full text-left rounded-xl flex items-center justify-between transition-all cursor-pointer ${getCardFundoClass(telaExtra.cardFundoEstilo || config.cardFundoEstilo)}`}
                                     >
-                                      <div className="flex items-center gap-2.5 pr-1 min-w-0">
-                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${corCls}`}>
-                                          <IconComp className="w-4 h-4" />
-                                        </div>
+                                      <div className="flex items-center gap-2 pr-1 min-w-0">
+                                        {showIcon && (
+                                          <div
+                                            style={{ width: `${iconBoxSz}px`, height: `${iconBoxSz}px` }}
+                                            className={`rounded-lg flex items-center justify-center shrink-0 border ${corCls}`}
+                                          >
+                                            <IconComp style={{ width: `${iconInnerSz}px`, height: `${iconInnerSz}px` }} />
+                                          </div>
+                                        )}
                                         <div className="min-w-0">
                                           <h4 
-                                            style={{ fontSize: `${config.cardFonteTitulo || 16}px` }}
-                                            className={`font-bold truncate leading-snug ${getCardFonteTituloClass(config.cardCorFonteTitulo)}`}
+                                            style={{ fontSize: `${autoFontT}px` }}
+                                            className={`font-bold truncate leading-tight ${getCardFonteTituloClass(telaExtra.cardCorFonteTitulo || config.cardCorFonteTitulo)}`}
                                           >
                                             {opt.titulo || 'Opção sem título'}
                                           </h4>
-                                          {opt.subtitulo && (
+                                          {opt.subtitulo && h >= 26 && (
                                             <p 
-                                              style={{ fontSize: `${config.cardFonteSubtitulo || 12}px` }}
-                                              className={`truncate mt-0.5 leading-snug ${getCardFonteSubtituloClass(config.cardCorFonteSubtitulo)}`}
+                                              style={{ fontSize: `${autoFontS}px` }}
+                                              className={`truncate leading-tight ${getCardFonteSubtituloClass(telaExtra.cardCorFonteSubtitulo || config.cardCorFonteSubtitulo)}`}
                                             >
                                               {opt.subtitulo}
                                             </p>
                                           )}
                                         </div>
                                       </div>
-                                      <div className="w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center shrink-0 text-slate-400">
+                                      <div
+                                        style={{ width: `${arrowBoxSz}px`, height: `${arrowBoxSz}px` }}
+                                        className="rounded-full bg-slate-800/90 flex items-center justify-center shrink-0 text-slate-400"
+                                      >
                                         {opt.temGaveta ? (
-                                          <ChevronDown className={`w-3 h-3 transition-transform ${isGavetaOpen ? 'rotate-180 text-amber-400' : ''}`} />
+                                          <ChevronDown className={`w-2.5 h-2.5 transition-transform ${isGavetaOpen ? 'rotate-180 text-amber-400' : ''}`} />
                                         ) : (
-                                          <ChevronRight className="w-3 h-3" />
+                                          <ChevronRight className="w-2.5 h-2.5" />
                                         )}
                                       </div>
                                     </div>

@@ -1,5 +1,6 @@
-import mammoth from 'mammoth';
-import JSZip from 'jszip';
+// mammoth e jszip são carregados sob demanda (só quando o admin importa um arquivo)
+const carregarMammoth = async () => (await import('mammoth')).default;
+const carregarJSZip = async () => (await import('jszip')).default;
 
 /**
  * Motor Inteligente (IA Semântica & Estrutural) de Importação de Formulários e Questionários
@@ -82,7 +83,7 @@ export async function parseDocxFile(file) {
 async function extractTextFromDocxBuffer(arrayBuffer) {
   // 1. Tenta extrair direto do XML word/document.xml via JSZip para preservar checkboxes nativos (<w:checkBox>, <w14:checkbox>, <w:sym>) e tabelas (<w:tbl>)
   try {
-    const zip = await JSZip.loadAsync(arrayBuffer);
+    const zip = await (await carregarJSZip()).loadAsync(arrayBuffer);
     const docXmlFile = zip.file('word/document.xml');
     if (docXmlFile) {
       const xmlStr = await docXmlFile.async('string');
@@ -97,13 +98,13 @@ async function extractTextFromDocxBuffer(arrayBuffer) {
 
   // 2. Fallback para Mammoth convertToHtml (preservando <table>, <tr>, <td>, <p>, <li>)
   try {
-    const htmlResult = await mammoth.convertToHtml({ arrayBuffer });
+    const htmlResult = await (await carregarMammoth()).convertToHtml({ arrayBuffer });
     if (htmlResult.value && htmlResult.value.trim().length > 0) {
       return convertHtmlToStructuredText(htmlResult.value);
     }
   } catch (e) {}
 
-  const rawResult = await mammoth.extractRawText({ arrayBuffer });
+  const rawResult = await (await carregarMammoth()).extractRawText({ arrayBuffer });
   return rawResult.value || '';
 }
 
@@ -235,7 +236,7 @@ function convertHtmlToStructuredText(html) {
  * Extrai texto de apresentações PowerPoint (.PPTX) via JSZip lendo todos os slides e tabelas
  */
 async function extractTextFromPptxBuffer(arrayBuffer) {
-  const zip = await JSZip.loadAsync(arrayBuffer);
+  const zip = await (await carregarJSZip()).loadAsync(arrayBuffer);
   const slideFiles = Object.keys(zip.files)
     .filter(path => /^ppt\/slides\/slide\d+\.xml$/i.test(path))
     .sort((a, b) => {
@@ -308,7 +309,7 @@ async function extractTextFromPptxBuffer(arrayBuffer) {
  * Extrai texto de Planilhas Excel (.XLSX) via JSZip
  */
 async function extractTextFromXlsxBuffer(arrayBuffer) {
-  const zip = await JSZip.loadAsync(arrayBuffer);
+  const zip = await (await carregarJSZip()).loadAsync(arrayBuffer);
   const parser = new DOMParser();
   const sharedStrings = [];
 
@@ -367,8 +368,9 @@ async function extractTextFromPdfBuffer(arrayBuffer) {
   try {
     const pdfjsLib = await import('pdfjs-dist');
     if (pdfjsLib.GlobalWorkerOptions && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
-      const version = pdfjsLib.version || '4.10.38';
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${version}/pdf.worker.min.mjs`;
+      // Worker empacotado junto com o site (versão sempre igual à biblioteca; sem depender de CDN)
+      const { default: workerUrl } = await import('pdfjs-dist/build/pdf.worker.min.mjs?url');
+      pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
     }
 
     const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) });
@@ -1058,7 +1060,8 @@ export function parseTextToQuestions(rawText, fileName = '') {
       ? sectionPrefix.replace(/\s*\(opcional\)\s*/i, '').trim()
       : '';
 
-    const fullTitle = (shortPrefix && !cleanQ.toLowerCase().startsWith(shortPrefix.toLowerCase()))
+    const hasDistinctPrefix = Boolean(shortPrefix && !cleanQ.toLowerCase().startsWith(shortPrefix.toLowerCase()));
+    const fullTitle = hasDistinctPrefix
       ? `${shortPrefix} — ${cleanQ}`
       : cleanQ;
 
@@ -1066,8 +1069,9 @@ export function parseTextToQuestions(rawText, fileName = '') {
       id: `tela_imp_${Date.now()}_${screens.length + 1}_${Math.random().toString(36).slice(2, 6)}`,
       tipo: detectedType,
       titulo: fullTitle || 'Pergunta',
-      titulo1: fullTitle || 'Pergunta',
-      titulo2: '',
+      titulo1: hasDistinctPrefix ? shortPrefix : (cleanQ || 'Pergunta'),
+      titulo2: hasDistinctPrefix ? cleanQ : '',
+      titulo3: '',
       subtitulo: '',
       legendaEscala: pendingScaleLegend || '',
       colunasGrade: ['1', '2', '3', '4', '5', 'NA'],
@@ -1336,8 +1340,11 @@ export function parseTextToQuestions(rawText, fileName = '') {
 }
 
 function buildConfigFromParsedScreens(screens, meta = {}) {
-  const tela1 = screens[0];
-  const telasExtras = screens.slice(1);
+  // A Tela 1 do celular só sabe mostrar CARDS. Se a primeira pergunta importada for de
+  // outro tipo (grade, texto, slider...), ela vira uma tela extra e a Tela 1 fica só como capa.
+  const primeiraECards = !screens[0]?.tipo || screens[0].tipo === 'cards';
+  const tela1 = primeiraECards ? screens[0] : null;
+  const telasExtras = primeiraECards ? screens.slice(1) : screens;
   const t1Count = (tela1?.opcoes || []).length;
 
   return {
@@ -1352,14 +1359,15 @@ function buildConfigFromParsedScreens(screens, meta = {}) {
     capaTitulo2: meta.eventSubtitle || '',
     capaTextoAbaixo: meta.introText || '',
     capaFonteTamanho: 16,
-    pergunta1Titulo: tela1?.titulo || 'Pergunta 1',
+    pergunta1Titulo: tela1 ? (tela1.titulo1 || tela1.titulo || 'Pergunta 1') : '',
     pergunta1Titulo2: tela1?.titulo2 || '',
+    pergunta1Titulo3: tela1?.titulo3 || '',
     pergunta1Subtitulo: tela1?.subtitulo || '',
     pergunta1TextoAbaixo: tela1?.subtitulo || '',
     pergunta1BotaoComecarTexto: 'COMEÇAR',
     mostrarBotaoComecar: true,
     pergunta1FonteTamanho: 18,
-    cardAltura: t1Count >= 6 ? 48 : 68,
+    cardAltura: t1Count >= 5 ? 36 : 52,
     cardsPorTela: tela1?.cardsPorTela || Math.min(12, Math.max(4, t1Count)),
     tela1Tipo: tela1?.tipo || 'cards',
     tela1TextoPlaceholder: tela1?.placeholder || 'Digite sua resposta...',
@@ -1368,12 +1376,13 @@ function buildConfigFromParsedScreens(screens, meta = {}) {
     telasExtras: telasExtras.map((t, idx) => {
       const optCount = (t.opcoes || []).length;
       return {
-        id: t.id || `extra_${idx}`,
+        id: t.id || `tela_imp_${idx + 1}`,
         ativa: true,
         tipo: t.tipo || 'cards',
         titulo: t.titulo || `Pergunta ${idx + 2}`,
         titulo1: t.titulo1 || t.titulo || `Pergunta ${idx + 2}`,
         titulo2: t.titulo2 || '',
+        titulo3: t.titulo3 || '',
         subtitulo: t.subtitulo || '',
         legendaEscala: t.legendaEscala || '',
         colunasGrade: t.colunasGrade || ['1', '2', '3', '4', '5', 'NA'],
@@ -1382,7 +1391,7 @@ function buildConfigFromParsedScreens(screens, meta = {}) {
         linhas: t.linhas || 4,
         obrigatorio: false,
         botaoTexto: 'Avançar',
-        cardAltura: optCount >= 6 ? 48 : 64,
+        cardAltura: optCount >= 5 ? 34 : 50,
         cardsPorTela: t.cardsPorTela || Math.min(12, Math.max(4, optCount)),
         sliderMin: t.sliderMin ?? 0,
         sliderMax: t.sliderMax ?? 10,

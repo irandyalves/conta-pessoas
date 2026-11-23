@@ -61,7 +61,29 @@ import {
   salvarEventoAtivoGlobal
 } from '../firebase';
 
-export default function DashboardView({ onOpenConfig, onChangeView }) {
+// Lista as respostas de um registro como [{ pergunta, resposta, tipo }].
+// Registros novos têm "respostas" (lista ordenada); os antigos são lidos dos mapas.
+function listarRespostas(item) {
+  if (Array.isArray(item?.respostas) && item.respostas.length > 0) {
+    return item.respostas
+      .filter((r) => r && r.telaId !== 'p1')
+      .map((r) => ({ pergunta: r.pergunta, resposta: r.resposta, tipo: String(r.pergunta || '').includes(' › ') ? 'gaveta' : 'texto' }));
+  }
+  const out = [];
+  Object.entries(item?.respostasExtras || {}).forEach(([k, v]) => out.push({ pergunta: k, resposta: v, tipo: 'texto' }));
+  Object.entries(item?.textoRespostas || {}).forEach(([k, v]) => out.push({ pergunta: k, resposta: v, tipo: 'texto' }));
+  Object.entries(item?.gavetaRespostas || {}).forEach(([k, v]) => out.push({ pergunta: k, resposta: v, tipo: 'gaveta' }));
+  return out.filter((r) => String(r.resposta ?? '').trim() !== '');
+}
+
+// Célula de CSV segura: escapa aspas e neutraliza fórmulas (=, +, -, @) que o Excel executaria
+function celulaCsv(valor) {
+  let t = Array.isArray(valor) ? valor.join(', ') : String(valor ?? '');
+  if (/^[=+\-@\t\r]/.test(t)) t = "'" + t;
+  return `"${t.replace(/"/g, '""')}"`;
+}
+
+export default function DashboardView({ onChangeView }) {
   const [presencas, setPresencas] = useState([]);
   const [eventoTitulo, setEventoTitulo] = useState(DEFAULT_EVENT_TITLE);
   const [editandoTitulo, setEditandoTitulo] = useState(false);
@@ -277,8 +299,13 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
 
   const handleSalvarTitulo = async () => {
     if (!inputTitulo.trim()) return;
-    await saveEventTitle(inputTitulo.trim(), activeEventId);
-    await salvarEventoAtivoGlobal(activeEventId, inputTitulo.trim());
+    try {
+      await saveEventTitle(inputTitulo.trim(), activeEventId);
+      await salvarEventoAtivoGlobal(activeEventId, inputTitulo.trim());
+    } catch (e) {
+      mostrarAvisoInline('Erro ao Salvar Título', e?.message || String(e), 'erro');
+      return;
+    }
     setEditandoTitulo(false);
     setSalvoFeedback(true);
     setTimeout(() => setSalvoFeedback(false), 3000);
@@ -350,32 +377,35 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
       return;
     }
 
+    // Uma coluna por pergunta, na ordem em que aparecem nos registros
+    const perguntas = [];
+    presencasFiltradas.forEach((p) => {
+      listarRespostas(p).forEach((r) => {
+        if (!perguntas.includes(r.pergunta)) perguntas.push(r.pergunta);
+      });
+    });
+
+    const tituloP1 = questionsConfig?.pergunta1Titulo || 'Como Chegou';
     const headers = [
       'Evento',
-      'Data do Culto',
+      'Data',
       'Horário',
-      'Como Chegou',
+      tituloP1,
       'Quantidade de Pessoas no Grupo',
-      'Respostas Gavetas (Subperguntas)',
-      'Respostas de Texto (Dissertativas)',
+      ...perguntas,
       'ID do Registro'
-    ];
-    const rows = presencasFiltradas.map(p => {
-      const gavetasStr = p.gavetaRespostas 
-        ? Object.entries(p.gavetaRespostas).map(([k, v]) => `${k}: ${v}`).join(' | ') 
-        : '';
-      const textosStr = p.textoRespostas 
-        ? Object.entries(p.textoRespostas).map(([k, v]) => `${k}: ${v}`).join(' | ') 
-        : '';
+    ].map(celulaCsv);
+    const rows = presencasFiltradas.map((p) => {
+      const mapa = {};
+      listarRespostas(p).forEach((r) => { mapa[r.pergunta] = r.resposta; });
       return [
-        `"${p.evento || eventoTitulo}"`,
-        `"${p.dataCulto || hoje}"`,
-        `"${p.hora || ''}"`,
-        `"${(p.comoChegou || '').replace(/"/g, '""')}"`,
-        p.qtdPessoas || 1,
-        `"${gavetasStr.replace(/"/g, '""')}"`,
-        `"${textosStr.replace(/"/g, '""')}"`,
-        `"${p.id || ''}"`
+        celulaCsv(p.evento || eventoTitulo),
+        celulaCsv(p.dataCulto || hoje),
+        celulaCsv(p.hora || ''),
+        celulaCsv(p.comoChegou || ''),
+        Number(p.qtdPessoas) || 1,
+        ...perguntas.map((q) => celulaCsv(mapa[q] ?? '')),
+        celulaCsv(p.id || '')
       ];
     });
 
@@ -384,10 +414,11 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `relatorio_${eventoTitulo.toLowerCase().replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `relatorio_${eventoTitulo.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '_')}_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   const handlePrint = () => {
@@ -1082,7 +1113,7 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
                           <th className="py-2.5 px-3.5">Horário</th>
                           <th className="py-2.5 px-3.5">Data</th>
                           <th className="py-2.5 px-3.5">Como Chegou</th>
-                          <th className="py-2.5 px-3.5">Respostas (Gavetas & Textos)</th>
+                          <th className="py-2.5 px-3.5">Respostas</th>
                           <th className="py-2.5 px-3.5 text-center">Grupo</th>
                         </tr>
                       </thead>
@@ -1095,8 +1126,7 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
                           </tr>
                         ) : (
                           presencasFiltradas.map((item, index) => {
-                            const temGaveta = item.gavetaRespostas && Object.keys(item.gavetaRespostas).length > 0;
-                            const temTexto = item.textoRespostas && Object.keys(item.textoRespostas).length > 0;
+                            const respostasItem = listarRespostas(item);
 
                             return (
                               <tr key={item.id || index} className="hover:bg-slate-800/40 print:hover:bg-transparent">
@@ -1107,25 +1137,15 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
                                   {item.comoChegou}
                                 </td>
                                 <td className="py-2.5 px-3.5">
-                                  {temGaveta && (
+                                  {respostasItem.length > 0 ? (
                                     <div className="space-y-1">
-                                      {Object.entries(item.gavetaRespostas).map(([cardId, txt]) => (
-                                        <span key={cardId} className="inline-block text-[11px] bg-amber-500/15 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-lg mr-1 mb-1 font-sans">
-                                          🗄️ {txt}
+                                      {respostasItem.map((r, ri) => (
+                                        <span key={ri} className={`inline-block text-[11px] px-2 py-0.5 rounded-lg mr-1 mb-1 font-sans border ${r.tipo === 'gaveta' ? 'bg-amber-500/15 text-amber-300 border-amber-500/30' : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'} print:bg-transparent print:text-black print:border-slate-300`}>
+                                          <strong className="font-bold">{r.pergunta}:</strong> {String(r.resposta)}
                                         </span>
                                       ))}
                                     </div>
-                                  )}
-                                  {temTexto && (
-                                    <div className="space-y-1">
-                                      {Object.entries(item.textoRespostas).map(([telaId, txt]) => (
-                                        <span key={telaId} className="inline-block text-[11px] bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-lg mr-1 mb-1 font-sans">
-                                          ✍️ "{txt}"
-                                        </span>
-                                      ))}
-                                    </div>
-                                  )}
-                                  {!temGaveta && !temTexto && (
+                                  ) : (
                                     <span className="text-slate-500 text-[11px]">-</span>
                                   )}
                                 </td>

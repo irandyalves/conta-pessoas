@@ -7,7 +7,7 @@ import {
   Sparkles,
   ArrowLeft
 } from 'lucide-react';
-import { escutarStatusSessao, escutarTituloEvento, getActiveEventId, DEFAULT_EVENT_TITLE } from '../firebase';
+import { escutarStatusSessao, escutarTituloEvento, getActiveEventId, DEFAULT_EVENT_TITLE, DEFAULT_EVENT_ID } from '../firebase';
 
 export default function ScreenView({ adminAuthed, onReturnToAdmin }) {
   const [activeEventId] = useState(() => getActiveEventId());
@@ -50,7 +50,7 @@ export default function ScreenView({ adminAuthed, onReturnToAdmin }) {
     try {
       const params = new URLSearchParams(window.location.search);
       const eventParam = params.get('e') || activeEventId;
-      if (eventParam && eventParam !== 'cantata-natal-2026') {
+      if (eventParam && eventParam !== DEFAULT_EVENT_ID) {
         return `${window.location.origin}/?e=${encodeURIComponent(eventParam)}`;
       }
     } catch (e) {}

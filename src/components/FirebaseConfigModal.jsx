@@ -30,8 +30,19 @@ export default function FirebaseConfigModal({ isOpen, onClose, inline = false })
     setRawConfig(text);
     try {
       // Tenta extrair valores de um objeto copiado do console do Firebase
-      const clean = text.replace(/const firebaseConfig =|;|var firebaseConfig =/g, '').trim();
-      const parsed = Function('"use strict";return (' + clean + ')')();
+      // Lê cada chave por expressão regular (sem executar o texto colado)
+      const pegar = (chave) => {
+        const m = text.match(new RegExp(`["']?${chave}["']?\\s*:\\s*["']([^"']+)["']`));
+        return m ? m[1] : '';
+      };
+      const parsed = {
+        apiKey: pegar('apiKey'),
+        projectId: pegar('projectId'),
+        authDomain: pegar('authDomain'),
+        storageBucket: pegar('storageBucket'),
+        messagingSenderId: pegar('messagingSenderId'),
+        appId: pegar('appId')
+      };
       if (parsed && parsed.apiKey) {
         setApiKey(parsed.apiKey || '');
         setProjectId(parsed.projectId || '');
