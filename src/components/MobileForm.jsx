@@ -35,7 +35,7 @@ import {
   DEFAULT_EVENT_TITLE,
   DEFAULT_EVENT_ID
 } from '../firebase';
-import { getFaixaFundoClass, estiloLinhas, getEfeitoStyle, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems } from '../utils/estilos';
+import { getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getEfeitoStyle, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems } from '../utils/estilos';
 
 const DISPOSITIVO_BLOQUEADO_KEY = 'presenca_dispositivo_bloqueado_voto';
 const DISPOSITIVO_VOTO_TIME_KEY = 'presenca_dispositivo_hora_voto';
@@ -925,42 +925,48 @@ export default function MobileForm() {
         {/* TÍTULO DA CAPA (QUANDO BOTÃO COMEÇAR ESTÁ ATIVO E AINDA NÃO CLICOU) */}
         {currentStep === 'p1' && questionsConfig.mostrarBotaoComecar !== false && !jaClicouComecar && (
           <div className="mt-2 pt-2 space-y-3">
-            {(questionsConfig.capaTitulo1 || questionsConfig.capaTitulo2 || questionsConfig.capaTitulo3) && (
-              <div className={`space-y-1 ${getAlinhamentoClass(questionsConfig.capaAlinhamento)} ${getCaptionFundoClass(questionsConfig.capaCaptionFundo)}`}>
-                {questionsConfig.capaTitulo1 && (
-                  <h2
-                    style={{ fontSize: `${questionsConfig.capaTitulo1Tamanho || questionsConfig.capaFonteTamanho || 20}px` }}
-                    className={`font-black leading-tight ${getCorTextoLinhaClass(questionsConfig.capaTitulo1Cor, 'text-white')}`}
+            <div className="shrink-0 space-y-1 pt-1">
+              {questionsConfig.capaTitulo1 && (
+                <div className={`${getAlinhamentoClass(questionsConfig.capaTitulo1Alinhamento || questionsConfig.capaAlinhamento)} ${getFaixaFundoClass(questionsConfig.capaTitulo1Fundo || questionsConfig.capaCaptionFundo || 'transparente', '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}>
+                  <h3
+                    style={{ fontSize: `${(questionsConfig.capaTitulo1Tamanho || questionsConfig.capaFonteTamanho || 18) * 1}px` }}
+                    className={`${pesoFonte(questionsConfig.capaTitulo1Bold, true)} leading-tight ${getCorTextoLinhaClass(questionsConfig.capaTitulo1Cor, 'text-white')}`}
                   >
                     {questionsConfig.capaTitulo1}
-                  </h2>
-                )}
-                {questionsConfig.capaTitulo2 && (
-                  <h2
-                    style={{ fontSize: `${questionsConfig.capaTitulo2Tamanho || 18}px` }}
-                    className={`font-black leading-tight ${getCorTextoLinhaClass(questionsConfig.capaTitulo2Cor, 'text-amber-300')}`}
+                  </h3>
+                </div>
+              )}
+              {questionsConfig.capaTitulo2 && (
+                <div className={`${getAlinhamentoClass(questionsConfig.capaTitulo2Alinhamento || questionsConfig.capaAlinhamento)} ${getFaixaFundoClass(questionsConfig.capaTitulo2Fundo || 'transparente', '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}>
+                  <h3
+                    style={{ fontSize: `${(questionsConfig.capaTitulo2Tamanho || 16) * 1}px` }}
+                    className={`${pesoFonte(questionsConfig.capaTitulo2Bold, true)} leading-tight ${getCorTextoLinhaClass(questionsConfig.capaTitulo2Cor, 'text-amber-300')}`}
                   >
                     {questionsConfig.capaTitulo2}
-                  </h2>
-                )}
-                {questionsConfig.capaTitulo3 && (
-                  <h2
-                    style={{ fontSize: `${questionsConfig.capaTitulo3Tamanho || 16}px` }}
-                    className={`font-black leading-tight ${getCorTextoLinhaClass(questionsConfig.capaTitulo3Cor, 'text-emerald-400')}`}
+                  </h3>
+                </div>
+              )}
+              {questionsConfig.capaTitulo3 && (
+                <div className={`${getAlinhamentoClass(questionsConfig.capaTitulo3Alinhamento || questionsConfig.capaAlinhamento)} ${getFaixaFundoClass(questionsConfig.capaTitulo3Fundo || 'transparente', '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}>
+                  <h3
+                    style={{ fontSize: `${(questionsConfig.capaTitulo3Tamanho || 15) * 1}px` }}
+                    className={`${pesoFonte(questionsConfig.capaTitulo3Bold, true)} leading-tight ${getCorTextoLinhaClass(questionsConfig.capaTitulo3Cor, 'text-emerald-400')}`}
                   >
                     {questionsConfig.capaTitulo3}
-                  </h2>
-                )}
-              </div>
-            )}
-            {(questionsConfig.capaTextoAbaixo || questionsConfig.pergunta1TextoAbaixo) && (
-              <div
-                style={{ fontSize: `${questionsConfig.capaTextoAbaixoTamanho || 14}px` }}
-                className={`p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 leading-relaxed whitespace-pre-line shadow-inner ${getCorTextoLinhaClass(questionsConfig.capaTextoAbaixoCor, 'text-slate-200')}`}
-              >
-                {questionsConfig.capaTextoAbaixo || questionsConfig.pergunta1TextoAbaixo}
-              </div>
-            )}
+                  </h3>
+                </div>
+              )}
+              {(questionsConfig.capaTextoAbaixo || questionsConfig.pergunta1TextoAbaixo) && (
+                <div className={`${getAlinhamentoClass(questionsConfig.capaTextoAbaixoAlinhamento || questionsConfig.capaAlinhamento)} ${getFaixaFundoClass(questionsConfig.capaTextoAbaixoFundo || 'escuro', '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}>
+                  <p
+                    style={{ fontSize: `${(questionsConfig.capaTextoAbaixoTamanho || 14) * 1}px` }}
+                    className={`${pesoFonte(questionsConfig.capaTextoAbaixoBold, false)} leading-relaxed whitespace-pre-line ${getCorTextoLinhaClass(questionsConfig.capaTextoAbaixoCor, 'text-slate-300')}`}
+                  >
+                    {(questionsConfig.capaTextoAbaixo || questionsConfig.pergunta1TextoAbaixo)}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -972,7 +978,7 @@ export default function MobileForm() {
                 {questionsConfig.pergunta1Titulo && (
                   <h2 
                     style={{ fontSize: `${questionsConfig.pergunta1FonteTamanho || 22}px` }}
-                    className={`font-black leading-tight ${getCorTextoLinhaClass(questionsConfig.pergunta1TituloCor, 'text-white')}`}
+                    className={`${pesoFonte(questionsConfig.pergunta1TituloBold)} leading-tight ${getCorTextoLinhaClass(questionsConfig.pergunta1TituloCor, 'text-white')}`}
                   >
                     {questionsConfig.pergunta1Titulo}
                   </h2>
@@ -980,7 +986,7 @@ export default function MobileForm() {
                 {questionsConfig.pergunta1Titulo2 && (
                   <h2 
                     style={{ fontSize: `${questionsConfig.pergunta1Titulo2Tamanho || 18}px` }}
-                    className={`font-black leading-tight ${getCorTextoLinhaClass(questionsConfig.pergunta1Titulo2Cor, 'text-amber-300')}`}
+                    className={`${pesoFonte(questionsConfig.pergunta1TituloBold)} leading-tight ${getCorTextoLinhaClass(questionsConfig.pergunta1Titulo2Cor, 'text-amber-300')}`}
                   >
                     {questionsConfig.pergunta1Titulo2}
                   </h2>
@@ -988,7 +994,7 @@ export default function MobileForm() {
                 {questionsConfig.pergunta1Titulo3 && (
                   <h2 
                     style={{ fontSize: `${questionsConfig.pergunta1Titulo3Tamanho || 16}px` }}
-                    className={`font-black leading-tight ${getCorTextoLinhaClass(questionsConfig.pergunta1Titulo3Cor, 'text-emerald-400')}`}
+                    className={`${pesoFonte(questionsConfig.pergunta1TituloBold)} leading-tight ${getCorTextoLinhaClass(questionsConfig.pergunta1Titulo3Cor, 'text-emerald-400')}`}
                   >
                     {questionsConfig.pergunta1Titulo3}
                   </h2>
@@ -999,7 +1005,7 @@ export default function MobileForm() {
             {questionsConfig.pergunta1TextoAbaixo && (
               <p
                 style={{ fontSize: `${questionsConfig.pergunta1TextoAbaixoTamanho || 14}px` }}
-                className={`leading-relaxed whitespace-pre-line ${getAlinhamentoClass(estiloLinhas(questionsConfig, 'pergunta1').subAl)} ${getFaixaFundoClass(estiloLinhas(questionsConfig, 'pergunta1').subFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')} ${getCorTextoLinhaClass(questionsConfig.pergunta1TextoAbaixoCor, 'text-slate-300')}`}
+                className={`leading-relaxed whitespace-pre-line ${getAlinhamentoClass(estiloLinhas(questionsConfig, 'pergunta1').subAl)} ${getFaixaFundoClass(estiloLinhas(questionsConfig, 'pergunta1').subFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')} ${questionsConfig.pergunta1SubBold ? 'font-bold' : ''} ${getCorTextoLinhaClass(questionsConfig.pergunta1TextoAbaixoCor, 'text-slate-300')}`}
               >
                 {questionsConfig.pergunta1TextoAbaixo}
               </p>
@@ -1016,22 +1022,22 @@ export default function MobileForm() {
           return (
             <div className="mt-2 pt-2 border-t border-slate-800/60 space-y-1">
               <div className={`space-y-1 ${getAlinhamentoClass(estiloLinhas(tela).tituloAl)} ${getFaixaFundoClass(estiloLinhas(tela).tituloFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}>
-              <h2 style={{ fontSize: `${tela.titulo1Tamanho || 20}px` }} className={`font-black leading-tight ${getCorTextoLinhaClass(tela.titulo1Cor, 'text-white')}`}>
+              <h2 style={{ fontSize: `${tela.titulo1Tamanho || 20}px` }} className={`${pesoFonte(tela.tituloBold)} leading-tight ${getCorTextoLinhaClass(tela.titulo1Cor, 'text-white')}`}>
                 {linha1}
               </h2>
               {tela.titulo2 && (
-                <h2 style={{ fontSize: `${tela.titulo2Tamanho || 15}px` }} className={`font-black leading-tight ${getCorTextoLinhaClass(tela.titulo2Cor, 'text-amber-300')}`}>
+                <h2 style={{ fontSize: `${tela.titulo2Tamanho || 15}px` }} className={`${pesoFonte(tela.tituloBold)} leading-tight ${getCorTextoLinhaClass(tela.titulo2Cor, 'text-amber-300')}`}>
                   {tela.titulo2}
                 </h2>
               )}
               {tela.titulo3 && (
-                <h2 style={{ fontSize: `${tela.titulo3Tamanho || 14}px` }} className={`font-black leading-tight ${getCorTextoLinhaClass(tela.titulo3Cor, 'text-emerald-400')}`}>
+                <h2 style={{ fontSize: `${tela.titulo3Tamanho || 14}px` }} className={`${pesoFonte(tela.tituloBold)} leading-tight ${getCorTextoLinhaClass(tela.titulo3Cor, 'text-emerald-400')}`}>
                   {tela.titulo3}
                 </h2>
               )}
               </div>
               {tela.subtitulo && (
-                <p style={{ fontSize: `${tela.subtituloTamanho || 13}px` }} className={`leading-snug ${getAlinhamentoClass(estiloLinhas(tela).subAl)} ${getFaixaFundoClass(estiloLinhas(tela).subFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')} ${getCorTextoLinhaClass(tela.subtituloCor, 'text-slate-300')}`}>
+                <p style={{ fontSize: `${tela.subtituloTamanho || 13}px` }} className={`leading-snug ${getAlinhamentoClass(estiloLinhas(tela).subAl)} ${getFaixaFundoClass(estiloLinhas(tela).subFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')} ${tela.subBold ? 'font-bold' : ''} ${getCorTextoLinhaClass(tela.subtituloCor, 'text-slate-300')}`}>
                   {tela.subtitulo}
                 </p>
               )}
@@ -1460,11 +1466,20 @@ export default function MobileForm() {
                   )}
 
                   {tela.tipo === 'grade' && (
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                       {tela.legendaEscala && (
-                        <div style={{ fontSize: `${tela.escalaTamanho || 12}px` }} className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 leading-relaxed text-left">
-                          <strong className="text-amber-300">Escala:</strong> {tela.legendaEscala}
-                        </div>
+                        <p
+                          style={{ fontSize: `${tela.escalaTamanho || 9}px` }}
+                          className={`text-center leading-snug ${tela.legendaBold ? 'font-bold' : ''} ${getCorTextoLinhaClass(tela.legendaCor, 'text-slate-300')} ${getFaixaFundoClass(tela.legendaFundo || 'escuro', '-mx-5 px-5 sm:-mx-6 sm:px-6')}`}
+                        >
+                          {parseScaleLegendItems(tela.legendaEscala).map((item, li) => (
+                            <span key={li} className="whitespace-nowrap">
+                              {li > 0 && <span className="opacity-40"> · </span>}
+                              {item.code && <strong className="text-amber-400 font-black">{item.code} </strong>}
+                              {item.label}
+                            </span>
+                          ))}
+                        </p>
                       )}
 
                       {opcoesAtivas.map((opt, oi) => {
@@ -1490,9 +1505,12 @@ export default function MobileForm() {
                         return (
                           <div
                             key={opt.id || oi}
-                            className="p-3.5 sm:p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2.5 text-left"
+                            className={`space-y-2 text-left border-y ${getFaixaFundoClass(tela.itemFundo || 'escuro', '-mx-5 px-5 sm:-mx-6 sm:px-6')} rounded-none`}
                           >
-                            <span className="text-xs sm:text-sm font-bold text-white block leading-snug">
+                            <span
+                              style={{ fontSize: `${tela.itemTamanho || 13}px` }}
+                              className={`${pesoFonte(tela.itemBold, true)} block leading-snug ${getCorTextoLinhaClass(tela.itemCor, 'text-white')}`}
+                            >
                               {opt.titulo}
                             </span>
                             <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${Math.max(1, cols.length)}, minmax(0, 1fr))` }}>
@@ -1505,7 +1523,7 @@ export default function MobileForm() {
                                     onClick={() => handleSelectGradeCol(col)}
                                     className={`py-2.5 rounded-xl text-xs sm:text-sm font-black border transition active:scale-95 ${
                                       isActive
-                                        ? 'bg-emerald-500 text-slate-950 border-emerald-300 shadow-lg shadow-emerald-500/20'
+                                        ? corGradeSelecionada(col, cols)
                                         : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-amber-400/60'
                                     }`}
                                   >

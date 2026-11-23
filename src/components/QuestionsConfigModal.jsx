@@ -51,7 +51,7 @@ import {
   saveEventTitle,
   DEFAULT_QUESTIONS_CONFIG 
 } from '../firebase';
-import { getFaixaFundoClass, estiloLinhas, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems, getEfeitoStyle, CORES_TEXTO_LINHAS, ALINHAMENTOS_TEXTO, FUNDOS_CAPTION } from '../utils/estilos';
+import { getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems, getEfeitoStyle, CORES_TEXTO_LINHAS, ALINHAMENTOS_TEXTO, FUNDOS_CAPTION } from '../utils/estilos';
 import ImportadorIA from './ImportadorIA';
 import EstiloLinhasTitulo from './EstiloLinhasTitulo';
 import { PRESETS_PESQUISAS } from '../utils/presets';
@@ -1266,251 +1266,15 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     </div>
                   </div>
 
-                  {/* TÍTULO 1 + SLIDE + BOLINHAS DE CORES */}
-                  <div className="space-y-1.5 pb-2.5 border-b border-slate-800/70">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[11px] font-bold text-slate-200">Título 1 (1ª Linha)</label>
-                      <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[10px]">
-                        {config.capaTitulo1Tamanho || config.capaFonteTamanho || 18}px
-                      </span>
-                    </div>
-                    <input
-                      type="text"
-                      value={config.capaTitulo1 ?? ''}
-                      onChange={(e) => setConfig({ ...config, capaTitulo1: e.target.value })}
-                      placeholder="Digite o Título 1..."
-                      className={`w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold shadow-inner ${getCorTextoLinhaClass(config.capaTitulo1Cor, 'text-white')}`}
-                    />
-                    <div className="flex flex-wrap items-center justify-between gap-3 pt-0.5">
-                      <div className="flex-1 flex items-center gap-2 min-w-[140px]">
-                        <span className="text-[9px] text-slate-500 font-mono">12px</span>
-                        <input
-                          type="range"
-                          min="12"
-                          max="36"
-                          step="1"
-                          value={config.capaTitulo1Tamanho || config.capaFonteTamanho || 18}
-                          onChange={(e) => setConfig({ ...config, capaTitulo1Tamanho: Number(e.target.value), capaFonteTamanho: Number(e.target.value) })}
-                          className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                        />
-                        <span className="text-[9px] text-slate-500 font-mono">36px</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        {CORES_TEXTO_LINHAS.map((c) => {
-                          const isSel = (config.capaTitulo1Cor || 'branco') === c.id;
-                          return (
-                            <button
-                              key={c.id}
-                              type="button"
-                              onClick={() => setConfig({ ...config, capaTitulo1Cor: c.id })}
-                              title={`Cor: ${c.label}`}
-                              className={`w-4 h-4 rounded-full transition-all ${c.bg} ${
-                                isSel ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110' : 'opacity-55 hover:opacity-100'
-                              }`}
-                            />
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* TÍTULO 2 + SLIDE + BOLINHAS DE CORES */}
-                  <div className="space-y-1.5 pb-2.5 border-b border-slate-800/70">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[11px] font-bold text-slate-200">Título 2 (2ª Linha)</label>
-                      <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[10px]">
-                        {config.capaTitulo2Tamanho || 16}px
-                      </span>
-                    </div>
-                    <input
-                      type="text"
-                      value={config.capaTitulo2 ?? ''}
-                      onChange={(e) => setConfig({ ...config, capaTitulo2: e.target.value })}
-                      placeholder="Digite o Título 2 (opcional)..."
-                      className={`w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold shadow-inner ${getCorTextoLinhaClass(config.capaTitulo2Cor, 'text-amber-300')}`}
-                    />
-                    <div className="flex flex-wrap items-center justify-between gap-3 pt-0.5">
-                      <div className="flex-1 flex items-center gap-2 min-w-[140px]">
-                        <span className="text-[9px] text-slate-500 font-mono">12px</span>
-                        <input
-                          type="range"
-                          min="12"
-                          max="36"
-                          step="1"
-                          value={config.capaTitulo2Tamanho || 16}
-                          onChange={(e) => setConfig({ ...config, capaTitulo2Tamanho: Number(e.target.value) })}
-                          className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                        />
-                        <span className="text-[9px] text-slate-500 font-mono">36px</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        {CORES_TEXTO_LINHAS.map((c) => {
-                          const isSel = (config.capaTitulo2Cor || 'dourado') === c.id;
-                          return (
-                            <button
-                              key={c.id}
-                              type="button"
-                              onClick={() => setConfig({ ...config, capaTitulo2Cor: c.id })}
-                              title={`Cor: ${c.label}`}
-                              className={`w-4 h-4 rounded-full transition-all ${c.bg} ${
-                                isSel ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110' : 'opacity-55 hover:opacity-100'
-                              }`}
-                            />
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* TÍTULO 3 + SLIDE + BOLINHAS DE CORES */}
-                  <div className="space-y-1.5 pb-2.5 border-b border-slate-800/70">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[11px] font-bold text-slate-200">Título 3 (3ª Linha)</label>
-                      <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[10px]">
-                        {config.capaTitulo3Tamanho || 15}px
-                      </span>
-                    </div>
-                    <input
-                      type="text"
-                      value={config.capaTitulo3 ?? ''}
-                      onChange={(e) => setConfig({ ...config, capaTitulo3: e.target.value })}
-                      placeholder="Digite o Título 3 (opcional)..."
-                      className={`w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold shadow-inner ${getCorTextoLinhaClass(config.capaTitulo3Cor, 'text-emerald-400')}`}
-                    />
-                    <div className="flex flex-wrap items-center justify-between gap-3 pt-0.5">
-                      <div className="flex-1 flex items-center gap-2 min-w-[140px]">
-                        <span className="text-[9px] text-slate-500 font-mono">12px</span>
-                        <input
-                          type="range"
-                          min="12"
-                          max="36"
-                          step="1"
-                          value={config.capaTitulo3Tamanho || 15}
-                          onChange={(e) => setConfig({ ...config, capaTitulo3Tamanho: Number(e.target.value) })}
-                          className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                        />
-                        <span className="text-[9px] text-slate-500 font-mono">36px</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        {CORES_TEXTO_LINHAS.map((c) => {
-                          const isSel = (config.capaTitulo3Cor || 'verde') === c.id;
-                          return (
-                            <button
-                              key={c.id}
-                              type="button"
-                              onClick={() => setConfig({ ...config, capaTitulo3Cor: c.id })}
-                              title={`Cor: ${c.label}`}
-                              className={`w-4 h-4 rounded-full transition-all ${c.bg} ${
-                                isSel ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110' : 'opacity-55 hover:opacity-100'
-                              }`}
-                            />
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* TEXTO ABAIXO + SLIDE + BOLINHAS DE CORES */}
-                  <div className="space-y-1.5 pb-2.5 border-b border-slate-800/70">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[11px] font-bold text-emerald-300">
-                        Texto Abaixo (Instrução / Explicação)
-                      </label>
-                      <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[10px]">
-                        {config.capaTextoAbaixoTamanho || 14}px
-                      </span>
-                    </div>
-                    <textarea
-                      rows={3}
-                      value={(config.capaTextoAbaixo !== undefined && config.capaTextoAbaixo !== '') ? config.capaTextoAbaixo : (config.pergunta1TextoAbaixo ?? '')}
-                      onChange={(e) => setConfig({ ...config, capaTextoAbaixo: e.target.value })}
-                      placeholder="Digite aqui o texto explicativo abaixo dos títulos..."
-                      className={`w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-lg px-3 py-2 text-xs placeholder-slate-500 shadow-inner resize-none ${getCorTextoLinhaClass(config.capaTextoAbaixoCor, 'text-slate-200')}`}
-                    />
-                    <div className="flex flex-wrap items-center justify-between gap-3 pt-0.5">
-                      <div className="flex-1 flex items-center gap-2 min-w-[140px]">
-                        <span className="text-[9px] text-slate-500 font-mono">10px</span>
-                        <input
-                          type="range"
-                          min="10"
-                          max="28"
-                          step="1"
-                          value={config.capaTextoAbaixoTamanho || 14}
-                          onChange={(e) => setConfig({ ...config, capaTextoAbaixoTamanho: Number(e.target.value) })}
-                          className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                        />
-                        <span className="text-[9px] text-slate-500 font-mono">28px</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        {CORES_TEXTO_LINHAS.map((c) => {
-                          const isSel = (config.capaTextoAbaixoCor || 'cinza') === c.id;
-                          return (
-                            <button
-                              key={c.id}
-                              type="button"
-                              onClick={() => setConfig({ ...config, capaTextoAbaixoCor: c.id })}
-                              title={`Cor: ${c.label}`}
-                              className={`w-4 h-4 rounded-full transition-all ${c.bg} ${
-                                isSel ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110' : 'opacity-55 hover:opacity-100'
-                              }`}
-                            />
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* ALINHAMENTO DOS TÍTULOS & FUNDO DOS CAPTIONS (INÍCIO) */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-2.5 border-b border-slate-800/70">
-                    <div>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">
-                        Alinhamento dos Títulos & Texto
-                      </span>
-                      <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
-                        {ALINHAMENTOS_TEXTO.map((al) => (
-                          <button
-                            key={al.id}
-                            type="button"
-                            onClick={() => setConfig({ ...config, capaAlinhamento: al.id })}
-                            className={`flex-1 py-1 rounded-lg text-[11px] font-bold transition ${
-                              (config.capaAlinhamento || 'center') === al.id
-                                ? 'bg-amber-400 text-slate-950 font-black shadow'
-                                : 'text-slate-400 hover:text-white'
-                            }`}
-                          >
-                            {al.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase">
-                          Fundo debaixo dos Captions
-                        </span>
-                        <span className="text-[10px] font-bold text-amber-300">
-                          {FUNDOS_CAPTION.find(f => f.id === (config.capaCaptionFundo || 'transparente'))?.label}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1.5 bg-slate-900 p-1.5 rounded-xl border border-slate-800">
-                        {FUNDOS_CAPTION.map((fc) => {
-                          const isSel = (config.capaCaptionFundo || 'transparente') === fc.id;
-                          return (
-                            <button
-                              key={fc.id}
-                              type="button"
-                              onClick={() => setConfig({ ...config, capaCaptionFundo: fc.id })}
-                              title={`Fundo: ${fc.label}`}
-                              className={`w-5 h-5 rounded-full transition-all ${fc.dot} ${
-                                isSel ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110' : 'opacity-65 hover:opacity-100'
-                              }`}
-                            />
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
+                  {/* Cada linha da capa numa seção própria: texto, tamanho, cor, negrito, alinhamento e faixa de fundo */}
+                  <EstiloLinhasTitulo
+                    linhas={[
+                      { rotulo: 'Título 1', texto: config.capaTitulo1 ?? '', onTexto: (v) => setConfig((c) => ({ ...c, capaTitulo1: v })), multilinha: false, tamanho: config.capaTitulo1Tamanho || (config.capaFonteTamanho || 18), min: 12, max: 36, onTamanho: (v) => setConfig((c) => ({ ...c, capaTitulo1Tamanho: v })), cor: config.capaTitulo1Cor || 'branco', onCor: (v) => setConfig((c) => ({ ...c, capaTitulo1Cor: v })), bold: config.capaTitulo1Bold ?? true, onBold: (v) => setConfig((c) => ({ ...c, capaTitulo1Bold: v })), alinhamento: config.capaTitulo1Alinhamento || config.capaAlinhamento || 'center', onAlinhamento: (v) => setConfig((c) => ({ ...c, capaTitulo1Alinhamento: v })), fundo: config.capaTitulo1Fundo || (config.capaCaptionFundo || 'transparente'), onFundo: (v) => setConfig((c) => ({ ...c, capaTitulo1Fundo: v })) },
+                      { rotulo: 'Título 2', texto: config.capaTitulo2 ?? '', onTexto: (v) => setConfig((c) => ({ ...c, capaTitulo2: v })), multilinha: false, tamanho: config.capaTitulo2Tamanho || 16, min: 10, max: 32, onTamanho: (v) => setConfig((c) => ({ ...c, capaTitulo2Tamanho: v })), cor: config.capaTitulo2Cor || 'dourado', onCor: (v) => setConfig((c) => ({ ...c, capaTitulo2Cor: v })), bold: config.capaTitulo2Bold ?? true, onBold: (v) => setConfig((c) => ({ ...c, capaTitulo2Bold: v })), alinhamento: config.capaTitulo2Alinhamento || config.capaAlinhamento || 'center', onAlinhamento: (v) => setConfig((c) => ({ ...c, capaTitulo2Alinhamento: v })), fundo: config.capaTitulo2Fundo || 'transparente', onFundo: (v) => setConfig((c) => ({ ...c, capaTitulo2Fundo: v })) },
+                      { rotulo: 'Título 3', texto: config.capaTitulo3 ?? '', onTexto: (v) => setConfig((c) => ({ ...c, capaTitulo3: v })), multilinha: false, tamanho: config.capaTitulo3Tamanho || 15, min: 10, max: 30, onTamanho: (v) => setConfig((c) => ({ ...c, capaTitulo3Tamanho: v })), cor: config.capaTitulo3Cor || 'verde', onCor: (v) => setConfig((c) => ({ ...c, capaTitulo3Cor: v })), bold: config.capaTitulo3Bold ?? true, onBold: (v) => setConfig((c) => ({ ...c, capaTitulo3Bold: v })), alinhamento: config.capaTitulo3Alinhamento || config.capaAlinhamento || 'center', onAlinhamento: (v) => setConfig((c) => ({ ...c, capaTitulo3Alinhamento: v })), fundo: config.capaTitulo3Fundo || 'transparente', onFundo: (v) => setConfig((c) => ({ ...c, capaTitulo3Fundo: v })) },
+                      { rotulo: 'Texto abaixo', texto: (config.capaTextoAbaixo !== undefined && config.capaTextoAbaixo !== '') ? config.capaTextoAbaixo : (config.pergunta1TextoAbaixo ?? ''), onTexto: (v) => setConfig((c) => ({ ...c, capaTextoAbaixo: v })), multilinha: true, tamanho: config.capaTextoAbaixoTamanho || 14, min: 9, max: 26, onTamanho: (v) => setConfig((c) => ({ ...c, capaTextoAbaixoTamanho: v })), cor: config.capaTextoAbaixoCor || 'cinza', onCor: (v) => setConfig((c) => ({ ...c, capaTextoAbaixoCor: v })), bold: config.capaTextoAbaixoBold ?? false, onBold: (v) => setConfig((c) => ({ ...c, capaTextoAbaixoBold: v })), alinhamento: config.capaTextoAbaixoAlinhamento || config.capaAlinhamento || 'center', onAlinhamento: (v) => setConfig((c) => ({ ...c, capaTextoAbaixoAlinhamento: v })), fundo: config.capaTextoAbaixoFundo || 'escuro', onFundo: (v) => setConfig((c) => ({ ...c, capaTextoAbaixoFundo: v })) }
+                    ]}
+                  />
 
                   {/* Botão COMEÇAR */}
                   <div className="space-y-2">
@@ -2306,8 +2070,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         linhas={(() => {
                           const e = estiloLinhas(config, 'pergunta1');
                           return [
-                            { rotulo: 'Título', tamanho: config.pergunta1FonteTamanho || 18, min: 12, max: 34, onTamanho: (v) => setConfig((c) => ({ ...c, pergunta1FonteTamanho: v })), alinhamento: e.tituloAl, onAlinhamento: (v) => setConfig((c) => ({ ...c, pergunta1TituloAlinhamento: v })), fundo: e.tituloFundo, onFundo: (v) => setConfig((c) => ({ ...c, pergunta1TituloFundo: v })) },
-                            { rotulo: 'Subtítulo', tamanho: config.pergunta1TextoAbaixoTamanho || 14, min: 9, max: 26, onTamanho: (v) => setConfig((c) => ({ ...c, pergunta1TextoAbaixoTamanho: v })), alinhamento: e.subAl, onAlinhamento: (v) => setConfig((c) => ({ ...c, pergunta1SubAlinhamento: v })), fundo: e.subFundo, onFundo: (v) => setConfig((c) => ({ ...c, pergunta1SubFundo: v })) }
+                            { rotulo: 'Título', tamanho: config.pergunta1FonteTamanho || 18, min: 12, max: 34, onTamanho: (v) => setConfig((c) => ({ ...c, pergunta1FonteTamanho: v })), cor: config.pergunta1TituloCor || 'branco', onCor: (v) => setConfig((c) => ({ ...c, pergunta1TituloCor: v })), bold: config.pergunta1TituloBold !== false, onBold: (v) => setConfig((c) => ({ ...c, pergunta1TituloBold: v })), alinhamento: e.tituloAl, onAlinhamento: (v) => setConfig((c) => ({ ...c, pergunta1TituloAlinhamento: v })), fundo: e.tituloFundo, onFundo: (v) => setConfig((c) => ({ ...c, pergunta1TituloFundo: v })) },
+                            { rotulo: 'Subtítulo', tamanho: config.pergunta1TextoAbaixoTamanho || 14, min: 9, max: 26, onTamanho: (v) => setConfig((c) => ({ ...c, pergunta1TextoAbaixoTamanho: v })), cor: config.pergunta1TextoAbaixoCor || 'cinza', onCor: (v) => setConfig((c) => ({ ...c, pergunta1TextoAbaixoCor: v })), bold: Boolean(config.pergunta1SubBold), onBold: (v) => setConfig((c) => ({ ...c, pergunta1SubBold: v })), alinhamento: e.subAl, onAlinhamento: (v) => setConfig((c) => ({ ...c, pergunta1SubAlinhamento: v })), fundo: e.subFundo, onFundo: (v) => setConfig((c) => ({ ...c, pergunta1SubFundo: v })) }
                           ];
                         })()}
                       />
@@ -3327,11 +3091,19 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             linhas={(() => {
                               const e = estiloLinhas(telaAlvo);
                               return [
-                                { rotulo: 'Título', tamanho: telaAlvo.titulo1Tamanho || 18, min: 12, max: 34, onTamanho: (v) => handleUpdateTelaProp(extraIndex, 'titulo1Tamanho', v), alinhamento: e.tituloAl, onAlinhamento: (v) => handleUpdateTelaProp(extraIndex, 'tituloAlinhamento', v), fundo: e.tituloFundo, onFundo: (v) => handleUpdateTelaProp(extraIndex, 'tituloFundo', v) },
-                                { rotulo: 'Subtítulo', tamanho: telaAlvo.subtituloTamanho || 12, min: 9, max: 26, onTamanho: (v) => handleUpdateTelaProp(extraIndex, 'subtituloTamanho', v), alinhamento: e.subAl, onAlinhamento: (v) => handleUpdateTelaProp(extraIndex, 'subAlinhamento', v), fundo: e.subFundo, onFundo: (v) => handleUpdateTelaProp(extraIndex, 'subFundo', v) }
+                                { rotulo: 'Título', tamanho: telaAlvo.titulo1Tamanho || 18, min: 12, max: 34, onTamanho: (v) => handleUpdateTelaProp(extraIndex, 'titulo1Tamanho', v), cor: telaAlvo.titulo1Cor || 'branco', onCor: (v) => handleUpdateTelaProp(extraIndex, 'titulo1Cor', v), bold: telaAlvo.tituloBold !== false, onBold: (v) => handleUpdateTelaProp(extraIndex, 'tituloBold', v), alinhamento: e.tituloAl, onAlinhamento: (v) => handleUpdateTelaProp(extraIndex, 'tituloAlinhamento', v), fundo: e.tituloFundo, onFundo: (v) => handleUpdateTelaProp(extraIndex, 'tituloFundo', v) },
+                                { rotulo: 'Subtítulo', tamanho: telaAlvo.subtituloTamanho || 12, min: 9, max: 26, onTamanho: (v) => handleUpdateTelaProp(extraIndex, 'subtituloTamanho', v), cor: telaAlvo.subtituloCor || 'cinza', onCor: (v) => handleUpdateTelaProp(extraIndex, 'subtituloCor', v), bold: Boolean(telaAlvo.subBold), onBold: (v) => handleUpdateTelaProp(extraIndex, 'subBold', v), alinhamento: e.subAl, onAlinhamento: (v) => handleUpdateTelaProp(extraIndex, 'subAlinhamento', v), fundo: e.subFundo, onFundo: (v) => handleUpdateTelaProp(extraIndex, 'subFundo', v) }
                               ];
                             })()}
                           />
+                          {telaAlvo.tipo === 'grade' && (
+                            <EstiloLinhasTitulo
+                              linhas={[
+                                { rotulo: 'Legenda', tamanho: telaAlvo.escalaTamanho || 9, min: 7, max: 16, onTamanho: (v) => handleUpdateTelaProp(extraIndex, 'escalaTamanho', v), cor: telaAlvo.legendaCor || 'cinza', onCor: (v) => handleUpdateTelaProp(extraIndex, 'legendaCor', v), bold: Boolean(telaAlvo.legendaBold), onBold: (v) => handleUpdateTelaProp(extraIndex, 'legendaBold', v), fundo: telaAlvo.legendaFundo || 'escuro', onFundo: (v) => handleUpdateTelaProp(extraIndex, 'legendaFundo', v) },
+                                { rotulo: 'Itens', tamanho: telaAlvo.itemTamanho || 12, min: 8, max: 20, onTamanho: (v) => handleUpdateTelaProp(extraIndex, 'itemTamanho', v), cor: telaAlvo.itemCor || 'branco', onCor: (v) => handleUpdateTelaProp(extraIndex, 'itemCor', v), bold: telaAlvo.itemBold !== false, onBold: (v) => handleUpdateTelaProp(extraIndex, 'itemBold', v), fundo: telaAlvo.itemFundo || 'escuro', onFundo: (v) => handleUpdateTelaProp(extraIndex, 'itemFundo', v) }
+                              ]}
+                            />
+                          )}
                         </div>
 
                     {/* CONFIGURAÇÃO ESPECÍFICA CONFORME O TIPO DA TELA EXTRA */}
@@ -4631,49 +4403,48 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
                       <div className="h-[374px] overflow-y-auto p-3 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between select-none custom-scrollbar">
                         <div className="flex flex-col justify-between h-full space-y-2">
-                          <div className={`shrink-0 space-y-1.5 pt-1 ${getAlinhamentoClass(config.capaAlinhamento)} ${getCaptionFundoClass(config.capaCaptionFundo)}`}>
-                            {(config.capaTitulo1 || config.capaTitulo2 || config.capaTitulo3) ? (
-                              <div className="space-y-1">
-                                {config.capaTitulo1 && (
+                            <div className="shrink-0 space-y-1 pt-1">
+                              {config.capaTitulo1 && (
+                                <div className={`${getAlinhamentoClass(config.capaTitulo1Alinhamento || config.capaAlinhamento)} ${getFaixaFundoClass(config.capaTitulo1Fundo || config.capaCaptionFundo || 'transparente', '-mx-3 px-3')}`}>
                                   <h3
                                     style={{ fontSize: `${(config.capaTitulo1Tamanho || config.capaFonteTamanho || 18) * 0.72}px` }}
-                                    className={`font-black leading-tight ${getCorTextoLinhaClass(config.capaTitulo1Cor, 'text-white')}`}
+                                    className={`${pesoFonte(config.capaTitulo1Bold, true)} leading-tight ${getCorTextoLinhaClass(config.capaTitulo1Cor, 'text-white')}`}
                                   >
                                     {config.capaTitulo1}
                                   </h3>
-                                )}
-                                {config.capaTitulo2 && (
+                                </div>
+                              )}
+                              {config.capaTitulo2 && (
+                                <div className={`${getAlinhamentoClass(config.capaTitulo2Alinhamento || config.capaAlinhamento)} ${getFaixaFundoClass(config.capaTitulo2Fundo || 'transparente', '-mx-3 px-3')}`}>
                                   <h3
                                     style={{ fontSize: `${(config.capaTitulo2Tamanho || 16) * 0.72}px` }}
-                                    className={`font-black leading-tight ${getCorTextoLinhaClass(config.capaTitulo2Cor, 'text-amber-300')}`}
+                                    className={`${pesoFonte(config.capaTitulo2Bold, true)} leading-tight ${getCorTextoLinhaClass(config.capaTitulo2Cor, 'text-amber-300')}`}
                                   >
                                     {config.capaTitulo2}
                                   </h3>
-                                )}
-                                {config.capaTitulo3 && (
+                                </div>
+                              )}
+                              {config.capaTitulo3 && (
+                                <div className={`${getAlinhamentoClass(config.capaTitulo3Alinhamento || config.capaAlinhamento)} ${getFaixaFundoClass(config.capaTitulo3Fundo || 'transparente', '-mx-3 px-3')}`}>
                                   <h3
                                     style={{ fontSize: `${(config.capaTitulo3Tamanho || 15) * 0.72}px` }}
-                                    className={`font-black leading-tight ${getCorTextoLinhaClass(config.capaTitulo3Cor, 'text-emerald-400')}`}
+                                    className={`${pesoFonte(config.capaTitulo3Bold, true)} leading-tight ${getCorTextoLinhaClass(config.capaTitulo3Cor, 'text-emerald-400')}`}
                                   >
                                     {config.capaTitulo3}
                                   </h3>
-                                )}
-                              </div>
-                            ) : (
-                              <h3 className="text-xs font-bold text-slate-500 italic">
-                                (Sem título na capa de início)
-                              </h3>
-                            )}
-
-                            {(config.capaTextoAbaixo || config.pergunta1TextoAbaixo) && (
-                              <p
-                                style={{ fontSize: `${(config.capaTextoAbaixoTamanho || 14) * 0.78}px` }}
-                                className={`mt-1 leading-relaxed whitespace-pre-line bg-slate-900/60 border border-slate-800/80 rounded-xl p-2 ${getCorTextoLinhaClass(config.capaTextoAbaixoCor, 'text-slate-300')}`}
-                              >
-                                {config.capaTextoAbaixo || config.pergunta1TextoAbaixo}
-                              </p>
-                            )}
-                          </div>
+                                </div>
+                              )}
+                              {(config.capaTextoAbaixo || config.pergunta1TextoAbaixo) && (
+                                <div className={`${getAlinhamentoClass(config.capaTextoAbaixoAlinhamento || config.capaAlinhamento)} ${getFaixaFundoClass(config.capaTextoAbaixoFundo || 'escuro', '-mx-3 px-3')}`}>
+                                  <p
+                                    style={{ fontSize: `${(config.capaTextoAbaixoTamanho || 14) * 0.72}px` }}
+                                    className={`${pesoFonte(config.capaTextoAbaixoBold, false)} leading-relaxed whitespace-pre-line ${getCorTextoLinhaClass(config.capaTextoAbaixoCor, 'text-slate-300')}`}
+                                  >
+                                    {(config.capaTextoAbaixo || config.pergunta1TextoAbaixo)}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
 
                           <div className="flex-1 flex flex-col justify-end py-3">
                             <div className="relative p-[2px] rounded-2xl overflow-hidden shadow-lg shadow-amber-500/20 group cursor-pointer active:scale-95 transition">
@@ -4742,7 +4513,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                   {config.pergunta1Titulo && (
                                     <h3
                                       style={{ fontSize: `${(config.pergunta1FonteTamanho || 18) * 0.72}px` }}
-                                      className={`font-black leading-tight ${getCorTextoLinhaClass(config.pergunta1TituloCor, 'text-white')}`}
+                                      className={`${pesoFonte(config.pergunta1TituloBold)} leading-tight ${getCorTextoLinhaClass(config.pergunta1TituloCor, 'text-white')}`}
                                     >
                                       {config.pergunta1Titulo}
                                     </h3>
@@ -4750,7 +4521,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                   {config.pergunta1Titulo2 && (
                                     <h3
                                       style={{ fontSize: `${(config.pergunta1Titulo2Tamanho || 16) * 0.72}px` }}
-                                      className={`font-black leading-tight ${getCorTextoLinhaClass(config.pergunta1Titulo2Cor, 'text-amber-300')}`}
+                                      className={`${pesoFonte(config.pergunta1TituloBold)} leading-tight ${getCorTextoLinhaClass(config.pergunta1Titulo2Cor, 'text-amber-300')}`}
                                     >
                                       {config.pergunta1Titulo2}
                                     </h3>
@@ -4758,7 +4529,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                   {config.pergunta1Titulo3 && (
                                     <h3
                                       style={{ fontSize: `${(config.pergunta1Titulo3Tamanho || 15) * 0.72}px` }}
-                                      className={`font-black leading-tight ${getCorTextoLinhaClass(config.pergunta1Titulo3Cor, 'text-emerald-400')}`}
+                                      className={`${pesoFonte(config.pergunta1TituloBold)} leading-tight ${getCorTextoLinhaClass(config.pergunta1Titulo3Cor, 'text-emerald-400')}`}
                                     >
                                       {config.pergunta1Titulo3}
                                     </h3>
@@ -4772,7 +4543,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                               {config.pergunta1TextoAbaixo && (
                                 <p
                                   style={{ fontSize: `${(config.pergunta1TextoAbaixoTamanho || 14) * 0.72}px` }}
-                                  className={`leading-snug ${getAlinhamentoClass(estiloLinhas(config, 'pergunta1').subAl)} ${getFaixaFundoClass(estiloLinhas(config, 'pergunta1').subFundo, '-mx-2.5 px-2.5')} ${getCorTextoLinhaClass(config.pergunta1TextoAbaixoCor, 'text-slate-300')}`}
+                                  className={`leading-snug ${getAlinhamentoClass(estiloLinhas(config, 'pergunta1').subAl)} ${getFaixaFundoClass(estiloLinhas(config, 'pergunta1').subFundo, '-mx-2.5 px-2.5')} ${config.pergunta1SubBold ? 'font-bold' : ''} ${getCorTextoLinhaClass(config.pergunta1TextoAbaixoCor, 'text-slate-300')}`}
                                 >
                                   {config.pergunta1TextoAbaixo}
                                 </p>
@@ -5031,7 +4802,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             {(telaExtra.titulo1 || telaExtra.titulo) && (
                               <h3
                                 style={{ fontSize: `${(telaExtra.titulo1Tamanho || 18) * 0.68}px` }}
-                                className={`font-black leading-tight ${getCorTextoLinhaClass(telaExtra.titulo1Cor, 'text-white')}`}
+                                className={`${pesoFonte(telaExtra.tituloBold)} leading-tight ${getCorTextoLinhaClass(telaExtra.titulo1Cor, 'text-white')}`}
                               >
                                 {telaExtra.titulo1 || telaExtra.titulo}
                               </h3>
@@ -5039,7 +4810,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             {telaExtra.titulo2 && (
                               <h3
                                 style={{ fontSize: `${(telaExtra.titulo2Tamanho || 15) * 0.68}px` }}
-                                className={`font-black leading-tight ${getCorTextoLinhaClass(telaExtra.titulo2Cor, 'text-amber-300')}`}
+                                className={`${pesoFonte(telaExtra.tituloBold)} leading-tight ${getCorTextoLinhaClass(telaExtra.titulo2Cor, 'text-amber-300')}`}
                               >
                                 {telaExtra.titulo2}
                               </h3>
@@ -5047,7 +4818,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             {telaExtra.titulo3 && (
                               <h3
                                 style={{ fontSize: `${(telaExtra.titulo3Tamanho || 14) * 0.68}px` }}
-                                className={`font-black leading-tight ${getCorTextoLinhaClass(telaExtra.titulo3Cor, 'text-emerald-400')}`}
+                                className={`${pesoFonte(telaExtra.tituloBold)} leading-tight ${getCorTextoLinhaClass(telaExtra.titulo3Cor, 'text-emerald-400')}`}
                               >
                                 {telaExtra.titulo3}
                               </h3>
@@ -5056,7 +4827,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             {telaExtra.subtitulo && (
                               <p
                                 style={{ fontSize: `${(telaExtra.subtituloTamanho || 12) * 0.75}px` }}
-                                className={`leading-snug ${getAlinhamentoClass(estiloLinhas(telaExtra).subAl)} ${getFaixaFundoClass(estiloLinhas(telaExtra).subFundo, '-mx-2.5 px-2.5')} ${getCorTextoLinhaClass(telaExtra.subtituloCor, 'text-slate-300')}`}
+                                className={`leading-snug ${getAlinhamentoClass(estiloLinhas(telaExtra).subAl)} ${getFaixaFundoClass(estiloLinhas(telaExtra).subFundo, '-mx-2.5 px-2.5')} ${telaExtra.subBold ? 'font-bold' : ''} ${getCorTextoLinhaClass(telaExtra.subtituloCor, 'text-slate-300')}`}
                               >
                                 {telaExtra.subtitulo}
                               </p>
@@ -5185,19 +4956,18 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                 onClick={e => e.stopPropagation()}
                               >
                                 {telaExtra.legendaEscala && (
-                                  <div className="p-1.5 rounded-lg bg-slate-900/95 border border-amber-500/30 flex flex-wrap items-center justify-center gap-1">
+                                  <p
+                                    style={{ fontSize: `${(telaExtra.escalaTamanho || 9) * 0.72}px` }}
+                                    className={`text-center leading-snug ${telaExtra.legendaBold ? 'font-bold' : ''} ${getCorTextoLinhaClass(telaExtra.legendaCor, 'text-slate-300')} ${getFaixaFundoClass(telaExtra.legendaFundo || 'escuro', '-mx-2.5 px-2.5')}`}
+                                  >
                                     {parseScaleLegendItems(telaExtra.legendaEscala).map((item, li) => (
-                                      <span
-                                        key={li}
-                                        style={{ fontSize: `${(telaExtra.escalaTamanho || 11) * 0.68}px` }}
-                                        className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-slate-950/90 border border-slate-800 text-slate-200 leading-none"
-                                      >
-                                        {item.code && <strong className="text-amber-400 font-black">{item.code}</strong>}
-                                        {item.code && <span className="text-slate-500">=</span>}
-                                        <span>{item.label}</span>
+                                      <span key={li} className="whitespace-nowrap">
+                                        {li > 0 && <span className="opacity-40"> · </span>}
+                                        {item.code && <strong className="text-amber-400 font-black">{item.code} </strong>}
+                                        {item.label}
                                       </span>
                                     ))}
-                                  </div>
+                                  </p>
                                 )}
                                 {cardsAtivos.map((opt, oi) => {
                                   const cols = telaExtra.colunasGrade || ['1', '2', '3', '4', '5', 'NA'];
@@ -5220,15 +4990,15 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                         paddingRight: '7px',
                                         ...getEfeitoStyle(telaExtra.cardEfeitoEstilo || config.cardEfeitoEstilo, telaExtra.cardProfundidade || config.cardProfundidade)
                                       }}
-                                      className={`rounded-xl border flex flex-col justify-center gap-1 ${getCardFundoClass(telaExtra.cardFundoEstilo || config.cardFundoEstilo)}`}
+                                      className={`-mx-2.5 border-y flex flex-col justify-center gap-1 ${getFaixaFundoClass(telaExtra.itemFundo || 'escuro', '')} rounded-none`}
                                     >
                                       <span
-                                        style={{ fontSize: `${autoFontT}px` }}
-                                        className={`font-bold block leading-tight truncate ${getCardFonteTituloClass(telaExtra.cardCorFonteTitulo || config.cardCorFonteTitulo)}`}
+                                        style={{ fontSize: `${telaExtra.itemTamanho ? telaExtra.itemTamanho * 0.72 : autoFontT}px` }}
+                                        className={`${pesoFonte(telaExtra.itemBold, true)} block leading-tight truncate ${getCorTextoLinhaClass(telaExtra.itemCor, 'text-white')}`}
                                       >
                                         {opt.titulo}
                                       </span>
-                                      <div className="grid grid-cols-6 gap-1">
+                                      <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${cols.length}, minmax(0, 1fr))` }}>
                                         {cols.map((col) => {
                                           const active = selVal === col;
                                           return (
@@ -5239,7 +5009,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                               style={{ fontSize: `${btnFont}px`, paddingTop: `${btnPadY}px`, paddingBottom: `${btnPadY}px` }}
                                               className={`rounded-md font-black border transition leading-none ${
                                                 active
-                                                  ? 'bg-emerald-500 text-slate-950 border-emerald-300 shadow'
+                                                  ? corGradeSelecionada(col, cols)
                                                   : 'bg-slate-950 text-slate-300 border-slate-700 hover:border-amber-400/60'
                                               }`}
                                             >
@@ -5410,11 +5180,6 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             )}
                           </div>
 
-                          <div className="shrink-0 pt-1 border-t border-slate-800/80">
-                            <span className="text-[9px] text-emerald-400 font-bold">
-                              ✓ Esta tela aparecerá no celular
-                            </span>
-                          </div>
                         </div>
                       </div>
                     </div>
