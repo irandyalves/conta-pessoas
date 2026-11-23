@@ -534,6 +534,21 @@ export default function MobileForm() {
     );
   };
 
+  // Avançar após Tela 1 (seja clicando num card ou no botão COMEÇAR)
+  const avancarDeP1 = (motivoEscolhido = '') => {
+    const finalMotivo = motivoEscolhido || comoChegou || questionsConfig?.pergunta1Titulo || 'Participante';
+    setComoChegou(finalMotivo);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    if (telasExtrasAtivas.length > 0) {
+      setCurrentStep('extra_0');
+    } else if (questionsConfig?.mostrarTelaAcompanhantes !== false) {
+      setCurrentStep('acompanhantes');
+    } else {
+      handleSelectQtd(1, finalMotivo);
+    }
+  };
+
   // Avançar após selecionar um card na Pergunta 1
   const handleSelectComoChegou = (opcao) => {
     setComoChegou(opcao.titulo);
@@ -547,34 +562,24 @@ export default function MobileForm() {
       return;
     }
 
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    if (telasExtrasAtivas.length > 0) {
-      setCurrentStep('extra_0');
-    } else {
-      setCurrentStep('acompanhantes');
-    }
+    avancarDeP1(opcao.titulo);
   };
 
   // Confirmar resposta da gaveta na Pergunta 1 e avançar
   const handleConfirmarGavetaP1 = (opcao) => {
     setComoChegou(opcao.titulo);
     setGavetaRespondidas((prev) => ({ ...prev, [opcao.id]: true }));
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-
-    if (telasExtrasAtivas.length > 0) {
-      setCurrentStep('extra_0');
-    } else {
-      setCurrentStep('acompanhantes');
-    }
+    avancarDeP1(opcao.titulo);
   };
 
   // Avançar após selecionar opção em tela extra
   const handleSelectOpcaoExtra = (telaIndex, opcao) => {
     const tela = telasExtrasAtivas[telaIndex];
-    setRespostasExtras((prev) => ({
-      ...prev,
+    const nextExtras = {
+      ...respostasExtras,
       [tela.titulo || `Pergunta_${telaIndex + 1}`]: opcao.titulo
-    }));
+    };
+    setRespostasExtras(nextExtras);
 
     // Se o card tem gaveta condicional, abre a gaveta para o respondente digitar
     if (opcao.temGaveta) {
@@ -588,30 +593,35 @@ export default function MobileForm() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     if (telaIndex + 1 < telasExtrasAtivas.length) {
       setCurrentStep(`extra_${telaIndex + 1}`);
-    } else {
+    } else if (questionsConfig?.mostrarTelaAcompanhantes !== false) {
       setCurrentStep('acompanhantes');
+    } else {
+      handleSelectQtd(1, comoChegou || opcao.titulo, nextExtras);
     }
   };
 
   // Confirmar resposta da gaveta em tela extra e avançar
   const handleConfirmarGavetaExtra = (telaIndex, opcao) => {
     const tela = telasExtrasAtivas[telaIndex];
-    setRespostasExtras((prev) => ({
-      ...prev,
+    const nextExtras = {
+      ...respostasExtras,
       [tela.titulo || `Pergunta_${telaIndex + 1}`]: opcao.titulo
-    }));
+    };
+    setRespostasExtras(nextExtras);
     setGavetaRespondidas((prev) => ({ ...prev, [opcao.id]: true }));
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
     if (telaIndex + 1 < telasExtrasAtivas.length) {
       setCurrentStep(`extra_${telaIndex + 1}`);
-    } else {
+    } else if (questionsConfig?.mostrarTelaAcompanhantes !== false) {
       setCurrentStep('acompanhantes');
+    } else {
+      handleSelectQtd(1, comoChegou || opcao.titulo, nextExtras);
     }
   };
 
-  // Ao escolher quantidade de acompanhantes: registra e trava definitivamente este dispositivo
-  const handleSelectQtd = (qtd) => {
+  // Ao escolher quantidade de acompanhantes (ou finalizar na última tela): registra e trava definitivamente este dispositivo
+  const handleSelectQtd = (qtd, overrideComoChegou = null, overrideExtras = null, overrideTextos = null) => {
     // Se já votou ou já está bloqueado, barra qualquer nova tentativa
     const estaBloqueadoAntes = dispositivoBloqueado || currentStep === 'final' || 
       localStorage.getItem(DISPOSITIVO_BLOQUEADO_EVENTO_KEY) === 'true' || 
@@ -640,12 +650,12 @@ export default function MobileForm() {
     } catch (e) {}
 
     registrarPresenca({
-      comoChegou,
+      comoChegou: overrideComoChegou || comoChegou || questionsConfig?.pergunta1Titulo || 'Participante',
       qtdPessoas: qtd,
       evento: eventoTitulo,
-      respostasExtras,
+      respostasExtras: overrideExtras || respostasExtras,
       gavetaRespostas: gavetaTextos,
-      textoRespostas: dissertativaTextos,
+      textoRespostas: overrideTextos || dissertativaTextos,
       eventoId: activeEventId
     });
 
@@ -817,24 +827,32 @@ export default function MobileForm() {
 
         {/* TÍTULO DA ETAPA ATUAL: TELA 1 */}
         {currentStep === 'p1' && (
-          <div className="mt-2 pt-2 border-t border-slate-800/60">
-            <h2 
-              style={{ fontSize: `${questionsConfig.pergunta1FonteTamanho || 22}px` }}
-              className="font-black text-white leading-tight"
-            >
-              {questionsConfig.pergunta1Titulo2 ? (
-                <>
-                  <span className="block">{questionsConfig.pergunta1Titulo}</span>
-                  <span className="block">{questionsConfig.pergunta1Titulo2}</span>
-                </>
-              ) : (
-                questionsConfig.pergunta1Titulo || 'Como você chegou aqui?'
-              )}
-            </h2>
+          <div className="mt-2 pt-2 border-t border-slate-800/60 space-y-2">
+            {(questionsConfig.pergunta1Titulo || questionsConfig.pergunta1Titulo2) && (
+              <h2 
+                style={{ fontSize: `${questionsConfig.pergunta1FonteTamanho || 22}px` }}
+                className="font-black text-white leading-tight"
+              >
+                {questionsConfig.pergunta1Titulo2 ? (
+                  <>
+                    <span className="block">{questionsConfig.pergunta1Titulo}</span>
+                    <span className="block">{questionsConfig.pergunta1Titulo2}</span>
+                  </>
+                ) : (
+                  questionsConfig.pergunta1Titulo
+                )}
+              </h2>
+            )}
             {questionsConfig.pergunta1Subtitulo && (
               <p className="text-xs sm:text-sm text-slate-400 mt-1">
                 {questionsConfig.pergunta1Subtitulo}
               </p>
+            )}
+            {/* TEXTO DIGITADO ABAIXO DO TÍTULO NA TELA 1 */}
+            {questionsConfig.pergunta1TextoAbaixo && (
+              <div className="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 text-xs sm:text-sm text-slate-200 leading-relaxed whitespace-pre-line shadow-inner">
+                {questionsConfig.pergunta1TextoAbaixo}
+              </div>
             )}
           </div>
         )}
@@ -1013,6 +1031,31 @@ export default function MobileForm() {
                 </button>
               </div>
             )}
+
+            {/* BOTÃO COMEÇAR NO RODAPÉ DA TELA 1 COM EFEITO DE LUZES GIRANDO SUAVE */}
+            {(questionsConfig.mostrarBotaoComecar !== false || cardsAtivosP1.length === 0) && (
+              <div className="pt-4">
+                <button
+                  type="button"
+                  onClick={() => avancarDeP1()}
+                  className="relative w-full p-[2.5px] rounded-2xl overflow-hidden shadow-2xl shadow-amber-500/25 active:scale-[0.98] transition-all group"
+                >
+                  {/* Luzes girando suave no contorno */}
+                  <div
+                    className="absolute inset-[-200%] animate-spin"
+                    style={{
+                      animationDuration: '4s',
+                      background: 'conic-gradient(from 0deg, transparent 0%, #f59e0b 25%, #10b981 50%, #38bdf8 75%, transparent 100%)'
+                    }}
+                  />
+                  <div className="relative w-full py-4 px-6 rounded-[14px] bg-slate-950/95 group-hover:bg-slate-900/95 text-amber-300 font-black text-base uppercase tracking-widest flex items-center justify-center gap-2.5">
+                    <Sparkles className="w-5 h-5 text-amber-400 animate-pulse" />
+                    <span>{questionsConfig.pergunta1BotaoComecarTexto || 'COMEÇAR'}</span>
+                    <ChevronRight className="w-5 h-5 text-emerald-400 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -1025,15 +1068,20 @@ export default function MobileForm() {
           if (!tela) return null;
 
           const avancarParaProxima = (valorSalvo = null) => {
+            const nextTextos = valorSalvo !== null
+              ? { ...dissertativaTextos, [tela.titulo || tela.id]: valorSalvo }
+              : dissertativaTextos;
             if (valorSalvo !== null) {
-              setDissertativaTextos((prev) => ({ ...prev, [tela.titulo || tela.id]: valorSalvo }));
+              setDissertativaTextos(nextTextos);
             }
             setCampoObrigatorioErro(null);
             window.scrollTo({ top: 0, behavior: 'smooth' });
             if (idx + 1 < telasExtrasAtivas.length) {
               setCurrentStep(`extra_${idx + 1}`);
-            } else {
+            } else if (questionsConfig?.mostrarTelaAcompanhantes !== false) {
               setCurrentStep('acompanhantes');
+            } else {
+              handleSelectQtd(1, comoChegou || valorSalvo || 'Participante', respostasExtras, nextTextos);
             }
           };
 

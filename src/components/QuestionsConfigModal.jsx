@@ -50,7 +50,7 @@ import {
   saveEventTitle,
   DEFAULT_QUESTIONS_CONFIG 
 } from '../firebase';
-import { parseAnyFile, parseJsonOrText } from '../utils/formImporter';
+import { parseAnyFile, parseJsonOrText, parseGoogleFormsUrl } from '../utils/formImporter';
 import { PRESETS_PESQUISAS } from '../utils/presets';
 
 export const TIPOS_PERGUNTA = [
@@ -307,6 +307,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
   const [showPresetsModal, setShowPresetsModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [importTexto, setImportTexto] = useState('');
+  const [googleFormsUrl, setGoogleFormsUrl] = useState('');
   const [importando, setImportando] = useState(false);
   const [previewImportado, setPreviewImportado] = useState(null);
   const [showTipoNovaTelaModal, setShowTipoNovaTelaModal] = useState(false);
@@ -412,12 +413,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
     }));
   };
 
-  // Excluir card da Tela 1
+  // Excluir card da Tela 1 (Permite deixar 100% em branco se o admin quiser apenas texto + botão COMEÇAR)
   const handleExcluirCardP1 = (index) => {
-    if (config.opcoesChegada.length <= 1) {
-      mostrarFeedback('Atenção', 'Você precisa manter pelo menos 1 opção na Tela 1!', 'aviso');
-      return;
-    }
     const cardAlvo = config.opcoesChegada[index];
     mostrarConfirm(
       'Excluir Opção',
@@ -430,6 +427,66 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
       },
       'Excluir'
     );
+  };
+
+  // DIVISOR DE TELA: "Daqui pra frente vira Tela 2, Tela 3..."
+  const handleDividirParaNovaTelaP1 = (splitIndex) => {
+    const todas = config.opcoesChegada || [];
+    if (splitIndex <= 0 || splitIndex >= todas.length) return;
+
+    const ficamNaTela1 = todas.slice(0, splitIndex);
+    const vaoParaNovaTela = todas.slice(splitIndex);
+    const totalExtras = (config.telasExtras || []).length;
+
+    const novaTela = {
+      id: `extra_${Date.now()}`,
+      ativa: true,
+      tipo: 'cards',
+      titulo: vaoParaNovaTela[0]?.titulo || `Pergunta da Tela ${totalExtras + 2}`,
+      titulo1: vaoParaNovaTela[0]?.titulo || `Pergunta da Tela ${totalExtras + 2}`,
+      titulo2: '',
+      subtitulo: '',
+      cardsPorTela: 4,
+      obrigatorio: false,
+      botaoTexto: 'Avançar',
+      opcoes: vaoParaNovaTela
+    };
+
+    setConfig((prev) => ({
+      ...prev,
+      opcoesChegada: ficamNaTela1,
+      telasExtras: [...(prev.telasExtras || []), novaTela]
+    }));
+    setActiveTab(`extra_${totalExtras}`);
+  };
+
+  const handleDividirParaNovaTelaExtra = (extraIndex, splitOptIndex) => {
+    const telas = [...(config.telasExtras || [])];
+    const telaAtual = telas[extraIndex];
+    if (!telaAtual || !Array.isArray(telaAtual.opcoes)) return;
+    if (splitOptIndex <= 0 || splitOptIndex >= telaAtual.opcoes.length) return;
+
+    const ficam = telaAtual.opcoes.slice(0, splitOptIndex);
+    const vao = telaAtual.opcoes.slice(splitOptIndex);
+
+    telas[extraIndex] = { ...telaAtual, opcoes: ficam };
+    const novaTela = {
+      id: `extra_${Date.now()}`,
+      ativa: true,
+      tipo: telaAtual.tipo || 'cards',
+      titulo: vao[0]?.titulo || `Nova Tela`,
+      titulo1: vao[0]?.titulo || `Nova Tela`,
+      titulo2: '',
+      subtitulo: '',
+      cardsPorTela: 4,
+      obrigatorio: false,
+      botaoTexto: 'Avançar',
+      opcoes: vao
+    };
+
+    telas.splice(extraIndex + 1, 0, novaTela);
+    setConfig((prev) => ({ ...prev, telasExtras: telas }));
+    setActiveTab(`extra_${extraIndex + 1}`);
   };
 
   // ============================================================
@@ -585,6 +642,22 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
     }
   };
 
+  // Importar pelo link direto do Google Forms com IA
+  const handleImportarGoogleFormsUrl = async () => {
+    if (!googleFormsUrl.trim()) {
+      mostrarFeedback('Link Vazio', 'Cole o link do Google Forms antes de clicar em Analisar Link.', 'aviso');
+      return;
+    }
+    try {
+      setImportando(true);
+      const imported = await parseGoogleFormsUrl(googleFormsUrl);
+      setPreviewImportado(imported);
+    } catch (err) {
+      mostrarFeedback('Aviso ao Ler Link do Google Forms', err?.message || String(err), 'aviso');
+    } finally {
+      setImportando(false);
+    }
+  };
   // Importar texto colado do Forms ou Google Docs
   const handleImportarTextoColado = () => {
     if (!importTexto.trim()) {
@@ -874,27 +947,10 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 </span>
               </button>
 
-              {/* Tela 2 (Acompanhantes) */}
-              <button
-                type="button"
-                onClick={() => setActiveTab('acompanhantes')}
-                className={`pb-2.5 px-3 text-xs sm:text-sm font-bold border-b-2 transition flex items-center gap-1.5 whitespace-nowrap ${
-                  activeTab === 'acompanhantes'
-                    ? 'border-amber-400 text-amber-300'
-                    : 'border-transparent text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <Users className="w-4 h-4" />
-                <span>Tela 2</span>
-                <span className="text-[10px] bg-slate-800 text-slate-300 px-1.5 py-0.2 rounded-full font-mono">
-                  Acomp.
-                </span>
-              </button>
-
-              {/* Telas Extras Criadas Dinamicamente (Tela 3, Tela 4, etc.) */}
+              {/* Telas Extras Criadas Dinamicamente (Tela 2, Tela 3, etc. conforme ordem real) */}
               {(config.telasExtras || []).map((tela, idx) => {
                 const tabKey = `extra_${idx}`;
-                const numTela = idx + 3;
+                const numTela = idx + 2;
                 const cardsAtivos = (tela.opcoes || []).filter(o => o.ativo !== false).length;
                 return (
                   <button
@@ -909,12 +965,43 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                   >
                     <Layers className="w-4 h-4" />
                     <span>Tela {numTela}</span>
-                    <span className="text-[10px] bg-slate-800 text-slate-300 px-1.5 py-0.2 rounded-full font-mono">
-                      {cardsAtivos}
-                    </span>
+                    {['cards', 'radio', 'checkbox', 'dropdown'].includes(tela.tipo || 'cards') && (
+                      <span className="text-[10px] bg-slate-800 text-slate-300 px-1.5 py-0.2 rounded-full font-mono">
+                        {cardsAtivos}
+                      </span>
+                    )}
                   </button>
                 );
               })}
+
+              {/* Tela Acompanhantes (Opcional - se ativa aparece na sequência, ou pode ser ativada) */}
+              {config.mostrarTelaAcompanhantes !== false ? (
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('acompanhantes')}
+                  className={`pb-2.5 px-3 text-xs sm:text-sm font-bold border-b-2 transition flex items-center gap-1.5 whitespace-nowrap ${
+                    activeTab === 'acompanhantes'
+                      ? 'border-amber-400 text-amber-300'
+                      : 'border-transparent text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <Users className="w-4 h-4" />
+                  <span>Tela {(config.telasExtras || []).length + 2} (Acomp.)</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setConfig(prev => ({ ...prev, mostrarTelaAcompanhantes: true }));
+                    setActiveTab('acompanhantes');
+                  }}
+                  title="Ativar tela de contagem de acompanhantes/grupo"
+                  className="pb-2.5 px-2.5 text-[11px] font-bold border-b-2 border-transparent text-slate-500 hover:text-emerald-300 transition flex items-center gap-1 whitespace-nowrap"
+                >
+                  <Users className="w-3.5 h-3.5" />
+                  <span>+ Acompanhantes</span>
+                </button>
+              )}
 
               {/* Tela Fim */}
               <button
@@ -1123,19 +1210,19 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       }`}
                     >
                       <Type className="w-3.5 h-3.5" />
-                      <span>Título da Pergunta</span>
+                      <span>Título, Texto & Botão COMEÇAR</span>
                     </button>
                   </div>
 
-                  {/* 1. TÍTULO 1 E TÍTULO 2 DA TELA 1 PARA QUEBRAR O TÍTULO */}
+                  {/* 1. TÍTULO 1, TÍTULO 2, TEXTO ABAIXO DO TÍTULO E BOTÃO COMEÇAR COM LUZES */}
                   {subTabTela1 === 'pergunta' && (
-                    <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-2.5 shadow-sm animate-fade-in">
+                    <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-3 shadow-sm animate-fade-in">
                       <div className="flex items-center justify-between">
                         <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wide">
-                          Título da Pergunta (Tela 1)
+                          Título, Texto de Introdução & Botão COMEÇAR (Tela 1)
                         </span>
                         <span className="text-[10px] text-slate-400">
-                          Use Título 1 e 2 para quebrar em 2 linhas
+                          Aparece ao vivo no celular à direita
                         </span>
                       </div>
 
@@ -1144,9 +1231,9 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                           <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Título 1 (1ª Linha)</label>
                           <input
                             type="text"
-                            value={config.pergunta1Titulo || ''}
+                            value={config.pergunta1Titulo ?? ''}
                             onChange={(e) => setConfig({ ...config, pergunta1Titulo: e.target.value })}
-                            placeholder="Ex: Como você"
+                            placeholder="Digite o título da Tela 1..."
                             className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-white shadow-inner"
                           />
                         </div>
@@ -1154,18 +1241,64 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                           <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Título 2 (2ª Linha - Opcional)</label>
                           <input
                             type="text"
-                            value={config.pergunta1Titulo2 || ''}
+                            value={config.pergunta1Titulo2 ?? ''}
                             onChange={(e) => setConfig({ ...config, pergunta1Titulo2: e.target.value })}
-                            placeholder="Ex: chegou aqui?"
+                            placeholder="Complemento do título (opcional)..."
                             className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-amber-300 shadow-inner"
                           />
                         </div>
                       </div>
 
+                      {/* TEXTO PARA SER INSERIDO ABAIXO DO TÍTULO NA TELA 1 */}
+                      <div>
+                        <label className="text-[10px] font-bold text-emerald-300 block mb-1">
+                          Texto Abaixo do Título (Boas-vindas, Instrução ou Explicação na Tela 1)
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={config.pergunta1TextoAbaixo ?? ''}
+                          onChange={(e) => setConfig({ ...config, pergunta1TextoAbaixo: e.target.value })}
+                          placeholder="Digite aqui um texto para aparecer logo abaixo do título na Tela 1..."
+                          className="w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-lg px-3 py-2 text-xs text-slate-200 placeholder-slate-500 shadow-inner resize-none"
+                        />
+                      </div>
+
+                      {/* BOTÃO COMEÇAR NO RODAPÉ COM EFEITO DE LUZES GIRANDO SUAVE */}
+                      <div className="p-3 rounded-xl bg-slate-900/90 border border-amber-500/30 space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <label className="flex items-center gap-2 cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              checked={config.mostrarBotaoComecar !== false}
+                              onChange={(e) => setConfig({ ...config, mostrarBotaoComecar: e.target.checked })}
+                              className="w-4 h-4 rounded accent-amber-400"
+                            />
+                            <span className="text-xs font-black text-amber-300">
+                              ✨ Exibir Botão "COMEÇAR" no Rodapé (Com Efeito de Luzes Girando Suave)
+                            </span>
+                          </label>
+                        </div>
+
+                        {config.mostrarBotaoComecar !== false && (
+                          <div>
+                            <label className="text-[10px] font-bold text-slate-400 block mb-0.5">
+                              Texto do Botão Iluminado no Rodapé
+                            </label>
+                            <input
+                              type="text"
+                              value={config.pergunta1BotaoComecarTexto ?? 'COMEÇAR'}
+                              onChange={(e) => setConfig({ ...config, pergunta1BotaoComecarTexto: e.target.value })}
+                              placeholder="COMEÇAR"
+                              className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-black text-amber-300 uppercase tracking-wider"
+                            />
+                          </div>
+                        )}
+                      </div>
+
                       {/* Slider de Tamanho da Fonte da Pergunta 1 */}
                       <div className="pt-2 border-t border-slate-800/80">
                         <div className="flex items-center justify-between text-xs mb-1">
-                          <span className="font-bold text-slate-300">Tamanho da Fonte da Pergunta 1</span>
+                          <span className="font-bold text-slate-300">Tamanho da Fonte do Título</span>
                           <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
                             {config.pergunta1FonteTamanho || 18}px
                           </span>
@@ -1179,11 +1312,6 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                           onChange={(e) => setConfig({ ...config, pergunta1FonteTamanho: Number(e.target.value) })}
                           className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
                         />
-                        <div className="flex justify-between text-[9px] text-slate-500 font-mono">
-                          <span>14px (Menor)</span>
-                          <span>18px (Padrão)</span>
-                          <span>28px (Maior)</span>
-                        </div>
                       </div>
                     </div>
                   )}
@@ -1499,7 +1627,70 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       </button>
                     </div>
 
+                    {/* Campo Rápido de Texto Abaixo do Título & Botão COMEÇAR também visíveis direto na aba principal da Tela 1 */}
+                    <div className="bg-slate-950 border border-slate-800 rounded-xl p-3 space-y-2.5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-[10px] font-bold text-amber-300 block mb-0.5">
+                            Título da Tela 1
+                          </label>
+                          <input
+                            type="text"
+                            value={config.pergunta1Titulo ?? ''}
+                            onChange={(e) => setConfig({ ...config, pergunta1Titulo: e.target.value })}
+                            placeholder="Digite o título ou pergunta da Tela 1..."
+                            className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-emerald-300 block mb-0.5">
+                            Texto Abaixo do Título (Tela 1)
+                          </label>
+                          <input
+                            type="text"
+                            value={config.pergunta1TextoAbaixo ?? ''}
+                            onChange={(e) => setConfig({ ...config, pergunta1TextoAbaixo: e.target.value })}
+                            placeholder="Texto complementar abaixo do título..."
+                            className="w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-lg px-2.5 py-1.5 text-xs text-slate-200"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-slate-900">
+                        <label className="flex items-center gap-2 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={config.mostrarBotaoComecar !== false}
+                            onChange={(e) => setConfig({ ...config, mostrarBotaoComecar: e.target.checked })}
+                            className="w-3.5 h-3.5 rounded accent-amber-400"
+                          />
+                          <span className="text-[11px] font-bold text-amber-300">
+                            ✨ Botão Rodapé "{config.pergunta1BotaoComecarTexto || 'COMEÇAR'}" (Luzes Girando Suave)
+                          </span>
+                        </label>
+                        {config.mostrarBotaoComecar !== false && (
+                          <input
+                            type="text"
+                            value={config.pergunta1BotaoComecarTexto ?? 'COMEÇAR'}
+                            onChange={(e) => setConfig({ ...config, pergunta1BotaoComecarTexto: e.target.value })}
+                            placeholder="COMEÇAR"
+                            className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-0.5 text-[11px] font-black text-amber-300 w-32 text-center"
+                          />
+                        )}
+                      </div>
+                    </div>
+
                     <div className="space-y-2.5">
+                      {(config.opcoesChegada || []).length === 0 && (
+                        <div className="p-6 rounded-2xl bg-slate-950/70 border border-dashed border-slate-800 text-center space-y-2">
+                          <p className="text-xs font-bold text-slate-300">
+                            Tela 1 em branco (sem opções cadastradas ainda)
+                          </p>
+                          <p className="text-[11px] text-slate-400">
+                            Clique em <strong>"Adicionar Opção"</strong> acima, use <strong>"+ Inserir Tela"</strong> para montar Tela 2, Tela 3... ou clique em <strong>"Importar IA"</strong>.
+                          </p>
+                        </div>
+                      )}
                       {(config.opcoesChegada || []).map((opcao, idx) => {
                         const isAtivo = opcao.ativo !== false;
                         const ativosAteAqui = (config.opcoesChegada || []).slice(0, idx + 1).filter(c => c.ativo !== false).length;
@@ -1534,6 +1725,18 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                   <span className="text-[10px] bg-amber-500/15 border border-amber-500/30 text-amber-300 px-2 py-0.5 rounded-full font-bold">
                                     Página {paginaDoCard}
                                   </span>
+                                )}
+
+                                {idx > 0 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDividirParaNovaTelaP1(idx)}
+                                    title="Mover esta opção e as próximas para uma nova Tela (Tela 2, Tela 3...)"
+                                    className="px-2 py-0.5 rounded-lg bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 text-[10px] font-bold flex items-center gap-1 transition"
+                                  >
+                                    <ArrowRight className="w-3 h-3" />
+                                    <span>Daqui p/ frente → Nova Tela</span>
+                                  </button>
                                 )}
                               </div>
 
@@ -1829,7 +2032,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 const telaAlvo = (config.telasExtras || [])[extraIndex];
                 if (!telaAlvo) return null;
 
-                const numTela = extraIndex + 3;
+                const numTela = extraIndex + 2;
                 const cardsAtivos = (telaAlvo.opcoes || []).filter(o => o.ativo !== false);
                 const limitCards = Number(telaAlvo.cardsPorTela) || 4;
 
@@ -2105,18 +2308,32 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                   }`}
                                 >
                                   <div className="flex items-center justify-between gap-2">
-                                    <button
-                                      type="button"
-                                      onClick={() => handleToggleCardExtra(extraIndex, optIdx)}
-                                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition border ${
-                                        isAtivo
-                                          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/30'
-                                          : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'
-                                      }`}
-                                    >
-                                      {isAtivo ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                                      <span>{isAtivo ? 'Visível' : 'Oculto'}</span>
-                                    </button>
+                                    <div className="flex items-center gap-1.5">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleToggleCardExtra(extraIndex, optIdx)}
+                                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition border ${
+                                          isAtivo
+                                            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/30'
+                                            : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'
+                                        }`}
+                                      >
+                                        {isAtivo ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                                        <span>{isAtivo ? 'Visível' : 'Oculto'}</span>
+                                      </button>
+
+                                      {optIdx > 0 && (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleDividirParaNovaTelaExtra(extraIndex, optIdx)}
+                                          title="Mover esta opção e as próximas para uma nova Tela"
+                                          className="px-2 py-0.5 rounded-lg bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 text-[10px] font-bold flex items-center gap-1 transition"
+                                        >
+                                          <ArrowRight className="w-3 h-3" />
+                                          <span>Daqui p/ frente → Tela {numTela + 1}</span>
+                                        </button>
+                                      )}
+                                    </div>
 
                                     <div className="flex items-center gap-2">
                                       <select
@@ -2559,10 +2776,32 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               )}
 
               {/* ====================================================== */}
-              {/* ABA: TELA 2 (ACOMPANHANTES / QUANTAS PESSOAS VIERAM)   */}
+              {/* ABA: TELA DE ACOMPANHANTES (OPCIONAL)                  */}
               {/* ====================================================== */}
               {activeTab === 'acompanhantes' && (
                 <div className="space-y-4">
+                  {/* Barra Superior com botão de Desativar/Ocultar esta tela caso o admin não queira no fluxo */}
+                  <div className="bg-slate-950 border border-slate-800 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <Users className="w-4 h-4 text-amber-400" />
+                      <span className="text-xs font-black text-white">
+                        Tela de Contagem de Acompanhantes / Grupo
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setConfig(prev => ({ ...prev, mostrarTelaAcompanhantes: false }));
+                        setActiveTab('tela_1');
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 text-xs font-bold flex items-center gap-1 transition"
+                      title="Remover tela de acompanhantes deste evento"
+                    >
+                      <EyeOff className="w-3.5 h-3.5" />
+                      <span>Ocultar Tela de Acompanhantes</span>
+                    </button>
+                  </div>
+
                   {/* Navegação Secundária Minimalista da Tela 2 */}
                   <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-900/90 rounded-2xl border border-slate-800 self-start">
                     <button
@@ -2968,16 +3207,6 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 Tela 1
               </button>
 
-              <button
-                type="button"
-                onClick={() => setPreviewScreen('acompanhantes')}
-                className={`py-1 px-2 rounded-lg text-[10px] font-bold transition text-center shrink-0 ${
-                  previewScreen === 'acompanhantes' ? 'bg-amber-400 text-slate-950 shadow' : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Tela 2
-              </button>
-
               {(config.telasExtras || []).map((_, idx) => (
                 <button
                   key={idx}
@@ -2987,9 +3216,21 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     previewScreen === `extra_${idx}` ? 'bg-amber-400 text-slate-950 shadow' : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  Tela {idx + 3}
+                  Tela {idx + 2}
                 </button>
               ))}
+
+              {config.mostrarTelaAcompanhantes !== false && (
+                <button
+                  type="button"
+                  onClick={() => setPreviewScreen('acompanhantes')}
+                  className={`py-1 px-2 rounded-lg text-[10px] font-bold transition text-center shrink-0 ${
+                    previewScreen === 'acompanhantes' ? 'bg-amber-400 text-slate-950 shadow' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Acomp.
+                </button>
+              )}
 
               <button
                 type="button"
@@ -3086,19 +3327,32 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       </div>
 
                       <div className="pt-1 border-t border-slate-800/60">
-                        <h3 
-                          style={{ fontSize: `${(config.pergunta1FonteTamanho || 18) * 0.72}px` }}
-                          className="font-black text-white leading-tight"
-                        >
-                          {config.pergunta1Titulo2 ? (
-                            <>
-                              <span className="block">{config.pergunta1Titulo}</span>
-                              <span className="block">{config.pergunta1Titulo2}</span>
-                            </>
-                          ) : (
-                            config.pergunta1Titulo || 'Como você chegou aqui?'
-                          )}
-                        </h3>
+                        {(config.pergunta1Titulo || config.pergunta1Titulo2) ? (
+                          <h3 
+                            style={{ fontSize: `${(config.pergunta1FonteTamanho || 18) * 0.72}px` }}
+                            className="font-black text-white leading-tight"
+                          >
+                            {config.pergunta1Titulo2 ? (
+                              <>
+                                <span className="block">{config.pergunta1Titulo}</span>
+                                <span className="block">{config.pergunta1Titulo2}</span>
+                              </>
+                            ) : (
+                              config.pergunta1Titulo
+                            )}
+                          </h3>
+                        ) : (
+                          <h3 className="text-xs font-bold text-slate-500 italic">
+                            (Sem título na Tela 1)
+                          </h3>
+                        )}
+
+                        {/* TEXTO ABAIXO DO TÍTULO NA TELA 1 */}
+                        {config.pergunta1TextoAbaixo && (
+                          <p className="text-[11px] text-slate-300 mt-1.5 leading-relaxed whitespace-pre-line bg-slate-900/60 border border-slate-800/80 rounded-xl p-2">
+                            {config.pergunta1TextoAbaixo}
+                          </p>
+                        )}
                       </div>
 
                       {totalPaginasPreviewP1 > 1 && (
@@ -3273,6 +3527,27 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                           <span>Ver mais</span>
                           <ChevronRight className="w-3 h-3" />
                         </button>
+                      </div>
+                    )}
+
+                    {/* BOTÃO COMEÇAR NO RODAPÉ DA TELA 1 COM EFEITO DE LUZES GIRANDO SUAVE */}
+                    {config.mostrarBotaoComecar !== false && (
+                      <div className="shrink-0 pt-2">
+                        <div className="relative p-[2px] rounded-2xl overflow-hidden shadow-lg shadow-amber-500/20 group cursor-pointer">
+                          {/* Luzes girando suave no contorno */}
+                          <div
+                            className="absolute inset-[-150%] animate-spin"
+                            style={{
+                              animationDuration: '4s',
+                              background: 'conic-gradient(from 0deg, transparent 0%, #f59e0b 25%, #10b981 50%, #38bdf8 75%, transparent 100%)'
+                            }}
+                          />
+                          <div className="relative w-full py-2.5 px-4 rounded-[14px] bg-slate-950 hover:bg-slate-900 text-amber-300 font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2">
+                            <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                            <span>{config.pergunta1BotaoComecarTexto || 'COMEÇAR'}</span>
+                            <ChevronRight className="w-3.5 h-3.5 text-emerald-400" />
+                          </div>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -3868,9 +4143,37 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 </button>
               </div>
 
-              {/* Upload de Arquivo Word (.docx, .doc), Planilha (.csv) ou Texto (.txt, .json) */}
+              {/* 1. IMPORTAR PELO LINK DIRETO DO GOOGLE FORMS (IA) */}
+              <div className="p-3.5 rounded-2xl bg-slate-950 border border-sky-500/40 space-y-2">
+                <label className="text-xs font-black text-sky-300 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-sky-400" />
+                  <span>Importar pelo Link do Google Forms (Análise Automática IA):</span>
+                </label>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input
+                    type="url"
+                    value={googleFormsUrl}
+                    onChange={(e) => setGoogleFormsUrl(e.target.value)}
+                    placeholder="Cole aqui o link: https://docs.google.com/forms/d/e/.../viewform ou https://forms.gle/..."
+                    className="flex-1 bg-slate-900 border border-slate-700 focus:border-sky-400 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleImportarGoogleFormsUrl}
+                    disabled={importando || !googleFormsUrl.trim()}
+                    className="px-4 py-2 bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-400 hover:to-sky-500 text-slate-950 font-black text-xs rounded-xl shadow active:scale-95 transition disabled:opacity-40 shrink-0"
+                  >
+                    {importando ? 'Analisando Link...' : 'Analisar Link Forms'}
+                  </button>
+                </div>
+                <p className="text-[10px] text-slate-400">
+                  Lê todas as perguntas, múltipla escolha, checkboxes, lista suspensa, escalas 0-10 e textos do Google Forms e distribui nas Telas 1, 2, 3...
+                </p>
+              </div>
+
+              {/* 2. Upload de Arquivo Word (.docx, .doc), Planilha (.csv) ou Texto (.txt, .json) */}
               <div className="p-4 rounded-2xl bg-slate-950 border-2 border-dashed border-slate-800 hover:border-emerald-500/50 transition text-center space-y-2">
-                <UploadCloud className="w-8 h-8 text-emerald-400 mx-auto" />
+                <UploadCloud className="w-7 h-7 text-emerald-400 mx-auto" />
                 <div>
                   <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 font-bold text-xs hover:bg-emerald-500/25 active:scale-95 transition">
                     <FolderUp className="w-4 h-4" />

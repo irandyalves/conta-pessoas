@@ -184,6 +184,60 @@ export function escutarEventosLista(callback) {
   return () => window.removeEventListener('church_eventos_lista_changed', localHandler);
 }
 
+export const BLANK_QUESTIONS_CONFIG = {
+  isBlankEvent: true,
+  pergunta1Titulo: '',
+  pergunta1Titulo2: '',
+  pergunta1Subtitulo: '',
+  pergunta1TextoAbaixo: '', // Texto livre digitado abaixo do título na Tela 1
+  pergunta1BotaoComecarTexto: 'COMEÇAR',
+  mostrarBotaoComecar: true,
+  pergunta1FonteTamanho: 18,
+  cardsPorTela: 4,
+  cardFonteTitulo: 16,
+  cardFonteSubtitulo: 12,
+  cardAltura: 82,
+  cardFundoEstilo: 'escuro',
+  cardEfeitoEstilo: 'efeito_3d',
+  cardProfundidade: 5,
+  cardCorFonteTitulo: 'branco',
+  cardCorFonteSubtitulo: 'cinza',
+  esperaLinha1: 'DENTRO DE INSTANTES',
+  esperaLinha2: 'ESTARÁ LIBERADO',
+  esperaLinha3: 'PARA RESPONDER.',
+  esperaLinha1Tamanho: 26,
+  esperaLinha2Tamanho: 26,
+  esperaLinha3Tamanho: 26,
+  esperaFonteTamanho: 26,
+  finalTitulo1: 'MUITO OBRIGADO',
+  finalTitulo2: 'PELA SUA PRESENÇA.',
+  finalTitulo: 'MUITO OBRIGADO PELA SUA PRESENÇA.',
+  finalTituloFonteTamanho: 26,
+  finalMensagem: 'será espetacular!',
+  finalMensagemFonteTamanho: 16,
+  finalStatus: 'REGISTRO CONCLUÍDO!',
+  finalStatusFonteTamanho: 18,
+  finalInstrucao: 'pode guardar seu celular',
+  finalInstrucaoFonteTamanho: 13,
+  finalFonteTamanho: 26,
+  opcoesChegada: [],
+  telasExtras: [],
+  mostrarTelaAcompanhantes: false,
+  pergunta2Titulo: '',
+  pergunta2Titulo2: '',
+  pergunta2Subtitulo: '',
+  pergunta2FonteTamanho: 18,
+  opcaoIndividualTitulo: 'SÓ EU',
+  opcaoIndividualSubtitulo: ', vim sozinho',
+  divisorQtdTexto: 'Quantas pessoas vieram com você?',
+  btnQtdAltura: 74,
+  btnQtdCor: 'slate',
+  btnQtdEfeito: 'efeito_3d',
+  btnQtdProfundidade: 5,
+  btnQtdFonteNumero: 34,
+  btnQtdCorNumero: 'branco'
+};
+
 export async function criarNovoEvento(id, titulo, presetConfig = null) {
   const cleanId = sanitizeEventId(id || (titulo ? titulo.toLowerCase() : `evento_${Date.now()}`));
   const cleanTitle = (titulo || cleanId.toUpperCase()).trim();
@@ -192,16 +246,20 @@ export async function criarNovoEvento(id, titulo, presetConfig = null) {
   const existe = listaAtual.find(e => e.id === cleanId);
   const novaLista = existe 
     ? listaAtual.map(e => e.id === cleanId ? { ...e, titulo: cleanTitle } : e)
-    : [...listaAtual, { id: cleanId, titulo: cleanTitle, ativo: true }];
+    : [...listaAtual, { id: cleanId, titulo: cleanTitle, ativo: true, sessaoAtiva: false }];
 
   await salvarEventosLista(novaLista);
   setActiveEventId(cleanId);
   await saveEventTitle(cleanTitle, cleanId);
   await salvarEventoAtivoGlobal(cleanId, cleanTitle);
 
-  if (presetConfig) {
-    await saveQuestionsConfig(presetConfig, cleanId);
-  }
+  // Ao criar um evento novo, salva tudo 100% EM BRANCO (sem nenhuma pergunta pré-cadastrada)
+  const initialConfig = presetConfig || {
+    ...BLANK_QUESTIONS_CONFIG,
+    opcoesChegada: [],
+    telasExtras: []
+  };
+  await saveQuestionsConfig(initialConfig, cleanId);
 
   return { id: cleanId, titulo: cleanTitle };
 }
@@ -731,12 +789,19 @@ function normalizeQuestionsConfig(config) {
   merged.finalInstrucaoFonteTamanho = Number(merged.finalInstrucaoFonteTamanho) || 13;
   merged.finalFonteTamanho = merged.finalTituloFonteTamanho;
 
-  // Tela 1 e Tela 2 (Perguntas)
-  merged.pergunta1Titulo = merged.pergunta1Titulo || 'Como você chegou aqui?';
-  merged.pergunta1Titulo2 = merged.pergunta1Titulo2 || '';
+  // Tela 1 e Tela 2 (Perguntas) - Se for evento criado em branco, preserva strings vazias e arrays vazios
+  const isBlank = Boolean(config.isBlankEvent);
+  merged.isBlankEvent = isBlank;
+  merged.pergunta1Titulo = config.pergunta1Titulo !== undefined ? config.pergunta1Titulo : (isBlank ? '' : 'Como você chegou aqui?');
+  merged.pergunta1Titulo2 = config.pergunta1Titulo2 || '';
+  merged.pergunta1Subtitulo = config.pergunta1Subtitulo || '';
+  merged.pergunta1TextoAbaixo = config.pergunta1TextoAbaixo || '';
+  merged.pergunta1BotaoComecarTexto = config.pergunta1BotaoComecarTexto || 'COMEÇAR';
+  merged.mostrarBotaoComecar = config.mostrarBotaoComecar !== undefined ? Boolean(config.mostrarBotaoComecar) : true;
   merged.pergunta1FonteTamanho = Number(merged.pergunta1FonteTamanho) || 18;
 
-  merged.pergunta2Titulo = merged.pergunta2Titulo || 'Você está só ou tem mais pessoas te acompanhando?';
+  merged.mostrarTelaAcompanhantes = config.mostrarTelaAcompanhantes !== undefined ? Boolean(config.mostrarTelaAcompanhantes) : !isBlank;
+  merged.pergunta2Titulo = config.pergunta2Titulo !== undefined ? config.pergunta2Titulo : (isBlank ? '' : 'Você está só ou tem mais pessoas te acompanhando?');
   merged.pergunta2Titulo2 = merged.pergunta2Titulo2 || '';
   merged.pergunta2FonteTamanho = Number(merged.pergunta2FonteTamanho) || 18;
 
@@ -783,8 +848,8 @@ function normalizeQuestionsConfig(config) {
   };
 
   // Garantir que cada opção tenha o campo 'ativo', 'id' e suporte a gaveta condicional rica
-  if (Array.isArray(merged.opcoesChegada)) {
-    merged.opcoesChegada = merged.opcoesChegada.map((op, idx) => ({
+  if (Array.isArray(config.opcoesChegada)) {
+    merged.opcoesChegada = config.opcoesChegada.map((op, idx) => ({
       id: op.id || `card_${idx + 1}`,
       titulo: op.titulo || '',
       subtitulo: op.subtitulo || '',
@@ -795,7 +860,7 @@ function normalizeQuestionsConfig(config) {
       gaveta: normalizeGaveta(op)
     }));
   } else {
-    merged.opcoesChegada = DEFAULT_QUESTIONS_CONFIG.opcoesChegada;
+    merged.opcoesChegada = isBlank ? [] : DEFAULT_QUESTIONS_CONFIG.opcoesChegada;
   }
 
   // Garantir telas extras com todos os tipos de componentes mundiais
@@ -860,7 +925,7 @@ export function getSavedQuestionsConfig(targetEventId = null) {
   } catch (e) {
     console.error('Erro ao ler perguntas do localStorage:', e);
   }
-  return DEFAULT_QUESTIONS_CONFIG;
+  return eventId === DEFAULT_EVENT_ID ? DEFAULT_QUESTIONS_CONFIG : BLANK_QUESTIONS_CONFIG;
 }
 
 export async function saveQuestionsConfig(config, targetEventId = null) {

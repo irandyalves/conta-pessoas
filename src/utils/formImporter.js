@@ -159,6 +159,187 @@ export function parseJsonOrText(content) {
 }
 
 /**
+ * Importa diretamente a partir do Link Público de um Google Forms (docs.google.com/forms/d/e/.../viewform ou forms.gle/...)
+ * Extrai a estrutura real das perguntas (FB_PUBLIC_LOAD_DATA_) via proxies públicos de leitura HTML
+ */
+export async function parseGoogleFormsUrl(url) {
+  const cleanUrl = String(url || '').trim();
+  if (!cleanUrl.startsWith('http')) {
+    throw new Error('Por favor, cole um link válido do Google Forms (começando com https://).');
+  }
+
+  const proxyGenerators = [
+    (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+    (u) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
+    (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`
+  ];
+
+  let html = '';
+  for (const makeProxy of proxyGenerators) {
+    try {
+      const resp = await fetch(makeProxy(cleanUrl));
+      if (resp.ok) {
+        const text = await resp.text();
+        if (text && (text.includes('FB_PUBLIC_LOAD_DATA_') || text.includes('docs-title') || text.length > 500)) {
+          html = text;
+          break;
+        }
+      }
+    } catch (e) {
+      // Tenta o próximo proxy
+    }
+  }
+
+  if (!html) {
+    throw new Error('Não foi possível acessar o link diretamente pelo navegador (o formulário pode estar restrito ou privado). Dica: Abra o Google Forms, pressione Ctrl+A e Ctrl+C e cole o texto na caixa abaixo!');
+  }
+
+  return parseGoogleFormsHtml(html);
+}
+
+export function parseGoogleFormsHtml(html) {
+  // 1. Tenta extrair o JSON nativo do Google Forms: var FB_PUBLIC_LOAD_DATA_ = [...];
+  const match = html.match(/FB_PUBLIC_LOAD_DATA_\s*=\s*(\[[\s\S]*?\]);\s*<\/script>/i) ||
+                html.match(/FB_PUBLIC_LOAD_DATA_\s*=\s*(\[[\s\S]*?\]);/i);
+
+  if (match && match[1]) {
+    try {
+      const data = JSON.parse(match[1]);
+      const formBody = data?.[1];
+      const formDescription = formBody?.[0] || '';
+      const rawItems = formBody?.[1] || [];
+      const formTitle = data?.[3] || formBody?.[8] || 'Formulário Importado';
+
+      const screens = [];
+      const icones = ['Tag', 'Church', 'HeartHandshake', 'Share2', 'Compass', 'Smile', 'Star', 'Sparkles'];
+      const cores = ['amber', 'emerald', 'sky', 'purple', 'indigo', 'rose'];
+
+      // Tipos internos do Google Forms:
+      // 0 = Texto Curto, 1 = Parágrafo (Texto Longo), 2 = Múltipla Escolha (Radio/Cards),
+      // 3 = Lista Suspensa (Dropdown), 4 = Caixas de Seleção (Checkbox), 5 = Escala Linear (Slider),
+      // 7 = Grade, 8 = Quebra de Seção/Página, 9 = Data, 10 = Hora
+      rawItems.forEach((item, idx) => {
+        if (!Array.isArray(item)) return;
+        const qTitle = (item[1] || '').trim();
+        const qDesc = (item[2] || '').trim();
+        const gType = item[3];
+        const qDetails = item[4]?.[0];
+
+        if (!qTitle || gType === 8 || gType === 6) return; // Ignora cabeçalhos puros sem pergunta
+
+        let tipo = 'cards';
+        let opcoes = [];
+        let sliderMin = 1;
+        let sliderMax = 5;
+
+        if (gType === 0) {
+          tipo = 'texto_curto';
+        } else if (gType === 1) {
+          tipo = 'texto';
+        } else if (gType === 2) {
+          // Múltipla escolha única
+          const rawChoices = qDetails?.[1] || [];
+          tipo = rawChoices.length <= 6 ? 'cards' : 'radio';
+          opcoes = rawChoices.map((c, oIdx) => ({
+            id: `gf_opt_${idx}_${oIdx}`,
+            titulo: String(c?.[0] || `Opção ${oIdx + 1}`).trim(),
+            subtitulo: '',
+            ativo: true,
+            icone: icones[oIdx % icones.length],
+            cor: cores[oIdx % cores.length],
+            temGaveta: Boolean(c?.[4]), // Opção "Outro" no Google Forms vira Gaveta!
+            gaveta: c?.[4] ? {
+              tipo: 'texto_curto',
+              pergunta: 'Especifique:',
+              placeholder: 'Digite aqui...',
+              obrigatorio: false,
+              botaoConfirmar: 'Confirmar & Avançar'
+            } : null
+          }));
+        } else if (gType === 3) {
+          tipo = 'dropdown';
+          const rawChoices = qDetails?.[1] || [];
+          opcoes = rawChoices.map((c, oIdx) => ({
+            id: `gf_dd_${idx}_${oIdx}`,
+            titulo: String(c?.[0] || `Opção ${oIdx + 1}`).trim(),
+            subtitulo: '',
+            ativo: true,
+            icone: 'Tag',
+            cor: 'amber'
+          }));
+        } else if (gType === 4) {
+          tipo = 'checkbox';
+          const rawChoices = qDetails?.[1] || [];
+          opcoes = rawChoices.map((c, oIdx) => ({
+            id: `gf_chk_${idx}_${oIdx}`,
+            titulo: String(c?.[0] || `Opção ${oIdx + 1}`).trim(),
+            subtitulo: '',
+            ativo: true,
+            icone: icones[oIdx % icones.length],
+            cor: cores[oIdx % cores.length]
+          }));
+        } else if (gType === 5) {
+          tipo = 'slider';
+          const rawScale = qDetails?.[1] || [];
+          if (rawScale.length >= 2) {
+            sliderMin = Number(rawScale[0]?.[0] ?? 1);
+            sliderMax = Number(rawScale[rawScale.length - 1]?.[0] ?? 10);
+          }
+        } else if (gType === 9) {
+          tipo = 'data';
+        } else if (gType === 10) {
+          tipo = 'hora';
+        } else {
+          tipo = detectQuestionTypeAI(qTitle);
+        }
+
+        screens.push({
+          id: `gf_tela_${Date.now()}_${idx}`,
+          tipo,
+          titulo: qTitle,
+          titulo1: qTitle,
+          titulo2: '',
+          subtitulo: qDesc,
+          placeholder: getSmartPlaceholder(tipo, qTitle),
+          multiline: tipo === 'texto',
+          linhas: tipo === 'texto' ? 4 : 1,
+          sliderMin,
+          sliderMax,
+          sliderStep: 1,
+          opcoes: opcoes.length > 0 ? opcoes : getDefaultOptionsForType(tipo)
+        });
+      });
+
+      if (screens.length > 0) {
+        const built = buildConfigFromParsedScreens(screens);
+        if (formDescription) {
+          built.pergunta1TextoAbaixo = formDescription;
+        }
+        built.importedFormTitle = formTitle;
+        return built;
+      }
+    } catch (err) {
+      console.warn('Falha ao decodificar FB_PUBLIC_LOAD_DATA_:', err);
+    }
+  }
+
+  // Fallback: Extrai textos visíveis do HTML caso o script tenha formato diferente
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+  const extractedLines = [];
+  doc.querySelectorAll('[role="heading"], [role="listitem"], .M7eMe, .docssharedWizToggleLabeledLabelText').forEach(el => {
+    const t = (el.textContent || '').trim();
+    if (t) extractedLines.push(t);
+  });
+
+  if (extractedLines.length > 0) {
+    return parseTextToQuestions(extractedLines.join('\n'));
+  }
+
+  throw new Error('Não encontramos perguntas públicas neste link. Verifique se o link está aberto para "Qualquer pessoa com o link".');
+}
+
+/**
  * Classificador Inteligente (IA Semântica) que identifica o tipo de componente ideal
  * baseado no enunciado da pergunta, tags colchetes [checkbox], [slide], [data], etc.
  */
@@ -446,15 +627,17 @@ function buildConfigFromParsedScreens(screens) {
   const telasExtras = screens.slice(1);
 
   return {
-    pergunta1Titulo: tela1?.titulo || 'Como você chegou aqui?',
+    isBlankEvent: false,
+    pergunta1Titulo: tela1?.titulo || '',
     pergunta1Titulo2: tela1?.titulo2 || '',
+    pergunta1TextoAbaixo: tela1?.subtitulo || '',
+    pergunta1BotaoComecarTexto: 'COMEÇAR',
+    mostrarBotaoComecar: true,
     pergunta1FonteTamanho: 18,
     tela1Tipo: tela1?.tipo || 'cards',
     tela1TextoPlaceholder: tela1?.placeholder || 'Digite sua resposta...',
-    opcoesChegada: (tela1?.opcoes && tela1.opcoes.length > 0) ? tela1.opcoes : [
-      { id: 'opt_1', titulo: 'Opção 1', subtitulo: '', ativo: true, icone: 'Tag', cor: 'amber' },
-      { id: 'opt_2', titulo: 'Opção 2', subtitulo: '', ativo: true, icone: 'Church', cor: 'sky' }
-    ],
+    opcoesChegada: (tela1?.opcoes && tela1.opcoes.length > 0) ? tela1.opcoes : [],
+    mostrarTelaAcompanhantes: false,
     telasExtras: telasExtras.map((t, idx) => ({
       id: t.id || `extra_${idx}`,
       ativa: true,
