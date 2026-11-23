@@ -851,19 +851,27 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
         {/* ============================================================ */}
         {/* CABEÇALHO DO MODAL (FIXO NO TOPO)                            */}
         {/* ============================================================ */}
-        <div className="px-5 py-3.5 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 bg-slate-950/80 shrink-0">
-          <div className="flex items-center gap-3">
+        <div className="px-5 py-3 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 bg-slate-950/80 shrink-0">
+          <div className="flex items-center gap-3 flex-wrap">
             <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center">
               <Sliders className="w-4 h-4" />
             </div>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-base sm:text-lg font-black text-white">Configurar Perguntas & Telas</h2>
-                <span className="px-2 py-0.5 rounded-full text-[11px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                  {eventoTitulo}
-                </span>
-              </div>
-              <p className="text-xs text-slate-400">Exclusivo deste evento • Tudo que você criar aparece ao vivo no celular à direita</p>
+            <h2 className="text-base sm:text-lg font-black text-white">Configurar Perguntas & Telas</h2>
+
+            {/* Listbox do Modelo de Celular movido para o Topo à Esquerda */}
+            <div className="flex items-center gap-2 ml-1 sm:ml-2 pl-3 border-l border-slate-800">
+              <Smartphone className="w-4 h-4 text-amber-400 shrink-0" />
+              <select
+                value={modeloCelularId}
+                onChange={(e) => setModeloCelularId(e.target.value)}
+                className="bg-slate-950 border border-slate-700 hover:border-amber-400 text-white text-xs font-bold rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer shadow-inner transition"
+              >
+                {MODELOS_CELULARES.map((mod) => (
+                  <option key={mod.id} value={mod.id} className="bg-slate-900 text-white py-1">
+                    {mod.nome} ({mod.marca})
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -3160,36 +3168,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
           {/* ========================================================== */}
           <div className="lg:col-span-6 bg-slate-950/90 flex flex-col min-h-0 p-2 sm:p-3 relative overflow-y-auto custom-scrollbar">
             
-            {/* CABEÇALHO DO PREVIEW: SELETOR LISTBOX DO MODELO DE CELULAR */}
-            <div className="w-full max-w-[800px] mx-auto mb-3 flex flex-wrap items-center justify-between gap-2.5 bg-slate-900/90 border border-slate-800 rounded-2xl p-2.5 shrink-0 shadow-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center shadow-sm">
-                  <Smartphone className="w-4 h-4" />
-                </div>
-                <div>
-                  <span className="text-xs font-black text-amber-300 block">Modelo do Celular:</span>
-                  <span className="text-[10px] text-slate-400 font-medium">Toque direto no celular para selecionar e editar à esquerda</span>
-                </div>
-              </div>
-
-              {/* LISTBOX (SELECT) COM OS MODELOS */}
-              <div className="flex items-center gap-2">
-                <select
-                  value={modeloCelularId}
-                  onChange={(e) => setModeloCelularId(e.target.value)}
-                  className="bg-slate-950 border border-slate-700 hover:border-amber-400 text-white text-xs font-bold rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer min-w-[190px] transition shadow-inner"
-                >
-                  {MODELOS_CELULARES.map((mod) => (
-                    <option key={mod.id} value={mod.id} className="bg-slate-900 text-white py-1">
-                      {mod.nome} ({mod.marca})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
             {/* GRID DOS CELULARES: 3 POR LINHA COM ESPAÇAMENTO 70% REDUZIDO */}
-            <div className="w-full max-w-[800px] mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 pb-6 place-items-center">
+            <div className="w-full max-w-[800px] mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 pb-6 place-items-center mt-1">
               {/* 1. TELA INÍCIO */}
               {(() => {
                 const isSelected = activeTab === 'inicio';
