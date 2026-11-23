@@ -1045,8 +1045,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               {/* ABA: TELA INÍCIO (ESPERA / START DO ADMIN)             */}
               {/* ====================================================== */}
               {activeTab === 'inicio' && (
-                <div className="space-y-4">
-                  <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-3">
+                <div className="space-y-5">
+                  <div className="space-y-3">
                     <div>
                       <span className="text-xs font-black text-amber-400 uppercase tracking-wide block">
                         Textos das 3 Linhas de Espera
@@ -1093,8 +1093,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                   </div>
 
                   {/* VÁRIOS SLIDERS: TAMANHO DE CADA UMA DAS 3 LINHAS DE ESPERA */}
-                  <div className="bg-slate-950 border border-amber-500/30 rounded-xl p-3.5 space-y-3 shadow-sm">
-                    <div className="flex items-center gap-2 pb-1 border-b border-slate-800">
+                  <div className="pt-4 border-t border-slate-800 space-y-3">
+                    <div className="flex items-center gap-2 pb-1 border-b border-slate-800/80">
                       <SlidersHorizontal className="w-4 h-4 text-amber-400" />
                       <span className="text-xs font-black text-white uppercase tracking-wider">
                         Tamanho das Fontes da Tela de Espera
@@ -1103,7 +1103,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       {/* 1ª Linha */}
-                      <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-2.5 space-y-1.5">
+                      <div className="space-y-1.5 p-1">
                         <div className="flex items-center justify-between text-xs">
                           <span className="font-bold text-slate-300">1ª Linha (Branco)</span>
                           <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
@@ -1126,7 +1126,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       </div>
 
                       {/* 2ª Linha */}
-                      <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-2.5 space-y-1.5">
+                      <div className="space-y-1.5 p-1">
                         <div className="flex items-center justify-between text-xs">
                           <span className="font-bold text-amber-300">2ª Linha (Dourado)</span>
                           <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
@@ -1149,7 +1149,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       </div>
 
                       {/* 3ª Linha */}
-                      <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-2.5 space-y-1.5">
+                      <div className="space-y-1.5 p-1">
                         <div className="flex items-center justify-between text-xs">
                           <span className="font-bold text-emerald-400">3ª Linha (Verde)</span>
                           <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
@@ -1224,7 +1224,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
                   {/* 1. TÍTULO 1, TÍTULO 2, TEXTO ABAIXO DO TÍTULO E BOTÃO COMEÇAR COM LUZES */}
                   {subTabTela1 === 'pergunta' && (
-                    <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-3 shadow-sm animate-fade-in">
+                    <div className="space-y-4 animate-fade-in">
                       <div className="flex items-center justify-between">
                         <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wide">
                           Título, Texto de Introdução & Botão COMEÇAR (Tela 1)
@@ -1272,7 +1272,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       </div>
 
                       {/* BOTÃO COMEÇAR NO RODAPÉ COM EFEITO DE LUZES GIRANDO SUAVE */}
-                      <div className="p-3 rounded-xl bg-slate-900/90 border border-amber-500/30 space-y-2">
+                      <div className="pt-3 border-t border-slate-800 space-y-2">
                         <div className="flex items-center justify-between gap-2">
                           <label className="flex items-center gap-2 cursor-pointer select-none">
                             <input
@@ -1300,14 +1300,14 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                               value={config.pergunta1BotaoComecarTexto ?? 'COMEÇAR'}
                               onChange={(e) => setConfig({ ...config, pergunta1BotaoComecarTexto: e.target.value })}
                               placeholder="COMEÇAR"
-                              className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-black text-amber-300 uppercase tracking-wider"
+                              className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-black text-amber-300 uppercase tracking-wider"
                             />
                           </div>
                         )}
                       </div>
 
                       {/* Slider de Tamanho da Fonte da Pergunta 1 */}
-                      <div className="pt-2 border-t border-slate-800/80">
+                      <div className="pt-3 border-t border-slate-800">
                         <div className="flex items-center justify-between text-xs mb-1">
                           <span className="font-bold text-slate-300">Tamanho da Fonte do Título</span>
                           <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
@@ -1639,7 +1639,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     </div>
 
                     {/* Campo Rápido de Texto Abaixo do Título & Botão COMEÇAR também visíveis direto na aba principal da Tela 1 */}
-                    <div className="bg-slate-950 border border-slate-800 rounded-xl p-3 space-y-2.5">
+                    <div className="pt-3 border-t border-slate-800 space-y-2.5">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div>
                           <label className="text-[10px] font-bold text-amber-300 block mb-0.5">
@@ -1667,7 +1667,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         </div>
                       </div>
 
-                      <div className="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-slate-900">
+                      <div className="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-slate-800/60">
                         <label className="flex items-center gap-2 cursor-pointer select-none">
                           <input
                             type="checkbox"
@@ -1697,7 +1697,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
                     <div className="space-y-2.5">
                       {(config.opcoesChegada || []).length === 0 && (
-                        <div className="p-6 rounded-2xl bg-slate-950/70 border border-dashed border-slate-800 text-center space-y-2">
+                        <div className="py-6 border-t border-slate-800 text-center space-y-2">
                           <p className="text-xs font-bold text-slate-300">
                             Tela 1 em branco (sem opções cadastradas ainda)
                           </p>
@@ -2589,7 +2589,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               {/* ====================================================== */}
               {activeTab === 'fim' && (
                 <div className="space-y-4">
-                  <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-3">
+                  <div className="space-y-3">
                     <div>
                       <span className="text-xs font-black text-amber-400 uppercase tracking-wide block">
                         Textos da Tela de Agradecimento (Tela Fim)
@@ -2681,8 +2681,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                   </div>
 
                   {/* VÁRIOS SLIDERS: TÍTULO, MENSAGEM, STATUS E INSTRUÇÃO DA TELA FIM */}
-                  <div className="bg-slate-950 border border-amber-500/30 rounded-xl p-3.5 space-y-3 shadow-sm">
-                    <div className="flex items-center gap-2 pb-1 border-b border-slate-800">
+                  <div className="pt-4 border-t border-slate-800 space-y-3">
+                    <div className="flex items-center gap-2 pb-1 border-b border-slate-800/80">
                       <SlidersHorizontal className="w-4 h-4 text-amber-400" />
                       <span className="text-xs font-black text-white uppercase tracking-wider">
                         Tamanho das Fontes da Tela de Agradecimento
@@ -2691,7 +2691,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {/* Slider 1: Título Principal */}
-                      <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-2.5 space-y-1.5">
+                      <div className="space-y-1.5 p-1">
                         <div className="flex items-center justify-between text-xs">
                           <span className="font-bold text-white">Título (Linhas 1 e 2)</span>
                           <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
@@ -2718,7 +2718,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       </div>
 
                       {/* Slider 2: Mensagem / Complemento */}
-                      <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-2.5 space-y-1.5">
+                      <div className="space-y-1.5 p-1">
                         <div className="flex items-center justify-between text-xs">
                           <span className="font-bold text-amber-300">Mensagem do Evento</span>
                           <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
@@ -2741,7 +2741,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       </div>
 
                       {/* Slider 3: Status de Conclusão */}
-                      <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-2.5 space-y-1.5">
+                      <div className="space-y-1.5 p-1">
                         <div className="flex items-center justify-between text-xs">
                           <span className="font-bold text-emerald-400">Status de Conclusão</span>
                           <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
@@ -2764,7 +2764,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       </div>
 
                       {/* Slider 4: Instrução ao Visitante */}
-                      <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-2.5 space-y-1.5">
+                      <div className="space-y-1.5 p-1">
                         <div className="flex items-center justify-between text-xs">
                           <span className="font-bold text-slate-300">Instrução ao Visitante</span>
                           <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
@@ -4050,16 +4050,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 {/* ============================================================ */}
         {/* RODAPÉ COM AÇÕES                                             */}
         {/* ============================================================ */}
-        <div className="px-5 py-3 border-t border-slate-800 bg-slate-950/90 flex flex-wrap items-center justify-between gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={handleRestaurarPadroes}
-            className="px-3 py-1.5 text-xs font-bold text-slate-400 hover:text-white rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 transition flex items-center gap-1.5"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span>Restaurar Padrões</span>
-          </button>
-
+        <div className="px-5 py-3 border-t border-slate-800 bg-slate-950/90 flex flex-wrap items-center justify-end gap-2 shrink-0">
           <div className="flex items-center gap-2">
             {!inline && onClose && (
               <button
