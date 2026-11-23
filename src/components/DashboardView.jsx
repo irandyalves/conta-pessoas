@@ -695,29 +695,6 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
                   />
                 )}
               </div>
-
-              {/* Botão de Ação Principal: Liberar / Pausar Sessão */}
-              {sessaoAtiva ? (
-                <button
-                  onClick={() => handleToggleSessao(activeEventId, false)}
-                  disabled={alternandoSessao}
-                  className="px-4 py-1.5 rounded-xl font-black text-xs bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-lg shadow-amber-900/30 active:scale-95 transition flex items-center gap-1.5"
-                  title="Pausar este evento e voltar celulares para tela de espera"
-                >
-                  <Pause className="w-3.5 h-3.5 fill-slate-950" />
-                  <span>{alternandoSessao ? 'Pausando...' : 'PAUSAR SESSÃO'}</span>
-                </button>
-              ) : (
-                <button
-                  onClick={() => handleToggleSessao(activeEventId, true)}
-                  disabled={alternandoSessao}
-                  className="px-4 py-1.5 rounded-xl font-black text-xs bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 shadow-lg shadow-emerald-500/25 active:scale-95 transition flex items-center gap-1.5"
-                  title="Liberar celulares para responder este evento"
-                >
-                  <Play className="w-3.5 h-3.5 fill-slate-950" />
-                  <span>{alternandoSessao ? 'Liberando...' : 'LIBERAR SESSÃO'}</span>
-                </button>
-              )}
             </div>
           </div>
         </header>
