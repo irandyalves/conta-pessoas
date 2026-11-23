@@ -224,60 +224,72 @@ export const CORES_NUMERO_QTD = [
   { id: 'preto', label: 'Preto', hex: '#0f172a', dot: 'bg-slate-900 border border-slate-600', classe: 'text-slate-950' },
 ];
 
+// OPÇÕES DE CORES DA DESCRIÇÃO ("PESSOAS") (TELA 2)
+export const CORES_DESCRICAO_QTD = [
+  { id: 'branco_80', label: 'Branco 80%', classe: 'text-white/80' },
+  { id: 'branco_puro', label: 'Branco Puro', classe: 'text-white' },
+  { id: 'dourado', label: 'Dourado', classe: 'text-amber-300' },
+  { id: 'amarelo', label: 'Amarelo', classe: 'text-yellow-300' },
+  { id: 'esmeralda', label: 'Esmeralda', classe: 'text-emerald-300' },
+  { id: 'azul', label: 'Azul Céu', classe: 'text-sky-300' },
+  { id: 'cinza', label: 'Cinza Suave', classe: 'text-slate-300' },
+  { id: 'laranja', label: 'Laranja', classe: 'text-orange-300' },
+];
+
 // 6 PRESETS DE MODELOS DE CELULARES PARA VISUALIZAÇÃO
 const MODELOS_CELULARES = [
   {
     id: 'iphone16pro',
     nome: 'iPhone 16 Pro',
     marca: 'Apple',
-    moldura: 'rounded-[46px] border-[6px] border-slate-700/90 shadow-2xl ring-1 ring-slate-800',
-    largura: 'w-[310px] sm:w-[325px]',
-    alturaTela: 'h-[460px]',
+    moldura: 'rounded-[38px] border-[5px] border-slate-700/90 shadow-2xl ring-1 ring-slate-800',
+    largura: 'w-full max-w-[240px] sm:max-w-[255px]',
+    alturaTela: 'h-[440px]',
     tipoTopo: 'dynamic-island'
   },
   {
     id: 's24ultra',
     nome: 'Samsung S24 Ultra',
     marca: 'Samsung',
-    moldura: 'rounded-[14px] border-[5px] border-slate-700/80 shadow-2xl ring-1 ring-slate-800',
-    largura: 'w-[320px] sm:w-[335px]',
-    alturaTela: 'h-[460px]',
+    moldura: 'rounded-[14px] border-[4px] border-slate-700/80 shadow-2xl ring-1 ring-slate-800',
+    largura: 'w-full max-w-[245px] sm:max-w-[260px]',
+    alturaTela: 'h-[440px]',
     tipoTopo: 'punch-hole-center'
   },
   {
     id: 'xiaomi14pro',
     nome: 'Xiaomi 14 Pro',
     marca: 'Xiaomi',
-    moldura: 'rounded-[36px] border-[5px] border-slate-600/80 shadow-2xl ring-1 ring-slate-800',
-    largura: 'w-[315px] sm:w-[330px]',
-    alturaTela: 'h-[460px]',
+    moldura: 'rounded-[30px] border-[4px] border-slate-600/80 shadow-2xl ring-1 ring-slate-800',
+    largura: 'w-full max-w-[242px] sm:max-w-[258px]',
+    alturaTela: 'h-[440px]',
     tipoTopo: 'punch-hole-center'
   },
   {
     id: 'pixel9pro',
     nome: 'Pixel 9 Pro',
     marca: 'Google',
-    moldura: 'rounded-[44px] border-[5px] border-slate-700/90 shadow-2xl ring-1 ring-slate-800',
-    largura: 'w-[310px] sm:w-[325px]',
-    alturaTela: 'h-[460px]',
+    moldura: 'rounded-[36px] border-[4px] border-slate-700/90 shadow-2xl ring-1 ring-slate-800',
+    largura: 'w-full max-w-[240px] sm:max-w-[255px]',
+    alturaTela: 'h-[440px]',
     tipoTopo: 'punch-hole-center'
   },
   {
     id: 'iphone_notch',
     nome: 'iPhone Notch',
     marca: 'Apple',
-    moldura: 'rounded-[40px] border-[6px] border-slate-800 shadow-2xl ring-1 ring-slate-750',
-    largura: 'w-[310px] sm:w-[325px]',
-    alturaTela: 'h-[460px]',
+    moldura: 'rounded-[34px] border-[5px] border-slate-800 shadow-2xl ring-1 ring-slate-750',
+    largura: 'w-full max-w-[240px] sm:max-w-[255px]',
+    alturaTela: 'h-[440px]',
     tipoTopo: 'notch'
   },
   {
     id: 'moto_edge',
     nome: 'Motorola Edge',
     marca: 'Motorola',
-    moldura: 'rounded-[28px] border-[4px] border-slate-600/70 shadow-2xl ring-1 ring-slate-800',
-    largura: 'w-[305px] sm:w-[320px]',
-    alturaTela: 'h-[460px]',
+    moldura: 'rounded-[24px] border-[4px] border-slate-600/70 shadow-2xl ring-1 ring-slate-800',
+    largura: 'w-full max-w-[238px] sm:max-w-[252px]',
+    alturaTela: 'h-[440px]',
     tipoTopo: 'punch-hole-center'
   }
 ];
@@ -842,6 +854,11 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
   const getBtnNumClass = (numCorId) => {
     const item = CORES_NUMERO_QTD.find(c => c.id === (numCorId || config.btnQtdCorNumero || 'branco'));
     return item ? item.classe : 'text-white';
+  };
+
+  const getBtnDescClass = (descCorId) => {
+    const item = CORES_DESCRICAO_QTD.find(c => c.id === (descCorId || config.btnQtdCorDescricao || 'branco_80'));
+    return item ? item.classe : 'text-white/80';
   };
 
   return (
@@ -2922,229 +2939,252 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
                   {/* 2. DESIGN & ESTILO DOS BOTÕES NUMÉRICOS (TELA 2) */}
                   {subTabTela2 === 'botoes' && (
-                    <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-4 shadow-sm animate-fade-in">
-                    <div className="flex items-center justify-between pb-2 border-b border-slate-850">
-                      <div className="flex items-center gap-2">
-                        <SlidersHorizontal className="w-4 h-4 text-amber-400" />
-                        <span className="text-xs font-black text-amber-400 uppercase tracking-wide">
-                          Estilo dos Botões de Quantidade (Tela 2)
-                        </span>
-                      </div>
-                      <span className="text-[10px] text-slate-400">
-                        Customização dos botões 2 a +10
-                      </span>
-                    </div>
-
-                    {/* 1. SLIDE: TAMANHO / ALTURA DO BOTÃO */}
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-bold text-slate-200">Tamanho / Altura do Botão</span>
-                        <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md text-[11px]">
-                          {config.btnQtdAltura || 74}px
-                        </span>
-                      </div>
-                      <input
-                        type="range"
-                        min="48"
-                        max="100"
-                        step="2"
-                        value={config.btnQtdAltura || 74}
-                        onChange={(e) => setConfig({ ...config, btnQtdAltura: Number(e.target.value) })}
-                        className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                      />
-                      <div className="flex justify-between text-[9px] text-slate-500 font-mono">
-                        <span>48px (Compacto)</span>
-                        <span>74px (Padrão)</span>
-                        <span>100px (Grande)</span>
-                      </div>
-                    </div>
-
-                    {/* 2. COR DO BOTÃO (10 OPÇÕES EM BOLINHAS) */}
-                    <div className="space-y-2 pt-2 border-t border-slate-900">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-200">
-                          Cor do Botão (10 Opções)
-                        </span>
-                        <span className="text-[11px] font-bold text-amber-300 bg-slate-900 px-2 py-0.5 rounded-full border border-slate-800">
-                          {CORES_BOTAO_QTD.find(c => c.id === (config.btnQtdCor || 'slate'))?.label || 'Grafite'}
-                        </span>
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-2.5 p-2.5 bg-slate-900/90 rounded-xl border border-slate-800/80">
-                        {CORES_BOTAO_QTD.map((c) => {
-                          const isSelected = (config.btnQtdCor || 'slate') === c.id;
-                          return (
-                            <button
-                              key={c.id}
-                              type="button"
-                              onClick={() => setConfig({ ...config, btnQtdCor: c.id })}
-                              className={`w-8 h-8 rounded-full ${c.dot} shadow-md transition-all flex items-center justify-center relative ${
-                                isSelected 
-                                  ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-950 scale-110 shadow-lg' 
-                                  : 'opacity-70 hover:opacity-100 hover:scale-105'
-                              }`}
-                              title={c.label}
-                            >
-                              {isSelected && (
-                                <Check className="w-4 h-4 text-white stroke-[3] drop-shadow" />
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* 3. EFEITO DOS BOTÕES NUMÉRICOS (3D, VIDRO, ENTALHE, ALTO-RELEVO, ETC.) */}
-                    <div className="space-y-2 pt-2 border-t border-slate-900">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-200">
-                          Efeito & Acabamento dos Botões
-                        </span>
-                        <span className="text-[10px] text-amber-300 font-bold bg-slate-900 px-2 py-0.5 rounded-full border border-slate-800">
-                          {EFEITOS_CARDS.find(e => e.id === (config.btnQtdEfeito || 'efeito_3d'))?.label}
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        {EFEITOS_CARDS.map((ef) => {
-                          const isSel = (config.btnQtdEfeito || 'efeito_3d') === ef.id;
-                          return (
-                            <button
-                              key={ef.id}
-                              type="button"
-                              onClick={() => setConfig({ ...config, btnQtdEfeito: ef.id })}
-                              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border active:scale-95 ${
-                                isSel
-                                  ? 'bg-amber-500/20 text-amber-300 border-amber-400 shadow-md ring-1 ring-amber-400'
-                                  : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-850'
-                              }`}
-                              title={ef.desc}
-                            >
-                              <span>{ef.label}</span>
-                              {isSel && <Check className="w-3.5 h-3.5 text-amber-400" />}
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      {/* SLIDE: PROFUNDIDADE DOS BOTÕES (TELA 2) */}
-                      <div className="pt-1.5">
-                        <div className="flex items-center justify-between text-xs mb-1">
-                          <span className="font-bold text-slate-300">Profundidade / Relevo do Botão</span>
-                          <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md text-[11px]">
-                            Nível {config.btnQtdProfundidade || 5}
+                    <div className="space-y-4 animate-fade-in">
+                      <div className="flex items-center justify-between pb-1 border-b border-slate-800">
+                        <div className="flex items-center gap-2">
+                          <SlidersHorizontal className="w-4 h-4 text-amber-400" />
+                          <span className="text-xs font-black text-amber-400 uppercase tracking-wide">
+                            Estilo dos Botões de Quantidade (Tela 2)
                           </span>
                         </div>
-                        <input
-                          type="range"
-                          min="1"
-                          max="10"
-                          step="1"
-                          value={config.btnQtdProfundidade || 5}
-                          onChange={(e) => setConfig({ ...config, btnQtdProfundidade: Number(e.target.value) })}
-                          className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                        />
-                        <div className="flex justify-between text-[9px] text-slate-500 font-mono">
-                          <span>1 (Sutil)</span>
-                          <span>5 (Padrão)</span>
-                          <span>10 (Profundidade Máxima)</span>
+                        <span className="text-[10px] text-slate-400">
+                          Customização dos botões 2 a +10
+                        </span>
+                      </div>
+
+                      {/* LINHA 1: ALTURA, LARGURA E COR DO BOTÃO */}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        {/* Altura */}
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-bold text-slate-200">Altura do Botão</span>
+                            <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md text-[11px]">
+                              {config.btnQtdAltura || 74}px
+                            </span>
+                          </div>
+                          <input
+                            type="range"
+                            min="48"
+                            max="100"
+                            step="2"
+                            value={config.btnQtdAltura || 74}
+                            onChange={(e) => setConfig({ ...config, btnQtdAltura: Number(e.target.value) })}
+                            className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                          />
+                          <div className="flex justify-between text-[9px] text-slate-500 font-mono">
+                            <span>48px</span>
+                            <span>74px</span>
+                            <span>100px</span>
+                          </div>
+                        </div>
+
+                        {/* Largura */}
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-bold text-slate-200">Largura do Botão</span>
+                            <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md text-[11px]">
+                              {config.btnQtdLargura || 100}%
+                            </span>
+                          </div>
+                          <input
+                            type="range"
+                            min="60"
+                            max="100"
+                            step="2"
+                            value={config.btnQtdLargura || 100}
+                            onChange={(e) => setConfig({ ...config, btnQtdLargura: Number(e.target.value) })}
+                            className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                          />
+                          <div className="flex justify-between text-[9px] text-slate-500 font-mono">
+                            <span>60% (Compacto)</span>
+                            <span>100% (Cheio)</span>
+                          </div>
+                        </div>
+
+                        {/* Cor do Botão em Listbox */}
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-bold text-slate-200">Cor do Botão</span>
+                            <span className="w-3.5 h-3.5 rounded-full inline-block border border-slate-700" style={{ backgroundColor: CORES_BOTAO_QTD.find(c => c.id === (config.btnQtdCor || 'slate'))?.hex }} />
+                          </div>
+                          <select
+                            value={config.btnQtdCor || 'slate'}
+                            onChange={(e) => setConfig({ ...config, btnQtdCor: e.target.value })}
+                            className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-amber-300"
+                          >
+                            {CORES_BOTAO_QTD.map(c => (
+                              <option key={c.id} value={c.id} className="bg-slate-950 text-white">
+                                {c.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* LINHA 2: EFEITO EM LISTBOX, PROFUNDIDADE E ESPESSURA DA LINHA */}
+                      <div className="pt-3 border-t border-slate-800 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        {/* Efeito em Listbox */}
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-slate-200 block">
+                            Efeito & Acabamento
+                          </label>
+                          <select
+                            value={config.btnQtdEfeito || 'efeito_3d'}
+                            onChange={(e) => setConfig({ ...config, btnQtdEfeito: e.target.value })}
+                            className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-amber-300"
+                          >
+                            {EFEITOS_CARDS.map(ef => (
+                              <option key={ef.id} value={ef.id} className="bg-slate-950 text-white">
+                                {ef.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Profundidade / Relevo */}
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-bold text-slate-200">Profundidade / Relevo</span>
+                            <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md text-[11px]">
+                              Nível {config.btnQtdProfundidade || 5}
+                            </span>
+                          </div>
+                          <input
+                            type="range"
+                            min="1"
+                            max="10"
+                            step="1"
+                            value={config.btnQtdProfundidade || 5}
+                            onChange={(e) => setConfig({ ...config, btnQtdProfundidade: Number(e.target.value) })}
+                            className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                          />
+                          <div className="flex justify-between text-[9px] text-slate-500 font-mono">
+                            <span>1 (Sutil)</span>
+                            <span>5 (Padrão)</span>
+                            <span>10 (Máx)</span>
+                          </div>
+                        </div>
+
+                        {/* Espessura da Linha (Borda) */}
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-bold text-slate-200">Espessura da Linha</span>
+                            <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md text-[11px]">
+                              {config.btnQtdBordaEspessura || 1}px
+                            </span>
+                          </div>
+                          <input
+                            type="range"
+                            min="1"
+                            max="6"
+                            step="1"
+                            value={config.btnQtdBordaEspessura || 1}
+                            onChange={(e) => setConfig({ ...config, btnQtdBordaEspessura: Number(e.target.value) })}
+                            className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                          />
+                          <div className="flex justify-between text-[9px] text-slate-500 font-mono">
+                            <span>1px (Fina)</span>
+                            <span>3px (Média)</span>
+                            <span>6px (Grossa)</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* LINHA 3: TAMANHO E COR DOS NÚMEROS + TAMANHO E COR DAS DESCRIÇÕES */}
+                      <div className="pt-3 border-t border-slate-800 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        {/* Tamanho do Número */}
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-bold text-slate-200">Tamanho Número</span>
+                            <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md text-[11px]">
+                              {config.btnQtdFonteNumero || 34}px
+                            </span>
+                          </div>
+                          <input
+                            type="range"
+                            min="18"
+                            max="48"
+                            step="1"
+                            value={config.btnQtdFonteNumero || 34}
+                            onChange={(e) => setConfig({ ...config, btnQtdFonteNumero: Number(e.target.value) })}
+                            className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                          />
+                          <div className="flex justify-between text-[9px] text-slate-500 font-mono">
+                            <span>18px</span>
+                            <span>34px</span>
+                            <span>48px</span>
+                          </div>
+                        </div>
+
+                        {/* Cor do Número em Listbox */}
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-slate-200 block">
+                            Cor dos Números
+                          </label>
+                          <select
+                            value={config.btnQtdCorNumero || 'branco'}
+                            onChange={(e) => setConfig({ ...config, btnQtdCorNumero: e.target.value })}
+                            className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-amber-300"
+                          >
+                            {CORES_NUMERO_QTD.map(c => (
+                              <option key={c.id} value={c.id} className="bg-slate-950 text-white">
+                                {c.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Tamanho da Descrição */}
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-bold text-slate-200">Tamanho Legenda</span>
+                            <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md text-[11px]">
+                              {config.btnQtdFonteDescricao || 11}px
+                            </span>
+                          </div>
+                          <input
+                            type="range"
+                            min="9"
+                            max="16"
+                            step="1"
+                            value={config.btnQtdFonteDescricao || 11}
+                            onChange={(e) => setConfig({ ...config, btnQtdFonteDescricao: Number(e.target.value) })}
+                            className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                          />
+                          <div className="flex justify-between text-[9px] text-slate-500 font-mono">
+                            <span>9px</span>
+                            <span>11px</span>
+                            <span>16px</span>
+                          </div>
+                        </div>
+
+                        {/* Cor da Descrição em Listbox */}
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-slate-200 block">
+                            Cor da Legenda
+                          </label>
+                          <select
+                            value={config.btnQtdCorDescricao || 'branco_80'}
+                            onChange={(e) => setConfig({ ...config, btnQtdCorDescricao: e.target.value })}
+                            className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-amber-300"
+                          >
+                            {CORES_DESCRICAO_QTD.map(c => (
+                              <option key={c.id} value={c.id} className="bg-slate-950 text-white">
+                                {c.label}
+                              </option>
+                            ))}
+                          </select>
                         </div>
                       </div>
                     </div>
-
-                    {/* 4. SLIDE: TAMANHO DO NÚMERO DENTRO DO BOTÃO */}
-                    <div className="space-y-1.5 pt-2 border-t border-slate-900">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-bold text-slate-200">Tamanho do Número no Botão</span>
-                        <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md text-[11px]">
-                          {config.btnQtdFonteNumero || 34}px
-                        </span>
-                      </div>
-                      <input
-                        type="range"
-                        min="18"
-                        max="48"
-                        step="1"
-                        value={config.btnQtdFonteNumero || 34}
-                        onChange={(e) => setConfig({ ...config, btnQtdFonteNumero: Number(e.target.value) })}
-                        className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                      />
-                      <div className="flex justify-between text-[9px] text-slate-500 font-mono">
-                        <span>18px (Menor)</span>
-                        <span>34px (Padrão)</span>
-                        <span>48px (Gigante)</span>
-                      </div>
-                    </div>
-
-                    {/* 4. COR DO NÚMERO (OPÇÕES EM BOLINHAS) */}
-                    <div className="space-y-2 pt-2 border-t border-slate-900">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-200">
-                          Cor do Número (Dígitos)
-                        </span>
-                        <span className="text-[11px] font-bold text-amber-300 bg-slate-900 px-2 py-0.5 rounded-full border border-slate-800">
-                          {CORES_NUMERO_QTD.find(c => c.id === (config.btnQtdCorNumero || 'branco'))?.label || 'Branco'}
-                        </span>
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-2.5 p-2.5 bg-slate-900/90 rounded-xl border border-slate-800/80">
-                        {CORES_NUMERO_QTD.map((c) => {
-                          const isSelected = (config.btnQtdCorNumero || 'branco') === c.id;
-                          return (
-                            <button
-                              key={c.id}
-                              type="button"
-                              onClick={() => setConfig({ ...config, btnQtdCorNumero: c.id })}
-                              className={`w-7 h-7 rounded-full ${c.dot} shadow-md transition-all flex items-center justify-center relative ${
-                                isSelected 
-                                  ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110 shadow-lg' 
-                                  : 'opacity-70 hover:opacity-100 hover:scale-105'
-                              }`}
-                              title={c.label}
-                            >
-                              {isSelected && (
-                                <Check className={`w-3.5 h-3.5 stroke-[3] drop-shadow ${c.id === 'branco' ? 'text-slate-900' : 'text-white'}`} />
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
                   )}
 
                   {/* 3. BOTÃO INDIVIDUAL E DIVISOR */}
                   {subTabTela2 === 'individual' && (
-                  <div className="space-y-3.5 animate-fade-in">
-                    <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-2 shadow-sm">
-                      <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wide block">
-                        Texto do Botão Individual (1 Pessoa)
-                      </span>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <div>
-                          <label className="text-[10px] text-slate-400 block mb-0.5">Texto Principal</label>
-                          <input
-                            type="text"
-                            value={config.opcaoIndividualTitulo || ''}
-                            onChange={(e) => setConfig({ ...config, opcaoIndividualTitulo: e.target.value })}
-                            placeholder="Ex: SÓ EU"
-                            className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs font-bold text-white"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[10px] text-slate-400 block mb-0.5">Complemento</label>
-                          <input
-                            type="text"
-                            value={config.opcaoIndividualSubtitulo || ''}
-                            onChange={(e) => setConfig({ ...config, opcaoIndividualSubtitulo: e.target.value })}
-                            placeholder="Ex: , vim sozinho"
-                            className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-300"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-1 shadow-sm">
-                      <label className="text-[11px] font-bold text-amber-400 uppercase tracking-wide block">
+                  <div className="space-y-4 animate-fade-in">
+                    {/* 1. TEXTO DO DIVISOR DAS QUANTIDADES (PRIMEIRO) */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-black text-amber-400 uppercase tracking-wide block">
                         Texto do Divisor das Quantidades
                       </label>
                       <input
@@ -3152,8 +3192,37 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         value={config.divisorQtdTexto || ''}
                         onChange={(e) => setConfig({ ...config, divisorQtdTexto: e.target.value })}
                         placeholder="Ex: Quantas pessoas vieram com você?"
-                        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs font-bold text-white"
+                        className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-3 py-1.5 text-xs font-bold text-white"
                       />
+                    </div>
+
+                    {/* 2. TEXTO DO BOTÃO INDIVIDUAL (1 PESSOA) */}
+                    <div className="pt-4 border-t border-slate-800 space-y-2.5">
+                      <span className="text-xs font-black text-emerald-400 uppercase tracking-wide block">
+                        Texto do Botão Individual (1 Pessoa)
+                      </span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Texto Principal</label>
+                          <input
+                            type="text"
+                            value={config.opcaoIndividualTitulo || ''}
+                            onChange={(e) => setConfig({ ...config, opcaoIndividualTitulo: e.target.value })}
+                            placeholder="Ex: SÓ EU"
+                            className="w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Complemento</label>
+                          <input
+                            type="text"
+                            value={config.opcaoIndividualSubtitulo || ''}
+                            onChange={(e) => setConfig({ ...config, opcaoIndividualSubtitulo: e.target.value })}
+                            placeholder="Ex: , vim sozinho"
+                            className="w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-lg px-2.5 py-1.5 text-xs text-slate-300"
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
                   )}
@@ -3168,8 +3237,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
           {/* ========================================================== */}
           <div className="lg:col-span-6 bg-slate-950/90 flex flex-col min-h-0 p-2 sm:p-3 relative overflow-y-auto custom-scrollbar">
             
-            {/* GRID DOS CELULARES: 3 POR LINHA COM ESPAÇAMENTO 70% REDUZIDO */}
-            <div className="w-full max-w-[800px] mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 pb-6 place-items-center mt-1">
+            {/* GRID DOS CELULARES: 3 POR LINHA FLUIDO E RESPONSIVO */}
+            <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 pb-6 place-items-center mt-1">
               {/* 1. TELA INÍCIO */}
               {(() => {
                 const isSelected = activeTab === 'inicio';
@@ -3177,57 +3246,56 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                   <div
                     key="prev_inicio"
                     onClick={() => setActiveTab('inicio')}
-                    className="flex justify-center items-center cursor-pointer p-0.5"
-                    style={{ zoom: 0.8 }}
+                    className="w-full flex justify-center items-start cursor-pointer p-0.5"
                   >
                     <div className={`relative ${modeloAtual.largura} ${modeloAtual.moldura} bg-slate-950 overflow-hidden flex flex-col shrink-0 transition-all duration-300 ${
                       isSelected
-                        ? 'ring-4 ring-amber-400 border-amber-400 shadow-[0_0_40px_rgba(251,191,36,0.55)] scale-[1.03]'
-                        : 'border-slate-800 hover:border-slate-600 hover:scale-[1.01] shadow-2xl opacity-80 hover:opacity-100'
+                        ? 'ring-4 ring-amber-400 border-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.55)] scale-[1.02]'
+                        : 'border-slate-800 hover:border-slate-600 hover:scale-[1.01] shadow-xl opacity-80 hover:opacity-100'
                     }`}>
-                      <div className="w-full pt-2.5 pb-1 px-5 flex items-center justify-between text-[10px] text-slate-400 bg-slate-950 shrink-0 relative">
+                      <div className="w-full pt-2 pb-1 px-4 flex items-center justify-between text-[10px] text-slate-400 bg-slate-950 shrink-0 relative">
                         <span className="font-mono font-bold text-[10px]">19:30</span>
                         {modeloAtual.tipoTopo === 'dynamic-island' && (
-                          <div className="w-20 h-4 bg-black rounded-full border border-slate-800 flex items-center justify-between px-2 shadow-inner">
+                          <div className="w-16 h-3.5 bg-black rounded-full border border-slate-800 flex items-center justify-between px-1.5 shadow-inner">
                             <div className="w-1.5 h-1.5 rounded-full bg-slate-900 border border-slate-700" />
                             <div className="w-1.5 h-1.5 rounded-full bg-slate-900" />
                           </div>
                         )}
                         {modeloAtual.tipoTopo === 'punch-hole-center' && (
-                          <div className="w-3 h-3 rounded-full bg-black border border-slate-800 shadow-inner" />
+                          <div className="w-2.5 h-2.5 rounded-full bg-black border border-slate-800 shadow-inner" />
                         )}
                         {modeloAtual.tipoTopo === 'notch' && (
-                          <div className="w-24 h-3 bg-black rounded-b-xl border-b border-slate-800 shadow-inner" />
+                          <div className="w-20 h-2.5 bg-black rounded-b-xl border-b border-slate-800 shadow-inner" />
                         )}
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1">
                           <Wifi className="w-2.5 h-2.5" />
                           <Battery className="w-3 h-3" />
                         </div>
                       </div>
 
-                      <div className="h-[460px] overflow-y-auto p-3.5 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between text-center select-none custom-scrollbar">
+                      <div className="h-[440px] overflow-y-auto p-3 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between text-center select-none custom-scrollbar">
                         <div className="flex flex-col items-center justify-center h-full space-y-4 my-auto">
-                          <div className="relative w-16 h-16 flex items-center justify-center">
+                          <div className="relative w-14 h-14 flex items-center justify-center">
                             <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-amber-400 border-r-emerald-400 animate-spin" />
-                            <div className="relative w-7 h-7 rounded-full bg-slate-950 border border-slate-700 flex items-center justify-center">
-                              <Sparkles className="w-4 h-4 text-amber-300" />
+                            <div className="relative w-6 h-6 rounded-full bg-slate-950 border border-slate-700 flex items-center justify-center">
+                              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
                             </div>
                           </div>
-                          <div className="space-y-1 text-center px-2">
+                          <div className="space-y-1 text-center px-1">
                             <span 
-                              style={{ fontSize: `${(config.esperaLinha1Tamanho || config.esperaFonteTamanho || 26) * 0.58}px` }}
+                              style={{ fontSize: `${(config.esperaLinha1Tamanho || config.esperaFonteTamanho || 26) * 0.52}px` }}
                               className="block font-black text-white tracking-wide uppercase leading-tight"
                             >
                               {config.esperaLinha1 || 'DENTRO DE INSTANTES'}
                             </span>
                             <span 
-                              style={{ fontSize: `${(config.esperaLinha2Tamanho || config.esperaFonteTamanho || 26) * 0.58}px` }}
+                              style={{ fontSize: `${(config.esperaLinha2Tamanho || config.esperaFonteTamanho || 26) * 0.52}px` }}
                               className="block font-black bg-gradient-to-r from-amber-300 to-amber-400 bg-clip-text text-transparent tracking-wide uppercase leading-tight"
                             >
                               {config.esperaLinha2 || 'ESTARÁ LIBERADO'}
                             </span>
                             <span 
-                              style={{ fontSize: `${(config.esperaLinha3Tamanho || config.esperaFonteTamanho || 26) * 0.58}px` }}
+                              style={{ fontSize: `${(config.esperaLinha3Tamanho || config.esperaFonteTamanho || 26) * 0.52}px` }}
                               className="block font-black text-emerald-400 tracking-wide uppercase leading-tight"
                             >
                               {config.esperaLinha3 || 'PARA RESPONDER.'}
@@ -3250,35 +3318,34 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                   <div
                     key="prev_tela_1"
                     onClick={() => setActiveTab('tela_1')}
-                    className="flex justify-center items-center cursor-pointer p-0.5"
-                    style={{ zoom: 0.8 }}
+                    className="w-full flex justify-center items-start cursor-pointer p-0.5"
                   >
                     <div className={`relative ${modeloAtual.largura} ${modeloAtual.moldura} bg-slate-950 overflow-hidden flex flex-col shrink-0 transition-all duration-300 ${
                       isSelected
-                        ? 'ring-4 ring-amber-400 border-amber-400 shadow-[0_0_40px_rgba(251,191,36,0.55)] scale-[1.03]'
-                        : 'border-slate-800 hover:border-slate-600 hover:scale-[1.01] shadow-2xl opacity-80 hover:opacity-100'
+                        ? 'ring-4 ring-amber-400 border-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.55)] scale-[1.02]'
+                        : 'border-slate-800 hover:border-slate-600 hover:scale-[1.01] shadow-xl opacity-80 hover:opacity-100'
                     }`}>
-                      <div className="w-full pt-2.5 pb-1 px-5 flex items-center justify-between text-[10px] text-slate-400 bg-slate-950 shrink-0 relative">
+                      <div className="w-full pt-2 pb-1 px-4 flex items-center justify-between text-[10px] text-slate-400 bg-slate-950 shrink-0 relative">
                         <span className="font-mono font-bold text-[10px]">19:30</span>
                         {modeloAtual.tipoTopo === 'dynamic-island' && (
-                          <div className="w-20 h-4 bg-black rounded-full border border-slate-800 flex items-center justify-between px-2 shadow-inner">
+                          <div className="w-16 h-3.5 bg-black rounded-full border border-slate-800 flex items-center justify-between px-1.5 shadow-inner">
                             <div className="w-1.5 h-1.5 rounded-full bg-slate-900 border border-slate-700" />
                             <div className="w-1.5 h-1.5 rounded-full bg-slate-900" />
                           </div>
                         )}
                         {modeloAtual.tipoTopo === 'punch-hole-center' && (
-                          <div className="w-3 h-3 rounded-full bg-black border border-slate-800 shadow-inner" />
+                          <div className="w-2.5 h-2.5 rounded-full bg-black border border-slate-800 shadow-inner" />
                         )}
                         {modeloAtual.tipoTopo === 'notch' && (
-                          <div className="w-24 h-3 bg-black rounded-b-xl border-b border-slate-800 shadow-inner" />
+                          <div className="w-20 h-2.5 bg-black rounded-b-xl border-b border-slate-800 shadow-inner" />
                         )}
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1">
                           <Wifi className="w-2.5 h-2.5" />
                           <Battery className="w-3 h-3" />
                         </div>
                       </div>
 
-                      <div className="h-[460px] overflow-y-auto p-3.5 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between text-center select-none custom-scrollbar">
+                      <div className="h-[440px] overflow-y-auto p-3 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between text-center select-none custom-scrollbar">
                         <div className="flex flex-col justify-between h-full space-y-2">
                           <div className="shrink-0 space-y-1">
                             <p className="text-xs font-black text-emerald-400 tracking-wide">
@@ -3560,35 +3627,34 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                   <div
                     key={`prev_${tabKey}`}
                     onClick={() => setActiveTab(tabKey)}
-                    className="flex justify-center items-center cursor-pointer p-0.5"
-                    style={{ zoom: 0.8 }}
+                    className="w-full flex justify-center items-start cursor-pointer p-0.5"
                   >
                     <div className={`relative ${modeloAtual.largura} ${modeloAtual.moldura} bg-slate-950 overflow-hidden flex flex-col shrink-0 transition-all duration-300 ${
                       isSelected
-                        ? 'ring-4 ring-amber-400 border-amber-400 shadow-[0_0_40px_rgba(251,191,36,0.55)] scale-[1.03]'
-                        : 'border-slate-800 hover:border-slate-600 hover:scale-[1.01] shadow-2xl opacity-80 hover:opacity-100'
+                        ? 'ring-4 ring-amber-400 border-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.55)] scale-[1.02]'
+                        : 'border-slate-800 hover:border-slate-600 hover:scale-[1.01] shadow-xl opacity-80 hover:opacity-100'
                     }`}>
-                      <div className="w-full pt-2.5 pb-1 px-5 flex items-center justify-between text-[10px] text-slate-400 bg-slate-950 shrink-0 relative">
+                      <div className="w-full pt-2 pb-1 px-4 flex items-center justify-between text-[10px] text-slate-400 bg-slate-950 shrink-0 relative">
                         <span className="font-mono font-bold text-[10px]">19:30</span>
                         {modeloAtual.tipoTopo === 'dynamic-island' && (
-                          <div className="w-20 h-4 bg-black rounded-full border border-slate-800 flex items-center justify-between px-2 shadow-inner">
+                          <div className="w-16 h-3.5 bg-black rounded-full border border-slate-800 flex items-center justify-between px-1.5 shadow-inner">
                             <div className="w-1.5 h-1.5 rounded-full bg-slate-900 border border-slate-700" />
                             <div className="w-1.5 h-1.5 rounded-full bg-slate-900" />
                           </div>
                         )}
                         {modeloAtual.tipoTopo === 'punch-hole-center' && (
-                          <div className="w-3 h-3 rounded-full bg-black border border-slate-800 shadow-inner" />
+                          <div className="w-2.5 h-2.5 rounded-full bg-black border border-slate-800 shadow-inner" />
                         )}
                         {modeloAtual.tipoTopo === 'notch' && (
-                          <div className="w-24 h-3 bg-black rounded-b-xl border-b border-slate-800 shadow-inner" />
+                          <div className="w-20 h-2.5 bg-black rounded-b-xl border-b border-slate-800 shadow-inner" />
                         )}
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1">
                           <Wifi className="w-2.5 h-2.5" />
                           <Battery className="w-3 h-3" />
                         </div>
                       </div>
 
-                      <div className="h-[460px] overflow-y-auto p-3.5 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between text-center select-none custom-scrollbar">
+                      <div className="h-[440px] overflow-y-auto p-3 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between text-center select-none custom-scrollbar">
                         <div className="flex flex-col justify-between h-full space-y-2">
                           <div className="shrink-0 space-y-1">
                             <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[9px] font-black uppercase">
@@ -3836,35 +3902,34 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                   <div
                     key="prev_acompanhantes"
                     onClick={() => setActiveTab('acompanhantes')}
-                    className="flex justify-center items-center cursor-pointer p-0.5"
-                    style={{ zoom: 0.8 }}
+                    className="w-full flex justify-center items-start cursor-pointer p-0.5"
                   >
                     <div className={`relative ${modeloAtual.largura} ${modeloAtual.moldura} bg-slate-950 overflow-hidden flex flex-col shrink-0 transition-all duration-300 ${
                       isSelected
-                        ? 'ring-4 ring-amber-400 border-amber-400 shadow-[0_0_40px_rgba(251,191,36,0.55)] scale-[1.03]'
-                        : 'border-slate-800 hover:border-slate-600 hover:scale-[1.01] shadow-2xl opacity-80 hover:opacity-100'
+                        ? 'ring-4 ring-amber-400 border-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.55)] scale-[1.02]'
+                        : 'border-slate-800 hover:border-slate-600 hover:scale-[1.01] shadow-xl opacity-80 hover:opacity-100'
                     }`}>
-                      <div className="w-full pt-2.5 pb-1 px-5 flex items-center justify-between text-[10px] text-slate-400 bg-slate-950 shrink-0 relative">
+                      <div className="w-full pt-2 pb-1 px-4 flex items-center justify-between text-[10px] text-slate-400 bg-slate-950 shrink-0 relative">
                         <span className="font-mono font-bold text-[10px]">19:30</span>
                         {modeloAtual.tipoTopo === 'dynamic-island' && (
-                          <div className="w-20 h-4 bg-black rounded-full border border-slate-800 flex items-center justify-between px-2 shadow-inner">
+                          <div className="w-16 h-3.5 bg-black rounded-full border border-slate-800 flex items-center justify-between px-1.5 shadow-inner">
                             <div className="w-1.5 h-1.5 rounded-full bg-slate-900 border border-slate-700" />
                             <div className="w-1.5 h-1.5 rounded-full bg-slate-900" />
                           </div>
                         )}
                         {modeloAtual.tipoTopo === 'punch-hole-center' && (
-                          <div className="w-3 h-3 rounded-full bg-black border border-slate-800 shadow-inner" />
+                          <div className="w-2.5 h-2.5 rounded-full bg-black border border-slate-800 shadow-inner" />
                         )}
                         {modeloAtual.tipoTopo === 'notch' && (
-                          <div className="w-24 h-3 bg-black rounded-b-xl border-b border-slate-800 shadow-inner" />
+                          <div className="w-20 h-2.5 bg-black rounded-b-xl border-b border-slate-800 shadow-inner" />
                         )}
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1">
                           <Wifi className="w-2.5 h-2.5" />
                           <Battery className="w-3 h-3" />
                         </div>
                       </div>
 
-                      <div className="h-[460px] overflow-y-auto p-3.5 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between text-center select-none custom-scrollbar">
+                      <div className="h-[440px] overflow-y-auto p-3 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between text-center select-none custom-scrollbar">
                         <div className="flex flex-col justify-between h-full space-y-2">
                           <div className="shrink-0 space-y-1">
                             <p className="text-xs font-black text-emerald-400 tracking-wide">
@@ -3885,29 +3950,29 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             </h3>
                           </div>
 
-                          <div className="flex-1 my-auto space-y-2.5 py-1">
+                          <div className="flex-1 my-auto space-y-2 py-1">
                             <div className="w-full p-2.5 rounded-2xl border border-emerald-500/30 border-b-4 border-b-emerald-950 bg-gradient-to-b from-emerald-600 to-emerald-700 flex items-center justify-between shadow-lg text-left">
                               <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-xl bg-emerald-900/60 flex items-center justify-center text-emerald-200">
-                                  <User className="w-4 h-4" />
+                                <div className="w-7 h-7 rounded-xl bg-emerald-900/60 flex items-center justify-center text-emerald-200">
+                                  <User className="w-3.5 h-3.5" />
                                 </div>
                                 <div>
-                                  <span className="font-black text-sm text-amber-300 block">
+                                  <span className="font-black text-xs text-amber-300 block">
                                     {config.opcaoIndividualTitulo || 'SÓ EU'}
                                   </span>
-                                  <span className="text-[10px] text-white/90 block">
+                                  <span className="text-[9px] text-white/90 block">
                                     {config.opcaoIndividualSubtitulo || ', vim sozinho'}
                                   </span>
                                 </div>
                               </div>
-                              <span className="w-7 h-7 rounded-xl bg-emerald-950/80 text-emerald-300 font-black text-xs flex items-center justify-center">
+                              <span className="w-6 h-6 rounded-xl bg-emerald-950/80 text-emerald-300 font-black text-xs flex items-center justify-center">
                                 1
                               </span>
                             </div>
 
                             <div className="flex items-center my-1">
                               <div className="flex-grow border-t border-slate-800" />
-                              <span className="px-2 text-[9px] font-black text-amber-300 uppercase">
+                              <span className="px-2 text-[9px] font-black text-amber-300 uppercase truncate">
                                 {config.divisorQtdTexto || 'Quantas pessoas vieram com você?'}
                               </span>
                               <div className="flex-grow border-t border-slate-800" />
@@ -3917,17 +3982,23 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                               {['2', '3', '4', '5', '6', '7', '8', '9', '+10'].map((num) => {
                                 const btnCorCls = getBtnQtdSimClass(config.btnQtdCor);
                                 const numCorCls = getBtnNumClass(config.btnQtdCorNumero);
+                                const descCorCls = getBtnDescClass(config.btnQtdCorDescricao);
                                 const simBtnHeight = Math.round((config.btnQtdAltura || 74) * 0.58);
                                 const simNumSize = Math.round((config.btnQtdFonteNumero || 34) * 0.58);
+                                const simDescSize = Math.round((config.btnQtdFonteDescricao || 11) * 0.7);
+                                const simBordaW = Math.max(1, Math.round((config.btnQtdBordaEspessura || 1) * 0.8));
 
                                 return (
                                   <div
                                     key={num}
                                     style={{ 
                                       minHeight: `${simBtnHeight}px`,
+                                      borderWidth: `${simBordaW}px`,
+                                      width: `${config.btnQtdLargura || 100}%`,
+                                      margin: '0 auto',
                                       ...getEfeitoStyle(config.btnQtdEfeito || 'efeito_3d', Math.max(1, Math.round((config.btnQtdProfundidade || 5) * 0.7)))
                                     }}
-                                    className={`py-1 px-1 rounded-xl border text-center flex flex-col items-center justify-center transition-all ${btnCorCls}`}
+                                    className={`py-1 px-1 rounded-xl text-center flex flex-col items-center justify-center transition-all ${btnCorCls}`}
                                   >
                                     <span 
                                       style={{ fontSize: `${simNumSize}px` }}
@@ -3935,7 +4006,10 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                     >
                                       {num}
                                     </span>
-                                    <span className="text-[8px] font-bold text-white/80 block mt-0.5">
+                                    <span 
+                                      style={{ fontSize: `${simDescSize}px` }}
+                                      className={`font-bold block mt-0.5 ${descCorCls}`}
+                                    >
                                       {num === '+10' ? 'Pessoas +' : 'Pessoas'}
                                     </span>
                                   </div>
@@ -3957,35 +4031,34 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                   <div
                     key="prev_fim"
                     onClick={() => setActiveTab('fim')}
-                    className="flex justify-center items-center cursor-pointer p-0.5"
-                    style={{ zoom: 0.8 }}
+                    className="w-full flex justify-center items-start cursor-pointer p-0.5"
                   >
                     <div className={`relative ${modeloAtual.largura} ${modeloAtual.moldura} bg-slate-950 overflow-hidden flex flex-col shrink-0 transition-all duration-300 ${
                       isSelected
-                        ? 'ring-4 ring-amber-400 border-amber-400 shadow-[0_0_40px_rgba(251,191,36,0.55)] scale-[1.03]'
-                        : 'border-slate-800 hover:border-slate-600 hover:scale-[1.01] shadow-2xl opacity-80 hover:opacity-100'
+                        ? 'ring-4 ring-amber-400 border-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.55)] scale-[1.02]'
+                        : 'border-slate-800 hover:border-slate-600 hover:scale-[1.01] shadow-xl opacity-80 hover:opacity-100'
                     }`}>
-                      <div className="w-full pt-2.5 pb-1 px-5 flex items-center justify-between text-[10px] text-slate-400 bg-slate-950 shrink-0 relative">
+                      <div className="w-full pt-2 pb-1 px-4 flex items-center justify-between text-[10px] text-slate-400 bg-slate-950 shrink-0 relative">
                         <span className="font-mono font-bold text-[10px]">19:30</span>
                         {modeloAtual.tipoTopo === 'dynamic-island' && (
-                          <div className="w-20 h-4 bg-black rounded-full border border-slate-800 flex items-center justify-between px-2 shadow-inner">
+                          <div className="w-16 h-3.5 bg-black rounded-full border border-slate-800 flex items-center justify-between px-1.5 shadow-inner">
                             <div className="w-1.5 h-1.5 rounded-full bg-slate-900 border border-slate-700" />
                             <div className="w-1.5 h-1.5 rounded-full bg-slate-900" />
                           </div>
                         )}
                         {modeloAtual.tipoTopo === 'punch-hole-center' && (
-                          <div className="w-3 h-3 rounded-full bg-black border border-slate-800 shadow-inner" />
+                          <div className="w-2.5 h-2.5 rounded-full bg-black border border-slate-800 shadow-inner" />
                         )}
                         {modeloAtual.tipoTopo === 'notch' && (
-                          <div className="w-24 h-3 bg-black rounded-b-xl border-b border-slate-800 shadow-inner" />
+                          <div className="w-20 h-2.5 bg-black rounded-b-xl border-b border-slate-800 shadow-inner" />
                         )}
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1">
                           <Wifi className="w-2.5 h-2.5" />
                           <Battery className="w-3 h-3" />
                         </div>
                       </div>
 
-                      <div className="h-[460px] overflow-y-auto p-3.5 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between text-center select-none custom-scrollbar">
+                      <div className="h-[440px] overflow-y-auto p-3 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between text-center select-none custom-scrollbar">
                         <div className="flex flex-col items-center justify-center h-full space-y-3.5 my-auto px-2">
                           <div className="w-full bg-slate-900/95 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-3">
                             <h3 

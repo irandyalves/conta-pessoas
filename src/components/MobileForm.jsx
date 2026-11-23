@@ -185,6 +185,17 @@ const BTN_NUM_CLASSES = {
   preto: 'text-slate-950',
 };
 
+const BTN_DESC_CLASSES = {
+  branco_80: 'text-white/80',
+  branco_puro: 'text-white',
+  dourado: 'text-amber-300',
+  amarelo: 'text-yellow-300',
+  esmeralda: 'text-emerald-300',
+  azul: 'text-sky-300',
+  cinza: 'text-slate-300',
+  laranja: 'text-orange-300',
+};
+
 export default function MobileForm() {
   const [activeEventId, setActiveEventIdState] = useState(() => getActiveEventId());
   
@@ -1490,16 +1501,26 @@ export default function MobileForm() {
               ].map((op) => {
                 const btnCorCls = BTN_QTD_CLASSES[questionsConfig?.btnQtdCor] || BTN_QTD_CLASSES.slate;
                 const numCorCls = BTN_NUM_CLASSES[questionsConfig?.btnQtdCorNumero] || 'text-white';
+                const descCorCls = BTN_DESC_CLASSES[questionsConfig?.btnQtdCorDescricao] || 'text-white/80';
                 const btnAltura = questionsConfig?.btnQtdAltura || 74;
+                const btnLargura = questionsConfig?.btnQtdLargura ? `${questionsConfig.btnQtdLargura}%` : '100%';
+                const bordaEspessura = questionsConfig?.btnQtdBordaEspessura ? `${questionsConfig.btnQtdBordaEspessura}px` : '1px';
                 const numFonte = questionsConfig?.btnQtdFonteNumero || 34;
+                const descFonte = questionsConfig?.btnQtdFonteDescricao || 11;
                 const btnEfeitoInline = getEfeitoStyle(questionsConfig?.btnQtdEfeito || 'efeito_3d', questionsConfig?.btnQtdProfundidade || 5);
 
                 return (
                   <button
                     key={op.valor}
                     onClick={() => handleSelectQtd(op.valor)}
-                    style={{ minHeight: `${btnAltura}px`, ...btnEfeitoInline }}
-                    className={`px-2 py-2 rounded-2xl border active:scale-[0.98] transition-all flex flex-col items-center justify-center group ${btnCorCls}`}
+                    style={{ 
+                      minHeight: `${btnAltura}px`, 
+                      width: btnLargura,
+                      borderWidth: bordaEspessura,
+                      margin: '0 auto',
+                      ...btnEfeitoInline 
+                    }}
+                    className={`px-2 py-2 rounded-2xl active:scale-[0.98] transition-all flex flex-col items-center justify-center group ${btnCorCls}`}
                   >
                     <span 
                       style={{ fontSize: `${numFonte}px` }}
@@ -1507,7 +1528,10 @@ export default function MobileForm() {
                     >
                       {op.label}
                     </span>
-                    <span className="text-[11px] font-bold text-white/80 group-hover:text-amber-300 transition-colors mt-1">
+                    <span 
+                      style={{ fontSize: `${descFonte}px` }}
+                      className={`font-bold transition-colors mt-1 ${descCorCls}`}
+                    >
                       {op.valor === 10 ? 'Pessoas +' : 'Pessoas'}
                     </span>
                   </button>
