@@ -51,7 +51,7 @@ import {
   saveEventTitle,
   DEFAULT_QUESTIONS_CONFIG 
 } from '../firebase';
-import { getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems, getEfeitoStyle, CORES_TEXTO_LINHAS, ALINHAMENTOS_TEXTO, FUNDOS_CAPTION } from '../utils/estilos';
+import { extrairEstilo, aplicarEstilo, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems, getEfeitoStyle, CORES_TEXTO_LINHAS, ALINHAMENTOS_TEXTO, FUNDOS_CAPTION } from '../utils/estilos';
 import ImportadorIA from './ImportadorIA';
 import IconeEspera, { ICONES_ESPERA } from './IconeEspera';
 import EstiloLinhasTitulo from './EstiloLinhasTitulo';
@@ -399,6 +399,40 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, inline, activeEventId]);
 
+  // COPIAR / COLAR / REPLICAR FORMATAÇÃO ENTRE TELAS
+  const [estiloCopiado, setEstiloCopiado] = useState(null);
+  const copiarEstilo = (ehP1, extraIndex) => {
+    const origem = ehP1 ? config : (config.telasExtras || [])[extraIndex];
+    setEstiloCopiado(extrairEstilo(origem, ehP1));
+  };
+  const colarEstilo = (ehP1, extraIndex) => {
+    if (!estiloCopiado) return;
+    setConfig((prev) => ehP1
+      ? aplicarEstilo(prev, estiloCopiado, true)
+      : { ...prev, telasExtras: (prev.telasExtras || []).map((t, i) => (i === extraIndex ? aplicarEstilo(t, estiloCopiado, false) : t)) });
+  };
+  const replicarEmTodas = (ehP1, extraIndex) => {
+    const origem = ehP1 ? config : (config.telasExtras || [])[extraIndex];
+    const e = extrairEstilo(origem, ehP1);
+    mostrarConfirm(
+      'Replicar formatação',
+      'Aplicar o tamanho, cor, negrito, alinhamento e fundo do título/subtítulo, além do estilo dos cards, legenda e itens desta tela em TODAS as telas?',
+      () => setConfig((prev) => ({
+        ...aplicarEstilo(prev, e, true),
+        telasExtras: (prev.telasExtras || []).map((t) => aplicarEstilo(t, e, false))
+      })),
+      'Replicar em todas'
+    );
+  };
+  const BarraFormatacao = ({ ehP1, extraIndex }) => (
+    <div className="flex flex-wrap items-center gap-1.5 pt-2">
+      <span className="text-[10px] font-bold text-slate-500 mr-1">Formatação:</span>
+      <button type="button" onClick={() => copiarEstilo(ehP1, extraIndex)} className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">📋 Copiar</button>
+      <button type="button" disabled={!estiloCopiado} onClick={() => colarEstilo(ehP1, extraIndex)} className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 disabled:opacity-40">📥 Colar aqui</button>
+      <button type="button" onClick={() => replicarEmTodas(ehP1, extraIndex)} className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40">🌐 Replicar em todas as telas</button>
+    </div>
+  );
+
   // SALVAMENTO AUTOMÁTICO NO BANCO: 1,5s depois da última alteração
   const [autoSalvo, setAutoSalvo] = useState('');
   useEffect(() => {
@@ -508,7 +542,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
     const vaoParaNovaTela = todas.slice(splitIndex);
     const totalExtras = (config.telasExtras || []).length;
 
-    const novaTela = {
+    // A nova tela herda TODA a formatação da Tela 1
+    const novaTela = aplicarEstilo({
       id: `extra_${Date.now()}`,
       ativa: true,
       tipo: 'cards',
@@ -516,18 +551,18 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
       titulo1: vaoParaNovaTela[0]?.titulo || `Pergunta da Tela ${totalExtras + 2}`,
       titulo2: '',
       subtitulo: '',
-      cardsPorTela: 4,
+      cardsPorTela: config.cardsPorTela || 4,
       obrigatorio: false,
       botaoTexto: 'Avançar',
       opcoes: vaoParaNovaTela
-    };
+    }, extrairEstilo(config, true), false);
 
     setConfig((prev) => ({
       ...prev,
       opcoesChegada: ficamNaTela1,
-      telasExtras: [...(prev.telasExtras || []), novaTela]
+      telasExtras: [novaTela, ...(prev.telasExtras || [])]
     }));
-    setActiveTab(`extra_${totalExtras}`);
+    setActiveTab('extra_0');
   };
 
   const handleDividirParaNovaTelaExtra = (extraIndex, splitOptIndex) => {
@@ -540,17 +575,16 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
     const vao = telaAtual.opcoes.slice(splitOptIndex);
 
     telas[extraIndex] = { ...telaAtual, opcoes: ficam };
+    // A nova tela é uma cópia da anterior (toda a formatação), só com outras opções e título
     const novaTela = {
+      ...telaAtual,
       id: `extra_${Date.now()}`,
       ativa: true,
-      tipo: telaAtual.tipo || 'cards',
       titulo: vao[0]?.titulo || `Nova Tela`,
       titulo1: vao[0]?.titulo || `Nova Tela`,
       titulo2: '',
-      subtitulo: '',
-      cardsPorTela: 4,
-      obrigatorio: false,
-      botaoTexto: 'Avançar',
+      titulo3: '',
+      subtitulo: telaAtual.subtitulo || '',
       opcoes: vao
     };
 
@@ -2116,6 +2150,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                           ];
                         })()}
                       />
+                      <BarraFormatacao ehP1 />
                     </div>
 
                     <div className="space-y-2.5">
@@ -3137,6 +3172,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                               ];
                             })()}
                           />
+                          <BarraFormatacao ehP1={false} extraIndex={extraIndex} />
                           {telaAlvo.tipo === 'grade' && (
                             <EstiloLinhasTitulo
                               linhas={[
@@ -4997,7 +5033,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                     className={`text-center leading-snug ${telaExtra.legendaBold ? 'font-bold' : ''} ${getCorTextoLinhaClass(telaExtra.legendaCor, 'text-slate-300')} ${getFaixaFundoClass(telaExtra.legendaFundo || 'escuro', '-mx-2.5 px-2.5')}`}
                                   >
                                     {parseScaleLegendItems(telaExtra.legendaEscala).map((item, li) => (
-                                      <span key={li} className="whitespace-nowrap">
+                                      <span key={li}>
                                         {li > 0 && <span className="opacity-40"> · </span>}
                                         {item.code && <strong className="text-amber-400 font-black">{item.code} </strong>}
                                         {item.label}

@@ -1463,7 +1463,7 @@ export default function MobileForm() {
                           className={`text-center leading-snug ${tela.legendaBold ? 'font-bold' : ''} ${getCorTextoLinhaClass(tela.legendaCor, 'text-slate-300')} ${getFaixaFundoClass(tela.legendaFundo || 'escuro', '-mx-5 px-5 sm:-mx-6 sm:px-6')}`}
                         >
                           {parseScaleLegendItems(tela.legendaEscala).map((item, li) => (
-                            <span key={li} className="whitespace-nowrap">
+                            <span key={li}>
                               {li > 0 && <span className="opacity-40"> · </span>}
                               {item.code && <strong className="text-amber-400 font-black">{item.code} </strong>}
                               {item.label}

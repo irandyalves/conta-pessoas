@@ -139,3 +139,45 @@ export const corGradeSelecionada = (col, cols = []) => {
   const pos = numericas.length <= 1 ? CORES_ESCALA.length - 1 : Math.round((i / (numericas.length - 1)) * (CORES_ESCALA.length - 1));
   return CORES_ESCALA[pos];
 };
+
+// ==========================================
+// COPIAR / REPLICAR FORMATAÇÃO ENTRE TELAS
+// A Tela 1 guarda os estilos com nomes "pergunta1..."; as telas extras com nomes próprios.
+// ==========================================
+const MAPA_P1 = {
+  tituloTamanho: 'pergunta1FonteTamanho', tituloCor: 'pergunta1TituloCor', tituloBold: 'pergunta1TituloBold',
+  tituloAlinhamento: 'pergunta1TituloAlinhamento', tituloFundo: 'pergunta1TituloFundo',
+  subTamanho: 'pergunta1TextoAbaixoTamanho', subCor: 'pergunta1TextoAbaixoCor', subBold: 'pergunta1SubBold',
+  subAlinhamento: 'pergunta1SubAlinhamento', subFundo: 'pergunta1SubFundo',
+  mostrarIcones: 'mostrarIconesCards'
+};
+const MAPA_EXTRA = {
+  tituloTamanho: 'titulo1Tamanho', tituloCor: 'titulo1Cor', tituloBold: 'tituloBold',
+  tituloAlinhamento: 'tituloAlinhamento', tituloFundo: 'tituloFundo',
+  subTamanho: 'subtituloTamanho', subCor: 'subtituloCor', subBold: 'subBold',
+  subAlinhamento: 'subAlinhamento', subFundo: 'subFundo',
+  mostrarIcones: 'mostrarIcones'
+};
+// Campos com o mesmo nome nos dois lugares
+const COMUNS = ['cardAltura', 'cardsPorTela', 'cardFundoEstilo', 'cardEfeitoEstilo', 'cardProfundidade', 'cardCorFonteTitulo',
+  'cardCorFonteSubtitulo', 'cardFonteTitulo', 'cardFonteSubtitulo', 'escalaTamanho', 'legendaCor', 'legendaBold', 'legendaFundo',
+  'itemTamanho', 'itemCor', 'itemBold', 'itemFundo'];
+
+export function extrairEstilo(origem, ehP1) {
+  const mapa = ehP1 ? MAPA_P1 : MAPA_EXTRA;
+  const e = {};
+  Object.entries(mapa).forEach(([k, campo]) => { if (origem?.[campo] !== undefined) e[k] = origem[campo]; });
+  COMUNS.forEach((c) => { if (origem?.[c] !== undefined) e[c] = origem[c]; });
+  return e;
+}
+
+export function aplicarEstilo(destino, estilo, ehP1) {
+  const mapa = ehP1 ? MAPA_P1 : MAPA_EXTRA;
+  const out = { ...destino };
+  Object.entries(estilo || {}).forEach(([k, v]) => {
+    if (v === undefined) return;
+    if (mapa[k]) out[mapa[k]] = v;
+    else if (COMUNS.includes(k)) out[k] = v;
+  });
+  return out;
+}
