@@ -990,10 +990,10 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
             className="flex flex-col min-h-0 bg-slate-900/50 shrink-0 border-b lg:border-b-0 border-slate-800"
           >
             
-            {/* BARRA DE ABAS: TELA INÍCIO, TELA 1, TELA 2 (ACOMP.), TELAS EXTRAS, TELA FIM + BOTÃO INSERIR NO FIM */}
+            {/* BARRA DE ABAS: BOAS-VINDAS, INÍCIO, TELA 1..X, FIM + BOTÃO + ADD TAB EM VERDE */}
             <div className="flex border-b border-slate-800 bg-slate-950/70 px-3 pt-2.5 shrink-0 gap-1.5 overflow-x-auto items-center custom-scrollbar">
               
-              {/* Tela Início */}
+              {/* Boas-vindas (Espera / Entrada) */}
               <button
                 type="button"
                 onClick={() => setActiveTab('inicio')}
@@ -1004,13 +1004,33 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 }`}
               >
                 <Hourglass className="w-4 h-4" />
-                <span>Tela Início</span>
+                <span>Boas-vindas</span>
               </button>
 
-              {/* Tela 1 */}
+              {/* Início (Capa / Botão COMEÇAR) */}
               <button
                 type="button"
-                onClick={() => setActiveTab('tela_1')}
+                onClick={() => {
+                  setActiveTab('inicio_comecar');
+                  setSubTabTela1('pergunta');
+                }}
+                className={`pb-2.5 px-3 text-xs sm:text-sm font-bold border-b-2 transition flex items-center gap-1.5 whitespace-nowrap ${
+                  activeTab === 'inicio_comecar'
+                    ? 'border-amber-400 text-amber-300'
+                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>Início</span>
+              </button>
+
+              {/* Tela 1 (Perguntas / Cards) */}
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('tela_1');
+                  if (subTabTela1 === 'pergunta') setSubTabTela1('opcoes');
+                }}
                 className={`pb-2.5 px-3 text-xs sm:text-sm font-bold border-b-2 transition flex items-center gap-1.5 whitespace-nowrap ${
                   activeTab === 'tela_1'
                     ? 'border-amber-400 text-amber-300'
@@ -1063,7 +1083,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                   }`}
                 >
                   <Users className="w-4 h-4" />
-                  <span>Tela {(config.telasExtras || []).length + 2} (Acomp.)</span>
+                  <span>Tela {(config.telasExtras || []).length + 2}</span>
                 </button>
               ) : (
                 <button
@@ -1080,7 +1100,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 </button>
               )}
 
-              {/* Tela Fim */}
+              {/* Fim */}
               <button
                 type="button"
                 onClick={() => setActiveTab('fim')}
@@ -1091,18 +1111,18 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 }`}
               >
                 <CheckCircle2 className="w-4 h-4" />
-                <span>Tela Fim</span>
+                <span>Fim</span>
               </button>
 
-              {/* Botão + Inserir Tela NO FIM DE TUDO (com escolha entre Cards ou Digitação) */}
+              {/* Botão + Add Tab em verde (com apenas um +) */}
               <button
                 type="button"
                 onClick={() => setShowTipoNovaTelaModal(true)}
-                className="mb-2 px-3 py-1.5 text-xs font-black text-amber-400 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap shrink-0 active:scale-95 ml-auto sm:ml-2 shadow-sm"
-                title="Inserir mais uma tela no fluxo de perguntas"
+                className="mb-2 px-3 py-1.5 text-xs font-black text-emerald-400 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap shrink-0 active:scale-95 ml-auto sm:ml-2 shadow-sm"
+                title="Adicionar mais uma tela / aba no fluxo de perguntas"
               >
                 <Plus className="w-4 h-4" />
-                <span>+ Inserir Tela</span>
+                <span>Add Tab</span>
               </button>
 
             </div>
@@ -1240,6 +1260,118 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         </div>
                       </div>
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ====================================================== */}
+              {/* ABA: INÍCIO (CAPA DO EVENTO COM BOTÃO COMEÇAR)         */}
+              {/* ====================================================== */}
+              {activeTab === 'inicio_comecar' && (
+                <div className="space-y-4 animate-fade-in">
+                  <div className="flex items-center justify-between pb-1 border-b border-slate-800">
+                    <div>
+                      <span className="text-xs font-black text-amber-400 uppercase tracking-wide block">
+                        Configuração da Tela de Início (Capa & Botão COMEÇAR)
+                      </span>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        Aparece no celular do participante assim que o evento for liberado.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Título 1 (1ª Linha)</label>
+                      <input
+                        type="text"
+                        value={config.pergunta1Titulo ?? ''}
+                        onChange={(e) => setConfig({ ...config, pergunta1Titulo: e.target.value })}
+                        placeholder="Ex: Seja muito bem-vindo!"
+                        className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-white shadow-inner"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Título 2 (2ª Linha - Opcional)</label>
+                      <input
+                        type="text"
+                        value={config.pergunta1Titulo2 ?? ''}
+                        onChange={(e) => setConfig({ ...config, pergunta1Titulo2: e.target.value })}
+                        placeholder="Complemento do título (opcional)..."
+                        className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-amber-300 shadow-inner"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Slider de Tamanho da Fonte do Título */}
+                  <div className="pt-2 border-t border-slate-800/80">
+                    <div className="flex items-center justify-between text-xs mb-1">
+                      <span className="font-bold text-slate-300">Tamanho da Fonte do Título</span>
+                      <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
+                        {config.pergunta1FonteTamanho || 18}px
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="14"
+                      max="32"
+                      step="1"
+                      value={config.pergunta1FonteTamanho || 18}
+                      onChange={(e) => setConfig({ ...config, pergunta1FonteTamanho: Number(e.target.value) })}
+                      className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                    />
+                    <div className="flex justify-between text-[9px] text-slate-500 font-mono">
+                      <span>14px (Menor)</span>
+                      <span>18px (Padrão)</span>
+                      <span>32px (Maior)</span>
+                    </div>
+                  </div>
+
+                  {/* Texto Abaixo do Título */}
+                  <div>
+                    <label className="text-[10px] font-bold text-emerald-300 block mb-1">
+                      Texto Abaixo do Título (Boas-vindas, Instrução ou Explicação)
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={config.pergunta1TextoAbaixo ?? ''}
+                      onChange={(e) => setConfig({ ...config, pergunta1TextoAbaixo: e.target.value })}
+                      placeholder="Digite aqui um texto explicativo para aparecer na Tela de Início..."
+                      className="w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-lg px-3 py-2 text-xs text-slate-200 placeholder-slate-500 shadow-inner resize-none"
+                    />
+                  </div>
+
+                  {/* Botão COMEÇAR */}
+                  <div className="pt-3 border-t border-slate-800 space-y-2">
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={config.mostrarBotaoComecar !== false}
+                        onChange={(e) => {
+                          setConfig({ ...config, mostrarBotaoComecar: e.target.checked });
+                          setPreviewInteractiveVal(p => ({ ...p, previewStarted: false }));
+                        }}
+                        className="w-4 h-4 rounded accent-amber-400"
+                      />
+                      <span className="text-xs font-black text-amber-300">
+                        ✨ Habilitar Botão "{config.pergunta1BotaoComecarTexto || 'COMEÇAR'}" (Se marcado, o participante toca nele para ir às perguntas)
+                      </span>
+                    </label>
+
+                    {config.mostrarBotaoComecar !== false && (
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-400 block mb-0.5">
+                          Texto do Botão
+                        </label>
+                        <input
+                          type="text"
+                          value={config.pergunta1BotaoComecarTexto ?? 'COMEÇAR'}
+                          onChange={(e) => setConfig({ ...config, pergunta1BotaoComecarTexto: e.target.value })}
+                          placeholder="COMEÇAR"
+                          className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-white shadow-inner"
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -2123,7 +2255,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 return (
                   <div className="space-y-4">
                     {/* Barra Superior da Tela Extra */}
-                    <div className="bg-slate-950 border border-slate-800 rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 shadow-sm">
+                    <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-slate-800">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-black text-amber-400">
                           Configurando Tela {numTela}
@@ -2168,7 +2300,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     </div>
 
                     {/* Título e Subtítulo da Tela Extra com Título 1 e Título 2 */}
-                    <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-3">
+                    <div className="space-y-3 pt-1">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div>
                           <label className="text-[10px] font-bold text-amber-400 uppercase tracking-wide block mb-1">
@@ -2340,7 +2472,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       /* CONFIGURAÇÃO ESPECÍFICA: CARDS, RADIO BUTTON, CHECKBOX OU LISTA SUSPENSA (COM GAVETAS) */
                       <div className="space-y-3">
                         {telaAlvo.tipo === 'cards' && (
-                          <div className="bg-slate-950 border border-slate-800 rounded-xl p-3 flex items-center justify-between text-xs">
+                          <div className="flex items-center justify-between text-xs py-1.5 border-b border-slate-800/80">
                             <span className="text-slate-300 font-bold">Cards por tela nesta etapa:</span>
                             <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
                               {[2, 3, 4, 5, 6].map((num) => (
@@ -2865,7 +2997,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               {activeTab === 'acompanhantes' && (
                 <div className="space-y-4">
                   {/* Barra Superior com botão de Desativar/Ocultar esta tela caso o admin não queira no fluxo */}
-                  <div className="bg-slate-950 border border-slate-800 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-800">
                     <div className="flex items-center gap-2">
                       <Users className="w-4 h-4 text-amber-400" />
                       <span className="text-xs font-black text-white">
@@ -2930,8 +3062,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
                   {/* 1. TÍTULO DA PERGUNTA TELA 2 */}
                   {subTabTela2 === 'pergunta' && (
-                    <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-2.5 shadow-sm animate-fade-in">
-                      <div className="flex items-center justify-between">
+                    <div className="space-y-3 animate-fade-in pt-1">
+                      <div className="flex items-center justify-between pb-1 border-b border-slate-800/80">
                         <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wide">
                           Título da Pergunta (Tela 2)
                         </span>
@@ -3393,13 +3525,13 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 );
               })()}
 
-              {/* 2. TELA 1 (PERGUNTAS / CARDS) */}
-              {(() => {
-                const isSelected = activeTab === 'tela_1';
+              {/* 2. TELA INÍCIO (CAPA DO EVENTO COM BOTÃO COMEÇAR) */}
+              {config.mostrarBotaoComecar !== false && (() => {
+                const isSelected = activeTab === 'inicio_comecar';
                 return (
                   <div
-                    key="prev_tela_1"
-                    onClick={() => setActiveTab('tela_1')}
+                    key="prev_inicio_comecar"
+                    onClick={() => setActiveTab('inicio_comecar')}
                     className="w-full flex justify-center items-start cursor-pointer p-0.5"
                   >
                     <div className={`relative ${modeloAtual.largura} ${modeloAtual.moldura} bg-slate-950 overflow-hidden flex flex-col shrink-0 transition-all duration-300 ${
@@ -3441,6 +3573,97 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             </div>
 
                             <div className="pt-1 border-t border-slate-800/60">
+                              {(config.pergunta1Titulo || config.pergunta1Titulo2) && (
+                                <h3 
+                                  style={{ fontSize: `${(config.pergunta1FonteTamanho || 18) * 0.72}px` }}
+                                  className="font-black text-white leading-tight"
+                                >
+                                  {config.pergunta1Titulo2 ? (
+                                    <>
+                                      <span className="block">{config.pergunta1Titulo}</span>
+                                      <span className="block">{config.pergunta1Titulo2}</span>
+                                    </>
+                                  ) : (
+                                    config.pergunta1Titulo
+                                  )}
+                                </h3>
+                              )}
+
+                              {config.pergunta1TextoAbaixo && (
+                                <p className="text-[11px] text-slate-300 mt-1.5 leading-relaxed whitespace-pre-line bg-slate-900/60 border border-slate-800/80 rounded-xl p-2">
+                                  {config.pergunta1TextoAbaixo}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex-1 flex flex-col justify-end py-3 space-y-3">
+                            <div className="my-auto px-3 py-4 rounded-2xl bg-slate-900/40 border border-slate-800/70 text-[10px] text-slate-400">
+                              🔒 O botão <strong>"{config.pergunta1BotaoComecarTexto || 'COMEÇAR'}"</strong> está habilitado.
+                            </div>
+                            <div className="relative p-[2px] rounded-2xl overflow-hidden shadow-lg shadow-amber-500/20 group cursor-pointer active:scale-95 transition">
+                              <div
+                                className="absolute inset-[-150%] animate-spin"
+                                style={{
+                                  animationDuration: '4s',
+                                  background: 'conic-gradient(from 0deg, transparent 0%, #f59e0b 25%, #10b981 50%, #38bdf8 75%, transparent 100%)'
+                                }}
+                              />
+                              <div className="relative w-full py-3 px-4 rounded-[14px] bg-slate-950 text-amber-300 font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2">
+                                <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                                <span>{config.pergunta1BotaoComecarTexto || 'COMEÇAR'}</span>
+                                <ChevronRight className="w-3.5 h-3.5 text-emerald-400" />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* 3. TELA 1 (PERGUNTAS / CARDS) */}
+              {(() => {
+                const isSelected = activeTab === 'tela_1';
+                return (
+                  <div
+                    key="prev_tela_1"
+                    onClick={() => setActiveTab('tela_1')}
+                    className="w-full flex justify-center items-start cursor-pointer p-0.5"
+                  >
+                    <div className={`relative ${modeloAtual.largura} ${modeloAtual.moldura} bg-slate-950 overflow-hidden flex flex-col shrink-0 transition-all duration-300 ${
+                      isSelected
+                        ? 'ring-4 ring-amber-400 border-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.55)] scale-[1.02]'
+                        : 'border-slate-800 hover:border-slate-600 hover:scale-[1.01] shadow-xl opacity-80 hover:opacity-100'
+                    }`}>
+                      <div className="w-full pt-2 pb-1 px-4 flex items-center justify-between text-[10px] text-slate-400 bg-slate-950 shrink-0 relative">
+                        <span className="font-mono font-bold text-[10px]">19:30</span>
+                        {modeloAtual.tipoTopo === 'dynamic-island' && (
+                          <div className="w-16 h-3.5 bg-black rounded-full border border-slate-800 flex items-center justify-between px-1.5 shadow-inner">
+                            <div className="w-1.5 h-1.5 rounded-full bg-slate-900 border border-slate-700" />
+                            <div className="w-1.5 h-1.5 rounded-full bg-slate-900" />
+                          </div>
+                        )}
+                        {modeloAtual.tipoTopo === 'punch-hole-center' && (
+                          <div className="w-2.5 h-2.5 rounded-full bg-black border border-slate-800 shadow-inner" />
+                        )}
+                        {modeloAtual.tipoTopo === 'notch' && (
+                          <div className="w-20 h-2.5 bg-black rounded-b-xl border-b border-slate-800 shadow-inner" />
+                        )}
+                        <div className="flex items-center gap-1">
+                          <Wifi className="w-2.5 h-2.5" />
+                          <Battery className="w-3 h-3" />
+                        </div>
+                      </div>
+
+                      <div className="h-[440px] overflow-y-auto p-3 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between text-center select-none custom-scrollbar">
+                        <div className="flex flex-col justify-between h-full space-y-2">
+                          <div className="shrink-0 space-y-1">
+                            <p className="text-xs font-black text-emerald-400 tracking-wide">
+                              {eventoTitulo}
+                            </p>
+                            <div className="pt-1 border-t border-slate-800/60">
                               {(config.pergunta1Titulo || config.pergunta1Titulo2) ? (
                                 <h3 
                                   style={{ fontSize: `${(config.pergunta1FonteTamanho || 18) * 0.72}px` }}
@@ -3457,14 +3680,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                 </h3>
                               ) : (
                                 <h3 className="text-xs font-bold text-slate-500 italic">
-                                  (Sem título na Tela 1)
+                                  (Tela 1 - Perguntas)
                                 </h3>
-                              )}
-
-                              {config.pergunta1TextoAbaixo && (
-                                <p className="text-[11px] text-slate-300 mt-1.5 leading-relaxed whitespace-pre-line bg-slate-900/60 border border-slate-800/80 rounded-xl p-2">
-                                  {config.pergunta1TextoAbaixo}
-                                </p>
                               )}
                             </div>
 
@@ -3489,55 +3706,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             )}
                           </div>
 
-                          {config.mostrarBotaoComecar !== false && !previewInteractiveVal.previewStarted ? (
-                            <div className="flex-1 flex flex-col justify-end py-3 space-y-3">
-                              <div className="my-auto px-3 py-4 rounded-2xl bg-slate-900/40 border border-slate-800/70 text-[10px] text-slate-400">
-                                🔒 O botão <strong>"{config.pergunta1BotaoComecarTexto || 'COMEÇAR'}"</strong> está habilitado.
-                              </div>
-                              <div
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  if (cardsAtivosP1.length > 0) {
-                                    setPreviewInteractiveVal(p => ({ ...p, previewStarted: true }));
-                                  } else if ((config.telasExtras || []).length > 0) {
-                                    setActiveTab('extra_0');
-                                  } else if (config.mostrarTelaAcompanhantes !== false) {
-                                    setActiveTab('acompanhantes');
-                                  } else {
-                                    setActiveTab('fim');
-                                  }
-                                }}
-                                className="relative p-[2px] rounded-2xl overflow-hidden shadow-lg shadow-amber-500/20 group cursor-pointer active:scale-95 transition"
-                              >
-                                <div
-                                  className="absolute inset-[-150%] animate-spin"
-                                  style={{
-                                    animationDuration: '4s',
-                                    background: 'conic-gradient(from 0deg, transparent 0%, #f59e0b 25%, #10b981 50%, #38bdf8 75%, transparent 100%)'
-                                  }}
-                                />
-                                <div className="relative w-full py-3 px-4 rounded-[14px] bg-slate-950 hover:bg-slate-900 text-amber-300 font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2">
-                                  <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-                                  <span>{config.pergunta1BotaoComecarTexto || 'COMEÇAR'}</span>
-                                  <ChevronRight className="w-3.5 h-3.5 text-emerald-400" />
-                                </div>
-                              </div>
-                            </div>
-                          ) : (
-                            <>
-                              {config.mostrarBotaoComecar !== false && previewInteractiveVal.previewStarted && (
-                                <div className="flex justify-end">
-                                  <button
-                                    type="button"
-                                    onClick={(e) => { e.stopPropagation(); setPreviewInteractiveVal(p => ({ ...p, previewStarted: false })); }}
-                                    className="text-[9px] text-amber-300 hover:underline flex items-center gap-1"
-                                  >
-                                    <ChevronLeft className="w-2.5 h-2.5" /> Voltar para capa
-                                  </button>
-                                </div>
-                              )}
-
-                              <div className="flex-1 my-auto space-y-2 py-1">
+                          <div className="flex-1 my-auto space-y-2 py-1">
                                 {cardsNaPaginaAtualP1.length === 0 ? (
                                   <div className="py-8 text-center text-xs text-slate-500">
                                     Nenhum card ativo nesta tela.
@@ -3689,14 +3858,12 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                   </button>
                                 </div>
                               )}
-                            </>
-                          )}
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
-                );
-              })()}
+                    );
+                  })()}
 
               {/* 3. TELAS EXTRAS */}
               {(config.telasExtras || []).map((telaExtra, extraIdx) => {
