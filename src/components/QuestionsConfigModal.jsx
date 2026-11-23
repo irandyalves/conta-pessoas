@@ -911,7 +911,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
           {/* ========================================================== */}
           {/* COLUNA ESQUERDA: CONFIGURAÇÕES ORGANIZADAS POR ABAS        */}
           {/* ========================================================== */}
-          <div className="lg:col-span-4 flex flex-col min-h-0 bg-slate-900/50">
+          <div className="lg:col-span-6 flex flex-col min-h-0 bg-slate-900/50">
             
             {/* BARRA DE ABAS: TELA INÍCIO, TELA 1, TELA 2 (ACOMP.), TELAS EXTRAS, TELA FIM + BOTÃO INSERIR NO FIM */}
             <div className="flex border-b border-slate-800 bg-slate-950/70 px-3 pt-2.5 shrink-0 gap-1.5 overflow-x-auto items-center custom-scrollbar">
@@ -3156,14 +3156,14 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
           </div>
 
           {/* ========================================================== */}
-          {/* COLUNA DIREITA: PREVIEW DOS CELULARES (GRID 3 EM 3)        */}
+          {/* COLUNA DIREITA: PREVIEW DOS CELULARES (GRID 3 EM 3 COMPACTO) */}
           {/* ========================================================== */}
-          <div className="lg:col-span-8 bg-slate-950/90 flex flex-col min-h-0 p-3 sm:p-5 relative overflow-y-auto custom-scrollbar">
+          <div className="lg:col-span-6 bg-slate-950/90 flex flex-col min-h-0 p-2 sm:p-3 relative overflow-y-auto custom-scrollbar">
             
             {/* CABEÇALHO DO PREVIEW: SELETOR LISTBOX DO MODELO DE CELULAR */}
-            <div className="w-full mb-4 flex flex-wrap items-center justify-between gap-3 bg-slate-900/90 border border-slate-800 rounded-2xl p-3 shrink-0 shadow-sm">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center shadow-sm">
+            <div className="w-full max-w-[800px] mx-auto mb-3 flex flex-wrap items-center justify-between gap-2.5 bg-slate-900/90 border border-slate-800 rounded-2xl p-2.5 shrink-0 shadow-sm">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center shadow-sm">
                   <Smartphone className="w-4 h-4" />
                 </div>
                 <div>
@@ -3177,7 +3177,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 <select
                   value={modeloCelularId}
                   onChange={(e) => setModeloCelularId(e.target.value)}
-                  className="bg-slate-950 border border-slate-700 hover:border-amber-400 text-white text-xs font-bold rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer min-w-[210px] transition shadow-inner"
+                  className="bg-slate-950 border border-slate-700 hover:border-amber-400 text-white text-xs font-bold rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer min-w-[190px] transition shadow-inner"
                 >
                   {MODELOS_CELULARES.map((mod) => (
                     <option key={mod.id} value={mod.id} className="bg-slate-900 text-white py-1">
@@ -3188,8 +3188,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               </div>
             </div>
 
-            {/* GRID DOS CELULARES: 3 POR LINHA */}
-            <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 pb-6 place-items-center">
+            {/* GRID DOS CELULARES: 3 POR LINHA COM ESPAÇAMENTO 70% REDUZIDO */}
+            <div className="w-full max-w-[800px] mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 pb-6 place-items-center">
               {/* 1. TELA INÍCIO */}
               {(() => {
                 const isSelected = activeTab === 'inicio';
@@ -3197,7 +3197,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                   <div
                     key="prev_inicio"
                     onClick={() => setActiveTab('inicio')}
-                    className="flex justify-center items-center cursor-pointer p-1"
+                    className="flex justify-center items-center cursor-pointer p-0.5"
                     style={{ zoom: 0.8 }}
                   >
                     <div className={`relative ${modeloAtual.largura} ${modeloAtual.moldura} bg-slate-950 overflow-hidden flex flex-col shrink-0 transition-all duration-300 ${
@@ -3270,7 +3270,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                   <div
                     key="prev_tela_1"
                     onClick={() => setActiveTab('tela_1')}
-                    className="flex justify-center items-center cursor-pointer p-1"
+                    className="flex justify-center items-center cursor-pointer p-0.5"
                     style={{ zoom: 0.8 }}
                   >
                     <div className={`relative ${modeloAtual.largura} ${modeloAtual.moldura} bg-slate-950 overflow-hidden flex flex-col shrink-0 transition-all duration-300 ${
@@ -3580,7 +3580,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                   <div
                     key={`prev_${tabKey}`}
                     onClick={() => setActiveTab(tabKey)}
-                    className="flex justify-center items-center cursor-pointer p-1"
+                    className="flex justify-center items-center cursor-pointer p-0.5"
                     style={{ zoom: 0.8 }}
                   >
                     <div className={`relative ${modeloAtual.largura} ${modeloAtual.moldura} bg-slate-950 overflow-hidden flex flex-col shrink-0 transition-all duration-300 ${
@@ -3856,7 +3856,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                   <div
                     key="prev_acompanhantes"
                     onClick={() => setActiveTab('acompanhantes')}
-                    className="flex justify-center items-center cursor-pointer p-1"
+                    className="flex justify-center items-center cursor-pointer p-0.5"
                     style={{ zoom: 0.8 }}
                   >
                     <div className={`relative ${modeloAtual.largura} ${modeloAtual.moldura} bg-slate-950 overflow-hidden flex flex-col shrink-0 transition-all duration-300 ${
@@ -3977,7 +3977,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                   <div
                     key="prev_fim"
                     onClick={() => setActiveTab('fim')}
-                    className="flex justify-center items-center cursor-pointer p-1"
+                    className="flex justify-center items-center cursor-pointer p-0.5"
                     style={{ zoom: 0.8 }}
                   >
                     <div className={`relative ${modeloAtual.largura} ${modeloAtual.moldura} bg-slate-950 overflow-hidden flex flex-col shrink-0 transition-all duration-300 ${
