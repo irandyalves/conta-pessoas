@@ -366,7 +366,7 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
       {/* SLIDE BAR LATERAL À ESQUERDA (MENUS E NAVEGAÇÃO DE ABAS)       */}
       {/* ============================================================== */}
       <aside
-        className={`print:hidden fixed lg:sticky top-0 left-0 z-50 h-screen bg-slate-900/95 border-r border-slate-800/90 flex flex-col justify-between transition-all duration-300 shadow-2xl shrink-0 ${
+        className={`print:hidden fixed lg:sticky top-0 left-0 z-40 h-screen bg-slate-900/95 border-r border-slate-800/90 flex flex-col justify-between transition-all duration-300 shadow-[6px_0_24px_rgba(0,0,0,0.5)] shrink-0 ${
           sidebarCollapsed ? 'w-20' : 'w-64'
         } ${
           mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
@@ -736,7 +736,11 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
         </header>
 
         {/* CONTEÚDO PRINCIPAL DO DASHBOARD (RENDERIZA A ABA SELECIONADA NA SLIDEBAR) */}
-        <main className={`flex-1 p-3 md:p-5 w-full mx-auto space-y-4 ${activeSection === 'perguntas' ? 'max-w-[1680px]' : 'max-w-7xl'}`}>
+        <main className={`flex-1 w-full space-y-4 ${
+          activeSection === 'perguntas'
+            ? 'p-0 md:py-3 md:pr-4 md:pl-0 max-w-none'
+            : 'p-3 md:p-5 max-w-7xl mx-auto'
+        }`}>
           
           {/* BANNER DE AVISO INLINE (SE HOUVER) */}
           {inlineToast && (

@@ -846,7 +846,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
   return (
     <div className={inline ? "w-full animate-fade-in" : "fixed inset-0 z-50 flex items-start justify-center pt-2 sm:pt-4 p-2 sm:p-4 bg-black/85 backdrop-blur-md overflow-y-auto animate-fade-in"}>
-      <div className={inline ? "relative w-full bg-slate-900 border border-slate-800 rounded-2xl shadow-xl flex flex-col overflow-hidden" : "relative w-[96vw] max-w-6xl bg-slate-900 border border-slate-700 rounded-3xl shadow-2xl flex flex-col max-h-[94vh] overflow-hidden shrink-0"}>
+      <div className={inline ? "relative w-full bg-slate-900 border border-slate-800 rounded-r-2xl rounded-l-none border-l-0 shadow-xl flex flex-col overflow-hidden" : "relative w-[96vw] max-w-7xl bg-slate-900 border border-slate-700 rounded-3xl shadow-2xl flex flex-col max-h-[94vh] overflow-hidden shrink-0"}>
         
         {/* ============================================================ */}
         {/* CABEÇALHO DO MODAL (FIXO NO TOPO)                            */}
@@ -911,7 +911,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
           {/* ========================================================== */}
           {/* COLUNA ESQUERDA: CONFIGURAÇÕES ORGANIZADAS POR ABAS        */}
           {/* ========================================================== */}
-          <div className="lg:col-span-5 flex flex-col min-h-0 bg-slate-900/50">
+          <div className="lg:col-span-4 flex flex-col min-h-0 bg-slate-900/50">
             
             {/* BARRA DE ABAS: TELA INÍCIO, TELA 1, TELA 2 (ACOMP.), TELAS EXTRAS, TELA FIM + BOTÃO INSERIR NO FIM */}
             <div className="flex border-b border-slate-800 bg-slate-950/70 px-3 pt-2.5 shrink-0 gap-1.5 overflow-x-auto items-center custom-scrollbar">
@@ -3156,9 +3156,9 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
           </div>
 
           {/* ========================================================== */}
-          {/* COLUNA DIREITA: PREVIEW DOS CELULARES (GRID 2 EM 2)        */}
+          {/* COLUNA DIREITA: PREVIEW DOS CELULARES (GRID 3 EM 3)        */}
           {/* ========================================================== */}
-          <div className="lg:col-span-7 bg-slate-950/90 flex flex-col min-h-0 p-3 sm:p-5 relative overflow-y-auto custom-scrollbar">
+          <div className="lg:col-span-8 bg-slate-950/90 flex flex-col min-h-0 p-3 sm:p-5 relative overflow-y-auto custom-scrollbar">
             
             {/* CABEÇALHO DO PREVIEW: SELETOR LISTBOX DO MODELO DE CELULAR */}
             <div className="w-full mb-4 flex flex-wrap items-center justify-between gap-3 bg-slate-900/90 border border-slate-800 rounded-2xl p-3 shrink-0 shadow-sm">
@@ -3188,8 +3188,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               </div>
             </div>
 
-            {/* GRID DOS CELULARES: SOMENTE O PRÓPRIO CELULAR, SEM CARDS EXTERNOS POLUÍDOS */}
-            <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 pb-6 place-items-center">
+            {/* GRID DOS CELULARES: 3 POR LINHA */}
+            <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 pb-6 place-items-center">
               {/* 1. TELA INÍCIO */}
               {(() => {
                 const isSelected = activeTab === 'inicio';
