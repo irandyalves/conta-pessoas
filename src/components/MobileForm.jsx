@@ -248,6 +248,7 @@ export default function MobileForm() {
       setGavetaTextos({});
       setGavetaRespondidas({});
       setDissertativaTextos({});
+      setJaClicouComecar(false);
     }
   }, [activeEventId]);
 
@@ -274,6 +275,7 @@ export default function MobileForm() {
   const [gavetaRespondidas, setGavetaRespondidas] = useState({});
   const [dissertativaTextos, setDissertativaTextos] = useState({});
   const [campoObrigatorioErro, setCampoObrigatorioErro] = useState(null);
+  const [jaClicouComecar, setJaClicouComecar] = useState(false);
   const [countdown, setCountdown] = useState(10);
   const [finalizado, setFinalizado] = useState(() => {
     try {
@@ -302,6 +304,7 @@ export default function MobileForm() {
         setGavetaTextos({});
         setGavetaRespondidas({});
         setDissertativaTextos({});
+        setJaClicouComecar(false);
         setFinalizado(false);
         setCountdown(10);
       }
@@ -534,6 +537,17 @@ export default function MobileForm() {
     );
   };
 
+  // Ao clicar no botão COMEÇAR na Tela 1 (quando habilitado pelo admin)
+  const handleClicarComecar = () => {
+    setJaClicouComecar(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Se a Tela 1 tem opções cadastradas, agora libera as opções da Tela 1 para responder
+    if (cardsAtivosP1.length > 0) {
+      return;
+    }
+    // Se a Tela 1 não tem opções (é apenas uma capa com texto + botão COMEÇAR), já avança para a próxima tela
+    avancarDeP1();
+  };
   // Avançar após Tela 1 (seja clicando num card ou no botão COMEÇAR)
   const avancarDeP1 = (motivoEscolhido = '') => {
     const finalMotivo = motivoEscolhido || comoChegou || questionsConfig?.pergunta1Titulo || 'Participante';
@@ -914,130 +928,17 @@ export default function MobileForm() {
       <main className="w-full flex-1 my-auto py-2">
         
         {/* ============================================================ */}
-        {/* ETAPA 1: PERGUNTA 1 COM SLIDER / PAGINAÇÃO DE CARDS GRANDES   */}
+        {/* ETAPA 1: PERGUNTA 1 / CAPA COM BOTÃO COMEÇAR (SE HABILITADO) */}
         {/* ============================================================ */}
         {currentStep === 'p1' && (
           <div className="space-y-3.5 fade-in">
             
-            {/* Indicador de Paginação/Slide se houver mais cards do que o limite */}
-            {totalSlidesP1 > 1 && (
-              <div className="flex items-center justify-between px-1 text-xs">
-                <span className="font-bold text-amber-300">
-                  Opções (Página {p1SlideIndex + 1} de {totalSlidesP1})
-                </span>
-
-                <div className="flex items-center gap-1.5">
-                  {Array.from({ length: totalSlidesP1 }).map((_, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => setP1SlideIndex(i)}
-                      className={`h-2 rounded-full transition-all ${
-                        p1SlideIndex === i ? 'w-6 bg-amber-400' : 'w-2 bg-slate-700 hover:bg-slate-600'
-                      }`}
-                      title={`Ir para página ${i + 1}`}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Cards do Slide Atual (Grandes, fáceis de tocar, não encolhem!) */}
-            <div className="space-y-3">
-              {cardsDoSlideAtual.map((opcao) => {
-                const IconComponent = ICON_COMPONENTS[opcao.icone] || Tag;
-                const corCls = COR_CLASSES[opcao.cor] || COR_CLASSES.amber;
-                const cardFundoCls = CARD_FUNDO_CLASSES[questionsConfig?.cardFundoEstilo] || CARD_FUNDO_CLASSES.escuro;
-                const cardFonteTituloCls = CARD_FONTE_TITULO_CLASSES[questionsConfig?.cardCorFonteTitulo] || 'text-white';
-                const cardFonteSubtituloCls = CARD_FONTE_SUBTITULO_CLASSES[questionsConfig?.cardCorFonteSubtitulo] || 'text-slate-400';
-                const cardEfeitoInline = getEfeitoStyle(questionsConfig?.cardEfeitoEstilo, questionsConfig?.cardProfundidade);
-
-                const isGavetaAberta = Boolean(
-                  opcao.temGaveta && (
-                    gavetasAbertas[opcao.id] || 
-                    gavetaRespondidas[opcao.id] || 
-                    (gavetaTextos[opcao.id] && gavetaTextos[opcao.id].trim().length > 0)
-                  )
-                );
-
-                return (
-                  <div key={opcao.id} className="space-y-2">
-                    <button
-                      type="button"
-                      onClick={() => handleSelectComoChegou(opcao)}
-                      style={{ minHeight: `${questionsConfig.cardAltura || 82}px`, ...cardEfeitoInline }}
-                      className={`w-full text-left p-4 sm:p-5 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-between group border ${cardFundoCls} ${
-                        isGavetaAberta ? 'border-amber-400/80 ring-1 ring-amber-400/40' : ''
-                      }`}
-                    >
-                      <div className="flex items-center gap-4 pr-2 min-w-0">
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border shadow-sm transition-transform group-hover:scale-105 ${corCls}`}>
-                          <IconComponent className="w-6 h-6" />
-                        </div>
-                        <div className="min-w-0">
-                          <h3 
-                            style={{ fontSize: `${questionsConfig.cardFonteTitulo || 16}px` }}
-                            className={`font-bold transition leading-snug truncate ${cardFonteTituloCls}`}
-                          >
-                            {opcao.titulo}
-                          </h3>
-                          {opcao.subtitulo && (
-                            <p 
-                              style={{ fontSize: `${questionsConfig.cardFonteSubtitulo || 12}px` }}
-                              className={`mt-1 line-clamp-2 leading-snug ${cardFonteSubtituloCls}`}
-                            >
-                              {opcao.subtitulo}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      <div className="w-7 h-7 rounded-full bg-slate-800/80 border border-slate-700/80 flex items-center justify-center shrink-0 text-slate-400 group-hover:text-amber-300 group-hover:border-amber-400/50 transition">
-                        {opcao.temGaveta ? (
-                          <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isGavetaAberta ? 'rotate-180 text-amber-400' : ''}`} />
-                        ) : (
-                          <ChevronRight className="w-4 h-4" />
-                        )}
-                      </div>
-                    </button>
-
-                    {/* GAVETA ACCORDION MULTI-COMPONENTE NA TELA 1 */}
-                    {opcao.temGaveta && isGavetaAberta && renderGavetaContent(opcao, () => handleConfirmarGavetaP1(opcao))}
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Controles de Navegação de Slide (se houver múltiplas páginas de cards) */}
-            {totalSlidesP1 > 1 && (
-              <div className="flex items-center justify-between pt-2">
+            {/* SE O BOTÃO COMEÇAR ESTIVER HABILITADO E O USUÁRIO AINDA NÃO CLICOU NELE: EXIBE APENAS O BOTÃO COMEÇAR */}
+            {questionsConfig.mostrarBotaoComecar !== false && !jaClicouComecar ? (
+              <div className="pt-6 pb-2">
                 <button
                   type="button"
-                  onClick={() => setP1SlideIndex(Math.max(0, p1SlideIndex - 1))}
-                  disabled={p1SlideIndex === 0}
-                  className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-300 bg-slate-900 border border-slate-800 hover:bg-slate-800 disabled:opacity-30 disabled:pointer-events-none transition flex items-center gap-1.5"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                  <span>Anterior</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setP1SlideIndex(Math.min(totalSlidesP1 - 1, p1SlideIndex + 1))}
-                  disabled={p1SlideIndex >= totalSlidesP1 - 1}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-amber-300 bg-amber-500/15 border border-amber-500/30 hover:bg-amber-500/25 disabled:opacity-30 disabled:pointer-events-none transition flex items-center gap-1.5"
-                >
-                  <span>Ver mais opções</span>
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            )}
-
-            {/* BOTÃO COMEÇAR NO RODAPÉ DA TELA 1 COM EFEITO DE LUZES GIRANDO SUAVE */}
-            {(questionsConfig.mostrarBotaoComecar !== false || cardsAtivosP1.length === 0) && (
-              <div className="pt-4">
-                <button
-                  type="button"
-                  onClick={() => avancarDeP1()}
+                  onClick={handleClicarComecar}
                   className="relative w-full p-[2.5px] rounded-2xl overflow-hidden shadow-2xl shadow-amber-500/25 active:scale-[0.98] transition-all group"
                 >
                   {/* Luzes girando suave no contorno */}
@@ -1055,6 +956,135 @@ export default function MobileForm() {
                   </div>
                 </button>
               </div>
+            ) : (
+              <>
+                {/* SE DESABILITADO (COMEÇA DIRETO) OU JÁ CLICOU EM COMEÇAR: MOSTRA AS PERGUNTAS/OPÇÕES */}
+                {totalSlidesP1 > 1 && (
+                  <div className="flex items-center justify-between px-1 text-xs">
+                    <span className="font-bold text-amber-300">
+                      Opções (Página {p1SlideIndex + 1} de {totalSlidesP1})
+                    </span>
+
+                    <div className="flex items-center gap-1.5">
+                      {Array.from({ length: totalSlidesP1 }).map((_, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => setP1SlideIndex(i)}
+                          className={`h-2 rounded-full transition-all ${
+                            p1SlideIndex === i ? 'w-6 bg-amber-400' : 'w-2 bg-slate-700 hover:bg-slate-600'
+                          }`}
+                          title={`Ir para página ${i + 1}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Cards do Slide Atual */}
+                <div className="space-y-3">
+                  {cardsDoSlideAtual.map((opcao) => {
+                    const IconComponent = ICON_COMPONENTS[opcao.icone] || Tag;
+                    const corCls = COR_CLASSES[opcao.cor] || COR_CLASSES.amber;
+                    const cardFundoCls = CARD_FUNDO_CLASSES[questionsConfig?.cardFundoEstilo] || CARD_FUNDO_CLASSES.escuro;
+                    const cardFonteTituloCls = CARD_FONTE_TITULO_CLASSES[questionsConfig?.cardCorFonteTitulo] || 'text-white';
+                    const cardFonteSubtituloCls = CARD_FONTE_SUBTITULO_CLASSES[questionsConfig?.cardCorFonteSubtitulo] || 'text-slate-400';
+                    const cardEfeitoInline = getEfeitoStyle(questionsConfig?.cardEfeitoEstilo, questionsConfig?.cardProfundidade);
+
+                    const isGavetaAberta = Boolean(
+                      opcao.temGaveta && (
+                        gavetasAbertas[opcao.id] || 
+                        gavetaRespondidas[opcao.id] || 
+                        (gavetaTextos[opcao.id] && gavetaTextos[opcao.id].trim().length > 0)
+                      )
+                    );
+
+                    return (
+                      <div key={opcao.id} className="space-y-2">
+                        <button
+                          type="button"
+                          onClick={() => handleSelectComoChegou(opcao)}
+                          style={{ minHeight: `${questionsConfig.cardAltura || 82}px`, ...cardEfeitoInline }}
+                          className={`w-full text-left p-4 sm:p-5 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-between group border ${cardFundoCls} ${
+                            isGavetaAberta ? 'border-amber-400/80 ring-1 ring-amber-400/40' : ''
+                          }`}
+                        >
+                          <div className="flex items-center gap-4 pr-2 min-w-0">
+                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border shadow-sm transition-transform group-hover:scale-105 ${corCls}`}>
+                              <IconComponent className="w-6 h-6" />
+                            </div>
+                            <div className="min-w-0">
+                              <h3 
+                                style={{ fontSize: `${questionsConfig.cardFonteTitulo || 16}px` }}
+                                className={`font-bold transition leading-snug truncate ${cardFonteTituloCls}`}
+                              >
+                                {opcao.titulo}
+                              </h3>
+                              {opcao.subtitulo && (
+                                <p 
+                                  style={{ fontSize: `${questionsConfig.cardFonteSubtitulo || 12}px` }}
+                                  className={`mt-1 line-clamp-2 leading-snug ${cardFonteSubtituloCls}`}
+                                >
+                                  {opcao.subtitulo}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="w-7 h-7 rounded-full bg-slate-800/80 border border-slate-700/80 flex items-center justify-center shrink-0 text-slate-400 group-hover:text-amber-300 group-hover:border-amber-400/50 transition">
+                            {opcao.temGaveta ? (
+                              <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isGavetaAberta ? 'rotate-180 text-amber-400' : ''}`} />
+                            ) : (
+                              <ChevronRight className="w-4 h-4" />
+                            )}
+                          </div>
+                        </button>
+
+                        {/* GAVETA ACCORDION MULTI-COMPONENTE NA TELA 1 */}
+                        {opcao.temGaveta && isGavetaAberta && renderGavetaContent(opcao, () => handleConfirmarGavetaP1(opcao))}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Controles de Navegação de Slide */}
+                {totalSlidesP1 > 1 && (
+                  <div className="flex items-center justify-between pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setP1SlideIndex(Math.max(0, p1SlideIndex - 1))}
+                      disabled={p1SlideIndex === 0}
+                      className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-300 bg-slate-900 border border-slate-800 hover:bg-slate-800 disabled:opacity-30 disabled:pointer-events-none transition flex items-center gap-1.5"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                      <span>Anterior</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setP1SlideIndex(Math.min(totalSlidesP1 - 1, p1SlideIndex + 1))}
+                      disabled={p1SlideIndex >= totalSlidesP1 - 1}
+                      className="px-4 py-2 rounded-xl text-xs font-bold text-amber-300 bg-amber-500/15 border border-amber-500/30 hover:bg-amber-500/25 disabled:opacity-30 disabled:pointer-events-none transition flex items-center gap-1.5"
+                    >
+                      <span>Ver mais opções</span>
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+
+                {/* Caso não haja opções e o botão Começar estivesse desabilitado, exibe botão para avançar */}
+                {cardsAtivosP1.length === 0 && (
+                  <div className="pt-4">
+                    <button
+                      type="button"
+                      onClick={() => avancarDeP1()}
+                      className="w-full py-4 px-6 rounded-2xl bg-amber-400 text-slate-950 font-black text-sm uppercase tracking-wider shadow-lg flex items-center justify-center gap-2"
+                    >
+                      <span>{questionsConfig.pergunta1BotaoComecarTexto || 'COMEÇAR'}</span>
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}
