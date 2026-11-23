@@ -736,7 +736,7 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
         </header>
 
         {/* CONTEÚDO PRINCIPAL DO DASHBOARD (RENDERIZA A ABA SELECIONADA NA SLIDEBAR) */}
-        <main className="flex-1 p-4 md:p-6 max-w-7xl w-full mx-auto space-y-4">
+        <main className={`flex-1 p-3 md:p-5 w-full mx-auto space-y-4 ${activeSection === 'perguntas' ? 'max-w-[1680px]' : 'max-w-7xl'}`}>
           
           {/* BANNER DE AVISO INLINE (SE HOUVER) */}
           {inlineToast && (

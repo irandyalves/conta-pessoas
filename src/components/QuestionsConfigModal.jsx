@@ -911,7 +911,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
           {/* ========================================================== */}
           {/* COLUNA ESQUERDA: CONFIGURAÇÕES ORGANIZADAS POR ABAS        */}
           {/* ========================================================== */}
-          <div className="lg:col-span-7 flex flex-col min-h-0 bg-slate-900/50">
+          <div className="lg:col-span-5 flex flex-col min-h-0 bg-slate-900/50">
             
             {/* BARRA DE ABAS: TELA INÍCIO, TELA 1, TELA 2 (ACOMP.), TELAS EXTRAS, TELA FIM + BOTÃO INSERIR NO FIM */}
             <div className="flex border-b border-slate-800 bg-slate-950/70 px-3 pt-2.5 shrink-0 gap-1.5 overflow-x-auto items-center custom-scrollbar">
@@ -3156,832 +3156,1059 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
           </div>
 
           {/* ========================================================== */}
-          {/* COLUNA DIREITA: PREVIEW DO CELULAR CENTRALIZADO VERTICAL   */}
+          {/* COLUNA DIREITA: PREVIEW DOS CELULARES (GRID 2 EM 2)        */}
           {/* ========================================================== */}
-          <div className="lg:col-span-5 bg-slate-950/90 flex flex-col min-h-0 p-3 sm:p-5 relative items-center justify-center overflow-y-auto">
+          <div className="lg:col-span-7 bg-slate-950/90 flex flex-col min-h-0 p-3 sm:p-5 relative overflow-y-auto custom-scrollbar">
             
-            {/* SELETOR DOS 6 PRESETS DE MODELOS DE CELULARES */}
-            <div className="w-full max-w-[340px] mb-2.5 space-y-1.5 shrink-0">
-              <div className="flex items-center justify-between text-[11px] text-slate-400 font-bold px-1">
-                <span className="flex items-center gap-1 text-amber-300">
-                  <Smartphone className="w-3.5 h-3.5" />
-                  <span>Modelo do Celular:</span>
-                </span>
-                <span className="text-[10px] text-slate-500 font-mono">
-                  {modeloAtual.marca}
-                </span>
-              </div>
-
-              {/* Botões dos 6 Presets */}
-              <div className="grid grid-cols-3 gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
-                {MODELOS_CELULARES.map((mod) => (
-                  <button
-                    key={mod.id}
-                    type="button"
-                    onClick={() => setModeloCelularId(mod.id)}
-                    className={`py-1 px-1.5 rounded-lg text-[10px] font-bold transition text-center truncate ${
-                      modeloCelularId === mod.id
-                        ? 'bg-amber-400 text-slate-950 shadow scale-[1.02]'
-                        : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                    }`}
-                    title={mod.nome}
-                  >
-                    {mod.nome}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* SELETOR DE TELAS DO PREVIEW (SINCRONIZADO COM AS ABAS: INÍCIO, TELA 1, TELA 2, EXTRAS, TELA FIM) */}
-            <div className="w-full max-w-[340px] mb-3 flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800 overflow-x-auto shrink-0 custom-scrollbar">
-              <button
-                type="button"
-                onClick={() => setPreviewScreen('inicio')}
-                className={`py-1 px-2 rounded-lg text-[10px] font-bold transition text-center shrink-0 ${
-                  previewScreen === 'inicio' ? 'bg-amber-400 text-slate-950 shadow' : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Início
-              </button>
-              
-              <button
-                type="button"
-                onClick={() => setPreviewScreen('tela_1')}
-                className={`py-1 px-2 rounded-lg text-[10px] font-bold transition text-center shrink-0 ${
-                  previewScreen === 'tela_1' ? 'bg-amber-400 text-slate-950 shadow' : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Tela 1
-              </button>
-
-              {(config.telasExtras || []).map((_, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => setPreviewScreen(`extra_${idx}`)}
-                  className={`py-1 px-2 rounded-lg text-[10px] font-bold transition text-center shrink-0 ${
-                    previewScreen === `extra_${idx}` ? 'bg-amber-400 text-slate-950 shadow' : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  Tela {idx + 2}
-                </button>
-              ))}
-
-              {config.mostrarTelaAcompanhantes !== false && (
-                <button
-                  type="button"
-                  onClick={() => setPreviewScreen('acompanhantes')}
-                  className={`py-1 px-2 rounded-lg text-[10px] font-bold transition text-center shrink-0 ${
-                    previewScreen === 'acompanhantes' ? 'bg-amber-400 text-slate-950 shadow' : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  Acomp.
-                </button>
-              )}
-
-              <button
-                type="button"
-                onClick={() => setPreviewScreen('fim')}
-                className={`py-1 px-2 rounded-lg text-[10px] font-bold transition text-center shrink-0 ${
-                  previewScreen === 'fim' ? 'bg-amber-400 text-slate-950 shadow' : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Tela Fim
-              </button>
-            </div>
-
-            {/* MOCKUP DO SMARTPHONE COM MOLDURA DINÂMICA DO PRESET */}
-            <div className={`relative ${modeloAtual.largura} ${modeloAtual.moldura} bg-slate-950 overflow-hidden flex flex-col shrink-0 my-auto transition-all duration-300`}>
-              
-              {/* Barra de Status com Notch / Dynamic Island / Punch Hole */}
-              <div className="w-full pt-2.5 pb-1 px-5 flex items-center justify-between text-[10px] text-slate-400 bg-slate-950 shrink-0 relative">
-                <span className="font-mono font-bold text-[10px]">19:30</span>
-                
-                {/* Elemento de Topo Específico do Modelo */}
-                {modeloAtual.tipoTopo === 'dynamic-island' && (
-                  <div className="w-20 h-4 bg-black rounded-full border border-slate-800 flex items-center justify-between px-2 shadow-inner">
-                    <div className="w-1.5 h-1.5 rounded-full bg-slate-900 border border-slate-700" />
-                    <div className="w-1.5 h-1.5 rounded-full bg-slate-900" />
-                  </div>
-                )}
-
-                {modeloAtual.tipoTopo === 'punch-hole-center' && (
-                  <div className="w-3 h-3 rounded-full bg-black border border-slate-800 shadow-inner" />
-                )}
-
-                {modeloAtual.tipoTopo === 'notch' && (
-                  <div className="w-24 h-3 bg-black rounded-b-xl border-b border-slate-800 shadow-inner" />
-                )}
-
-                <div className="flex items-center gap-1.5">
-                  <Wifi className="w-2.5 h-2.5" />
-                  <Battery className="w-3 h-3" />
+            {/* CABEÇALHO DO PREVIEW: SELETOR LISTBOX DO MODELO DE CELULAR */}
+            <div className="w-full mb-4 flex flex-wrap items-center justify-between gap-3 bg-slate-900/90 border border-slate-800 rounded-2xl p-3 shrink-0 shadow-sm">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center shadow-sm">
+                  <Smartphone className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-xs font-black text-amber-300 block">Modelo do Celular:</span>
+                  <span className="text-[10px] text-slate-400 font-medium">Toque em qualquer celular para editar a tela correspondente</span>
                 </div>
               </div>
 
-              {/* Tela Interna do Celular */}
-              <div className="h-[460px] overflow-y-auto p-3.5 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between text-center select-none custom-scrollbar">
-                
-                {/* PREVIEW: TELA INÍCIO */}
-                {previewScreen === 'inicio' && (
-                  <div className="flex flex-col items-center justify-center h-full space-y-4 my-auto">
-                    <div className="relative w-16 h-16 flex items-center justify-center">
-                      <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-amber-400 border-r-emerald-400 animate-spin" />
-                      <div className="relative w-7 h-7 rounded-full bg-slate-950 border border-slate-700 flex items-center justify-center">
-                        <Sparkles className="w-4 h-4 text-amber-300" />
-                      </div>
-                    </div>
-
-                    <div className="space-y-1 text-center px-2">
-                      <span 
-                        style={{ fontSize: `${(config.esperaLinha1Tamanho || config.esperaFonteTamanho || 26) * 0.58}px` }}
-                        className="block font-black text-white tracking-wide uppercase leading-tight"
-                      >
-                        {config.esperaLinha1 || 'DENTRO DE INSTANTES'}
-                      </span>
-                      <span 
-                        style={{ fontSize: `${(config.esperaLinha2Tamanho || config.esperaFonteTamanho || 26) * 0.58}px` }}
-                        className="block font-black bg-gradient-to-r from-amber-300 to-amber-400 bg-clip-text text-transparent tracking-wide uppercase leading-tight"
-                      >
-                        {config.esperaLinha2 || 'ESTARÁ LIBERADO'}
-                      </span>
-                      <span 
-                        style={{ fontSize: `${(config.esperaLinha3Tamanho || config.esperaFonteTamanho || 26) * 0.58}px` }}
-                        className="block font-black text-emerald-400 tracking-wide uppercase leading-tight"
-                      >
-                        {config.esperaLinha3 || 'PARA RESPONDER.'}
-                      </span>
-                    </div>
-
-                    <div className="w-2/3 bg-slate-950 rounded-full h-1 overflow-hidden">
-                      <div className="bg-amber-400 h-full w-1/2 rounded-full animate-pulse mx-auto" />
-                    </div>
-                  </div>
-                )}
-
-                {/* PREVIEW: TELA 1 */}
-                {previewScreen === 'tela_1' && (
-                  <div className="flex flex-col justify-between h-full space-y-2">
-                    <div className="shrink-0 space-y-1">
-                      <p className="text-xs font-black text-emerald-400 tracking-wide">
-                        Seja muito bem-vindo!
-                      </p>
-                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-900/90 border border-amber-500/40 text-amber-300 shadow">
-                        <TreePine className="w-3 h-3 text-emerald-400 shrink-0" />
-                        <span className="text-[10px] font-black tracking-wide uppercase truncate max-w-[180px]">
-                          {eventoTitulo}
-                        </span>
-                      </div>
-
-                      <div className="pt-1 border-t border-slate-800/60">
-                        {(config.pergunta1Titulo || config.pergunta1Titulo2) ? (
-                          <h3 
-                            style={{ fontSize: `${(config.pergunta1FonteTamanho || 18) * 0.72}px` }}
-                            className="font-black text-white leading-tight"
-                          >
-                            {config.pergunta1Titulo2 ? (
-                              <>
-                                <span className="block">{config.pergunta1Titulo}</span>
-                                <span className="block">{config.pergunta1Titulo2}</span>
-                              </>
-                            ) : (
-                              config.pergunta1Titulo
-                            )}
-                          </h3>
-                        ) : (
-                          <h3 className="text-xs font-bold text-slate-500 italic">
-                            (Sem título na Tela 1)
-                          </h3>
-                        )}
-
-                        {/* TEXTO ABAIXO DO TÍTULO NA TELA 1 */}
-                        {config.pergunta1TextoAbaixo && (
-                          <p className="text-[11px] text-slate-300 mt-1.5 leading-relaxed whitespace-pre-line bg-slate-900/60 border border-slate-800/80 rounded-xl p-2">
-                            {config.pergunta1TextoAbaixo}
-                          </p>
-                        )}
-                      </div>
-
-                      {totalPaginasPreviewP1 > 1 && (
-                        <div className="flex items-center justify-between pt-1 px-1">
-                          <span className="text-[9px] font-bold text-amber-300">
-                            Página {safePreviewPageP1 + 1} de {totalPaginasPreviewP1}
-                          </span>
-                          <div className="flex items-center gap-1">
-                            {Array.from({ length: totalPaginasPreviewP1 }).map((_, i) => (
-                              <button
-                                key={i}
-                                type="button"
-                                onClick={() => setPreviewPage(i)}
-                                className={`h-1.5 rounded-full transition-all ${
-                                  safePreviewPageP1 === i ? 'w-4 bg-amber-400' : 'w-1.5 bg-slate-700'
-                                }`}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* SE O BOTÃO COMEÇAR ESTIVER HABILITADO E AINDA NÃO CLICOU NO PREVIEW: MOSTRA A CAPA COM O BOTÃO COMEÇAR */}
-                    {config.mostrarBotaoComecar !== false && !previewInteractiveVal.previewStarted ? (
-                      <div className="flex-1 flex flex-col justify-end py-3 space-y-3">
-                        <div className="my-auto px-3 py-4 rounded-2xl bg-slate-900/40 border border-slate-800/70 text-[10px] text-slate-400">
-                          🔒 O botão <strong>"{config.pergunta1BotaoComecarTexto || 'COMEÇAR'}"</strong> está habilitado. O participante verá esta capa e precisará tocar no botão abaixo para abrir as perguntas.
-                        </div>
-                        <div
-                          onClick={() => {
-                            if (cardsAtivosP1.length > 0) {
-                              setPreviewInteractiveVal(p => ({ ...p, previewStarted: true }));
-                            } else if ((config.telasExtras || []).length > 0) {
-                              setPreviewScreen('extra_0');
-                            } else if (config.mostrarTelaAcompanhantes !== false) {
-                              setPreviewScreen('acompanhantes');
-                            } else {
-                              setPreviewScreen('fim');
-                            }
-                          }}
-                          className="relative p-[2px] rounded-2xl overflow-hidden shadow-lg shadow-amber-500/20 group cursor-pointer active:scale-95 transition"
-                          title="Clique para testar o botão COMEÇAR no simulador"
-                        >
-                          <div
-                            className="absolute inset-[-150%] animate-spin"
-                            style={{
-                              animationDuration: '4s',
-                              background: 'conic-gradient(from 0deg, transparent 0%, #f59e0b 25%, #10b981 50%, #38bdf8 75%, transparent 100%)'
-                            }}
-                          />
-                          <div className="relative w-full py-3 px-4 rounded-[14px] bg-slate-950 hover:bg-slate-900 text-amber-300 font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2">
-                            <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-                            <span>{config.pergunta1BotaoComecarTexto || 'COMEÇAR'}</span>
-                            <ChevronRight className="w-3.5 h-3.5 text-emerald-400" />
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        {config.mostrarBotaoComecar !== false && previewInteractiveVal.previewStarted && (
-                          <div className="flex justify-end">
-                            <button
-                              type="button"
-                              onClick={() => setPreviewInteractiveVal(p => ({ ...p, previewStarted: false }))}
-                              className="text-[9px] text-amber-300 hover:underline flex items-center gap-1"
-                            >
-                              <ChevronLeft className="w-2.5 h-2.5" /> Voltar para capa "{config.pergunta1BotaoComecarTexto || 'COMEÇAR'}"
-                            </button>
-                          </div>
-                        )}
-
-                        {/* Cards da Tela 1 (com Gaveta Interativa no Preview) */}
-                        <div className="flex-1 my-auto space-y-2 py-1">
-                          {cardsNaPaginaAtualP1.length === 0 ? (
-                            <div className="py-8 text-center text-xs text-slate-500">
-                              Nenhum card ativo nesta tela.
-                            </div>
-                          ) : (
-                            cardsNaPaginaAtualP1.map((opcao) => {
-                              const IconComp = getIconComponent(opcao.icone);
-                              const corCls = getCorBadge(opcao.cor);
-                              const isGavetaOpen = Boolean(opcao.temGaveta && previewOpenGavetaId === opcao.id);
-
-                              return (
-                                <div key={opcao.id} className="space-y-1.5">
-                                  <div
-                                    onClick={() => {
-                                      if (opcao.temGaveta) {
-                                        setPreviewOpenGavetaId(isGavetaOpen ? null : opcao.id);
-                                      }
-                                    }}
-                                    style={{ 
-                                      minHeight: `${config.cardAltura || 82}px`,
-                                      ...getEfeitoStyle(config.cardEfeitoEstilo, config.cardProfundidade)
-                                    }}
-                                    className={`w-full text-left p-2.5 rounded-xl flex items-center justify-between transition-all cursor-pointer ${getCardFundoClass(config.cardFundoEstilo)} ${
-                                      isGavetaOpen ? 'ring-1 ring-amber-400 border-amber-400/70' : ''
-                                    }`}
-                                  >
-                                    <div className="flex items-center gap-2.5 pr-1 min-w-0">
-                                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${corCls}`}>
-                                        <IconComp className="w-4 h-4" />
-                                      </div>
-                                      <div className="min-w-0">
-                                        <h4 
-                                          style={{ fontSize: `${config.cardFonteTitulo || 16}px` }}
-                                          className={`font-bold truncate leading-snug ${getCardFonteTituloClass(config.cardCorFonteTitulo)}`}
-                                        >
-                                          {opcao.titulo || 'Opção sem título'}
-                                        </h4>
-                                        {opcao.subtitulo && (
-                                          <p 
-                                            style={{ fontSize: `${config.cardFonteSubtitulo || 12}px` }}
-                                            className={`truncate mt-0.5 leading-snug ${getCardFonteSubtituloClass(config.cardCorFonteSubtitulo)}`}
-                                          >
-                                            {opcao.subtitulo}
-                                          </p>
-                                        )}
-                                      </div>
-                                    </div>
-                                    <div className="w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center shrink-0 text-slate-400">
-                                      {opcao.temGaveta ? (
-                                        <ChevronDown className={`w-3 h-3 transition-transform ${isGavetaOpen ? 'rotate-180 text-amber-400' : ''}`} />
-                                      ) : (
-                                        <ChevronRight className="w-3 h-3" />
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  {/* Preview da Gaveta Aberta */}
-                                  {isGavetaOpen && (
-                                    <div className="p-2.5 rounded-xl bg-slate-900/95 border border-amber-500/50 text-left space-y-2 animate-fade-in">
-                                      <span className="text-[10px] font-black text-amber-300 block">
-                                        🗄️ {opcao.gaveta?.pergunta || 'Por favor, detalhe sua resposta:'}
-                                      </span>
-
-                                      {opcao.gaveta?.tipo === 'radio' ? (
-                                        <div className="space-y-1">
-                                          {(opcao.gaveta?.opcoes || ['Opção 1', 'Opção 2']).map((gOpt, gi) => (
-                                            <label key={gi} className="flex items-center gap-2 p-1.5 rounded-lg bg-slate-950 border border-slate-800 text-[10px] text-slate-200 cursor-pointer">
-                                              <input type="radio" name={`prev_gav_${opcao.id}`} defaultChecked={gi === 0} className="accent-amber-400" />
-                                              <span>{gOpt}</span>
-                                            </label>
-                                          ))}
-                                        </div>
-                                      ) : opcao.gaveta?.tipo === 'checkbox' ? (
-                                        <div className="space-y-1">
-                                          {(opcao.gaveta?.opcoes || ['Opção 1', 'Opção 2']).map((gOpt, gi) => (
-                                            <label key={gi} className="flex items-center gap-2 p-1.5 rounded-lg bg-slate-950 border border-slate-800 text-[10px] text-slate-200 cursor-pointer">
-                                              <input type="checkbox" defaultChecked={gi === 0} className="accent-amber-400 rounded" />
-                                              <span>{gOpt}</span>
-                                            </label>
-                                          ))}
-                                        </div>
-                                      ) : opcao.gaveta?.tipo === 'slider' ? (
-                                        <div className="p-2 rounded-lg bg-slate-950 border border-slate-800 space-y-1">
-                                          <div className="flex justify-between text-[10px] font-bold text-amber-300">
-                                            <span>Valor:</span>
-                                            <span>{previewInteractiveVal[`gav_${opcao.id}`] ?? opcao.gaveta?.sliderMax ?? 10}{opcao.gaveta?.sliderUnidade || ''}</span>
-                                          </div>
-                                          <input
-                                            type="range"
-                                            min={opcao.gaveta?.sliderMin ?? 0}
-                                            max={opcao.gaveta?.sliderMax ?? 10}
-                                            step={opcao.gaveta?.sliderStep ?? 1}
-                                            value={previewInteractiveVal[`gav_${opcao.id}`] ?? opcao.gaveta?.sliderMax ?? 10}
-                                            onChange={(e) => setPreviewInteractiveVal(p => ({ ...p, [`gav_${opcao.id}`]: e.target.value }))}
-                                            className="w-full h-1.5 bg-slate-800 rounded-lg accent-amber-400"
-                                          />
-                                        </div>
-                                      ) : opcao.gaveta?.tipo === 'data' ? (
-                                        <input type="date" className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-[10px] text-white" />
-                                      ) : opcao.gaveta?.tipo === 'hora' ? (
-                                        <input type="time" className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-[10px] text-white" />
-                                      ) : opcao.gaveta?.tipo === 'texto_curto' ? (
-                                        <input
-                                          type="text"
-                                          placeholder={opcao.gaveta?.placeholder || 'Digite aqui...'}
-                                          className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-[10px] text-white"
-                                        />
-                                      ) : (
-                                        <textarea
-                                          rows={2}
-                                          placeholder={opcao.gaveta?.placeholder || 'Digite sua resposta...'}
-                                          className="w-full bg-slate-950 border border-slate-700 rounded-lg p-1.5 text-[10px] text-white resize-none"
-                                        />
-                                      )}
-
-                                      <div className="text-right">
-                                        <span className="inline-block px-2.5 py-1 rounded-lg bg-amber-500 text-slate-950 font-black text-[9px]">
-                                          {opcao.gaveta?.botaoConfirmar || 'Confirmar & Avançar'} →
-                                        </span>
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })
-                          )}
-                        </div>
-
-                        {totalPaginasPreviewP1 > 1 && (
-                          <div className="shrink-0 flex items-center justify-between pt-1 border-t border-slate-800/80">
-                            <button
-                              type="button"
-                              onClick={() => setPreviewPage(Math.max(0, safePreviewPageP1 - 1))}
-                              disabled={safePreviewPageP1 === 0}
-                              className="px-2 py-1 rounded-lg text-[10px] font-bold text-slate-300 bg-slate-900 border border-slate-800 disabled:opacity-30 disabled:pointer-events-none flex items-center gap-1"
-                            >
-                              <ChevronLeft className="w-3 h-3" />
-                              <span>Anterior</span>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => setPreviewPage(Math.min(totalPaginasPreviewP1 - 1, safePreviewPageP1 + 1))}
-                              disabled={safePreviewPageP1 >= totalPaginasPreviewP1 - 1}
-                              className="px-2.5 py-1 rounded-lg text-[10px] font-bold text-amber-300 bg-amber-500/20 border border-amber-500/30 disabled:opacity-30 disabled:pointer-events-none flex items-center gap-1"
-                            >
-                              <span>Ver mais</span>
-                              <ChevronRight className="w-3 h-3" />
-                            </button>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                )}
-
-                {/* PREVIEW: TELAS EXTRAS (TELA 3, TELA 4, ETC.) */}
-                {previewScreen.startsWith('extra_') && (() => {
-                  const extraIdx = parseInt(previewScreen.split('_')[1], 10);
-                  const telaExtra = (config.telasExtras || [])[extraIdx];
-                  if (!telaExtra) return null;
-
-                  const numTela = extraIdx + 3;
-                  const cardsAtivos = (telaExtra.opcoes || []).filter(o => o.ativo !== false);
-
-                  return (
-                    <div className="flex flex-col justify-between h-full space-y-2">
-                      <div className="shrink-0 space-y-1">
-                        <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[9px] font-black uppercase">
-                          <span>Tela {numTela} de {2 + (config.telasExtras || []).length + 1}</span>
-                        </div>
-
-                        <h3 className="text-xs sm:text-sm font-black text-white leading-tight">
-                          {telaExtra.titulo1 && telaExtra.titulo2 ? (
-                            <>
-                              <span className="block">{telaExtra.titulo1}</span>
-                              <span className="block">{telaExtra.titulo2}</span>
-                            </>
-                          ) : (
-                            telaExtra.titulo || `Pergunta da Tela ${numTela}`
-                          )}
-                        </h3>
-                        {telaExtra.subtitulo && (
-                          <p className="text-[10px] text-slate-400">
-                            {telaExtra.subtitulo}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="flex-1 my-auto space-y-2 py-1 text-left">
-                        {/* RENDERIZAÇÃO AO VIVO DE TODOS OS 10 TIPOS DE PERGUNTA NO SIMULADOR */}
-                        {telaExtra.tipo === 'texto' ? (
-                          <div className="p-3 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2.5">
-                            <textarea
-                              rows={telaExtra.linhas || 4}
-                              placeholder={telaExtra.placeholder || 'Digite sua resposta aqui...'}
-                              className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white placeholder-slate-500 resize-none"
-                            />
-                            <div className="w-full py-2.5 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
-                              {telaExtra.botaoTexto || 'Avançar'} →
-                            </div>
-                          </div>
-                        ) : telaExtra.tipo === 'texto_curto' ? (
-                          <div className="p-3 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2.5">
-                            <input
-                              type="text"
-                              placeholder={telaExtra.placeholder || 'Digite sua resposta curta...'}
-                              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white placeholder-slate-500"
-                            />
-                            <div className="w-full py-2.5 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
-                              {telaExtra.botaoTexto || 'Avançar'} →
-                            </div>
-                          </div>
-                        ) : telaExtra.tipo === 'slider' ? (
-                          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3 text-center">
-                            <div className="text-3xl font-black text-amber-400">
-                              {previewInteractiveVal[`extra_sl_${extraIdx}`] ?? Math.round(((telaExtra.sliderMin ?? 0) + (telaExtra.sliderMax ?? 10)) / 2)}{telaExtra.sliderUnidade || ''}
-                            </div>
-                            <input
-                              type="range"
-                              min={telaExtra.sliderMin ?? 0}
-                              max={telaExtra.sliderMax ?? 10}
-                              step={telaExtra.sliderStep ?? 1}
-                              value={previewInteractiveVal[`extra_sl_${extraIdx}`] ?? Math.round(((telaExtra.sliderMin ?? 0) + (telaExtra.sliderMax ?? 10)) / 2)}
-                              onChange={(e) => setPreviewInteractiveVal(p => ({ ...p, [`extra_sl_${extraIdx}`]: e.target.value }))}
-                              className="w-full h-2 bg-slate-800 rounded-lg accent-amber-400 cursor-pointer"
-                            />
-                            <div className="flex justify-between text-[10px] font-mono text-slate-400">
-                              <span>{telaExtra.sliderMin ?? 0}</span>
-                              <span>{telaExtra.sliderMax ?? 10}</span>
-                            </div>
-                            <div className="w-full py-2.5 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
-                              {telaExtra.botaoTexto || 'Avançar'} →
-                            </div>
-                          </div>
-                        ) : telaExtra.tipo === 'rating' ? (
-                          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3 text-center">
-                            <div className="flex items-center justify-center gap-2 py-2">
-                              {[1, 2, 3, 4, 5].map((st) => {
-                                const cur = previewInteractiveVal[`extra_rt_${extraIdx}`] ?? 5;
-                                return (
-                                  <button
-                                    key={st}
-                                    type="button"
-                                    onClick={() => setPreviewInteractiveVal(p => ({ ...p, [`extra_rt_${extraIdx}`]: st }))}
-                                    className="p-1 transition hover:scale-110"
-                                  >
-                                    <Star className={`w-7 h-7 ${st <= cur ? 'text-amber-400 fill-amber-400' : 'text-slate-700'}`} />
-                                  </button>
-                                );
-                              })}
-                            </div>
-                            <div className="w-full py-2.5 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
-                              {telaExtra.botaoTexto || 'Avançar'} →
-                            </div>
-                          </div>
-                        ) : telaExtra.tipo === 'data' ? (
-                          <div className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
-                            <input
-                              type="date"
-                              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white"
-                            />
-                            <div className="w-full py-2.5 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
-                              {telaExtra.botaoTexto || 'Avançar'} →
-                            </div>
-                          </div>
-                        ) : telaExtra.tipo === 'hora' ? (
-                          <div className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
-                            <input
-                              type="time"
-                              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white"
-                            />
-                            <div className="w-full py-2.5 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
-                              {telaExtra.botaoTexto || 'Avançar'} →
-                            </div>
-                          </div>
-                        ) : telaExtra.tipo === 'dropdown' ? (
-                          <div className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
-                            <select className="w-full bg-slate-950 border border-amber-500/50 rounded-xl px-3 py-2.5 text-xs font-bold text-white">
-                              <option value="">Selecione uma opção...</option>
-                              {cardsAtivos.map((opt) => (
-                                <option key={opt.id} value={opt.titulo}>{opt.titulo}</option>
-                              ))}
-                            </select>
-                            <div className="w-full py-2.5 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
-                              {telaExtra.botaoTexto || 'Avançar'} →
-                            </div>
-                          </div>
-                        ) : telaExtra.tipo === 'radio' || telaExtra.tipo === 'checkbox' ? (
-                          <div className="space-y-2">
-                            {cardsAtivos.map((opt, oi) => (
-                              <label
-                                key={opt.id || oi}
-                                className="flex items-center gap-2.5 p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-amber-400/50 cursor-pointer"
-                              >
-                                <input
-                                  type={telaExtra.tipo === 'radio' ? 'radio' : 'checkbox'}
-                                  name={`prev_extra_${extraIdx}`}
-                                  defaultChecked={oi === 0}
-                                  className="w-4 h-4 accent-amber-400"
-                                />
-                                <div className="min-w-0 flex-1">
-                                  <span className="text-xs font-bold text-white block truncate">{opt.titulo}</span>
-                                  {opt.subtitulo && <span className="text-[10px] text-slate-400 block truncate">{opt.subtitulo}</span>}
-                                </div>
-                              </label>
-                            ))}
-                            <div className="w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow mt-2">
-                              {telaExtra.botaoTexto || 'Avançar'} →
-                            </div>
-                          </div>
-                        ) : cardsAtivos.length === 0 ? (
-                          <div className="py-8 text-center text-xs text-slate-500">
-                            Nenhum card ativo nesta tela.
-                          </div>
-                        ) : (
-                          cardsAtivos.map((opt) => {
-                            const IconComp = getIconComponent(opt.icone);
-                            const corCls = getCorBadge(opt.cor);
-                            const isGavetaOpen = Boolean(opt.temGaveta && previewOpenGavetaId === opt.id);
-
-                            return (
-                              <div key={opt.id} className="space-y-1.5">
-                                <div
-                                  onClick={() => {
-                                    if (opt.temGaveta) {
-                                      setPreviewOpenGavetaId(isGavetaOpen ? null : opt.id);
-                                    }
-                                  }}
-                                  style={{ 
-                                    minHeight: `${config.cardAltura || 82}px`,
-                                    ...getEfeitoStyle(config.cardEfeitoEstilo, config.cardProfundidade)
-                                  }}
-                                  className={`w-full text-left p-2.5 rounded-xl flex items-center justify-between transition-all cursor-pointer ${getCardFundoClass(config.cardFundoEstilo)}`}
-                                >
-                                  <div className="flex items-center gap-2.5 pr-1 min-w-0">
-                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${corCls}`}>
-                                      <IconComp className="w-4 h-4" />
-                                    </div>
-                                    <div className="min-w-0">
-                                      <h4 
-                                        style={{ fontSize: `${config.cardFonteTitulo || 16}px` }}
-                                        className={`font-bold truncate leading-snug ${getCardFonteTituloClass(config.cardCorFonteTitulo)}`}
-                                      >
-                                        {opt.titulo || 'Opção sem título'}
-                                      </h4>
-                                      {opt.subtitulo && (
-                                        <p 
-                                          style={{ fontSize: `${config.cardFonteSubtitulo || 12}px` }}
-                                          className={`truncate mt-0.5 leading-snug ${getCardFonteSubtituloClass(config.cardCorFonteSubtitulo)}`}
-                                        >
-                                          {opt.subtitulo}
-                                        </p>
-                                      )}
-                                    </div>
-                                  </div>
-                                  <div className="w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center shrink-0 text-slate-400">
-                                    {opt.temGaveta ? (
-                                      <ChevronDown className={`w-3 h-3 transition-transform ${isGavetaOpen ? 'rotate-180 text-amber-400' : ''}`} />
-                                    ) : (
-                                      <ChevronRight className="w-3 h-3" />
-                                    )}
-                                  </div>
-                                </div>
-
-                                {isGavetaOpen && (
-                                  <div className="p-2.5 rounded-xl bg-slate-900/95 border border-amber-500/50 text-left space-y-2">
-                                    <span className="text-[10px] font-black text-amber-300 block">
-                                      🗄️ {opt.gaveta?.pergunta || 'Por favor, detalhe sua resposta:'}
-                                    </span>
-                                    {opt.gaveta?.tipo === 'radio' || opt.gaveta?.tipo === 'checkbox' ? (
-                                      <div className="space-y-1">
-                                        {(opt.gaveta?.opcoes || ['Opção 1', 'Opção 2']).map((gOpt, gi) => (
-                                          <label key={gi} className="flex items-center gap-2 p-1.5 rounded-lg bg-slate-950 border border-slate-800 text-[10px] text-slate-200">
-                                            <input type={opt.gaveta?.tipo === 'radio' ? 'radio' : 'checkbox'} defaultChecked={gi === 0} className="accent-amber-400" />
-                                            <span>{gOpt}</span>
-                                          </label>
-                                        ))}
-                                      </div>
-                                    ) : (
-                                      <input
-                                        type="text"
-                                        placeholder={opt.gaveta?.placeholder || 'Digite aqui...'}
-                                        className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-[10px] text-white"
-                                      />
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })
-                        )}
-                      </div>
-
-                      <div className="shrink-0 pt-1 border-t border-slate-800/80">
-                        <span className="text-[9px] text-emerald-400 font-bold">
-                          ✓ Esta tela aparecerá no celular
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                {/* PREVIEW: TELA 2 (ACOMPANHANTES) */}
-                {previewScreen === 'acompanhantes' && (
-                  <div className="flex flex-col justify-between h-full space-y-2">
-                    <div className="shrink-0 space-y-1">
-                      <p className="text-xs font-black text-emerald-400 tracking-wide">
-                        Seja muito bem-vindo!
-                      </p>
-                      <h3 
-                        style={{ fontSize: `${(config.pergunta2FonteTamanho || 18) * 0.72}px` }}
-                        className="font-black text-white leading-tight"
-                      >
-                        {config.pergunta2Titulo2 ? (
-                          <>
-                            <span className="block">{config.pergunta2Titulo}</span>
-                            <span className="block">{config.pergunta2Titulo2}</span>
-                          </>
-                        ) : (
-                          config.pergunta2Titulo || 'Você está só ou tem mais pessoas te acompanhando?'
-                        )}
-                      </h3>
-                    </div>
-
-                    <div className="flex-1 my-auto space-y-2.5 py-1">
-                      <div className="w-full p-2.5 rounded-2xl border border-emerald-500/30 border-b-4 border-b-emerald-950 bg-gradient-to-b from-emerald-600 to-emerald-700 flex items-center justify-between shadow-lg text-left">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-xl bg-emerald-900/60 flex items-center justify-center text-emerald-200">
-                            <User className="w-4 h-4" />
-                          </div>
-                          <div>
-                            <span className="font-black text-sm text-amber-300 block">
-                              {config.opcaoIndividualTitulo || 'SÓ EU'}
-                            </span>
-                            <span className="text-[10px] text-white/90 block">
-                              {config.opcaoIndividualSubtitulo || ', vim sozinho'}
-                            </span>
-                          </div>
-                        </div>
-                        <span className="w-7 h-7 rounded-xl bg-emerald-950/80 text-emerald-300 font-black text-xs flex items-center justify-center">
-                          1
-                        </span>
-                      </div>
-
-                      <div className="flex items-center my-1">
-                        <div className="flex-grow border-t border-slate-800" />
-                        <span className="px-2 text-[9px] font-black text-amber-300 uppercase">
-                          {config.divisorQtdTexto || 'Quantas pessoas vieram com você?'}
-                        </span>
-                        <div className="flex-grow border-t border-slate-800" />
-                      </div>
-
-                      <div className="grid grid-cols-3 gap-1.5">
-                        {['2', '3', '4', '5', '6', '7', '8', '9', '+10'].map((num) => {
-                          const btnCorCls = getBtnQtdSimClass(config.btnQtdCor);
-                          const numCorCls = getBtnNumClass(config.btnQtdCorNumero);
-                          const simBtnHeight = Math.round((config.btnQtdAltura || 74) * 0.58);
-                          const simNumSize = Math.round((config.btnQtdFonteNumero || 34) * 0.58);
-
-                          return (
-                            <div
-                              key={num}
-                              style={{ 
-                                minHeight: `${simBtnHeight}px`,
-                                ...getEfeitoStyle(config.btnQtdEfeito || 'efeito_3d', Math.max(1, Math.round((config.btnQtdProfundidade || 5) * 0.7)))
-                              }}
-                              className={`py-1 px-1 rounded-xl border text-center flex flex-col items-center justify-center transition-all ${btnCorCls}`}
-                            >
-                              <span 
-                                style={{ fontSize: `${simNumSize}px` }}
-                                className={`font-black leading-none block ${numCorCls}`}
-                              >
-                                {num}
-                              </span>
-                              <span className="text-[8px] font-bold text-white/80 block mt-0.5">
-                                {num === '+10' ? 'Pessoas +' : 'Pessoas'}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* PREVIEW: TELA FIM */}
-                {previewScreen === 'fim' && (
-                  <div className="flex flex-col items-center justify-center h-full space-y-3.5 my-auto px-2">
-                    <div className="w-full bg-slate-900/95 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-3">
-                      <h3 
-                        style={{ fontSize: `${(config.finalTituloFonteTamanho || config.finalFonteTamanho || 26) * 0.58}px` }}
-                        className="font-black text-white tracking-tight leading-snug"
-                      >
-                        {config.finalTitulo1 && config.finalTitulo2 ? (
-                          <>
-                            <span className="block">{config.finalTitulo1}</span>
-                            <span className="block">{config.finalTitulo2}</span>
-                          </>
-                        ) : (
-                          config.finalTitulo || 'MUITO OBRIGADO PELA SUA PRESENÇA.'
-                        )}
-                      </h3>
-
-                      <div className="space-y-0.5">
-                        <span className="block text-[11px] font-black bg-gradient-to-r from-amber-300 to-amber-400 bg-clip-text text-transparent uppercase tracking-wide">
-                          A {eventoTitulo}
-                        </span>
-                        <span 
-                          style={{ fontSize: `${(config.finalMensagemFonteTamanho || 16) * 0.65}px` }}
-                          className="block font-extrabold text-amber-400"
-                        >
-                          {config.finalMensagem || 'será espetacular!'}
-                        </span>
-                      </div>
-
-                      <div className="pt-2 border-t border-slate-800 space-y-1">
-                        <div className="w-full bg-slate-950 rounded-full h-1 overflow-hidden mb-2">
-                          <div className="bg-amber-400 h-full w-2/3 rounded-full mx-auto" />
-                        </div>
-                        <p 
-                          style={{ fontSize: `${(config.finalStatusFonteTamanho || 18) * 0.65}px` }}
-                          className="font-black text-emerald-400 uppercase tracking-wide"
-                        >
-                          {config.finalStatus || 'REGISTRO CONCLUÍDO!'}
-                        </p>
-                        <p 
-                          style={{ fontSize: `${(config.finalInstrucaoFonteTamanho || 13) * 0.72}px` }}
-                          className="font-bold text-slate-400"
-                        >
-                          {config.finalInstrucao || 'pode guardar seu celular'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
+              {/* LISTBOX (SELECT) COM OS MODELOS */}
+              <div className="flex items-center gap-2">
+                <select
+                  value={modeloCelularId}
+                  onChange={(e) => setModeloCelularId(e.target.value)}
+                  className="bg-slate-950 border border-slate-700 hover:border-amber-400 text-white text-xs font-bold rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer min-w-[210px] transition shadow-inner"
+                >
+                  {MODELOS_CELULARES.map((mod) => (
+                    <option key={mod.id} value={mod.id} className="bg-slate-900 text-white py-1">
+                      {mod.nome} ({mod.marca})
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
-            <p className="text-[10px] text-slate-400 mt-2 font-medium text-center shrink-0">
-              {modeloAtual.nome} • Simulação interativa centralizada
+            {/* GRID DOS CELULARES: RENDERIZADOS DE 2 EM 2 COM ZOOM 0.8 */}
+            <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 pb-6 items-start">
+              {/* 1. TELA INÍCIO */}
+              {(() => {
+                const isSelected = activeTab === 'inicio';
+                return (
+                  <div
+                    key="prev_inicio"
+                    onClick={() => setActiveTab('inicio')}
+                    className={`flex flex-col items-center cursor-pointer transition-all duration-300 p-2.5 rounded-3xl group relative ${
+                      isSelected
+                        ? 'bg-amber-500/15 ring-2 ring-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.25)] scale-[1.01]'
+                        : 'bg-slate-900/50 hover:bg-slate-900/90 ring-1 ring-slate-800 hover:ring-slate-700'
+                    }`}
+                  >
+                    <div className="w-full flex items-center justify-between gap-2 mb-2.5 px-1">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className={`w-2.5 h-2.5 rounded-full shrink-0 transition-colors ${
+                          isSelected ? 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.9)] animate-pulse' : 'bg-slate-600'
+                        }`} />
+                        <span className={`text-xs font-black truncate ${
+                          isSelected ? 'text-amber-300' : 'text-slate-300 group-hover:text-white'
+                        }`}>
+                          Tela Início (Espera)
+                        </span>
+                      </div>
+                      {isSelected ? (
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-400 text-slate-950 flex items-center gap-1 shadow shrink-0">
+                          <Check className="w-3.5 h-3.5 stroke-[3]" />
+                          <span>Editando</span>
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-slate-400 bg-slate-950/80 border border-slate-800 group-hover:text-amber-300 group-hover:border-amber-500/40 transition shrink-0">
+                          1ª Tela
+                        </span>
+                      )}
+                    </div>
+
+                    <div style={{ zoom: 0.8 }} className="w-full flex justify-center transition-transform duration-200">
+                      <div className={`relative ${modeloAtual.largura} ${modeloAtual.moldura} bg-slate-950 overflow-hidden flex flex-col shrink-0 transition-all duration-300 ${
+                        isSelected
+                          ? 'ring-4 ring-amber-400 border-amber-400 shadow-[0_0_30px_rgba(251,191,36,0.4)]'
+                          : 'border-slate-800 group-hover:border-slate-600 shadow-xl'
+                      }`}>
+                        <div className="w-full pt-2.5 pb-1 px-5 flex items-center justify-between text-[10px] text-slate-400 bg-slate-950 shrink-0 relative">
+                          <span className="font-mono font-bold text-[10px]">19:30</span>
+                          {modeloAtual.tipoTopo === 'dynamic-island' && (
+                            <div className="w-20 h-4 bg-black rounded-full border border-slate-800 flex items-center justify-between px-2 shadow-inner">
+                              <div className="w-1.5 h-1.5 rounded-full bg-slate-900 border border-slate-700" />
+                              <div className="w-1.5 h-1.5 rounded-full bg-slate-900" />
+                            </div>
+                          )}
+                          {modeloAtual.tipoTopo === 'punch-hole-center' && (
+                            <div className="w-3 h-3 rounded-full bg-black border border-slate-800 shadow-inner" />
+                          )}
+                          {modeloAtual.tipoTopo === 'notch' && (
+                            <div className="w-24 h-3 bg-black rounded-b-xl border-b border-slate-800 shadow-inner" />
+                          )}
+                          <div className="flex items-center gap-1.5">
+                            <Wifi className="w-2.5 h-2.5" />
+                            <Battery className="w-3 h-3" />
+                          </div>
+                        </div>
+
+                        <div className="h-[460px] overflow-y-auto p-3.5 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between text-center select-none custom-scrollbar">
+                          <div className="flex flex-col items-center justify-center h-full space-y-4 my-auto">
+                            <div className="relative w-16 h-16 flex items-center justify-center">
+                              <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-amber-400 border-r-emerald-400 animate-spin" />
+                              <div className="relative w-7 h-7 rounded-full bg-slate-950 border border-slate-700 flex items-center justify-center">
+                                <Sparkles className="w-4 h-4 text-amber-300" />
+                              </div>
+                            </div>
+                            <div className="space-y-1 text-center px-2">
+                              <span 
+                                style={{ fontSize: `${(config.esperaLinha1Tamanho || config.esperaFonteTamanho || 26) * 0.58}px` }}
+                                className="block font-black text-white tracking-wide uppercase leading-tight"
+                              >
+                                {config.esperaLinha1 || 'DENTRO DE INSTANTES'}
+                              </span>
+                              <span 
+                                style={{ fontSize: `${(config.esperaLinha2Tamanho || config.esperaFonteTamanho || 26) * 0.58}px` }}
+                                className="block font-black bg-gradient-to-r from-amber-300 to-amber-400 bg-clip-text text-transparent tracking-wide uppercase leading-tight"
+                              >
+                                {config.esperaLinha2 || 'ESTARÁ LIBERADO'}
+                              </span>
+                              <span 
+                                style={{ fontSize: `${(config.esperaLinha3Tamanho || config.esperaFonteTamanho || 26) * 0.58}px` }}
+                                className="block font-black text-emerald-400 tracking-wide uppercase leading-tight"
+                              >
+                                {config.esperaLinha3 || 'PARA RESPONDER.'}
+                              </span>
+                            </div>
+                            <div className="w-2/3 bg-slate-950 rounded-full h-1 overflow-hidden">
+                              <div className="bg-amber-400 h-full w-1/2 rounded-full animate-pulse mx-auto" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* 2. TELA 1 (PERGUNTAS / CARDS) */}
+              {(() => {
+                const isSelected = activeTab === 'tela_1';
+                return (
+                  <div
+                    key="prev_tela_1"
+                    onClick={() => setActiveTab('tela_1')}
+                    className={`flex flex-col items-center cursor-pointer transition-all duration-300 p-2.5 rounded-3xl group relative ${
+                      isSelected
+                        ? 'bg-amber-500/15 ring-2 ring-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.25)] scale-[1.01]'
+                        : 'bg-slate-900/50 hover:bg-slate-900/90 ring-1 ring-slate-800 hover:ring-slate-700'
+                    }`}
+                  >
+                    <div className="w-full flex items-center justify-between gap-2 mb-2.5 px-1">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className={`w-2.5 h-2.5 rounded-full shrink-0 transition-colors ${
+                          isSelected ? 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.9)] animate-pulse' : 'bg-slate-600'
+                        }`} />
+                        <span className={`text-xs font-black truncate ${
+                          isSelected ? 'text-amber-300' : 'text-slate-300 group-hover:text-white'
+                        }`}>
+                          Tela 1 (Perguntas)
+                        </span>
+                      </div>
+                      {isSelected ? (
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-400 text-slate-950 flex items-center gap-1 shadow shrink-0">
+                          <Check className="w-3.5 h-3.5 stroke-[3]" />
+                          <span>Editando</span>
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-slate-400 bg-slate-950/80 border border-slate-800 group-hover:text-amber-300 group-hover:border-amber-500/40 transition shrink-0">
+                          {cardsAtivosP1.length} cards
+                        </span>
+                      )}
+                    </div>
+
+                    <div style={{ zoom: 0.8 }} className="w-full flex justify-center transition-transform duration-200">
+                      <div className={`relative ${modeloAtual.largura} ${modeloAtual.moldura} bg-slate-950 overflow-hidden flex flex-col shrink-0 transition-all duration-300 ${
+                        isSelected
+                          ? 'ring-4 ring-amber-400 border-amber-400 shadow-[0_0_30px_rgba(251,191,36,0.4)]'
+                          : 'border-slate-800 group-hover:border-slate-600 shadow-xl'
+                      }`}>
+                        <div className="w-full pt-2.5 pb-1 px-5 flex items-center justify-between text-[10px] text-slate-400 bg-slate-950 shrink-0 relative">
+                          <span className="font-mono font-bold text-[10px]">19:30</span>
+                          {modeloAtual.tipoTopo === 'dynamic-island' && (
+                            <div className="w-20 h-4 bg-black rounded-full border border-slate-800 flex items-center justify-between px-2 shadow-inner">
+                              <div className="w-1.5 h-1.5 rounded-full bg-slate-900 border border-slate-700" />
+                              <div className="w-1.5 h-1.5 rounded-full bg-slate-900" />
+                            </div>
+                          )}
+                          {modeloAtual.tipoTopo === 'punch-hole-center' && (
+                            <div className="w-3 h-3 rounded-full bg-black border border-slate-800 shadow-inner" />
+                          )}
+                          {modeloAtual.tipoTopo === 'notch' && (
+                            <div className="w-24 h-3 bg-black rounded-b-xl border-b border-slate-800 shadow-inner" />
+                          )}
+                          <div className="flex items-center gap-1.5">
+                            <Wifi className="w-2.5 h-2.5" />
+                            <Battery className="w-3 h-3" />
+                          </div>
+                        </div>
+
+                        <div className="h-[460px] overflow-y-auto p-3.5 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between text-center select-none custom-scrollbar">
+                          <div className="flex flex-col justify-between h-full space-y-2">
+                            <div className="shrink-0 space-y-1">
+                              <p className="text-xs font-black text-emerald-400 tracking-wide">
+                                Seja muito bem-vindo!
+                              </p>
+                              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-900/90 border border-amber-500/40 text-amber-300 shadow">
+                                <TreePine className="w-3 h-3 text-emerald-400 shrink-0" />
+                                <span className="text-[10px] font-black tracking-wide uppercase truncate max-w-[180px]">
+                                  {eventoTitulo}
+                                </span>
+                              </div>
+
+                              <div className="pt-1 border-t border-slate-800/60">
+                                {(config.pergunta1Titulo || config.pergunta1Titulo2) ? (
+                                  <h3 
+                                    style={{ fontSize: `${(config.pergunta1FonteTamanho || 18) * 0.72}px` }}
+                                    className="font-black text-white leading-tight"
+                                  >
+                                    {config.pergunta1Titulo2 ? (
+                                      <>
+                                        <span className="block">{config.pergunta1Titulo}</span>
+                                        <span className="block">{config.pergunta1Titulo2}</span>
+                                      </>
+                                    ) : (
+                                      config.pergunta1Titulo
+                                    )}
+                                  </h3>
+                                ) : (
+                                  <h3 className="text-xs font-bold text-slate-500 italic">
+                                    (Sem título na Tela 1)
+                                  </h3>
+                                )}
+
+                                {config.pergunta1TextoAbaixo && (
+                                  <p className="text-[11px] text-slate-300 mt-1.5 leading-relaxed whitespace-pre-line bg-slate-900/60 border border-slate-800/80 rounded-xl p-2">
+                                    {config.pergunta1TextoAbaixo}
+                                  </p>
+                                )}
+                              </div>
+
+                              {totalPaginasPreviewP1 > 1 && (
+                                <div className="flex items-center justify-between pt-1 px-1">
+                                  <span className="text-[9px] font-bold text-amber-300">
+                                    Página {safePreviewPageP1 + 1} de {totalPaginasPreviewP1}
+                                  </span>
+                                  <div className="flex items-center gap-1">
+                                    {Array.from({ length: totalPaginasPreviewP1 }).map((_, i) => (
+                                      <button
+                                        key={i}
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); setPreviewPage(i); }}
+                                        className={`h-1.5 rounded-full transition-all ${
+                                          safePreviewPageP1 === i ? 'w-4 bg-amber-400' : 'w-1.5 bg-slate-700'
+                                        }`}
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            {config.mostrarBotaoComecar !== false && !previewInteractiveVal.previewStarted ? (
+                              <div className="flex-1 flex flex-col justify-end py-3 space-y-3">
+                                <div className="my-auto px-3 py-4 rounded-2xl bg-slate-900/40 border border-slate-800/70 text-[10px] text-slate-400">
+                                  🔒 O botão <strong>"{config.pergunta1BotaoComecarTexto || 'COMEÇAR'}"</strong> está habilitado.
+                                </div>
+                                <div
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (cardsAtivosP1.length > 0) {
+                                      setPreviewInteractiveVal(p => ({ ...p, previewStarted: true }));
+                                    } else if ((config.telasExtras || []).length > 0) {
+                                      setActiveTab('extra_0');
+                                    } else if (config.mostrarTelaAcompanhantes !== false) {
+                                      setActiveTab('acompanhantes');
+                                    } else {
+                                      setActiveTab('fim');
+                                    }
+                                  }}
+                                  className="relative p-[2px] rounded-2xl overflow-hidden shadow-lg shadow-amber-500/20 group cursor-pointer active:scale-95 transition"
+                                >
+                                  <div
+                                    className="absolute inset-[-150%] animate-spin"
+                                    style={{
+                                      animationDuration: '4s',
+                                      background: 'conic-gradient(from 0deg, transparent 0%, #f59e0b 25%, #10b981 50%, #38bdf8 75%, transparent 100%)'
+                                    }}
+                                  />
+                                  <div className="relative w-full py-3 px-4 rounded-[14px] bg-slate-950 hover:bg-slate-900 text-amber-300 font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2">
+                                    <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                                    <span>{config.pergunta1BotaoComecarTexto || 'COMEÇAR'}</span>
+                                    <ChevronRight className="w-3.5 h-3.5 text-emerald-400" />
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <>
+                                {config.mostrarBotaoComecar !== false && previewInteractiveVal.previewStarted && (
+                                  <div className="flex justify-end">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => { e.stopPropagation(); setPreviewInteractiveVal(p => ({ ...p, previewStarted: false })); }}
+                                      className="text-[9px] text-amber-300 hover:underline flex items-center gap-1"
+                                    >
+                                      <ChevronLeft className="w-2.5 h-2.5" /> Voltar para capa
+                                    </button>
+                                  </div>
+                                )}
+
+                                <div className="flex-1 my-auto space-y-2 py-1">
+                                  {cardsNaPaginaAtualP1.length === 0 ? (
+                                    <div className="py-8 text-center text-xs text-slate-500">
+                                      Nenhum card ativo nesta tela.
+                                    </div>
+                                  ) : (
+                                    cardsNaPaginaAtualP1.map((opcao) => {
+                                      const IconComp = getIconComponent(opcao.icone);
+                                      const corCls = getCorBadge(opcao.cor);
+                                      const isGavetaOpen = Boolean(opcao.temGaveta && previewOpenGavetaId === opcao.id);
+
+                                      return (
+                                        <div key={opcao.id} className="space-y-1.5">
+                                          <div
+                                            onClick={(e) => {
+                                              if (opcao.temGaveta) {
+                                                e.stopPropagation();
+                                                setPreviewOpenGavetaId(isGavetaOpen ? null : opcao.id);
+                                              }
+                                            }}
+                                            style={{ 
+                                              minHeight: `${config.cardAltura || 82}px`,
+                                              ...getEfeitoStyle(config.cardEfeitoEstilo, config.cardProfundidade)
+                                            }}
+                                            className={`w-full text-left p-2.5 rounded-xl flex items-center justify-between transition-all cursor-pointer ${getCardFundoClass(config.cardFundoEstilo)} ${
+                                              isGavetaOpen ? 'ring-1 ring-amber-400 border-amber-400/70' : ''
+                                            }`}
+                                          >
+                                            <div className="flex items-center gap-2.5 pr-1 min-w-0">
+                                              <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${corCls}`}>
+                                                <IconComp className="w-4 h-4" />
+                                              </div>
+                                              <div className="min-w-0">
+                                                <h4 
+                                                  style={{ fontSize: `${config.cardFonteTitulo || 16}px` }}
+                                                  className={`font-bold truncate leading-snug ${getCardFonteTituloClass(config.cardCorFonteTitulo)}`}
+                                                >
+                                                  {opcao.titulo || 'Opção sem título'}
+                                                </h4>
+                                                {opcao.subtitulo && (
+                                                  <p 
+                                                    style={{ fontSize: `${config.cardFonteSubtitulo || 12}px` }}
+                                                    className={`truncate mt-0.5 leading-snug ${getCardFonteSubtituloClass(config.cardCorFonteSubtitulo)}`}
+                                                  >
+                                                    {opcao.subtitulo}
+                                                  </p>
+                                                )}
+                                              </div>
+                                            </div>
+                                            <div className="w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center shrink-0 text-slate-400">
+                                              {opcao.temGaveta ? (
+                                                <ChevronDown className={`w-3 h-3 transition-transform ${isGavetaOpen ? 'rotate-180 text-amber-400' : ''}`} />
+                                              ) : (
+                                                <ChevronRight className="w-3 h-3" />
+                                              )}
+                                            </div>
+                                          </div>
+
+                                          {isGavetaOpen && (
+                                            <div className="p-2.5 rounded-xl bg-slate-900/95 border border-amber-500/50 text-left space-y-2 animate-fade-in" onClick={e => e.stopPropagation()}>
+                                              <span className="text-[10px] font-black text-amber-300 block">
+                                                🗄️ {opcao.gaveta?.pergunta || 'Por favor, detalhe sua resposta:'}
+                                              </span>
+
+                                              {opcao.gaveta?.tipo === 'radio' ? (
+                                                <div className="space-y-1">
+                                                  {(opcao.gaveta?.opcoes || ['Opção 1', 'Opção 2']).map((gOpt, gi) => (
+                                                    <label key={gi} className="flex items-center gap-2 p-1.5 rounded-lg bg-slate-950 border border-slate-800 text-[10px] text-slate-200 cursor-pointer">
+                                                      <input type="radio" name={`prev_gav_${opcao.id}`} defaultChecked={gi === 0} className="accent-amber-400" />
+                                                      <span>{gOpt}</span>
+                                                    </label>
+                                                  ))}
+                                                </div>
+                                              ) : opcao.gaveta?.tipo === 'checkbox' ? (
+                                                <div className="space-y-1">
+                                                  {(opcao.gaveta?.opcoes || ['Opção 1', 'Opção 2']).map((gOpt, gi) => (
+                                                    <label key={gi} className="flex items-center gap-2 p-1.5 rounded-lg bg-slate-950 border border-slate-800 text-[10px] text-slate-200 cursor-pointer">
+                                                      <input type="checkbox" defaultChecked={gi === 0} className="accent-amber-400 rounded" />
+                                                      <span>{gOpt}</span>
+                                                    </label>
+                                                  ))}
+                                                </div>
+                                              ) : opcao.gaveta?.tipo === 'slider' ? (
+                                                <div className="p-2 rounded-lg bg-slate-950 border border-slate-800 space-y-1">
+                                                  <div className="flex justify-between text-[10px] font-bold text-amber-300">
+                                                    <span>Valor:</span>
+                                                    <span>{previewInteractiveVal[`gav_${opcao.id}`] ?? opcao.gaveta?.sliderMax ?? 10}{opcao.gaveta?.sliderUnidade || ''}</span>
+                                                  </div>
+                                                  <input
+                                                    type="range"
+                                                    min={opcao.gaveta?.sliderMin ?? 0}
+                                                    max={opcao.gaveta?.sliderMax ?? 10}
+                                                    step={opcao.gaveta?.sliderStep ?? 1}
+                                                    value={previewInteractiveVal[`gav_${opcao.id}`] ?? opcao.gaveta?.sliderMax ?? 10}
+                                                    onChange={(e) => setPreviewInteractiveVal(p => ({ ...p, [`gav_${opcao.id}`]: e.target.value }))}
+                                                    className="w-full h-1.5 bg-slate-800 rounded-lg accent-amber-400"
+                                                  />
+                                                </div>
+                                              ) : opcao.gaveta?.tipo === 'data' ? (
+                                                <input type="date" className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-[10px] text-white" />
+                                              ) : opcao.gaveta?.tipo === 'hora' ? (
+                                                <input type="time" className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-[10px] text-white" />
+                                              ) : opcao.gaveta?.tipo === 'texto_curto' ? (
+                                                <input
+                                                  type="text"
+                                                  placeholder={opcao.gaveta?.placeholder || 'Digite aqui...'}
+                                                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-[10px] text-white"
+                                                />
+                                              ) : (
+                                                <textarea
+                                                  rows={2}
+                                                  placeholder={opcao.gaveta?.placeholder || 'Digite sua resposta...'}
+                                                  className="w-full bg-slate-950 border border-slate-700 rounded-lg p-1.5 text-[10px] text-white resize-none"
+                                                />
+                                              )}
+
+                                              <div className="text-right">
+                                                <span className="inline-block px-2.5 py-1 rounded-lg bg-amber-500 text-slate-950 font-black text-[9px]">
+                                                  {opcao.gaveta?.botaoConfirmar || 'Confirmar & Avançar'} →
+                                                </span>
+                                              </div>
+                                            </div>
+                                          )}
+                                        </div>
+                                      );
+                                    })
+                                  )}
+                                </div>
+
+                                {totalPaginasPreviewP1 > 1 && (
+                                  <div className="shrink-0 flex items-center justify-between pt-1 border-t border-slate-800/80">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => { e.stopPropagation(); setPreviewPage(Math.max(0, safePreviewPageP1 - 1)); }}
+                                      disabled={safePreviewPageP1 === 0}
+                                      className="px-2 py-1 rounded-lg text-[10px] font-bold text-slate-300 bg-slate-900 border border-slate-800 disabled:opacity-30 disabled:pointer-events-none flex items-center gap-1"
+                                    >
+                                      <ChevronLeft className="w-3 h-3" />
+                                      <span>Anterior</span>
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={(e) => { e.stopPropagation(); setPreviewPage(Math.min(totalPaginasPreviewP1 - 1, safePreviewPageP1 + 1)); }}
+                                      disabled={safePreviewPageP1 >= totalPaginasPreviewP1 - 1}
+                                      className="px-2.5 py-1 rounded-lg text-[10px] font-bold text-amber-300 bg-amber-500/20 border border-amber-500/30 disabled:opacity-30 disabled:pointer-events-none flex items-center gap-1"
+                                    >
+                                      <span>Ver mais</span>
+                                      <ChevronRight className="w-3 h-3" />
+                                    </button>
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* 3. TELAS EXTRAS */}
+              {(config.telasExtras || []).map((telaExtra, extraIdx) => {
+                const tabKey = `extra_${extraIdx}`;
+                const isSelected = activeTab === tabKey;
+                const numTela = extraIdx + 3;
+                const cardsAtivos = (telaExtra.opcoes || []).filter(o => o.ativo !== false);
+
+                return (
+                  <div
+                    key={`prev_${tabKey}`}
+                    onClick={() => setActiveTab(tabKey)}
+                    className={`flex flex-col items-center cursor-pointer transition-all duration-300 p-2.5 rounded-3xl group relative ${
+                      isSelected
+                        ? 'bg-amber-500/15 ring-2 ring-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.25)] scale-[1.01]'
+                        : 'bg-slate-900/50 hover:bg-slate-900/90 ring-1 ring-slate-800 hover:ring-slate-700'
+                    }`}
+                  >
+                    <div className="w-full flex items-center justify-between gap-2 mb-2.5 px-1">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className={`w-2.5 h-2.5 rounded-full shrink-0 transition-colors ${
+                          isSelected ? 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.9)] animate-pulse' : 'bg-slate-600'
+                        }`} />
+                        <span className={`text-xs font-black truncate ${
+                          isSelected ? 'text-amber-300' : 'text-slate-300 group-hover:text-white'
+                        }`}>
+                          Tela {numTela} ({telaExtra.tipo || 'cards'})
+                        </span>
+                      </div>
+                      {isSelected ? (
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-400 text-slate-950 flex items-center gap-1 shadow shrink-0">
+                          <Check className="w-3.5 h-3.5 stroke-[3]" />
+                          <span>Editando</span>
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-slate-400 bg-slate-950/80 border border-slate-800 group-hover:text-amber-300 group-hover:border-amber-500/40 transition shrink-0">
+                          {telaExtra.titulo || `Tela ${numTela}`}
+                        </span>
+                      )}
+                    </div>
+
+                    <div style={{ zoom: 0.8 }} className="w-full flex justify-center transition-transform duration-200">
+                      <div className={`relative ${modeloAtual.largura} ${modeloAtual.moldura} bg-slate-950 overflow-hidden flex flex-col shrink-0 transition-all duration-300 ${
+                        isSelected
+                          ? 'ring-4 ring-amber-400 border-amber-400 shadow-[0_0_30px_rgba(251,191,36,0.4)]'
+                          : 'border-slate-800 group-hover:border-slate-600 shadow-xl'
+                      }`}>
+                        <div className="w-full pt-2.5 pb-1 px-5 flex items-center justify-between text-[10px] text-slate-400 bg-slate-950 shrink-0 relative">
+                          <span className="font-mono font-bold text-[10px]">19:30</span>
+                          {modeloAtual.tipoTopo === 'dynamic-island' && (
+                            <div className="w-20 h-4 bg-black rounded-full border border-slate-800 flex items-center justify-between px-2 shadow-inner">
+                              <div className="w-1.5 h-1.5 rounded-full bg-slate-900 border border-slate-700" />
+                              <div className="w-1.5 h-1.5 rounded-full bg-slate-900" />
+                            </div>
+                          )}
+                          {modeloAtual.tipoTopo === 'punch-hole-center' && (
+                            <div className="w-3 h-3 rounded-full bg-black border border-slate-800 shadow-inner" />
+                          )}
+                          {modeloAtual.tipoTopo === 'notch' && (
+                            <div className="w-24 h-3 bg-black rounded-b-xl border-b border-slate-800 shadow-inner" />
+                          )}
+                          <div className="flex items-center gap-1.5">
+                            <Wifi className="w-2.5 h-2.5" />
+                            <Battery className="w-3 h-3" />
+                          </div>
+                        </div>
+
+                        <div className="h-[460px] overflow-y-auto p-3.5 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between text-center select-none custom-scrollbar">
+                          <div className="flex flex-col justify-between h-full space-y-2">
+                            <div className="shrink-0 space-y-1">
+                              <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[9px] font-black uppercase">
+                                <span>Tela {numTela} de {2 + (config.telasExtras || []).length + 1}</span>
+                              </div>
+
+                              <h3 className="text-xs sm:text-sm font-black text-white leading-tight">
+                                {telaExtra.titulo1 && telaExtra.titulo2 ? (
+                                  <>
+                                    <span className="block">{telaExtra.titulo1}</span>
+                                    <span className="block">{telaExtra.titulo2}</span>
+                                  </>
+                                ) : (
+                                  telaExtra.titulo || `Pergunta da Tela ${numTela}`
+                                )}
+                              </h3>
+                              {telaExtra.subtitulo && (
+                                <p className="text-[10px] text-slate-400">
+                                  {telaExtra.subtitulo}
+                                </p>
+                              )}
+                            </div>
+
+                            <div className="flex-1 my-auto space-y-2 py-1 text-left">
+                              {telaExtra.tipo === 'texto' ? (
+                                <div className="p-3 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2.5" onClick={e => e.stopPropagation()}>
+                                  <textarea
+                                    rows={telaExtra.linhas || 4}
+                                    placeholder={telaExtra.placeholder || 'Digite sua resposta aqui...'}
+                                    className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white placeholder-slate-500 resize-none"
+                                  />
+                                  <div className="w-full py-2.5 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
+                                    {telaExtra.botaoTexto || 'Avançar'} →
+                                  </div>
+                                </div>
+                              ) : telaExtra.tipo === 'texto_curto' ? (
+                                <div className="p-3 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2.5" onClick={e => e.stopPropagation()}>
+                                  <input
+                                    type="text"
+                                    placeholder={telaExtra.placeholder || 'Digite sua resposta curta...'}
+                                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white placeholder-slate-500"
+                                  />
+                                  <div className="w-full py-2.5 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
+                                    {telaExtra.botaoTexto || 'Avançar'} →
+                                  </div>
+                                </div>
+                              ) : telaExtra.tipo === 'slider' ? (
+                                <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3 text-center" onClick={e => e.stopPropagation()}>
+                                  <div className="text-3xl font-black text-amber-400">
+                                    {previewInteractiveVal[`extra_sl_${extraIdx}`] ?? Math.round(((telaExtra.sliderMin ?? 0) + (telaExtra.sliderMax ?? 10)) / 2)}{telaExtra.sliderUnidade || ''}
+                                  </div>
+                                  <input
+                                    type="range"
+                                    min={telaExtra.sliderMin ?? 0}
+                                    max={telaExtra.sliderMax ?? 10}
+                                    step={telaExtra.sliderStep ?? 1}
+                                    value={previewInteractiveVal[`extra_sl_${extraIdx}`] ?? Math.round(((telaExtra.sliderMin ?? 0) + (telaExtra.sliderMax ?? 10)) / 2)}
+                                    onChange={(e) => setPreviewInteractiveVal(p => ({ ...p, [`extra_sl_${extraIdx}`]: e.target.value }))}
+                                    className="w-full h-2 bg-slate-800 rounded-lg accent-amber-400 cursor-pointer"
+                                  />
+                                  <div className="flex justify-between text-[10px] font-mono text-slate-400">
+                                    <span>{telaExtra.sliderMin ?? 0}</span>
+                                    <span>{telaExtra.sliderMax ?? 10}</span>
+                                  </div>
+                                  <div className="w-full py-2.5 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
+                                    {telaExtra.botaoTexto || 'Avançar'} →
+                                  </div>
+                                </div>
+                              ) : telaExtra.tipo === 'rating' ? (
+                                <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3 text-center" onClick={e => e.stopPropagation()}>
+                                  <div className="flex items-center justify-center gap-2 py-2">
+                                    {[1, 2, 3, 4, 5].map((st) => {
+                                      const cur = previewInteractiveVal[`extra_rt_${extraIdx}`] ?? 5;
+                                      return (
+                                        <button
+                                          key={st}
+                                          type="button"
+                                          onClick={() => setPreviewInteractiveVal(p => ({ ...p, [`extra_rt_${extraIdx}`]: st }))}
+                                          className="p-1 transition hover:scale-110"
+                                        >
+                                          <Star className={`w-7 h-7 ${st <= cur ? 'text-amber-400 fill-amber-400' : 'text-slate-700'}`} />
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                  <div className="w-full py-2.5 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
+                                    {telaExtra.botaoTexto || 'Avançar'} →
+                                  </div>
+                                </div>
+                              ) : telaExtra.tipo === 'data' ? (
+                                <div className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3" onClick={e => e.stopPropagation()}>
+                                  <input
+                                    type="date"
+                                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white"
+                                  />
+                                  <div className="w-full py-2.5 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
+                                    {telaExtra.botaoTexto || 'Avançar'} →
+                                  </div>
+                                </div>
+                              ) : telaExtra.tipo === 'hora' ? (
+                                <div className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3" onClick={e => e.stopPropagation()}>
+                                  <input
+                                    type="time"
+                                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white"
+                                  />
+                                  <div className="w-full py-2.5 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
+                                    {telaExtra.botaoTexto || 'Avançar'} →
+                                  </div>
+                                </div>
+                              ) : telaExtra.tipo === 'dropdown' ? (
+                                <div className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3" onClick={e => e.stopPropagation()}>
+                                  <select className="w-full bg-slate-950 border border-amber-500/50 rounded-xl px-3 py-2.5 text-xs font-bold text-white">
+                                    <option value="">Selecione uma opção...</option>
+                                    {cardsAtivos.map((opt) => (
+                                      <option key={opt.id} value={opt.titulo}>{opt.titulo}</option>
+                                    ))}
+                                  </select>
+                                  <div className="w-full py-2.5 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
+                                    {telaExtra.botaoTexto || 'Avançar'} →
+                                  </div>
+                                </div>
+                              ) : telaExtra.tipo === 'radio' || telaExtra.tipo === 'checkbox' ? (
+                                <div className="space-y-2" onClick={e => e.stopPropagation()}>
+                                  {cardsAtivos.map((opt, oi) => (
+                                    <label
+                                      key={opt.id || oi}
+                                      className="flex items-center gap-2.5 p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-amber-400/50 cursor-pointer"
+                                    >
+                                      <input
+                                        type={telaExtra.tipo === 'radio' ? 'radio' : 'checkbox'}
+                                        name={`prev_extra_${extraIdx}`}
+                                        defaultChecked={oi === 0}
+                                        className="w-4 h-4 accent-amber-400"
+                                      />
+                                      <div className="min-w-0 flex-1">
+                                        <span className="text-xs font-bold text-white block truncate">{opt.titulo}</span>
+                                        {opt.subtitulo && <span className="text-[10px] text-slate-400 block truncate">{opt.subtitulo}</span>}
+                                      </div>
+                                    </label>
+                                  ))}
+                                  <div className="w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow mt-2">
+                                    {telaExtra.botaoTexto || 'Avançar'} →
+                                  </div>
+                                </div>
+                              ) : cardsAtivos.length === 0 ? (
+                                <div className="py-8 text-center text-xs text-slate-500">
+                                  Nenhum card ativo nesta tela.
+                                </div>
+                              ) : (
+                                cardsAtivos.map((opt) => {
+                                  const IconComp = getIconComponent(opt.icone);
+                                  const corCls = getCorBadge(opt.cor);
+                                  const isGavetaOpen = Boolean(opt.temGaveta && previewOpenGavetaId === opt.id);
+
+                                  return (
+                                    <div key={opt.id} className="space-y-1.5">
+                                      <div
+                                        onClick={(e) => {
+                                          if (opt.temGaveta) {
+                                            e.stopPropagation();
+                                            setPreviewOpenGavetaId(isGavetaOpen ? null : opt.id);
+                                          }
+                                        }}
+                                        style={{ 
+                                          minHeight: `${config.cardAltura || 82}px`,
+                                          ...getEfeitoStyle(config.cardEfeitoEstilo, config.cardProfundidade)
+                                        }}
+                                        className={`w-full text-left p-2.5 rounded-xl flex items-center justify-between transition-all cursor-pointer ${getCardFundoClass(config.cardFundoEstilo)}`}
+                                      >
+                                        <div className="flex items-center gap-2.5 pr-1 min-w-0">
+                                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${corCls}`}>
+                                            <IconComp className="w-4 h-4" />
+                                          </div>
+                                          <div className="min-w-0">
+                                            <h4 
+                                              style={{ fontSize: `${config.cardFonteTitulo || 16}px` }}
+                                              className={`font-bold truncate leading-snug ${getCardFonteTituloClass(config.cardCorFonteTitulo)}`}
+                                            >
+                                              {opt.titulo || 'Opção sem título'}
+                                            </h4>
+                                            {opt.subtitulo && (
+                                              <p 
+                                                style={{ fontSize: `${config.cardFonteSubtitulo || 12}px` }}
+                                                className={`truncate mt-0.5 leading-snug ${getCardFonteSubtituloClass(config.cardCorFonteSubtitulo)}`}
+                                              >
+                                                {opt.subtitulo}
+                                              </p>
+                                            )}
+                                          </div>
+                                        </div>
+                                        <div className="w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center shrink-0 text-slate-400">
+                                          {opt.temGaveta ? (
+                                            <ChevronDown className={`w-3 h-3 transition-transform ${isGavetaOpen ? 'rotate-180 text-amber-400' : ''}`} />
+                                          ) : (
+                                            <ChevronRight className="w-3 h-3" />
+                                          )}
+                                        </div>
+                                      </div>
+
+                                      {isGavetaOpen && (
+                                        <div className="p-2.5 rounded-xl bg-slate-900/95 border border-amber-500/50 text-left space-y-2" onClick={e => e.stopPropagation()}>
+                                          <span className="text-[10px] font-black text-amber-300 block">
+                                            🗄️ {opt.gaveta?.pergunta || 'Por favor, detalhe sua resposta:'}
+                                          </span>
+                                          {opt.gaveta?.tipo === 'radio' || opt.gaveta?.tipo === 'checkbox' ? (
+                                            <div className="space-y-1">
+                                              {(opt.gaveta?.opcoes || ['Opção 1', 'Opção 2']).map((gOpt, gi) => (
+                                                <label key={gi} className="flex items-center gap-2 p-1.5 rounded-lg bg-slate-950 border border-slate-800 text-[10px] text-slate-200">
+                                                  <input type={opt.gaveta?.tipo === 'radio' ? 'radio' : 'checkbox'} defaultChecked={gi === 0} className="accent-amber-400" />
+                                                  <span>{gOpt}</span>
+                                                </label>
+                                              ))}
+                                            </div>
+                                          ) : (
+                                            <input
+                                              type="text"
+                                              placeholder={opt.gaveta?.placeholder || 'Digite aqui...'}
+                                              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-[10px] text-white"
+                                            />
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })
+                              )}
+                            </div>
+
+                            <div className="shrink-0 pt-1 border-t border-slate-800/80">
+                              <span className="text-[9px] text-emerald-400 font-bold">
+                                ✓ Esta tela aparecerá no celular
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* 4. TELA ACOMPANHANTES (SE ATIVA) */}
+              {config.mostrarTelaAcompanhantes !== false && (() => {
+                const isSelected = activeTab === 'acompanhantes';
+                const numTela = (config.telasExtras || []).length + 2;
+                return (
+                  <div
+                    key="prev_acompanhantes"
+                    onClick={() => setActiveTab('acompanhantes')}
+                    className={`flex flex-col items-center cursor-pointer transition-all duration-300 p-2.5 rounded-3xl group relative ${
+                      isSelected
+                        ? 'bg-amber-500/15 ring-2 ring-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.25)] scale-[1.01]'
+                        : 'bg-slate-900/50 hover:bg-slate-900/90 ring-1 ring-slate-800 hover:ring-slate-700'
+                    }`}
+                  >
+                    <div className="w-full flex items-center justify-between gap-2 mb-2.5 px-1">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className={`w-2.5 h-2.5 rounded-full shrink-0 transition-colors ${
+                          isSelected ? 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.9)] animate-pulse' : 'bg-slate-600'
+                        }`} />
+                        <span className={`text-xs font-black truncate ${
+                          isSelected ? 'text-amber-300' : 'text-slate-300 group-hover:text-white'
+                        }`}>
+                          Tela {numTela} (Acompanhantes)
+                        </span>
+                      </div>
+                      {isSelected ? (
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-400 text-slate-950 flex items-center gap-1 shadow shrink-0">
+                          <Check className="w-3.5 h-3.5 stroke-[3]" />
+                          <span>Editando</span>
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-slate-400 bg-slate-950/80 border border-slate-800 group-hover:text-amber-300 group-hover:border-amber-500/40 transition shrink-0">
+                          Grupo
+                        </span>
+                      )}
+                    </div>
+
+                    <div style={{ zoom: 0.8 }} className="w-full flex justify-center transition-transform duration-200">
+                      <div className={`relative ${modeloAtual.largura} ${modeloAtual.moldura} bg-slate-950 overflow-hidden flex flex-col shrink-0 transition-all duration-300 ${
+                        isSelected
+                          ? 'ring-4 ring-amber-400 border-amber-400 shadow-[0_0_30px_rgba(251,191,36,0.4)]'
+                          : 'border-slate-800 group-hover:border-slate-600 shadow-xl'
+                      }`}>
+                        <div className="w-full pt-2.5 pb-1 px-5 flex items-center justify-between text-[10px] text-slate-400 bg-slate-950 shrink-0 relative">
+                          <span className="font-mono font-bold text-[10px]">19:30</span>
+                          {modeloAtual.tipoTopo === 'dynamic-island' && (
+                            <div className="w-20 h-4 bg-black rounded-full border border-slate-800 flex items-center justify-between px-2 shadow-inner">
+                              <div className="w-1.5 h-1.5 rounded-full bg-slate-900 border border-slate-700" />
+                              <div className="w-1.5 h-1.5 rounded-full bg-slate-900" />
+                            </div>
+                          )}
+                          {modeloAtual.tipoTopo === 'punch-hole-center' && (
+                            <div className="w-3 h-3 rounded-full bg-black border border-slate-800 shadow-inner" />
+                          )}
+                          {modeloAtual.tipoTopo === 'notch' && (
+                            <div className="w-24 h-3 bg-black rounded-b-xl border-b border-slate-800 shadow-inner" />
+                          )}
+                          <div className="flex items-center gap-1.5">
+                            <Wifi className="w-2.5 h-2.5" />
+                            <Battery className="w-3 h-3" />
+                          </div>
+                        </div>
+
+                        <div className="h-[460px] overflow-y-auto p-3.5 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between text-center select-none custom-scrollbar">
+                          <div className="flex flex-col justify-between h-full space-y-2">
+                            <div className="shrink-0 space-y-1">
+                              <p className="text-xs font-black text-emerald-400 tracking-wide">
+                                Seja muito bem-vindo!
+                              </p>
+                              <h3 
+                                style={{ fontSize: `${(config.pergunta2FonteTamanho || 18) * 0.72}px` }}
+                                className="font-black text-white leading-tight"
+                              >
+                                {config.pergunta2Titulo2 ? (
+                                  <>
+                                    <span className="block">{config.pergunta2Titulo}</span>
+                                    <span className="block">{config.pergunta2Titulo2}</span>
+                                  </>
+                                ) : (
+                                  config.pergunta2Titulo || 'Você está só ou tem mais pessoas te acompanhando?'
+                                )}
+                              </h3>
+                            </div>
+
+                            <div className="flex-1 my-auto space-y-2.5 py-1">
+                              <div className="w-full p-2.5 rounded-2xl border border-emerald-500/30 border-b-4 border-b-emerald-950 bg-gradient-to-b from-emerald-600 to-emerald-700 flex items-center justify-between shadow-lg text-left">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-8 h-8 rounded-xl bg-emerald-900/60 flex items-center justify-center text-emerald-200">
+                                    <User className="w-4 h-4" />
+                                  </div>
+                                  <div>
+                                    <span className="font-black text-sm text-amber-300 block">
+                                      {config.opcaoIndividualTitulo || 'SÓ EU'}
+                                    </span>
+                                    <span className="text-[10px] text-white/90 block">
+                                      {config.opcaoIndividualSubtitulo || ', vim sozinho'}
+                                    </span>
+                                  </div>
+                                </div>
+                                <span className="w-7 h-7 rounded-xl bg-emerald-950/80 text-emerald-300 font-black text-xs flex items-center justify-center">
+                                  1
+                                </span>
+                              </div>
+
+                              <div className="flex items-center my-1">
+                                <div className="flex-grow border-t border-slate-800" />
+                                <span className="px-2 text-[9px] font-black text-amber-300 uppercase">
+                                  {config.divisorQtdTexto || 'Quantas pessoas vieram com você?'}
+                                </span>
+                                <div className="flex-grow border-t border-slate-800" />
+                              </div>
+
+                              <div className="grid grid-cols-3 gap-1.5">
+                                {['2', '3', '4', '5', '6', '7', '8', '9', '+10'].map((num) => {
+                                  const btnCorCls = getBtnQtdSimClass(config.btnQtdCor);
+                                  const numCorCls = getBtnNumClass(config.btnQtdCorNumero);
+                                  const simBtnHeight = Math.round((config.btnQtdAltura || 74) * 0.58);
+                                  const simNumSize = Math.round((config.btnQtdFonteNumero || 34) * 0.58);
+
+                                  return (
+                                    <div
+                                      key={num}
+                                      style={{ 
+                                        minHeight: `${simBtnHeight}px`,
+                                        ...getEfeitoStyle(config.btnQtdEfeito || 'efeito_3d', Math.max(1, Math.round((config.btnQtdProfundidade || 5) * 0.7)))
+                                      }}
+                                      className={`py-1 px-1 rounded-xl border text-center flex flex-col items-center justify-center transition-all ${btnCorCls}`}
+                                    >
+                                      <span 
+                                        style={{ fontSize: `${simNumSize}px` }}
+                                        className={`font-black leading-none block ${numCorCls}`}
+                                      >
+                                        {num}
+                                      </span>
+                                      <span className="text-[8px] font-bold text-white/80 block mt-0.5">
+                                        {num === '+10' ? 'Pessoas +' : 'Pessoas'}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* 5. TELA FIM (AGRADECIMENTO / STATUS) */}
+              {(() => {
+                const isSelected = activeTab === 'fim';
+                return (
+                  <div
+                    key="prev_fim"
+                    onClick={() => setActiveTab('fim')}
+                    className={`flex flex-col items-center cursor-pointer transition-all duration-300 p-2.5 rounded-3xl group relative ${
+                      isSelected
+                        ? 'bg-amber-500/15 ring-2 ring-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.25)] scale-[1.01]'
+                        : 'bg-slate-900/50 hover:bg-slate-900/90 ring-1 ring-slate-800 hover:ring-slate-700'
+                    }`}
+                  >
+                    <div className="w-full flex items-center justify-between gap-2 mb-2.5 px-1">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className={`w-2.5 h-2.5 rounded-full shrink-0 transition-colors ${
+                          isSelected ? 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.9)] animate-pulse' : 'bg-slate-600'
+                        }`} />
+                        <span className={`text-xs font-black truncate ${
+                          isSelected ? 'text-amber-300' : 'text-slate-300 group-hover:text-white'
+                        }`}>
+                          Tela Fim (Agradecimento)
+                        </span>
+                      </div>
+                      {isSelected ? (
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-400 text-slate-950 flex items-center gap-1 shadow shrink-0">
+                          <Check className="w-3.5 h-3.5 stroke-[3]" />
+                          <span>Editando</span>
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-slate-400 bg-slate-950/80 border border-slate-800 group-hover:text-amber-300 group-hover:border-amber-500/40 transition shrink-0">
+                          Final
+                        </span>
+                      )}
+                    </div>
+
+                    <div style={{ zoom: 0.8 }} className="w-full flex justify-center transition-transform duration-200">
+                      <div className={`relative ${modeloAtual.largura} ${modeloAtual.moldura} bg-slate-950 overflow-hidden flex flex-col shrink-0 transition-all duration-300 ${
+                        isSelected
+                          ? 'ring-4 ring-amber-400 border-amber-400 shadow-[0_0_30px_rgba(251,191,36,0.4)]'
+                          : 'border-slate-800 group-hover:border-slate-600 shadow-xl'
+                      }`}>
+                        <div className="w-full pt-2.5 pb-1 px-5 flex items-center justify-between text-[10px] text-slate-400 bg-slate-950 shrink-0 relative">
+                          <span className="font-mono font-bold text-[10px]">19:30</span>
+                          {modeloAtual.tipoTopo === 'dynamic-island' && (
+                            <div className="w-20 h-4 bg-black rounded-full border border-slate-800 flex items-center justify-between px-2 shadow-inner">
+                              <div className="w-1.5 h-1.5 rounded-full bg-slate-900 border border-slate-700" />
+                              <div className="w-1.5 h-1.5 rounded-full bg-slate-900" />
+                            </div>
+                          )}
+                          {modeloAtual.tipoTopo === 'punch-hole-center' && (
+                            <div className="w-3 h-3 rounded-full bg-black border border-slate-800 shadow-inner" />
+                          )}
+                          {modeloAtual.tipoTopo === 'notch' && (
+                            <div className="w-24 h-3 bg-black rounded-b-xl border-b border-slate-800 shadow-inner" />
+                          )}
+                          <div className="flex items-center gap-1.5">
+                            <Wifi className="w-2.5 h-2.5" />
+                            <Battery className="w-3 h-3" />
+                          </div>
+                        </div>
+
+                        <div className="h-[460px] overflow-y-auto p-3.5 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between text-center select-none custom-scrollbar">
+                          <div className="flex flex-col items-center justify-center h-full space-y-3.5 my-auto px-2">
+                            <div className="w-full bg-slate-900/95 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-3">
+                              <h3 
+                                style={{ fontSize: `${(config.finalTituloFonteTamanho || config.finalFonteTamanho || 26) * 0.58}px` }}
+                                className="font-black text-white tracking-tight leading-snug"
+                              >
+                                {config.finalTitulo1 && config.finalTitulo2 ? (
+                                  <>
+                                    <span className="block">{config.finalTitulo1}</span>
+                                    <span className="block">{config.finalTitulo2}</span>
+                                  </>
+                                ) : (
+                                  config.finalTitulo || 'MUITO OBRIGADO PELA SUA PRESENÇA.'
+                                )}
+                              </h3>
+
+                              <div className="space-y-0.5">
+                                <span className="block text-[11px] font-black bg-gradient-to-r from-amber-300 to-amber-400 bg-clip-text text-transparent uppercase tracking-wide">
+                                  A {eventoTitulo}
+                                </span>
+                                <span 
+                                  style={{ fontSize: `${(config.finalMensagemFonteTamanho || 16) * 0.65}px` }}
+                                  className="block font-extrabold text-amber-400"
+                                >
+                                  {config.finalMensagem || 'será espetacular!'}
+                                </span>
+                              </div>
+
+                              <div className="pt-2 border-t border-slate-800 space-y-1">
+                                <div className="w-full bg-slate-950 rounded-full h-1 overflow-hidden mb-2">
+                                  <div className="bg-amber-400 h-full w-2/3 rounded-full mx-auto" />
+                                </div>
+                                <p 
+                                  style={{ fontSize: `${(config.finalStatusFonteTamanho || 18) * 0.65}px` }}
+                                  className="font-black text-emerald-400 uppercase tracking-wide"
+                                >
+                                  {config.finalStatus || 'REGISTRO CONCLUÍDO!'}
+                                </p>
+                                <p 
+                                  style={{ fontSize: `${(config.finalInstrucaoFonteTamanho || 13) * 0.72}px` }}
+                                  className="font-bold text-slate-400"
+                                >
+                                  {config.finalInstrucao || 'pode guardar seu celular'}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+
+            <p className="text-[10px] text-slate-500 mt-auto py-2 font-medium text-center shrink-0">
+              {modeloAtual.nome} • Simulação interativa ao vivo de todas as telas (reduzido em 20%)
             </p>
           </div>
 
         </div>
 
-        {/* ============================================================ */}
+                {/* ============================================================ */}
         {/* RODAPÉ COM AÇÕES                                             */}
         {/* ============================================================ */}
         <div className="px-5 py-3 border-t border-slate-800 bg-slate-950/90 flex flex-wrap items-center justify-between gap-2 shrink-0">
