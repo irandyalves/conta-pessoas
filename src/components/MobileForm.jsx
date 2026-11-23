@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import IconeEspera from './IconeEspera';
+import EscalaVisual, { ESCALA_COM_VALOR_INICIAL } from './EscalaVisual';
 import { 
   registrarPresenca, 
   escutarTituloEvento, 
@@ -1360,22 +1361,11 @@ export default function MobileForm() {
 
                   {tela.tipo === 'slider' && (
                     <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-4 text-center">
-                      <div className="text-4xl font-black text-amber-400">
-                        {valAtual !== '' ? valAtual : defaultSliderVal}{tela.sliderUnidade || ''}
-                      </div>
-                      <input
-                        type="range"
-                        min={tela.sliderMin ?? 0}
-                        max={tela.sliderMax ?? 10}
-                        step={tela.sliderStep ?? 1}
-                        value={valAtual !== '' ? Number(valAtual) : defaultSliderVal}
-                        onChange={(e) => setTextos((prev) => ({ ...prev, [valKey]: e.target.value }))}
-                        className="w-full h-3 bg-slate-800 rounded-lg accent-amber-400 cursor-pointer"
+                      <EscalaVisual
+                        tela={tela}
+                        valor={valAtual}
+                        onChange={(v) => setTextos((prev) => ({ ...prev, [valKey]: v }))}
                       />
-                      <div className="flex justify-between text-xs font-mono text-slate-400">
-                        <span>{tela.sliderMin ?? 0}{tela.sliderLabelMin && tela.sliderLabelMin !== 'Mínimo' ? ` · ${tela.sliderLabelMin}` : ''}</span>
-                        <span>{tela.sliderLabelMax && tela.sliderLabelMax !== 'Máximo' ? `${tela.sliderLabelMax} · ` : ''}{tela.sliderMax ?? 10}</span>
-                      </div>
                       {tela.legendaEscala && (
                         <div className="flex flex-wrap items-center justify-center gap-1.5 pt-1">
                           {parseScaleLegendItems(tela.legendaEscala).map((item, li) => (
@@ -1583,7 +1573,8 @@ export default function MobileForm() {
             const valorFinal = (t) => {
               const v = dissertativaTextos[t.id] ?? '';
               const dsv = Math.round(((t.sliderMin ?? 0) + (t.sliderMax ?? 10)) / 2);
-              return t.tipo === 'slider' && v === '' ? `${dsv}${t.sliderUnidade || ''}` : v;
+              // só os estilos que já mostram um valor (slide, número, carinhas, termômetro) gravam o valor do meio se não tocar
+              return t.tipo === 'slider' && v === '' && ESCALA_COM_VALOR_INICIAL.includes(t.estiloEscala || 'slider') ? `${dsv}${t.sliderUnidade || ''}` : v;
             };
 
             return (

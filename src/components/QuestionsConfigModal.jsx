@@ -51,9 +51,10 @@ import {
   saveEventTitle,
   DEFAULT_QUESTIONS_CONFIG 
 } from '../firebase';
-import { extrairEstilo, aplicarEstilo, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems, getEfeitoStyle, CORES_TEXTO_LINHAS, ALINHAMENTOS_TEXTO, FUNDOS_CAPTION } from '../utils/estilos';
+import { continuaNaMesmaPagina, extrairEstilo, aplicarEstilo, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems, getEfeitoStyle, CORES_TEXTO_LINHAS, ALINHAMENTOS_TEXTO, FUNDOS_CAPTION } from '../utils/estilos';
 import ImportadorIA from './ImportadorIA';
 import IconeEspera, { ICONES_ESPERA } from './IconeEspera';
+import EscalaVisual, { ESTILOS_ESCALA } from './EscalaVisual';
 import EstiloLinhasTitulo from './EstiloLinhasTitulo';
 import { PRESETS_PESQUISAS } from '../utils/presets';
 
@@ -3210,6 +3211,29 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         </div>
 
                         {telaAlvo.tipo === 'slider' && (
+                          <div className="space-y-2">
+                            <span className="text-[11px] font-black text-amber-300 block">Estilo da escala</span>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                              {ESTILOS_ESCALA.map((es) => {
+                                const sel = (telaAlvo.estiloEscala || 'slider') === es.id;
+                                return (
+                                  <button
+                                    key={es.id}
+                                    type="button"
+                                    onClick={() => handleUpdateTelaProp(extraIndex, 'estiloEscala', es.id)}
+                                    className={`p-2 rounded-xl border text-left transition ${sel ? 'bg-amber-500/10 border-amber-400' : 'bg-slate-950 border-slate-800 hover:border-slate-600'}`}
+                                  >
+                                    <div className="pointer-events-none h-[74px] overflow-hidden flex items-center">
+                                      <div className="w-full"><EscalaVisual tela={{ ...telaAlvo, estiloEscala: es.id }} escala={0.45} valor={String(Math.round(((telaAlvo.sliderMin ?? 0) + (telaAlvo.sliderMax ?? 10)) * 0.7))} onChange={() => {}} /></div>
+                                    </div>
+                                    <span className={`block text-[10px] font-bold mt-1 ${sel ? 'text-amber-200' : 'text-slate-400'}`}>{es.label}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                        {telaAlvo.tipo === 'slider' && (
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                             <div>
                               <label className="text-[10px] font-bold text-slate-400 block mb-1">Valor Mínimo</label>
@@ -4846,8 +4870,13 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
               {/* 3. TELAS EXTRAS */}
               {(config.telasExtras || []).map((telaExtra, extraIdx) => {
+                // Igual ao celular: telas que "continuam na mesma página" aparecem DENTRO do celular anterior
+                const listaTelas = config.telasExtras || [];
+                if (continuaNaMesmaPagina(listaTelas[extraIdx - 1], telaExtra)) return null;
+                const grupoPreview = [telaExtra];
+                for (let gi = extraIdx + 1; gi < listaTelas.length && continuaNaMesmaPagina(listaTelas[gi - 1], listaTelas[gi]); gi++) grupoPreview.push(listaTelas[gi]);
                 const tabKey = `extra_${extraIdx}`;
-                const isSelected = activeTab === tabKey;
+                const isSelected = grupoPreview.some((_, gi) => activeTab === `extra_${extraIdx + gi}`);
                 const numTela = extraIdx + 3;
                 const cardsAtivos = (telaExtra.opcoes || []).filter(o => o.ativo !== false);
 
@@ -4933,7 +4962,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                   placeholder={telaExtra.placeholder || 'Digite sua resposta aqui...'}
                                   className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white placeholder-slate-500 resize-none"
                                 />
-                                <div className="mt-auto w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
+                                <div className={`${grupoPreview.length > 1 ? "hidden" : ""} mt-auto w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow`}>
                                   {telaExtra.botaoTexto || 'Avançar'} →
                                 </div>
                               </div>
@@ -4944,7 +4973,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                   placeholder={telaExtra.placeholder || 'Digite sua resposta curta...'}
                                   className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white placeholder-slate-500"
                                 />
-                                <div className="mt-auto w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
+                                <div className={`${grupoPreview.length > 1 ? "hidden" : ""} mt-auto w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow`}>
                                   {telaExtra.botaoTexto || 'Avançar'} →
                                 </div>
                               </div>
@@ -4964,23 +4993,13 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                     ))}
                                   </div>
                                 )}
-                                <div className="text-2xl font-black text-amber-400">
-                                  {previewInteractiveVal[`extra_sl_${extraIdx}`] ?? Math.round(((telaExtra.sliderMin ?? 0) + (telaExtra.sliderMax ?? 10)) / 2)}{telaExtra.sliderUnidade || ''}
-                                </div>
-                                <input
-                                  type="range"
-                                  min={telaExtra.sliderMin ?? 0}
-                                  max={telaExtra.sliderMax ?? 10}
-                                  step={telaExtra.sliderStep ?? 1}
-                                  value={previewInteractiveVal[`extra_sl_${extraIdx}`] ?? Math.round(((telaExtra.sliderMin ?? 0) + (telaExtra.sliderMax ?? 10)) / 2)}
-                                  onChange={(e) => setPreviewInteractiveVal(p => ({ ...p, [`extra_sl_${extraIdx}`]: e.target.value }))}
-                                  className="w-full h-2 bg-slate-800 rounded-lg accent-amber-400 cursor-pointer"
+                                <EscalaVisual
+                                  tela={telaExtra}
+                                  escala={0.68}
+                                  valor={previewInteractiveVal[`extra_sl_${extraIdx}`] ?? ''}
+                                  onChange={(v) => setPreviewInteractiveVal(p => ({ ...p, [`extra_sl_${extraIdx}`]: v }))}
                                 />
-                                <div className="flex justify-between text-[10px] font-mono text-slate-400">
-                                  <span>{telaExtra.sliderMin ?? 0}</span>
-                                  <span>{telaExtra.sliderMax ?? 10}</span>
-                                </div>
-                                <div className="mt-auto w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
+                                <div className={`${grupoPreview.length > 1 ? "hidden" : ""} mt-auto w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow`}>
                                   {telaExtra.botaoTexto || 'Avançar'} →
                                 </div>
                               </div>
@@ -5001,7 +5020,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                     );
                                   })}
                                 </div>
-                                <div className="mt-auto w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
+                                <div className={`${grupoPreview.length > 1 ? "hidden" : ""} mt-auto w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow`}>
                                   {telaExtra.botaoTexto || 'Avançar'} →
                                 </div>
                               </div>
@@ -5011,7 +5030,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                   type="date"
                                   className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white"
                                 />
-                                <div className="mt-auto w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
+                                <div className={`${grupoPreview.length > 1 ? "hidden" : ""} mt-auto w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow`}>
                                   {telaExtra.botaoTexto || 'Avançar'} →
                                 </div>
                               </div>
@@ -5021,7 +5040,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                   type="time"
                                   className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white"
                                 />
-                                <div className="mt-auto w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
+                                <div className={`${grupoPreview.length > 1 ? "hidden" : ""} mt-auto w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow`}>
                                   {telaExtra.botaoTexto || 'Avançar'} →
                                 </div>
                               </div>
@@ -5033,7 +5052,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                     <option key={opt.id} value={opt.titulo}>{opt.titulo}</option>
                                   ))}
                                 </select>
-                                <div className="mt-auto w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
+                                <div className={`${grupoPreview.length > 1 ? "hidden" : ""} mt-auto w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow`}>
                                   {telaExtra.botaoTexto || 'Avançar'} →
                                 </div>
                               </div>
@@ -5109,7 +5128,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                     </div>
                                   );
                                 })}
-                                <div className="mt-auto w-full py-1.5 rounded-xl bg-amber-400 text-slate-950 font-black text-[11px] text-center shadow mt-1">
+                                <div className={`${grupoPreview.length > 1 ? "hidden" : ""} mt-auto w-full py-1.5 rounded-xl bg-amber-400 text-slate-950 font-black text-[11px] text-center shadow mt-1`}>
                                   {telaExtra.botaoTexto || 'Avançar'} →
                                 </div>
                               </div>
@@ -5157,7 +5176,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                     </label>
                                   );
                                 })}
-                                <div className="mt-auto w-full py-1.5 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow mt-1">
+                                <div className={`${grupoPreview.length > 1 ? "hidden" : ""} mt-auto w-full py-1.5 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow mt-1`}>
                                   {telaExtra.botaoTexto || 'Avançar'} →
                                 </div>
                               </div>
@@ -5346,6 +5365,44 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                               <span className="w-6 h-6 rounded-xl bg-emerald-950/80 text-emerald-300 font-black text-xs flex items-center justify-center">
                                 1
                               </span>
+                              {grupoPreview.length > 1 && (
+                                <>
+                                  {grupoPreview.slice(1).map((m, mi) => (
+                                    <div
+                                      key={m.id || mi}
+                                      onClick={(e) => { e.stopPropagation(); setActiveTab(`extra_${extraIdx + mi + 1}`); }}
+                                      className={`mt-2 pt-2 border-t border-slate-800/60 space-y-1.5 rounded-lg ${activeTab === `extra_${extraIdx + mi + 1}` ? 'ring-1 ring-amber-400/70' : ''}`}
+                                    >
+                                      <h3 style={{ fontSize: `${(m.titulo1Tamanho || 18) * 0.68}px` }} className={`${pesoFonte(m.tituloBold)} leading-tight ${getAlinhamentoClass(estiloLinhas(m).tituloAl)} ${getCorTextoLinhaClass(m.titulo1Cor, 'text-white')}`}>
+                                        {[m.titulo1 || m.titulo, m.titulo2, m.titulo3].filter(Boolean).join(' ')}
+                                      </h3>
+                                      {m.subtitulo && (
+                                        <p style={{ fontSize: `${(m.subtituloTamanho || 12) * 0.75}px` }} className={`leading-snug ${getAlinhamentoClass(estiloLinhas(m).subAl)} ${m.subBold ? 'font-bold' : ''} ${getCorTextoLinhaClass(m.subtituloCor, 'text-slate-300')}`}>{m.subtitulo}</p>
+                                      )}
+                                      {m.tipo === 'slider' ? (
+                                        <EscalaVisual tela={m} escala={0.68} valor={previewInteractiveVal[`extra_sl_${extraIdx + mi + 1}`] ?? ''} onChange={(v) => setPreviewInteractiveVal((p) => ({ ...p, [`extra_sl_${extraIdx + mi + 1}`]: v }))} />
+                                      ) : ['texto', 'texto_curto', 'data', 'hora'].includes(m.tipo) ? (
+                                        <div className={`w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 text-[10px] text-slate-500 ${m.tipo === 'texto' ? 'h-16 py-2' : 'py-2'}`}>
+                                          {m.tipo === 'data' ? 'dd/mm/aaaa' : m.tipo === 'hora' ? '--:--' : (m.placeholder || 'Digite sua resposta...')}
+                                        </div>
+                                      ) : (
+                                        <div className="space-y-1">
+                                          {(m.opcoes || []).filter((o) => o.ativo !== false).slice(0, 6).map((o) => (
+                                            <div key={o.id} className="px-2 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-[10px] text-slate-200 truncate">{o.titulo}</div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                  <div className="h-2" />
+                                  <div className="sticky bottom-0 -mx-2.5 px-2.5 pt-2 pb-1 bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent">
+                                    <div className="w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
+                                      {telaExtra.botaoTexto || 'Avançar'} →
+                                    </div>
+                                    <p className="text-[8px] text-center text-slate-500 mt-1">↕ role para responder as {grupoPreview.length} perguntas desta página</p>
+                                  </div>
+                                </>
+                              )}
                             </div>
 
                             <div className="flex items-center my-1">

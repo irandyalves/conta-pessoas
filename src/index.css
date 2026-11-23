@@ -63,3 +63,6 @@
 @keyframes ieBalancar { 0%,100%{transform:rotate(0)} 20%{transform:rotate(14deg)} 40%{transform:rotate(-12deg)} 60%{transform:rotate(7deg)} 80%{transform:rotate(-4deg)} }
 .ie-brilho { transform-origin: 50% 50%; animation: ieBrilho 1.8s ease-in-out infinite; }
 @keyframes ieBrilho { 0%,100%{transform:scale(.7);opacity:.5} 50%{transform:scale(1.05);opacity:1} }
+
+/* Escala: número/carinha entrando com efeito suave */
+@keyframes esNum { 0%{transform:scale(.6);opacity:.2} 60%{transform:scale(1.12);opacity:1} 100%{transform:scale(1)} }

@@ -181,3 +181,13 @@ export function aplicarEstilo(destino, estilo, ehP1) {
   });
   return out;
 }
+
+// Páginas com várias perguntas: texto longo seguido de texto longo fica na mesma página por padrão;
+// os outros tipos de campo só quando marcado "Continuar na mesma página".
+export const TIPOS_CAMPO = ['texto', 'texto_curto', 'data', 'hora', 'slider', 'rating', 'dropdown', 'radio', 'checkbox', 'grade'];
+export const continuaNaMesmaPagina = (anterior, atual) => {
+  if (!anterior || !atual || !TIPOS_CAMPO.includes(anterior.tipo) || !TIPOS_CAMPO.includes(atual.tipo)) return false;
+  if (atual.mesmaPagina === true) return true;
+  if (atual.mesmaPagina === false) return false;
+  return atual.tipo === 'texto' && anterior.tipo === 'texto';
+};
