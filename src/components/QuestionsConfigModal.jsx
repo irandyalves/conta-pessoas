@@ -52,7 +52,7 @@ import {
   DEFAULT_QUESTIONS_CONFIG 
 } from '../firebase';
 import { getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems, getEfeitoStyle, CORES_TEXTO_LINHAS, ALINHAMENTOS_TEXTO, FUNDOS_CAPTION } from '../utils/estilos';
-import { parseAnyFile, parseJsonOrText, parseGoogleFormsUrl, TEXTO_AVALIACAO_JMU_ENAJUM } from '../utils/formImporter';
+import ImportadorIA from './ImportadorIA';
 import { PRESETS_PESQUISAS } from '../utils/presets';
 
 export const TIPOS_PERGUNTA = [
@@ -331,10 +331,6 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
       document.body.style.userSelect = '';
     };
   }, [isDragging, splitPercent]);
-  const [importTexto, setImportTexto] = useState('');
-  const [googleFormsUrl, setGoogleFormsUrl] = useState('');
-  const [importando, setImportando] = useState(false);
-  const [previewImportado, setPreviewImportado] = useState(null);
   const [showTipoNovaTelaModal, setShowTipoNovaTelaModal] = useState(false);
 
   // Modal Padronizado de Avisos, Erros e Confirmações
@@ -679,63 +675,29 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
     setActiveTab('tela_1');
   };
 
-  // Importar arquivo (.docx / .doc / .csv / .txt / .json) com IA
-  const handleImportarArquivo = async (file) => {
-    try {
-      setImportando(true);
-      const imported = await parseAnyFile(file);
-      setPreviewImportado(imported);
-    } catch (err) {
-      mostrarFeedback('Erro ao Importar Arquivo', err?.message || String(err), 'erro');
-    } finally {
-      setImportando(false);
+  // Aplica as telas criadas pela IA: substitui tudo ou adiciona depois das telas atuais
+  const handleAplicarImportacao = (importado, modo = 'substituir') => {
+    if (modo === 'adicionar') {
+      setConfig((prev) => {
+        const novas = [...(importado.telasExtras || [])];
+        if ((importado.opcoesChegada || []).length > 0) {
+          novas.unshift({
+            id: `tela_ia_p1_${Date.now()}`,
+            tipo: 'cards',
+            titulo: importado.pergunta1Titulo,
+            titulo1: importado.pergunta1Titulo,
+            subtitulo: importado.pergunta1Subtitulo || '',
+            opcoes: importado.opcoesChegada
+          });
+        }
+        return { ...prev, telasExtras: [...(prev.telasExtras || []), ...novas] };
+      });
+    } else {
+      setConfig((prev) => ({ ...prev, ...importado }));
+      if (importado.capaTitulo1) setEventoTitulo(importado.capaTitulo1);
     }
-  };
-
-  // Importar pelo link direto do Google Forms com IA
-  const handleImportarGoogleFormsUrl = async () => {
-    if (!googleFormsUrl.trim()) {
-      mostrarFeedback('Link Vazio', 'Cole o link do Google Forms antes de clicar em Analisar Link.', 'aviso');
-      return;
-    }
-    try {
-      setImportando(true);
-      const imported = await parseGoogleFormsUrl(googleFormsUrl);
-      setPreviewImportado(imported);
-    } catch (err) {
-      mostrarFeedback('Aviso ao Ler Link do Google Forms', err?.message || String(err), 'aviso');
-    } finally {
-      setImportando(false);
-    }
-  };
-  // Importar texto colado do Forms ou Google Docs
-  const handleImportarTextoColado = () => {
-    if (!importTexto.trim()) {
-      mostrarFeedback('Campo em Branco', 'Por favor, cole o texto das perguntas ou formulário antes de prosseguir.', 'aviso');
-      return;
-    }
-    try {
-      const imported = parseJsonOrText(importTexto);
-      setPreviewImportado(imported);
-    } catch (err) {
-      mostrarFeedback('Erro ao Analisar Texto', err?.message || String(err), 'erro');
-    }
-  };
-
-  // Confirmar aplicação de formulário importado
-  const handleConfirmarImportacao = () => {
-    if (!previewImportado) return;
-    setConfig((prev) => ({
-      ...prev,
-      ...previewImportado
-    }));
-    if (previewImportado.importedFormTitle) {
-      setEventoTitulo(previewImportado.importedFormTitle);
-    }
-    setPreviewImportado(null);
-    setImportTexto('');
     setShowImportModal(false);
-    setActiveTab('tela_1');
+    setActiveTab('inicio');
   };
 
   const handleExcluirTela = (extraIndex) => {
@@ -943,7 +905,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               title="Carregar modelos mundiais prontos (NPS, Checkbox, Gavetas, Inscrição)"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Modelos Mundiais IA</span>
+              <span className="hidden sm:inline">Modelos prontos</span>
               <span className="sm:hidden">Modelos</span>
             </button>
 
@@ -955,8 +917,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               title="Importar com IA arquivos .pdf, .pptx, .ppt, .docx, .doc, .xlsx, .csv, .txt ou Google Forms"
             >
               <FileText className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Importar IA (.pdf / .pptx / .docx / .txt)</span>
-              <span className="sm:hidden">Importar IA</span>
+              <span className="hidden sm:inline">Criar com IA (arquivo)</span>
+              <span className="sm:hidden">IA</span>
             </button>
 
             {!inline && onClose && (
@@ -5896,192 +5858,15 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
           <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fade-in overflow-y-auto">
             <div className="bg-slate-900 border border-slate-700 rounded-3xl p-5 max-w-2xl w-full shadow-2xl space-y-4 my-auto max-h-[92vh] overflow-y-auto custom-scrollbar">
               <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center">
-                    <FileText className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-black text-white">Importador Inteligente IA Multi-Formato</h3>
-                    <p className="text-xs text-slate-400">Importe arquivos PDF, PowerPoint (.pptx/.ppt), Word (.docx/.doc), Excel (.xlsx/.csv) ou Texto</p>
-                  </div>
+                <div>
+                  <h3 className="text-base font-black text-white flex items-center gap-2"><Sparkles className="w-4 h-4 text-amber-400" /> Criar telas com IA</h3>
+                  <p className="text-xs text-slate-400">Envie um questionário, avaliação ou simulado e revise as telas antes de aplicar.</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setShowImportModal(false)}
-                  className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
-                >
+                <button type="button" onClick={() => setShowImportModal(false)} className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800">
                   <X className="w-5 h-5" />
                 </button>
               </div>
-
-              {/* Atalho 1-Clique: Carregar Avaliação Oficial do I Encontro Nacional JMU / ENAJUM */}
-              <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-emerald-500/15 to-sky-500/15 border border-amber-500/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <div className="space-y-0.5">
-                  <span className="text-xs font-black text-amber-300 flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Avaliação I Encontro Nacional Diretores de Secretaria JMU (ENAJUM)</span>
-                  </span>
-                  <p className="text-[11px] text-slate-300">
-                    15 telas estruturadas: Perfil (Instituição, Cargo, Nome), Grades 1 a 5 + NA (Conteúdo, Palestras, Metodologia, Organização), Escala 0-10 e Dissertativas.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const parsed = parseJsonOrText(TEXTO_AVALIACAO_JMU_ENAJUM);
-                    setPreviewImportado(parsed);
-                  }}
-                  className="px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs shrink-0 shadow active:scale-95 transition"
-                >
-                  ⚡ Carregar Avaliação JMU
-                </button>
-              </div>
-
-              {/* 1. Upload de Arquivo (.pdf, .pptx, .ppt, .docx, .doc, .xlsx, .csv, .txt, .json) */}
-              <div className="p-4 rounded-2xl bg-slate-950 border-2 border-dashed border-emerald-500/40 hover:border-emerald-400 transition text-center space-y-2">
-                <UploadCloud className="w-7 h-7 text-emerald-400 mx-auto" />
-                <div>
-                  <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 font-bold text-xs hover:bg-emerald-500/25 active:scale-95 transition">
-                    <FolderUp className="w-4 h-4" />
-                    <span>Selecionar Arquivo (.pdf, .pptx, .ppt, .docx, .doc, .xlsx, .csv, .txt)</span>
-                    <input
-                      type="file"
-                      accept=".pdf,.pptx,.ppt,.docx,.doc,.xlsx,.csv,.txt,.json"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleImportarArquivo(file);
-                      }}
-                      className="hidden"
-                    />
-                  </label>
-                </div>
-                <p className="text-[11px] text-slate-400">
-                  A IA lê automaticamente tabelas de avaliação (1 a 5 / NA), caixas ☐, opções com "Outro: ____" (cria gaveta), escalas 0 a 10 e perguntas abertas!
-                </p>
-              </div>
-
-              {/* 2. IMPORTAR PELO LINK DIRETO DO GOOGLE FORMS (IA) */}
-              <div className="p-3 rounded-2xl bg-slate-950 border border-sky-500/30 space-y-2">
-                <label className="text-xs font-black text-sky-300 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-sky-400" />
-                  <span>Ou Importar pelo Link do Google Forms:</span>
-                </label>
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <input
-                    type="url"
-                    value={googleFormsUrl}
-                    onChange={(e) => setGoogleFormsUrl(e.target.value)}
-                    placeholder="https://docs.google.com/forms/d/e/.../viewform ou https://forms.gle/..."
-                    className="flex-1 bg-slate-900 border border-slate-700 focus:border-sky-400 rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleImportarGoogleFormsUrl}
-                    disabled={importando || !googleFormsUrl.trim()}
-                    className="px-4 py-1.5 bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-400 hover:to-sky-500 text-slate-950 font-black text-xs rounded-xl shadow active:scale-95 transition disabled:opacity-40 shrink-0"
-                  >
-                    {importando ? 'Analisando...' : 'Analisar Link'}
-                  </button>
-                </div>
-              </div>
-
-              {/* 3. Ou Colar Texto */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-300 block">
-                  Ou cole o texto copiado do PDF / Word / PowerPoint / Forms aqui:
-                </label>
-                <textarea
-                  rows={4}
-                  value={importTexto}
-                  onChange={(e) => setImportTexto(e.target.value)}
-                  placeholder="Cole aqui todo o conteúdo do documento (incluindo títulos, opções com ☐, tabelas | Item | 1 | 2 | 3 | 4 | 5 | NA | e perguntas abertas)..."
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-emerald-400 rounded-xl p-3 text-xs text-white placeholder-slate-600 focus:outline-none transition resize-none font-mono"
-                />
-
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={handleImportarTextoColado}
-                    disabled={importando || !importTexto.trim()}
-                    className="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-300 font-bold text-xs rounded-xl border border-emerald-500/30 active:scale-95 transition disabled:opacity-40"
-                  >
-                    Analisar Texto Colado
-                  </button>
-                </div>
-              </div>
-
-              {/* Preview Estruturado da Importação */}
-              {previewImportado && (
-                <div className="p-4 rounded-2xl bg-emerald-950/40 border border-emerald-500/50 space-y-3 animate-fade-in text-left">
-                  <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-emerald-500/30">
-                    <div>
-                      <span className="text-xs font-black text-emerald-300 uppercase tracking-wide flex items-center gap-1.5">
-                        <Check className="w-4 h-4 text-emerald-400" />
-                        Estrutura Identificada pela IA com Sucesso!
-                      </span>
-                      {previewImportado.importedFormTitle && (
-                        <p className="text-[11px] text-amber-300 font-bold mt-0.5">
-                          Evento detectado: {previewImportado.importedFormTitle}
-                        </p>
-                      )}
-                    </div>
-                    <span className="text-[11px] bg-emerald-500/20 text-emerald-300 px-2.5 py-0.5 rounded-full font-black border border-emerald-500/40">
-                      {1 + (previewImportado.telasExtras || []).length} Telas Prontas
-                    </span>
-                  </div>
-
-                  <div className="max-h-56 overflow-y-auto space-y-1.5 pr-1 custom-scrollbar text-xs">
-                    <div className="p-2 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between gap-2">
-                      <div className="min-w-0">
-                        <span className="text-amber-400 font-black mr-1.5">Tela 1:</span>
-                        <span className="text-white font-bold">{previewImportado.pergunta1Titulo}</span>
-                      </div>
-                      <span className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/30">
-                        {previewImportado.opcoesChegada?.length || 0} opções
-                      </span>
-                    </div>
-
-                    {(previewImportado.telasExtras || []).map((t, i) => {
-                      const badgeLabel =
-                        t.tipo === 'grade' ? `📊 Grade (${t.opcoes?.length || 0} itens)` :
-                        t.tipo === 'slider' ? `🎚️ Escala ${t.sliderMin ?? 0} a ${t.sliderMax ?? 10}` :
-                        t.tipo === 'texto' ? '📝 Texto Dissertativo' :
-                        t.tipo === 'texto_curto' ? '🔤 Texto Curto' :
-                        `🃏 ${t.opcoes?.length || 0} opções`;
-                      return (
-                        <div key={i} className="p-2 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between gap-2">
-                          <div className="min-w-0">
-                            <span className="text-emerald-400 font-black mr-1.5">Tela {i + 2}:</span>
-                            <span className="text-slate-200 font-bold">{t.titulo}</span>
-                          </div>
-                          <span className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-lg bg-slate-900 text-emerald-300 border border-slate-700">
-                            {badgeLabel}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={handleConfirmarImportacao}
-                    className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-xs sm:text-sm rounded-xl shadow-lg active:scale-95 transition flex items-center justify-center gap-2"
-                  >
-                    <Check className="w-4 h-4" />
-                    <span>Aplicar Todas as {1 + (previewImportado.telasExtras || []).length} Telas Agora</span>
-                  </button>
-                </div>
-              )}
-
-              <div className="pt-2 border-t border-slate-800 text-right">
-                <button
-                  type="button"
-                  onClick={() => setShowImportModal(false)}
-                  className="px-4 py-1.5 text-xs text-slate-400 hover:text-white"
-                >
-                  Cancelar
-                </button>
-              </div>
+              <ImportadorIA permitirAdicionar onAplicar={handleAplicarImportacao} textoAplicar="Aplicar no evento" />
             </div>
           </div>
         )}

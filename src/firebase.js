@@ -487,6 +487,10 @@ if (currentConfig && currentConfig.apiKey && currentConfig.projectId) {
   }
 }
 
+export function getFirebaseApp() {
+  return app;
+}
+
 export function isFirebaseReady() {
   return db !== null;
 }
@@ -962,6 +966,7 @@ function normalizeQuestionsConfig(config) {
       ativo: op.ativo !== false,
       icone: op.icone || 'Tag',
       cor: op.cor || 'amber',
+      correta: Boolean(op.correta),
       temGaveta: Boolean(op.temGaveta),
       gaveta: normalizeGaveta(op)
     }));
@@ -1028,6 +1033,7 @@ function normalizeQuestionsConfig(config) {
           ativo: op.ativo !== false,
           icone: op.icone || 'Sparkles',
           cor: op.cor || 'emerald',
+          correta: Boolean(op.correta),
           temGaveta: Boolean(op.temGaveta),
           gaveta: normalizeGaveta(op)
         })) : []

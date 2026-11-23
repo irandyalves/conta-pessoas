@@ -73,6 +73,25 @@ export async function parseAnyFile(file) {
   return parseJsonOrText(rawText, file.name);
 }
 
+// Extrai SOMENTE o texto de qualquer arquivo suportado (usado pela IA)
+export async function extrairTextoDeArquivo(file) {
+  const name = (file?.name || '').toLowerCase();
+  const buf = () => file.arrayBuffer();
+  if (name.endsWith('.docx')) return extractTextFromDocxBuffer(await buf());
+  if (name.endsWith('.pptx')) return extractTextFromPptxBuffer(await buf());
+  if (name.endsWith('.pdf')) return extractTextFromPdfBuffer(await buf());
+  if (name.endsWith('.xlsx')) return extractTextFromXlsxBuffer(await buf());
+  if (name.endsWith('.doc') || name.endsWith('.ppt')) {
+    const b = await buf();
+    try {
+      const t = name.endsWith('.doc') ? await extractTextFromDocxBuffer(b) : await extractTextFromPptxBuffer(b);
+      if (t && t.trim().length > 20) return t;
+    } catch (e) {}
+    return extractReadableTextFromBinaryBuffer(b);
+  }
+  return file.text();
+}
+
 export async function parseDocxFile(file) {
   return parseAnyFile(file);
 }
@@ -829,7 +848,7 @@ function getDefaultOptionsForType(tipo) {
  * Analisa uma opção individual e detecta automaticamente Gavetas Condicionais
  * Inclui detecção automática de "Outro: _____________" ou "Qual? _____"
  */
-function parseOptionWithDrawerAI(cleanOption, extraGavetaHint = '') {
+export function parseOptionWithDrawerAI(cleanOption, extraGavetaHint = '') {
   let optionTitle = String(cleanOption || '').trim();
   let temGaveta = false;
   let gavetaTipo = 'texto_curto';
@@ -1339,7 +1358,7 @@ export function parseTextToQuestions(rawText, fileName = '') {
   });
 }
 
-function buildConfigFromParsedScreens(screens, meta = {}) {
+export function buildConfigFromParsedScreens(screens, meta = {}) {
   // A Tela 1 do celular só sabe mostrar CARDS. Se a primeira pergunta importada for de
   // outro tipo (grade, texto, slider...), ela vira uma tela extra e a Tela 1 fica só como capa.
   const primeiraECards = !screens[0]?.tipo || screens[0].tipo === 'cards';
@@ -1412,99 +1431,3 @@ function normalizeImportedConfig(data) {
   };
 }
 
-/**
- * Texto oficial da Avaliação do I Encontro Nacional dos Diretores de Secretaria da JMU (ENAJUM)
- * Pronta para uso imediato ou teste de importação IA
- */
-export const TEXTO_AVALIACAO_JMU_ENAJUM = `AVALIAÇÃO DO I ENCONTRO NACIONAL DOS DIRETORES DE SECRETARIA DA JUSTIÇA MILITAR DA UNIÃO
-Competências, Inovação, Gestão e Eficiência Processual na JMU
-Sua participação é importante para o aperfeiçoamento dos cursos e eventos promovidos pela ENAJUM. Responda às questões considerando sua experiência no Encontro. As respostas serão utilizadas para avaliar a atividade e orientar o planejamento de futuras ações educacionais.
-1. Perfil do participante (opcional)
-Instituição ou órgão de vínculo:
-☐  Justiça Militar da União
-☐  Justiça Militar Estadual
-☐  Justiça Federal
-☐  Justiça Estadual
-☐  Ministério Público / Ministério Público Militar
-☐  Forças Armadas
-☐  Defensoria Pública
-☐  Advocacia
-☐  Outro: __________________________
-Cargo ou função:
-☐  Magistrado(a)
-☐  Membro do Ministério Público
-☐  Servidor(a) do Poder Judiciário
-☐  Oficial das Forças Armadas
-☐  Praça das Forças Armadas
-☐  Defensor(a) público(a)
-☐  Advogado(a)
-☐  Outro: __________________________
-Nome: __________________________________________________________________________________________________
-2. Conteúdo programático
-Avalie a relevância de cada eixo temático para sua atuação profissional. 
-Escala: 1 = Nada relevante; 2 = Pouco relevante; 3 = Moderadamente relevante; 4 = Relevante; 5 = Muito relevante; NA = Não se aplica / Não sei avaliar.
-| Item   | 1   | 2   | 3   | 4   | 5   | NA   |
-| 24/11 — Inovação e Tecnologia Judiciária   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
-| 24/11 — Gestão Processual e Cartorária   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
-| 24/11 — Direito Administrativo    | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
-| 24/11 — Liderança e Gestão de Conflitos    | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
-| 25/11 — Segurança Cibernética e Integridade de Dados   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
-| 25/11 — Direito e Jurisdição   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
-| 25/11 — Atuação e Desenvolvimento do Diretor de Secretaria   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
-| 25/11 — Boas Práticas de Gestão Processual   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
-3. Palestras, mesas-redondas e oficina
-Considerando o conjunto das atividades, avalie os seguintes aspectos.
-| Item   | 1   | 2   | 3   | 4   | 5   | NA   |
-| Clareza e organização das exposições   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
-| Domínio do conteúdo pelos(as) formadores(as)   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
-| Atualidade e profundidade dos conteúdos   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
-| Relevância dos temas para a prática profissional   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
-| Articulação entre fundamentos e situações práticas   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
-| Adequação do tempo destinado às atividades   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
-| Qualidade da mediação e das respostas às perguntas   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
-Escala: 1 = Péssimo(a); 2 = Ruim; 3 = Regular; 4 = Bom/Boa; 5 = Ótimo(a); NA = Não foi possível avaliar.
-4. Metodologia e participação
-| Item   | 1   | 2   | 3   | 4   | 5   | NA   |
-| Adequação da metodologia aos objetivos do Encontro   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
-| Equilíbrio entre exposições e debates   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
-| Oportunidades de interação e esclarecimento de dúvidas   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
-Escala: 1 = Péssimo(a); 2 = Ruim; 3 = Regular; 4 = Bom/Boa; 5 = Ótimo(a); NA = Não foi possível avaliar.
-Como você avalia a carga horária total do Encontro?
-☐  Insuficiente
-☐  Adequada
-☐  Excessiva
-5. Organização e infraestrutura
-| Item   | 1   | 2   | 3   | 4   | 5   | NA   |
-| Organização geral e cumprimento da programação   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
-| Clareza e tempestividade das informações antes e durante o Encontro   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
-| Disponibilização de materiais e informações de apoio   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
-| Apoio prestado pela equipe organizadora   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
-| Estrutura física e conforto do ambiente   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
-| Qualidade dos recursos audiovisuais e projeção das apresentações   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
-| Condições de acessibilidade do local   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
-Escala: 1 = Péssimo(a); 2 = Ruim; 3 = Regular; 4 = Bom/Boa; 5 = Ótimo(a); NA = Não foi possível avaliar.
-Indique seu grau de concordância com as afirmações:
-| Item   | 1   | 2   | 3   | 4   | 5   | NA   |
-| O local e a cidade-sede foram adequados para a realização do evento.   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
-| A realização do Encontro e a hospedagem no mesmo local facilitaram minha participação.   | ☐   | ☐   | ☐   | ☐   | ☐   | ☐   |
-Escala: 1 = Discordo totalmente; 2 = Discordo parcialmente; 3 = Nem concordo nem discordo; 4 = Concordo parcialmente;
-5 = Concordo totalmente; NA = Não se aplica.
-6. Satisfação geral
-Em uma escala de 0 a 10, qual é o seu grau de satisfação geral com o Encontro?
-0 = Totalmente insatisfeito(a) | 10 = Totalmente satisfeito(a)
-| 0☐   | 1☐   | 2☐   | 3☐   | 4☐   | 5☐   | 6☐   | 7☐   | 8☐   | 9☐   | 10☐   |
-7. Contribuição para a atuação profissional
-Em que medida o Encontro ampliou sua compreensão sobre os desafios contemporâneos da Justiça Militar?
-☐ 1 = Nada  ☐ 2 = Pouco  ☐ 3 = Moderadamente  ☐ 4 = Bastante  ☐ 5 = Muito  ☐ Não sei avaliar
-Que conhecimentos, reflexão ou prática discutida no Encontro você pretende incorporar à sua atuação profissional? 
-___________________________________________________________________________________________________________
-___________________________________________________________________________________________________________
-8. Sugestões e comentários
-Quais temas, questões jurídicas ou desafios profissionais deveriam ser priorizados nos próximos Encontros de Diretores? ___________________________________________________________________________________________________________
-___________________________________________________________________________________________________________
-Quais aspectos do Encontro você considera que ocorreram de modo excelente?
-___________________________________________________________________________________________________________
-___________________________________________________________________________________________________________
-Quais oportunidades de melhoria você sugere para as próximas edições?
-___________________________________________________________________________________________________________
-___________________________________________________________________________________________________________`;
