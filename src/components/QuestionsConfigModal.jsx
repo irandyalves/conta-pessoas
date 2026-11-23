@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   X, 
   Save, 
@@ -318,6 +318,55 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
   // Modais de Modelos Prontos e Importação de Arquivos / Formulários
   const [showPresetsModal, setShowPresetsModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+
+  // Splitter / Linha Editável para redimensionar colunas (Configurações vs Celulares)
+  const [splitPercent, setSplitPercent] = useState(() => {
+    try {
+      const saved = localStorage.getItem('questions_modal_split');
+      return saved ? Math.min(78, Math.max(22, Number(saved))) : 50;
+    } catch {
+      return 50;
+    }
+  });
+  const [isDragging, setIsDragging] = useState(false);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!isDragging || !containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const relativeX = e.clientX - rect.left;
+      const newPercent = (relativeX / rect.width) * 100;
+      const clamped = Math.min(78, Math.max(22, newPercent));
+      setSplitPercent(clamped);
+    };
+
+    const handleMouseUp = () => {
+      if (isDragging) {
+        setIsDragging(false);
+        try {
+          localStorage.setItem('questions_modal_split', String(splitPercent));
+        } catch {}
+      }
+    };
+
+    if (isDragging) {
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    } else {
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [isDragging, splitPercent]);
   const [importTexto, setImportTexto] = useState('');
   const [googleFormsUrl, setGoogleFormsUrl] = useState('');
   const [importando, setImportando] = useState(false);
@@ -931,12 +980,15 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
         {/* ============================================================ */}
         {/* CORPO EM 2 COLUNAS: ESQUERDA (CONFIG) + DIREITA (CELULAR)    */}
         {/* ============================================================ */}
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 min-h-0 overflow-hidden divide-y lg:divide-y-0 lg:divide-x divide-slate-800">
+        <div ref={containerRef} className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden relative">
           
           {/* ========================================================== */}
           {/* COLUNA ESQUERDA: CONFIGURAÇÕES ORGANIZADAS POR ABAS        */}
           {/* ========================================================== */}
-          <div className="lg:col-span-6 flex flex-col min-h-0 bg-slate-900/50">
+          <div 
+            style={{ width: typeof window !== 'undefined' && window.innerWidth >= 1024 ? `${splitPercent}%` : '100%' }} 
+            className="flex flex-col min-h-0 bg-slate-900/50 shrink-0 border-b lg:border-b-0 border-slate-800"
+          >
             
             {/* BARRA DE ABAS: TELA INÍCIO, TELA 1, TELA 2 (ACOMP.), TELAS EXTRAS, TELA FIM + BOTÃO INSERIR NO FIM */}
             <div className="flex border-b border-slate-800 bg-slate-950/70 px-3 pt-2.5 shrink-0 gap-1.5 overflow-x-auto items-center custom-scrollbar">
@@ -3233,9 +3285,39 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
           </div>
 
           {/* ========================================================== */}
+          {/* LINHA RESIZER / SPLITTER EDITÁVEL COM BRILHO VERDE        */}
+          {/* ========================================================== */}
+          <div
+            onMouseDown={(e) => {
+              e.preventDefault();
+              setIsDragging(true);
+            }}
+            className="hidden lg:flex w-3.5 -mx-[7px] cursor-col-resize items-center justify-center z-30 group relative select-none shrink-0"
+            title="Arraste para redimensionar colunas (esquerda ou celulares)"
+          >
+            {/* Linha vertical que brilha em verde no hover ou durante o arrasto */}
+            <div className={`h-full transition-all duration-150 ${
+              isDragging
+                ? 'w-[3px] bg-emerald-400 shadow-[0_0_15px_#10b981,0_0_30px_#34d399]'
+                : 'w-[2px] bg-slate-800 group-hover:w-[3px] group-hover:bg-emerald-400 group-hover:shadow-[0_0_12px_#34d399,0_0_24px_#10b981]'
+            }`} />
+
+            {/* Pílula / Botão de pegada central com efeito verde */}
+            <div className={`absolute top-1/2 -translate-y-1/2 w-4 h-10 rounded-full border flex flex-col items-center justify-center gap-1 transition-all ${
+              isDragging
+                ? 'bg-emerald-500 border-emerald-300 shadow-[0_0_15px_#10b981] scale-110'
+                : 'bg-slate-900 border-slate-700 group-hover:border-emerald-400 group-hover:bg-emerald-950 group-hover:shadow-[0_0_12px_#34d399]'
+            }`}>
+              <div className={`w-1 h-1 rounded-full transition-colors ${isDragging ? 'bg-black' : 'bg-slate-400 group-hover:bg-emerald-300'}`} />
+              <div className={`w-1 h-1 rounded-full transition-colors ${isDragging ? 'bg-black' : 'bg-slate-400 group-hover:bg-emerald-300'}`} />
+              <div className={`w-1 h-1 rounded-full transition-colors ${isDragging ? 'bg-black' : 'bg-slate-400 group-hover:bg-emerald-300'}`} />
+            </div>
+          </div>
+
+          {/* ========================================================== */}
           {/* COLUNA DIREITA: PREVIEW DOS CELULARES (GRID 3 EM 3 COMPACTO) */}
           {/* ========================================================== */}
-          <div className="lg:col-span-6 bg-slate-950/90 flex flex-col min-h-0 p-2 sm:p-3 relative overflow-y-auto custom-scrollbar">
+          <div className="flex-1 min-w-0 bg-slate-950/90 flex flex-col min-h-0 p-2 sm:p-3 relative overflow-y-auto custom-scrollbar">
             
             {/* GRID DOS CELULARES: 3 POR LINHA FLUIDO E RESPONSIVO */}
             <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 pb-6 place-items-center mt-1">
