@@ -763,6 +763,9 @@ function normalizeQuestionsConfig(config) {
   merged.esperaLinha1Tamanho = Number(merged.esperaLinha1Tamanho) || baseEspera;
   merged.esperaLinha2Tamanho = Number(merged.esperaLinha2Tamanho) || baseEspera;
   merged.esperaLinha3Tamanho = Number(merged.esperaLinha3Tamanho) || baseEspera;
+  merged.esperaLinha1Cor = merged.esperaLinha1Cor || 'branco';
+  merged.esperaLinha2Cor = merged.esperaLinha2Cor || 'dourado';
+  merged.esperaLinha3Cor = merged.esperaLinha3Cor || 'verde';
   merged.esperaFonteTamanho = baseEspera;
 
   // Garantir tela final (agradecimento) com Titulo 1 e Titulo 2 para quebrar
@@ -795,15 +798,33 @@ function normalizeQuestionsConfig(config) {
   merged.isBlankEvent = isBlank;
   merged.capaTitulo1 = config.capaTitulo1 !== undefined ? config.capaTitulo1 : (config.importedFormTitle || '');
   merged.capaTitulo2 = config.capaTitulo2 !== undefined ? config.capaTitulo2 : (config.importedFormSubtitle || '');
+  merged.capaTitulo3 = config.capaTitulo3 || '';
   merged.capaTextoAbaixo = config.capaTextoAbaixo !== undefined ? config.capaTextoAbaixo : (config.importedIntroText || config.pergunta1TextoAbaixo || '');
-  merged.capaFonteTamanho = Number(config.capaFonteTamanho) || 16;
+  merged.capaFonteTamanho = Number(config.capaFonteTamanho) || 18;
+  merged.capaTitulo1Tamanho = Number(config.capaTitulo1Tamanho) || merged.capaFonteTamanho || 18;
+  merged.capaTitulo2Tamanho = Number(config.capaTitulo2Tamanho) || 16;
+  merged.capaTitulo3Tamanho = Number(config.capaTitulo3Tamanho) || 15;
+  merged.capaTextoAbaixoTamanho = Number(config.capaTextoAbaixoTamanho) || 14;
+  merged.capaTitulo1Cor = config.capaTitulo1Cor || 'branco';
+  merged.capaTitulo2Cor = config.capaTitulo2Cor || 'dourado';
+  merged.capaTitulo3Cor = config.capaTitulo3Cor || 'verde';
+  merged.capaTextoAbaixoCor = config.capaTextoAbaixoCor || 'cinza';
+
   merged.pergunta1Titulo = config.pergunta1Titulo !== undefined ? config.pergunta1Titulo : (isBlank ? '' : 'Como você chegou aqui?');
   merged.pergunta1Titulo2 = config.pergunta1Titulo2 || '';
+  merged.pergunta1Titulo3 = config.pergunta1Titulo3 || '';
   merged.pergunta1Subtitulo = config.pergunta1Subtitulo || '';
   merged.pergunta1TextoAbaixo = config.pergunta1TextoAbaixo || '';
   merged.pergunta1BotaoComecarTexto = config.pergunta1BotaoComecarTexto || 'COMEÇAR';
   merged.mostrarBotaoComecar = config.mostrarBotaoComecar !== undefined ? Boolean(config.mostrarBotaoComecar) : true;
-  merged.pergunta1FonteTamanho = Number(merged.pergunta1FonteTamanho) || 18;
+  merged.pergunta1FonteTamanho = Number(config.pergunta1FonteTamanho) || 18;
+  merged.pergunta1Titulo2Tamanho = Number(config.pergunta1Titulo2Tamanho) || 16;
+  merged.pergunta1Titulo3Tamanho = Number(config.pergunta1Titulo3Tamanho) || 15;
+  merged.pergunta1TextoAbaixoTamanho = Number(config.pergunta1TextoAbaixoTamanho) || 14;
+  merged.pergunta1TituloCor = config.pergunta1TituloCor || 'branco';
+  merged.pergunta1Titulo2Cor = config.pergunta1Titulo2Cor || 'dourado';
+  merged.pergunta1Titulo3Cor = config.pergunta1Titulo3Cor || 'verde';
+  merged.pergunta1TextoAbaixoCor = config.pergunta1TextoAbaixoCor || 'cinza';
 
   merged.mostrarTelaAcompanhantes = config.mostrarTelaAcompanhantes !== undefined ? Boolean(config.mostrarTelaAcompanhantes) : !isBlank;
   merged.pergunta2Titulo = config.pergunta2Titulo !== undefined ? config.pergunta2Titulo : (isBlank ? '' : 'Você está só ou tem mais pessoas te acompanhando?');

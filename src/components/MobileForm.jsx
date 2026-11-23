@@ -790,23 +790,47 @@ export default function MobileForm() {
             <div className="absolute inset-0 rounded-full bg-amber-400/15 blur-xl pointer-events-none animate-pulse" />
           </div>
 
-          {/* TEXTO EM EXATAS 3 LINHAS COM FONTES INDIVIDUAIS */}
+          {/* TEXTO EM EXATAS 3 LINHAS COM FONTES E CORES INDIVIDUAIS */}
           <div className="space-y-1 text-center">
             <h2 
               style={{ fontSize: `${questionsConfig.esperaLinha1Tamanho || questionsConfig.esperaFonteTamanho || 26}px` }}
-              className="font-black text-white tracking-wide uppercase leading-tight drop-shadow-sm"
+              className={`font-black tracking-wide uppercase leading-tight drop-shadow-sm ${
+                questionsConfig.esperaLinha1Cor === 'dourado' ? 'text-amber-300' :
+                questionsConfig.esperaLinha1Cor === 'verde' ? 'text-emerald-400' :
+                questionsConfig.esperaLinha1Cor === 'azul' ? 'text-sky-300' :
+                questionsConfig.esperaLinha1Cor === 'cinza' ? 'text-slate-300' :
+                questionsConfig.esperaLinha1Cor === 'laranja' ? 'text-orange-300' :
+                questionsConfig.esperaLinha1Cor === 'roxo' ? 'text-purple-300' :
+                questionsConfig.esperaLinha1Cor === 'rosa' ? 'text-rose-300' : 'text-white'
+              }`}
             >
               {questionsConfig.esperaLinha1 || 'DENTRO DE INSTANTES'}
             </h2>
             <h2 
               style={{ fontSize: `${questionsConfig.esperaLinha2Tamanho || questionsConfig.esperaFonteTamanho || 26}px` }}
-              className="font-black bg-gradient-to-r from-amber-300 via-orange-300 to-amber-400 bg-clip-text text-transparent tracking-wide uppercase leading-tight drop-shadow-sm"
+              className={`font-black tracking-wide uppercase leading-tight drop-shadow-sm ${
+                questionsConfig.esperaLinha2Cor === 'branco' ? 'text-white' :
+                questionsConfig.esperaLinha2Cor === 'verde' ? 'text-emerald-400' :
+                questionsConfig.esperaLinha2Cor === 'azul' ? 'text-sky-300' :
+                questionsConfig.esperaLinha2Cor === 'cinza' ? 'text-slate-300' :
+                questionsConfig.esperaLinha2Cor === 'laranja' ? 'text-orange-300' :
+                questionsConfig.esperaLinha2Cor === 'roxo' ? 'text-purple-300' :
+                questionsConfig.esperaLinha2Cor === 'rosa' ? 'text-rose-300' : 'text-amber-300'
+              }`}
             >
               {questionsConfig.esperaLinha2 || 'ESTARÁ LIBERADO'}
             </h2>
             <h2 
               style={{ fontSize: `${questionsConfig.esperaLinha3Tamanho || questionsConfig.esperaFonteTamanho || 26}px` }}
-              className="font-black text-emerald-400 tracking-wide uppercase leading-tight drop-shadow-sm"
+              className={`font-black tracking-wide uppercase leading-tight drop-shadow-sm ${
+                questionsConfig.esperaLinha3Cor === 'branco' ? 'text-white' :
+                questionsConfig.esperaLinha3Cor === 'dourado' ? 'text-amber-300' :
+                questionsConfig.esperaLinha3Cor === 'azul' ? 'text-sky-300' :
+                questionsConfig.esperaLinha3Cor === 'cinza' ? 'text-slate-300' :
+                questionsConfig.esperaLinha3Cor === 'laranja' ? 'text-orange-300' :
+                questionsConfig.esperaLinha3Cor === 'roxo' ? 'text-purple-300' :
+                questionsConfig.esperaLinha3Cor === 'rosa' ? 'text-rose-300' : 'text-emerald-400'
+              }`}
             >
               {questionsConfig.esperaLinha3 || 'PARA RESPONDER.'}
             </h2>
@@ -840,18 +864,72 @@ export default function MobileForm() {
         {/* TÍTULO DA CAPA (QUANDO BOTÃO COMEÇAR ESTÁ ATIVO E AINDA NÃO CLICOU) */}
         {currentStep === 'p1' && questionsConfig.mostrarBotaoComecar !== false && !jaClicouComecar && (
           <div className="mt-2 pt-2 space-y-3">
-            {(questionsConfig.capaTitulo1 || questionsConfig.capaTitulo2) && (
-              <h2 
-                style={{ fontSize: `${questionsConfig.capaFonteTamanho || 20}px` }}
-                className="font-black text-white leading-tight space-y-1"
-              >
-                {questionsConfig.capaTitulo1 && <span className="block">{questionsConfig.capaTitulo1}</span>}
-                {questionsConfig.capaTitulo2 && <span className="block text-amber-300">{questionsConfig.capaTitulo2}</span>}
-              </h2>
+            {(questionsConfig.capaTitulo1 || questionsConfig.capaTitulo2 || questionsConfig.capaTitulo3) && (
+              <div className="space-y-1">
+                {questionsConfig.capaTitulo1 && (
+                  <h2
+                    style={{ fontSize: `${questionsConfig.capaTitulo1Tamanho || questionsConfig.capaFonteTamanho || 20}px` }}
+                    className={`font-black leading-tight ${
+                      questionsConfig.capaTitulo1Cor === 'dourado' ? 'text-amber-300' :
+                      questionsConfig.capaTitulo1Cor === 'verde' ? 'text-emerald-400' :
+                      questionsConfig.capaTitulo1Cor === 'azul' ? 'text-sky-300' :
+                      questionsConfig.capaTitulo1Cor === 'cinza' ? 'text-slate-300' :
+                      questionsConfig.capaTitulo1Cor === 'laranja' ? 'text-orange-300' :
+                      questionsConfig.capaTitulo1Cor === 'roxo' ? 'text-purple-300' :
+                      questionsConfig.capaTitulo1Cor === 'rosa' ? 'text-rose-300' : 'text-white'
+                    }`}
+                  >
+                    {questionsConfig.capaTitulo1}
+                  </h2>
+                )}
+                {questionsConfig.capaTitulo2 && (
+                  <h2
+                    style={{ fontSize: `${questionsConfig.capaTitulo2Tamanho || 18}px` }}
+                    className={`font-black leading-tight ${
+                      questionsConfig.capaTitulo2Cor === 'branco' ? 'text-white' :
+                      questionsConfig.capaTitulo2Cor === 'verde' ? 'text-emerald-400' :
+                      questionsConfig.capaTitulo2Cor === 'azul' ? 'text-sky-300' :
+                      questionsConfig.capaTitulo2Cor === 'cinza' ? 'text-slate-300' :
+                      questionsConfig.capaTitulo2Cor === 'laranja' ? 'text-orange-300' :
+                      questionsConfig.capaTitulo2Cor === 'roxo' ? 'text-purple-300' :
+                      questionsConfig.capaTitulo2Cor === 'rosa' ? 'text-rose-300' : 'text-amber-300'
+                    }`}
+                  >
+                    {questionsConfig.capaTitulo2}
+                  </h2>
+                )}
+                {questionsConfig.capaTitulo3 && (
+                  <h2
+                    style={{ fontSize: `${questionsConfig.capaTitulo3Tamanho || 16}px` }}
+                    className={`font-black leading-tight ${
+                      questionsConfig.capaTitulo3Cor === 'branco' ? 'text-white' :
+                      questionsConfig.capaTitulo3Cor === 'dourado' ? 'text-amber-300' :
+                      questionsConfig.capaTitulo3Cor === 'azul' ? 'text-sky-300' :
+                      questionsConfig.capaTitulo3Cor === 'cinza' ? 'text-slate-300' :
+                      questionsConfig.capaTitulo3Cor === 'laranja' ? 'text-orange-300' :
+                      questionsConfig.capaTitulo3Cor === 'roxo' ? 'text-purple-300' :
+                      questionsConfig.capaTitulo3Cor === 'rosa' ? 'text-rose-300' : 'text-emerald-400'
+                    }`}
+                  >
+                    {questionsConfig.capaTitulo3}
+                  </h2>
+                )}
+              </div>
             )}
-            {questionsConfig.capaTextoAbaixo && (
-              <div className="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 text-xs sm:text-sm text-slate-200 leading-relaxed whitespace-pre-line shadow-inner">
-                {questionsConfig.capaTextoAbaixo}
+            {(questionsConfig.capaTextoAbaixo || questionsConfig.pergunta1TextoAbaixo) && (
+              <div
+                style={{ fontSize: `${questionsConfig.capaTextoAbaixoTamanho || 14}px` }}
+                className={`p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 leading-relaxed whitespace-pre-line shadow-inner ${
+                  questionsConfig.capaTextoAbaixoCor === 'branco' ? 'text-white' :
+                  questionsConfig.capaTextoAbaixoCor === 'dourado' ? 'text-amber-300' :
+                  questionsConfig.capaTextoAbaixoCor === 'verde' ? 'text-emerald-400' :
+                  questionsConfig.capaTextoAbaixoCor === 'azul' ? 'text-sky-300' :
+                  questionsConfig.capaTextoAbaixoCor === 'laranja' ? 'text-orange-300' :
+                  questionsConfig.capaTextoAbaixoCor === 'roxo' ? 'text-purple-300' :
+                  questionsConfig.capaTextoAbaixoCor === 'rosa' ? 'text-rose-300' : 'text-slate-200'
+                }`}
+              >
+                {questionsConfig.capaTextoAbaixo || questionsConfig.pergunta1TextoAbaixo}
               </div>
             )}
           </div>
@@ -860,20 +938,57 @@ export default function MobileForm() {
         {/* TÍTULO DA ETAPA ATUAL: TELA 1 */}
         {currentStep === 'p1' && (questionsConfig.mostrarBotaoComecar === false || jaClicouComecar) && (
           <div className="mt-2 pt-2 space-y-2">
-            {(questionsConfig.pergunta1Titulo || questionsConfig.pergunta1Titulo2) && (
-              <h2 
-                style={{ fontSize: `${questionsConfig.pergunta1FonteTamanho || 22}px` }}
-                className="font-black text-white leading-tight"
-              >
-                {questionsConfig.pergunta1Titulo2 ? (
-                  <>
-                    <span className="block">{questionsConfig.pergunta1Titulo}</span>
-                    <span className="block">{questionsConfig.pergunta1Titulo2}</span>
-                  </>
-                ) : (
-                  questionsConfig.pergunta1Titulo
+            {(questionsConfig.pergunta1Titulo || questionsConfig.pergunta1Titulo2 || questionsConfig.pergunta1Titulo3) && (
+              <div className="space-y-1">
+                {questionsConfig.pergunta1Titulo && (
+                  <h2 
+                    style={{ fontSize: `${questionsConfig.pergunta1FonteTamanho || 22}px` }}
+                    className={`font-black leading-tight ${
+                      questionsConfig.pergunta1TituloCor === 'dourado' ? 'text-amber-300' :
+                      questionsConfig.pergunta1TituloCor === 'verde' ? 'text-emerald-400' :
+                      questionsConfig.pergunta1TituloCor === 'azul' ? 'text-sky-300' :
+                      questionsConfig.pergunta1TituloCor === 'cinza' ? 'text-slate-300' :
+                      questionsConfig.pergunta1TituloCor === 'laranja' ? 'text-orange-300' :
+                      questionsConfig.pergunta1TituloCor === 'roxo' ? 'text-purple-300' :
+                      questionsConfig.pergunta1TituloCor === 'rosa' ? 'text-rose-300' : 'text-white'
+                    }`}
+                  >
+                    {questionsConfig.pergunta1Titulo}
+                  </h2>
                 )}
-              </h2>
+                {questionsConfig.pergunta1Titulo2 && (
+                  <h2 
+                    style={{ fontSize: `${questionsConfig.pergunta1Titulo2Tamanho || 18}px` }}
+                    className={`font-black leading-tight ${
+                      questionsConfig.pergunta1Titulo2Cor === 'branco' ? 'text-white' :
+                      questionsConfig.pergunta1Titulo2Cor === 'verde' ? 'text-emerald-400' :
+                      questionsConfig.pergunta1Titulo2Cor === 'azul' ? 'text-sky-300' :
+                      questionsConfig.pergunta1Titulo2Cor === 'cinza' ? 'text-slate-300' :
+                      questionsConfig.pergunta1Titulo2Cor === 'laranja' ? 'text-orange-300' :
+                      questionsConfig.pergunta1Titulo2Cor === 'roxo' ? 'text-purple-300' :
+                      questionsConfig.pergunta1Titulo2Cor === 'rosa' ? 'text-rose-300' : 'text-amber-300'
+                    }`}
+                  >
+                    {questionsConfig.pergunta1Titulo2}
+                  </h2>
+                )}
+                {questionsConfig.pergunta1Titulo3 && (
+                  <h2 
+                    style={{ fontSize: `${questionsConfig.pergunta1Titulo3Tamanho || 16}px` }}
+                    className={`font-black leading-tight ${
+                      questionsConfig.pergunta1Titulo3Cor === 'branco' ? 'text-white' :
+                      questionsConfig.pergunta1Titulo3Cor === 'dourado' ? 'text-amber-300' :
+                      questionsConfig.pergunta1Titulo3Cor === 'azul' ? 'text-sky-300' :
+                      questionsConfig.pergunta1Titulo3Cor === 'cinza' ? 'text-slate-300' :
+                      questionsConfig.pergunta1Titulo3Cor === 'laranja' ? 'text-orange-300' :
+                      questionsConfig.pergunta1Titulo3Cor === 'roxo' ? 'text-purple-300' :
+                      questionsConfig.pergunta1Titulo3Cor === 'rosa' ? 'text-rose-300' : 'text-emerald-400'
+                    }`}
+                  >
+                    {questionsConfig.pergunta1Titulo3}
+                  </h2>
+                )}
+              </div>
             )}
             {questionsConfig.pergunta1Subtitulo && (
               <p className="text-xs sm:text-sm text-slate-400 mt-1">
@@ -882,7 +997,18 @@ export default function MobileForm() {
             )}
             {/* TEXTO DIGITADO ABAIXO DO TÍTULO NA TELA 1 */}
             {questionsConfig.pergunta1TextoAbaixo && (
-              <div className="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 text-xs sm:text-sm text-slate-200 leading-relaxed whitespace-pre-line shadow-inner">
+              <div
+                style={{ fontSize: `${questionsConfig.pergunta1TextoAbaixoTamanho || 14}px` }}
+                className={`p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 leading-relaxed whitespace-pre-line shadow-inner ${
+                  questionsConfig.pergunta1TextoAbaixoCor === 'branco' ? 'text-white' :
+                  questionsConfig.pergunta1TextoAbaixoCor === 'dourado' ? 'text-amber-300' :
+                  questionsConfig.pergunta1TextoAbaixoCor === 'verde' ? 'text-emerald-400' :
+                  questionsConfig.pergunta1TextoAbaixoCor === 'azul' ? 'text-sky-300' :
+                  questionsConfig.pergunta1TextoAbaixoCor === 'laranja' ? 'text-orange-300' :
+                  questionsConfig.pergunta1TextoAbaixoCor === 'roxo' ? 'text-purple-300' :
+                  questionsConfig.pergunta1TextoAbaixoCor === 'rosa' ? 'text-rose-300' : 'text-slate-200'
+                }`}
+              >
                 {questionsConfig.pergunta1TextoAbaixo}
               </div>
             )}

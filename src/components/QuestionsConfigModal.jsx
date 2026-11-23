@@ -77,6 +77,21 @@ export const TIPOS_GAVETA = [
   { id: 'hora', label: '⏰ Seletor de Hora' }
 ];
 
+export const CORES_TEXTO_LINHAS = [
+  { id: 'branco', label: 'Branco', bg: 'bg-white', textClass: 'text-white' },
+  { id: 'dourado', label: 'Dourado', bg: 'bg-amber-400', textClass: 'text-amber-300' },
+  { id: 'verde', label: 'Verde', bg: 'bg-emerald-400', textClass: 'text-emerald-400' },
+  { id: 'azul', label: 'Azul', bg: 'bg-sky-400', textClass: 'text-sky-300' },
+  { id: 'cinza', label: 'Cinza Claro', bg: 'bg-slate-300', textClass: 'text-slate-300' },
+  { id: 'laranja', label: 'Laranja', bg: 'bg-orange-400', textClass: 'text-orange-300' },
+  { id: 'roxo', label: 'Roxo', bg: 'bg-purple-400', textClass: 'text-purple-300' },
+  { id: 'rosa', label: 'Rosa', bg: 'bg-rose-400', textClass: 'text-rose-300' }
+];
+
+export const getCorTextoLinhaClass = (corId, defaultClass = 'text-white') => {
+  return CORES_TEXTO_LINHAS.find(c => c.id === corId)?.textClass || defaultClass;
+};
+
 // Lista de ícones amigáveis
 const ICONES = [
   { id: 'Tag', label: 'Faixa', icon: Tag },
@@ -1135,133 +1150,159 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
             <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 text-left custom-scrollbar">
               
               {/* ====================================================== */}
-              {/* ABA: TELA INÍCIO (ESPERA / START DO ADMIN)             */}
+              {/* ABA: BOAS-VINDAS (ESPERA / START DO ADMIN)             */}
               {/* ====================================================== */}
               {activeTab === 'inicio' && (
-                <div className="space-y-5">
-                  <div className="space-y-3">
-                    <div>
-                      <span className="text-xs font-black text-amber-400 uppercase tracking-wide block">
-                        Textos das 3 Linhas de Espera
+                <div className="space-y-4">
+                  <div>
+                    <span className="text-xs font-black text-amber-400 uppercase tracking-wide block">
+                      Textos das 3 Linhas de Espera (Boas-vindas)
+                    </span>
+                    <p className="text-[11px] text-slate-400 mt-0.5">
+                      Exibido no celular enquanto a pesquisa não for iniciada ou estiver pausada pelo admin.
+                    </p>
+                  </div>
+
+                  {/* Título 1 / 1ª Linha + Slide + Bolinhas de Cores */}
+                  <div className="space-y-1.5 pb-3 border-b border-slate-800/70">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-bold text-slate-300">Título 1 (1ª Linha)</label>
+                      <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[10px]">
+                        {config.esperaLinha1Tamanho || config.esperaFonteTamanho || 26}px
                       </span>
-                      <p className="text-[11px] text-slate-400 mt-0.5">
-                        Exibido no celular enquanto a pesquisa não for iniciada ou estiver pausada pelo admin.
-                      </p>
                     </div>
-
-                    <div className="space-y-2">
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-400 block mb-0.5">1ª Linha (Texto Branco)</label>
+                    <input
+                      type="text"
+                      value={config.esperaLinha1 ?? 'DENTRO DE INSTANTES'}
+                      onChange={(e) => setConfig({ ...config, esperaLinha1: e.target.value })}
+                      placeholder="DENTRO DE INSTANTES"
+                      className={`w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-3 py-1.5 text-xs font-bold ${getCorTextoLinhaClass(config.esperaLinha1Cor, 'text-white')}`}
+                    />
+                    <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                      <div className="flex-1 flex items-center gap-2 min-w-[140px]">
+                        <span className="text-[9px] text-slate-500 font-mono">14px</span>
                         <input
-                          type="text"
-                          value={config.esperaLinha1 ?? 'DENTRO DE INSTANTES'}
-                          onChange={(e) => setConfig({ ...config, esperaLinha1: e.target.value })}
-                          placeholder="DENTRO DE INSTANTES"
-                          className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-3 py-1.5 text-xs font-bold text-white"
+                          type="range"
+                          min="14"
+                          max="42"
+                          step="1"
+                          value={config.esperaLinha1Tamanho || config.esperaFonteTamanho || 26}
+                          onChange={(e) => setConfig({ ...config, esperaLinha1Tamanho: Number(e.target.value) })}
+                          className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
                         />
+                        <span className="text-[9px] text-slate-500 font-mono">42px</span>
                       </div>
-
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-400 block mb-0.5">2ª Linha (Texto Dourado)</label>
-                        <input
-                          type="text"
-                          value={config.esperaLinha2 ?? 'ESTARÁ LIBERADO'}
-                          onChange={(e) => setConfig({ ...config, esperaLinha2: e.target.value })}
-                          placeholder="ESTARÁ LIBERADO"
-                          className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-3 py-1.5 text-xs font-bold text-amber-300"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-400 block mb-0.5">3ª Linha (Texto Verde)</label>
-                        <input
-                          type="text"
-                          value={config.esperaLinha3 ?? 'PARA RESPONDER.'}
-                          onChange={(e) => setConfig({ ...config, esperaLinha3: e.target.value })}
-                          placeholder="PARA RESPONDER."
-                          className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-3 py-1.5 text-xs font-bold text-emerald-400"
-                        />
+                      <div className="flex items-center gap-1.5">
+                        {CORES_TEXTO_LINHAS.map((c) => {
+                          const isSel = (config.esperaLinha1Cor || 'branco') === c.id;
+                          return (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => setConfig({ ...config, esperaLinha1Cor: c.id })}
+                              title={`Cor: ${c.label}`}
+                              className={`w-4 h-4 rounded-full transition-all ${c.bg} ${
+                                isSel ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110' : 'opacity-55 hover:opacity-100'
+                              }`}
+                            />
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
 
-                  {/* VÁRIOS SLIDERS: TAMANHO DE CADA UMA DAS 3 LINHAS DE ESPERA */}
-                  <div className="pt-4 border-t border-slate-800 space-y-3">
-                    <div className="flex items-center gap-2 pb-1 border-b border-slate-800/80">
-                      <SlidersHorizontal className="w-4 h-4 text-amber-400" />
-                      <span className="text-xs font-black text-white uppercase tracking-wider">
-                        Tamanho das Fontes da Tela de Espera
+                  {/* Título 2 / 2ª Linha + Slide + Bolinhas de Cores */}
+                  <div className="space-y-1.5 pb-3 border-b border-slate-800/70">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-bold text-slate-300">Título 2 (2ª Linha)</label>
+                      <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[10px]">
+                        {config.esperaLinha2Tamanho || config.esperaFonteTamanho || 26}px
                       </span>
                     </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      {/* 1ª Linha */}
-                      <div className="space-y-1.5 p-1">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="font-bold text-slate-300">1ª Linha (Branco)</span>
-                          <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
-                            {config.esperaLinha1Tamanho || config.esperaFonteTamanho || 26}px
-                          </span>
-                        </div>
+                    <input
+                      type="text"
+                      value={config.esperaLinha2 ?? 'ESTARÁ LIBERADO'}
+                      onChange={(e) => setConfig({ ...config, esperaLinha2: e.target.value })}
+                      placeholder="ESTARÁ LIBERADO"
+                      className={`w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-3 py-1.5 text-xs font-bold ${getCorTextoLinhaClass(config.esperaLinha2Cor, 'text-amber-300')}`}
+                    />
+                    <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                      <div className="flex-1 flex items-center gap-2 min-w-[140px]">
+                        <span className="text-[9px] text-slate-500 font-mono">14px</span>
                         <input
                           type="range"
-                          min="16"
-                          max="40"
-                          step="1"
-                          value={config.esperaLinha1Tamanho || config.esperaFonteTamanho || 26}
-                          onChange={(e) => setConfig({ ...config, esperaLinha1Tamanho: Number(e.target.value) })}
-                          className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                        />
-                        <div className="flex justify-between text-[9px] text-slate-500 font-mono">
-                          <span>16px</span>
-                          <span>40px</span>
-                        </div>
-                      </div>
-
-                      {/* 2ª Linha */}
-                      <div className="space-y-1.5 p-1">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="font-bold text-amber-300">2ª Linha (Dourado)</span>
-                          <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
-                            {config.esperaLinha2Tamanho || config.esperaFonteTamanho || 26}px
-                          </span>
-                        </div>
-                        <input
-                          type="range"
-                          min="16"
-                          max="40"
+                          min="14"
+                          max="42"
                           step="1"
                           value={config.esperaLinha2Tamanho || config.esperaFonteTamanho || 26}
                           onChange={(e) => setConfig({ ...config, esperaLinha2Tamanho: Number(e.target.value) })}
-                          className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                          className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
                         />
-                        <div className="flex justify-between text-[9px] text-slate-500 font-mono">
-                          <span>16px</span>
-                          <span>40px</span>
-                        </div>
+                        <span className="text-[9px] text-slate-500 font-mono">42px</span>
                       </div>
+                      <div className="flex items-center gap-1.5">
+                        {CORES_TEXTO_LINHAS.map((c) => {
+                          const isSel = (config.esperaLinha2Cor || 'dourado') === c.id;
+                          return (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => setConfig({ ...config, esperaLinha2Cor: c.id })}
+                              title={`Cor: ${c.label}`}
+                              className={`w-4 h-4 rounded-full transition-all ${c.bg} ${
+                                isSel ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110' : 'opacity-55 hover:opacity-100'
+                              }`}
+                            />
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
 
-                      {/* 3ª Linha */}
-                      <div className="space-y-1.5 p-1">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="font-bold text-emerald-400">3ª Linha (Verde)</span>
-                          <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
-                            {config.esperaLinha3Tamanho || config.esperaFonteTamanho || 26}px
-                          </span>
-                        </div>
+                  {/* Título 3 / 3ª Linha + Slide + Bolinhas de Cores */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-bold text-slate-300">Título 3 (3ª Linha)</label>
+                      <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[10px]">
+                        {config.esperaLinha3Tamanho || config.esperaFonteTamanho || 26}px
+                      </span>
+                    </div>
+                    <input
+                      type="text"
+                      value={config.esperaLinha3 ?? 'PARA RESPONDER.'}
+                      onChange={(e) => setConfig({ ...config, esperaLinha3: e.target.value })}
+                      placeholder="PARA RESPONDER."
+                      className={`w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-3 py-1.5 text-xs font-bold ${getCorTextoLinhaClass(config.esperaLinha3Cor, 'text-emerald-400')}`}
+                    />
+                    <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                      <div className="flex-1 flex items-center gap-2 min-w-[140px]">
+                        <span className="text-[9px] text-slate-500 font-mono">14px</span>
                         <input
                           type="range"
-                          min="16"
-                          max="40"
+                          min="14"
+                          max="42"
                           step="1"
                           value={config.esperaLinha3Tamanho || config.esperaFonteTamanho || 26}
                           onChange={(e) => setConfig({ ...config, esperaLinha3Tamanho: Number(e.target.value) })}
-                          className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                          className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
                         />
-                        <div className="flex justify-between text-[9px] text-slate-500 font-mono">
-                          <span>16px</span>
-                          <span>40px</span>
-                        </div>
+                        <span className="text-[9px] text-slate-500 font-mono">42px</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {CORES_TEXTO_LINHAS.map((c) => {
+                          const isSel = (config.esperaLinha3Cor || 'verde') === c.id;
+                          return (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => setConfig({ ...config, esperaLinha3Cor: c.id })}
+                              title={`Cor: ${c.label}`}
+                              className={`w-4 h-4 rounded-full transition-all ${c.bg} ${
+                                isSel ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110' : 'opacity-55 hover:opacity-100'
+                              }`}
+                            />
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
@@ -1272,57 +1313,214 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               {/* ABA: INÍCIO (CAPA DO EVENTO COM BOTÃO COMEÇAR)         */}
               {/* ====================================================== */}
               {activeTab === 'inicio_comecar' && (
-                <div className="space-y-4 animate-fade-in">
+                <div className="space-y-3.5 animate-fade-in">
                   <div className="flex items-center justify-between pb-1 border-b border-slate-800">
                     <div>
                       <span className="text-xs font-black text-amber-400 uppercase tracking-wide block">
-                        Configuração da Tela de Início (Capa & Botão COMEÇAR)
+                        Configuração da Tela de Início (Títulos 1, 2, 3, Texto Abaixo & Botão COMEÇAR)
                       </span>
                       <p className="text-[11px] text-slate-400 mt-0.5">
-                        Aparece no celular do participante assim que o evento for liberado.
+                        Abaixo de cada campo há um slide de tamanho e bolinhas de cores.
                       </p>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Título 1 (1ª Linha da Capa)</label>
-                      <input
-                        type="text"
-                        value={config.capaTitulo1 ?? ''}
-                        onChange={(e) => setConfig({ ...config, capaTitulo1: e.target.value })}
-                        placeholder="Título principal da capa..."
-                        className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-white shadow-inner"
-                      />
+                  {/* TÍTULO 1 + SLIDE + BOLINHAS DE CORES */}
+                  <div className="space-y-1.5 pb-2.5 border-b border-slate-800/70">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-bold text-slate-200">Título 1 (1ª Linha)</label>
+                      <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[10px]">
+                        {config.capaTitulo1Tamanho || config.capaFonteTamanho || 18}px
+                      </span>
                     </div>
-                    <div>
-                      <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Título 2 (2ª Linha - Opcional)</label>
-                      <input
-                        type="text"
-                        value={config.capaTitulo2 ?? ''}
-                        onChange={(e) => setConfig({ ...config, capaTitulo2: e.target.value })}
-                        placeholder="Subtítulo ou complemento (opcional)..."
-                        className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-amber-300 shadow-inner"
-                      />
+                    <input
+                      type="text"
+                      value={config.capaTitulo1 ?? ''}
+                      onChange={(e) => setConfig({ ...config, capaTitulo1: e.target.value })}
+                      placeholder="Digite o Título 1..."
+                      className={`w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold shadow-inner ${getCorTextoLinhaClass(config.capaTitulo1Cor, 'text-white')}`}
+                    />
+                    <div className="flex flex-wrap items-center justify-between gap-3 pt-0.5">
+                      <div className="flex-1 flex items-center gap-2 min-w-[140px]">
+                        <span className="text-[9px] text-slate-500 font-mono">12px</span>
+                        <input
+                          type="range"
+                          min="12"
+                          max="36"
+                          step="1"
+                          value={config.capaTitulo1Tamanho || config.capaFonteTamanho || 18}
+                          onChange={(e) => setConfig({ ...config, capaTitulo1Tamanho: Number(e.target.value), capaFonteTamanho: Number(e.target.value) })}
+                          className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                        />
+                        <span className="text-[9px] text-slate-500 font-mono">36px</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {CORES_TEXTO_LINHAS.map((c) => {
+                          const isSel = (config.capaTitulo1Cor || 'branco') === c.id;
+                          return (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => setConfig({ ...config, capaTitulo1Cor: c.id })}
+                              title={`Cor: ${c.label}`}
+                              className={`w-4 h-4 rounded-full transition-all ${c.bg} ${
+                                isSel ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110' : 'opacity-55 hover:opacity-100'
+                              }`}
+                            />
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Texto Abaixo do Título */}
-                  <div>
-                    <label className="text-[10px] font-bold text-emerald-300 block mb-1">
-                      Texto Abaixo do Título (Instrução ou Explicação na Capa)
-                    </label>
+                  {/* TÍTULO 2 + SLIDE + BOLINHAS DE CORES */}
+                  <div className="space-y-1.5 pb-2.5 border-b border-slate-800/70">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-bold text-slate-200">Título 2 (2ª Linha)</label>
+                      <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[10px]">
+                        {config.capaTitulo2Tamanho || 16}px
+                      </span>
+                    </div>
+                    <input
+                      type="text"
+                      value={config.capaTitulo2 ?? ''}
+                      onChange={(e) => setConfig({ ...config, capaTitulo2: e.target.value })}
+                      placeholder="Digite o Título 2 (opcional)..."
+                      className={`w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold shadow-inner ${getCorTextoLinhaClass(config.capaTitulo2Cor, 'text-amber-300')}`}
+                    />
+                    <div className="flex flex-wrap items-center justify-between gap-3 pt-0.5">
+                      <div className="flex-1 flex items-center gap-2 min-w-[140px]">
+                        <span className="text-[9px] text-slate-500 font-mono">12px</span>
+                        <input
+                          type="range"
+                          min="12"
+                          max="36"
+                          step="1"
+                          value={config.capaTitulo2Tamanho || 16}
+                          onChange={(e) => setConfig({ ...config, capaTitulo2Tamanho: Number(e.target.value) })}
+                          className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                        />
+                        <span className="text-[9px] text-slate-500 font-mono">36px</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {CORES_TEXTO_LINHAS.map((c) => {
+                          const isSel = (config.capaTitulo2Cor || 'dourado') === c.id;
+                          return (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => setConfig({ ...config, capaTitulo2Cor: c.id })}
+                              title={`Cor: ${c.label}`}
+                              className={`w-4 h-4 rounded-full transition-all ${c.bg} ${
+                                isSel ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110' : 'opacity-55 hover:opacity-100'
+                              }`}
+                            />
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* TÍTULO 3 + SLIDE + BOLINHAS DE CORES */}
+                  <div className="space-y-1.5 pb-2.5 border-b border-slate-800/70">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-bold text-slate-200">Título 3 (3ª Linha)</label>
+                      <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[10px]">
+                        {config.capaTitulo3Tamanho || 15}px
+                      </span>
+                    </div>
+                    <input
+                      type="text"
+                      value={config.capaTitulo3 ?? ''}
+                      onChange={(e) => setConfig({ ...config, capaTitulo3: e.target.value })}
+                      placeholder="Digite o Título 3 (opcional)..."
+                      className={`w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold shadow-inner ${getCorTextoLinhaClass(config.capaTitulo3Cor, 'text-emerald-400')}`}
+                    />
+                    <div className="flex flex-wrap items-center justify-between gap-3 pt-0.5">
+                      <div className="flex-1 flex items-center gap-2 min-w-[140px]">
+                        <span className="text-[9px] text-slate-500 font-mono">12px</span>
+                        <input
+                          type="range"
+                          min="12"
+                          max="36"
+                          step="1"
+                          value={config.capaTitulo3Tamanho || 15}
+                          onChange={(e) => setConfig({ ...config, capaTitulo3Tamanho: Number(e.target.value) })}
+                          className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                        />
+                        <span className="text-[9px] text-slate-500 font-mono">36px</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {CORES_TEXTO_LINHAS.map((c) => {
+                          const isSel = (config.capaTitulo3Cor || 'verde') === c.id;
+                          return (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => setConfig({ ...config, capaTitulo3Cor: c.id })}
+                              title={`Cor: ${c.label}`}
+                              className={`w-4 h-4 rounded-full transition-all ${c.bg} ${
+                                isSel ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110' : 'opacity-55 hover:opacity-100'
+                              }`}
+                            />
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* TEXTO ABAIXO + SLIDE + BOLINHAS DE CORES */}
+                  <div className="space-y-1.5 pb-2.5 border-b border-slate-800/70">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-bold text-emerald-300">
+                        Texto Abaixo (Instrução / Explicação)
+                      </label>
+                      <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[10px]">
+                        {config.capaTextoAbaixoTamanho || 14}px
+                      </span>
+                    </div>
                     <textarea
                       rows={3}
-                      value={config.capaTextoAbaixo ?? ''}
+                      value={(config.capaTextoAbaixo !== undefined && config.capaTextoAbaixo !== '') ? config.capaTextoAbaixo : (config.pergunta1TextoAbaixo ?? '')}
                       onChange={(e) => setConfig({ ...config, capaTextoAbaixo: e.target.value })}
-                      placeholder="Digite aqui um texto explicativo para aparecer na Tela de Início..."
-                      className="w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-lg px-3 py-2 text-xs text-slate-200 placeholder-slate-500 shadow-inner resize-none"
+                      placeholder="Digite aqui o texto explicativo abaixo dos títulos..."
+                      className={`w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-lg px-3 py-2 text-xs placeholder-slate-500 shadow-inner resize-none ${getCorTextoLinhaClass(config.capaTextoAbaixoCor, 'text-slate-200')}`}
                     />
+                    <div className="flex flex-wrap items-center justify-between gap-3 pt-0.5">
+                      <div className="flex-1 flex items-center gap-2 min-w-[140px]">
+                        <span className="text-[9px] text-slate-500 font-mono">10px</span>
+                        <input
+                          type="range"
+                          min="10"
+                          max="28"
+                          step="1"
+                          value={config.capaTextoAbaixoTamanho || 14}
+                          onChange={(e) => setConfig({ ...config, capaTextoAbaixoTamanho: Number(e.target.value) })}
+                          className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                        />
+                        <span className="text-[9px] text-slate-500 font-mono">28px</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {CORES_TEXTO_LINHAS.map((c) => {
+                          const isSel = (config.capaTextoAbaixoCor || 'cinza') === c.id;
+                          return (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => setConfig({ ...config, capaTextoAbaixoCor: c.id })}
+                              title={`Cor: ${c.label}`}
+                              className={`w-4 h-4 rounded-full transition-all ${c.bg} ${
+                                isSel ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110' : 'opacity-55 hover:opacity-100'
+                              }`}
+                            />
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
 
                   {/* Botão COMEÇAR */}
-                  <div className="pt-3 border-t border-slate-800 space-y-2">
+                  <div className="space-y-2">
                     <label className="flex items-center gap-2 cursor-pointer select-none">
                       <input
                         type="checkbox"
@@ -1334,7 +1532,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         className="w-4 h-4 rounded accent-amber-400"
                       />
                       <span className="text-xs font-black text-amber-300">
-                        ✨ Habilitar Botão "{config.pergunta1BotaoComecarTexto || 'COMEÇAR'}" (Se marcado, o participante toca nele para ir às perguntas)
+                        ✨ Habilitar Botão "{config.pergunta1BotaoComecarTexto || 'COMEÇAR'}"
                       </span>
                     </label>
 
@@ -1352,30 +1550,6 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         />
                       </div>
                     )}
-                  </div>
-
-                  {/* Slider de Tamanho da Fonte do Título (EMBAIXO) */}
-                  <div className="pt-3 border-t border-slate-800/80">
-                    <div className="flex items-center justify-between text-xs mb-1">
-                      <span className="font-bold text-slate-300">Tamanho da Fonte do Título</span>
-                      <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
-                        {config.capaFonteTamanho || 16}px
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min="12"
-                      max="30"
-                      step="1"
-                      value={config.capaFonteTamanho || 16}
-                      onChange={(e) => setConfig({ ...config, capaFonteTamanho: Number(e.target.value) })}
-                      className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                    />
-                    <div className="flex justify-between text-[9px] text-slate-500 font-mono">
-                      <span>12px (Menor)</span>
-                      <span>16px (Padrão)</span>
-                      <span>30px (Maior)</span>
-                    </div>
                   </div>
                 </div>
               )}
@@ -1427,73 +1601,228 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     </button>
                   </div>
 
-                  {/* 1. TÍTULO 1, TÍTULO 2, TEXTO ABAIXO DO TÍTULO E BOTÃO COMEÇAR COM LUZES */}
+                  {/* 1. TÍTULO 1, TÍTULO 2, TÍTULO 3, TEXTO ABAIXO DO TÍTULO E BOTÃO COMEÇAR */}
                   {subTabTela1 === 'pergunta' && (
-                    <div className="space-y-4 animate-fade-in">
-                      <div className="flex items-center justify-between">
+                    <div className="space-y-3.5 animate-fade-in">
+                      <div className="flex items-center justify-between pb-1 border-b border-slate-800">
                         <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wide">
-                          Título, Texto de Introdução & Botão COMEÇAR (Tela 1)
+                          Títulos 1, 2, 3 & Texto Abaixo (Tela 1)
                         </span>
                         <span className="text-[10px] text-slate-400">
-                          Aparece ao vivo no celular à direita
+                          Abaixo de cada campo há um slide e bolinhas de cores
                         </span>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <div>
-                          <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Título 1 (1ª Linha)</label>
-                          <input
-                            type="text"
-                            value={config.pergunta1Titulo ?? ''}
-                            onChange={(e) => setConfig({ ...config, pergunta1Titulo: e.target.value })}
-                            placeholder="Digite o título da Tela 1..."
-                            className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-white shadow-inner"
-                          />
+                      {/* TÍTULO 1 (TELA 1) */}
+                      <div className="space-y-1.5 pb-2.5 border-b border-slate-800/70">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[11px] font-bold text-slate-200">Título 1 (1ª Linha)</label>
+                          <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[10px]">
+                            {config.pergunta1FonteTamanho || 18}px
+                          </span>
                         </div>
-                        <div>
-                          <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Título 2 (2ª Linha - Opcional)</label>
-                          <input
-                            type="text"
-                            value={config.pergunta1Titulo2 ?? ''}
-                            onChange={(e) => setConfig({ ...config, pergunta1Titulo2: e.target.value })}
-                            placeholder="Complemento do título (opcional)..."
-                            className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-amber-300 shadow-inner"
-                          />
+                        <input
+                          type="text"
+                          value={config.pergunta1Titulo ?? ''}
+                          onChange={(e) => setConfig({ ...config, pergunta1Titulo: e.target.value })}
+                          placeholder="Digite o Título 1 da Tela 1..."
+                          className={`w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold shadow-inner ${getCorTextoLinhaClass(config.pergunta1TituloCor, 'text-white')}`}
+                        />
+                        <div className="flex flex-wrap items-center justify-between gap-3 pt-0.5">
+                          <div className="flex-1 flex items-center gap-2 min-w-[140px]">
+                            <span className="text-[9px] text-slate-500 font-mono">12px</span>
+                            <input
+                              type="range"
+                              min="12"
+                              max="36"
+                              step="1"
+                              value={config.pergunta1FonteTamanho || 18}
+                              onChange={(e) => setConfig({ ...config, pergunta1FonteTamanho: Number(e.target.value) })}
+                              className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                            />
+                            <span className="text-[9px] text-slate-500 font-mono">36px</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            {CORES_TEXTO_LINHAS.map((c) => {
+                              const isSel = (config.pergunta1TituloCor || 'branco') === c.id;
+                              return (
+                                <button
+                                  key={c.id}
+                                  type="button"
+                                  onClick={() => setConfig({ ...config, pergunta1TituloCor: c.id })}
+                                  title={`Cor: ${c.label}`}
+                                  className={`w-4 h-4 rounded-full transition-all ${c.bg} ${
+                                    isSel ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110' : 'opacity-55 hover:opacity-100'
+                                  }`}
+                                />
+                              );
+                            })}
+                          </div>
                         </div>
                       </div>
 
-                      {/* TEXTO PARA SER INSERIDO ABAIXO DO TÍTULO NA TELA 1 */}
-                      <div>
-                        <label className="text-[10px] font-bold text-emerald-300 block mb-1">
-                          Texto Abaixo do Título (Boas-vindas, Instrução ou Explicação na Tela 1)
-                        </label>
+                      {/* TÍTULO 2 (TELA 1) */}
+                      <div className="space-y-1.5 pb-2.5 border-b border-slate-800/70">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[11px] font-bold text-slate-200">Título 2 (2ª Linha)</label>
+                          <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[10px]">
+                            {config.pergunta1Titulo2Tamanho || 16}px
+                          </span>
+                        </div>
+                        <input
+                          type="text"
+                          value={config.pergunta1Titulo2 ?? ''}
+                          onChange={(e) => setConfig({ ...config, pergunta1Titulo2: e.target.value })}
+                          placeholder="Digite o Título 2 (opcional)..."
+                          className={`w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold shadow-inner ${getCorTextoLinhaClass(config.pergunta1Titulo2Cor, 'text-amber-300')}`}
+                        />
+                        <div className="flex flex-wrap items-center justify-between gap-3 pt-0.5">
+                          <div className="flex-1 flex items-center gap-2 min-w-[140px]">
+                            <span className="text-[9px] text-slate-500 font-mono">12px</span>
+                            <input
+                              type="range"
+                              min="12"
+                              max="36"
+                              step="1"
+                              value={config.pergunta1Titulo2Tamanho || 16}
+                              onChange={(e) => setConfig({ ...config, pergunta1Titulo2Tamanho: Number(e.target.value) })}
+                              className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                            />
+                            <span className="text-[9px] text-slate-500 font-mono">36px</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            {CORES_TEXTO_LINHAS.map((c) => {
+                              const isSel = (config.pergunta1Titulo2Cor || 'dourado') === c.id;
+                              return (
+                                <button
+                                  key={c.id}
+                                  type="button"
+                                  onClick={() => setConfig({ ...config, pergunta1Titulo2Cor: c.id })}
+                                  title={`Cor: ${c.label}`}
+                                  className={`w-4 h-4 rounded-full transition-all ${c.bg} ${
+                                    isSel ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110' : 'opacity-55 hover:opacity-100'
+                                  }`}
+                                />
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* TÍTULO 3 (TELA 1) */}
+                      <div className="space-y-1.5 pb-2.5 border-b border-slate-800/70">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[11px] font-bold text-slate-200">Título 3 (3ª Linha)</label>
+                          <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[10px]">
+                            {config.pergunta1Titulo3Tamanho || 15}px
+                          </span>
+                        </div>
+                        <input
+                          type="text"
+                          value={config.pergunta1Titulo3 ?? ''}
+                          onChange={(e) => setConfig({ ...config, pergunta1Titulo3: e.target.value })}
+                          placeholder="Digite o Título 3 (opcional)..."
+                          className={`w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold shadow-inner ${getCorTextoLinhaClass(config.pergunta1Titulo3Cor, 'text-emerald-400')}`}
+                        />
+                        <div className="flex flex-wrap items-center justify-between gap-3 pt-0.5">
+                          <div className="flex-1 flex items-center gap-2 min-w-[140px]">
+                            <span className="text-[9px] text-slate-500 font-mono">12px</span>
+                            <input
+                              type="range"
+                              min="12"
+                              max="36"
+                              step="1"
+                              value={config.pergunta1Titulo3Tamanho || 15}
+                              onChange={(e) => setConfig({ ...config, pergunta1Titulo3Tamanho: Number(e.target.value) })}
+                              className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                            />
+                            <span className="text-[9px] text-slate-500 font-mono">36px</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            {CORES_TEXTO_LINHAS.map((c) => {
+                              const isSel = (config.pergunta1Titulo3Cor || 'verde') === c.id;
+                              return (
+                                <button
+                                  key={c.id}
+                                  type="button"
+                                  onClick={() => setConfig({ ...config, pergunta1Titulo3Cor: c.id })}
+                                  title={`Cor: ${c.label}`}
+                                  className={`w-4 h-4 rounded-full transition-all ${c.bg} ${
+                                    isSel ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110' : 'opacity-55 hover:opacity-100'
+                                  }`}
+                                />
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* TEXTO ABAIXO (TELA 1) */}
+                      <div className="space-y-1.5 pb-2.5 border-b border-slate-800/70">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[11px] font-bold text-emerald-300">
+                            Texto Abaixo (Instrução ou Explicação na Tela 1)
+                          </label>
+                          <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[10px]">
+                            {config.pergunta1TextoAbaixoTamanho || 14}px
+                          </span>
+                        </div>
                         <textarea
                           rows={2}
                           value={config.pergunta1TextoAbaixo ?? ''}
                           onChange={(e) => setConfig({ ...config, pergunta1TextoAbaixo: e.target.value })}
                           placeholder="Digite aqui um texto para aparecer logo abaixo do título na Tela 1..."
-                          className="w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-lg px-3 py-2 text-xs text-slate-200 placeholder-slate-500 shadow-inner resize-none"
+                          className={`w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-lg px-3 py-2 text-xs placeholder-slate-500 shadow-inner resize-none ${getCorTextoLinhaClass(config.pergunta1TextoAbaixoCor, 'text-slate-200')}`}
                         />
+                        <div className="flex flex-wrap items-center justify-between gap-3 pt-0.5">
+                          <div className="flex-1 flex items-center gap-2 min-w-[140px]">
+                            <span className="text-[9px] text-slate-500 font-mono">10px</span>
+                            <input
+                              type="range"
+                              min="10"
+                              max="28"
+                              step="1"
+                              value={config.pergunta1TextoAbaixoTamanho || 14}
+                              onChange={(e) => setConfig({ ...config, pergunta1TextoAbaixoTamanho: Number(e.target.value) })}
+                              className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                            />
+                            <span className="text-[9px] text-slate-500 font-mono">28px</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            {CORES_TEXTO_LINHAS.map((c) => {
+                              const isSel = (config.pergunta1TextoAbaixoCor || 'cinza') === c.id;
+                              return (
+                                <button
+                                  key={c.id}
+                                  type="button"
+                                  onClick={() => setConfig({ ...config, pergunta1TextoAbaixoCor: c.id })}
+                                  title={`Cor: ${c.label}`}
+                                  className={`w-4 h-4 rounded-full transition-all ${c.bg} ${
+                                    isSel ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110' : 'opacity-55 hover:opacity-100'
+                                  }`}
+                                />
+                              );
+                            })}
+                          </div>
+                        </div>
                       </div>
 
-                      {/* BOTÃO COMEÇAR NO RODAPÉ COM EFEITO DE LUZES GIRANDO SUAVE */}
-                      <div className="pt-3 border-t border-slate-800 space-y-2">
-                        <div className="flex items-center justify-between gap-2">
-                          <label className="flex items-center gap-2 cursor-pointer select-none">
-                            <input
-                              type="checkbox"
-                              checked={config.mostrarBotaoComecar !== false}
-                              onChange={(e) => {
-                                setConfig({ ...config, mostrarBotaoComecar: e.target.checked });
-                                setPreviewInteractiveVal(p => ({ ...p, previewStarted: false }));
-                              }}
-                              className="w-4 h-4 rounded accent-amber-400"
-                            />
-                            <span className="text-xs font-black text-amber-300">
-                              ✨ Habilitar Botão "{config.pergunta1BotaoComecarTexto || 'COMEÇAR'}" (Se ativado, precisa clicar para iniciar; se desativado, começa direto nas perguntas)
-                            </span>
-                          </label>
-                        </div>
+                      {/* BOTÃO COMEÇAR */}
+                      <div className="space-y-2">
+                        <label className="flex items-center gap-2 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={config.mostrarBotaoComecar !== false}
+                            onChange={(e) => {
+                              setConfig({ ...config, mostrarBotaoComecar: e.target.checked });
+                              setPreviewInteractiveVal(p => ({ ...p, previewStarted: false }));
+                            }}
+                            className="w-4 h-4 rounded accent-amber-400"
+                          />
+                          <span className="text-xs font-black text-amber-300">
+                            ✨ Habilitar Botão "{config.pergunta1BotaoComecarTexto || 'COMEÇAR'}"
+                          </span>
+                        </label>
 
                         {config.mostrarBotaoComecar !== false && (
                           <div>
@@ -1509,25 +1838,6 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             />
                           </div>
                         )}
-                      </div>
-
-                      {/* Slider de Tamanho da Fonte da Pergunta 1 */}
-                      <div className="pt-3 border-t border-slate-800">
-                        <div className="flex items-center justify-between text-xs mb-1">
-                          <span className="font-bold text-slate-300">Tamanho da Fonte do Título</span>
-                          <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
-                            {config.pergunta1FonteTamanho || 18}px
-                          </span>
-                        </div>
-                        <input
-                          type="range"
-                          min="14"
-                          max="28"
-                          step="1"
-                          value={config.pergunta1FonteTamanho || 18}
-                          onChange={(e) => setConfig({ ...config, pergunta1FonteTamanho: Number(e.target.value) })}
-                          className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                        />
                       </div>
                     </div>
                   )}
@@ -3569,19 +3879,19 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                           <div className="space-y-1 text-center px-1">
                             <span 
                               style={{ fontSize: `${(config.esperaLinha1Tamanho || config.esperaFonteTamanho || 26) * 0.52}px` }}
-                              className="block font-black text-white tracking-wide uppercase leading-tight"
+                              className={`block font-black tracking-wide uppercase leading-tight ${getCorTextoLinhaClass(config.esperaLinha1Cor, 'text-white')}`}
                             >
                               {config.esperaLinha1 || 'DENTRO DE INSTANTES'}
                             </span>
                             <span 
                               style={{ fontSize: `${(config.esperaLinha2Tamanho || config.esperaFonteTamanho || 26) * 0.52}px` }}
-                              className="block font-black bg-gradient-to-r from-amber-300 to-amber-400 bg-clip-text text-transparent tracking-wide uppercase leading-tight"
+                              className={`block font-black tracking-wide uppercase leading-tight ${getCorTextoLinhaClass(config.esperaLinha2Cor, 'text-amber-300')}`}
                             >
                               {config.esperaLinha2 || 'ESTARÁ LIBERADO'}
                             </span>
                             <span 
                               style={{ fontSize: `${(config.esperaLinha3Tamanho || config.esperaFonteTamanho || 26) * 0.52}px` }}
-                              className="block font-black text-emerald-400 tracking-wide uppercase leading-tight"
+                              className={`block font-black tracking-wide uppercase leading-tight ${getCorTextoLinhaClass(config.esperaLinha3Cor, 'text-emerald-400')}`}
                             >
                               {config.esperaLinha3 || 'PARA RESPONDER.'}
                             </span>
@@ -3632,24 +3942,46 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
                       <div className="h-[374px] overflow-y-auto p-3 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between text-center select-none custom-scrollbar">
                         <div className="flex flex-col justify-between h-full space-y-2">
-                          <div className="shrink-0 space-y-2 pt-2">
-                            {(config.capaTitulo1 || config.capaTitulo2) ? (
-                              <h3 
-                                style={{ fontSize: `${(config.capaFonteTamanho || 16) * 0.72}px` }}
-                                className="font-black text-white leading-tight space-y-1"
-                              >
-                                {config.capaTitulo1 && <span className="block">{config.capaTitulo1}</span>}
-                                {config.capaTitulo2 && <span className="block text-amber-300">{config.capaTitulo2}</span>}
-                              </h3>
+                          <div className="shrink-0 space-y-1.5 pt-2">
+                            {(config.capaTitulo1 || config.capaTitulo2 || config.capaTitulo3) ? (
+                              <div className="space-y-1">
+                                {config.capaTitulo1 && (
+                                  <h3
+                                    style={{ fontSize: `${(config.capaTitulo1Tamanho || config.capaFonteTamanho || 18) * 0.72}px` }}
+                                    className={`font-black leading-tight ${getCorTextoLinhaClass(config.capaTitulo1Cor, 'text-white')}`}
+                                  >
+                                    {config.capaTitulo1}
+                                  </h3>
+                                )}
+                                {config.capaTitulo2 && (
+                                  <h3
+                                    style={{ fontSize: `${(config.capaTitulo2Tamanho || 16) * 0.72}px` }}
+                                    className={`font-black leading-tight ${getCorTextoLinhaClass(config.capaTitulo2Cor, 'text-amber-300')}`}
+                                  >
+                                    {config.capaTitulo2}
+                                  </h3>
+                                )}
+                                {config.capaTitulo3 && (
+                                  <h3
+                                    style={{ fontSize: `${(config.capaTitulo3Tamanho || 15) * 0.72}px` }}
+                                    className={`font-black leading-tight ${getCorTextoLinhaClass(config.capaTitulo3Cor, 'text-emerald-400')}`}
+                                  >
+                                    {config.capaTitulo3}
+                                  </h3>
+                                )}
+                              </div>
                             ) : (
                               <h3 className="text-xs font-bold text-slate-500 italic">
                                 (Sem título na capa de início)
                               </h3>
                             )}
 
-                            {config.capaTextoAbaixo && (
-                              <p className="text-[10.5px] text-slate-300 mt-1.5 leading-relaxed whitespace-pre-line bg-slate-900/60 border border-slate-800/80 rounded-xl p-2.5">
-                                {config.capaTextoAbaixo}
+                            {(config.capaTextoAbaixo || config.pergunta1TextoAbaixo) && (
+                              <p
+                                style={{ fontSize: `${(config.capaTextoAbaixoTamanho || 14) * 0.78}px` }}
+                                className={`mt-1.5 leading-relaxed whitespace-pre-line bg-slate-900/60 border border-slate-800/80 rounded-xl p-2.5 ${getCorTextoLinhaClass(config.capaTextoAbaixoCor, 'text-slate-300')}`}
+                              >
+                                {config.capaTextoAbaixo || config.pergunta1TextoAbaixo}
                               </p>
                             )}
                           </div>
@@ -3714,27 +4046,37 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       <div className="h-[374px] overflow-y-auto p-3 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between text-center select-none custom-scrollbar">
                         <div className="flex flex-col justify-between h-full space-y-2">
                           <div className="shrink-0 space-y-1">
-                            <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[9px] font-black uppercase">
-                              <span>Tela 1 de {1 + (config.telasExtras || []).length}</span>
-                            </div>
-                            <div className="pt-1 border-t border-slate-800/60">
-                              {(config.pergunta1Titulo || config.pergunta1Titulo2) ? (
-                                <h3 
-                                  style={{ fontSize: `${(config.pergunta1FonteTamanho || 18) * 0.72}px` }}
-                                  className="font-black text-white leading-tight"
-                                >
-                                  {config.pergunta1Titulo2 ? (
-                                    <>
-                                      <span className="block">{config.pergunta1Titulo}</span>
-                                      <span className="block">{config.pergunta1Titulo2}</span>
-                                    </>
-                                  ) : (
-                                    config.pergunta1Titulo
+                            <div className="pt-0.5">
+                              {(config.pergunta1Titulo || config.pergunta1Titulo2 || config.pergunta1Titulo3) ? (
+                                <div className="space-y-0.5">
+                                  {config.pergunta1Titulo && (
+                                    <h3
+                                      style={{ fontSize: `${(config.pergunta1FonteTamanho || 18) * 0.72}px` }}
+                                      className={`font-black leading-tight ${getCorTextoLinhaClass(config.pergunta1TituloCor, 'text-white')}`}
+                                    >
+                                      {config.pergunta1Titulo}
+                                    </h3>
                                   )}
-                                </h3>
+                                  {config.pergunta1Titulo2 && (
+                                    <h3
+                                      style={{ fontSize: `${(config.pergunta1Titulo2Tamanho || 16) * 0.72}px` }}
+                                      className={`font-black leading-tight ${getCorTextoLinhaClass(config.pergunta1Titulo2Cor, 'text-amber-300')}`}
+                                    >
+                                      {config.pergunta1Titulo2}
+                                    </h3>
+                                  )}
+                                  {config.pergunta1Titulo3 && (
+                                    <h3
+                                      style={{ fontSize: `${(config.pergunta1Titulo3Tamanho || 15) * 0.72}px` }}
+                                      className={`font-black leading-tight ${getCorTextoLinhaClass(config.pergunta1Titulo3Cor, 'text-emerald-400')}`}
+                                    >
+                                      {config.pergunta1Titulo3}
+                                    </h3>
+                                  )}
+                                </div>
                               ) : (
                                 <h3 className="text-xs font-bold text-slate-500 italic">
-                                  (Tela 1 - Perguntas)
+                                  (Sem título)
                                 </h3>
                               )}
                             </div>
@@ -3959,11 +4301,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
                       <div className="h-[374px] overflow-y-auto p-3 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between text-center select-none custom-scrollbar">
                         <div className="flex flex-col justify-between h-full space-y-2">
-                          <div className="shrink-0 space-y-1">
-                            <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[9px] font-black uppercase">
-                              <span>Tela {numTela} de {2 + (config.telasExtras || []).length + 1}</span>
-                            </div>
-
+                          <div className="shrink-0 space-y-1 pt-0.5">
                             <h3 className="text-xs sm:text-sm font-black text-white leading-tight">
                               {telaExtra.titulo1 && telaExtra.titulo2 ? (
                                 <>
@@ -3971,7 +4309,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                   <span className="block">{telaExtra.titulo2}</span>
                                 </>
                               ) : (
-                                telaExtra.titulo || `Pergunta da Tela ${numTela}`
+                                telaExtra.titulo || 'Pergunta'
                               )}
                             </h3>
                             {telaExtra.subtitulo && (
