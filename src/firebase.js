@@ -206,6 +206,36 @@ export async function criarNovoEvento(id, titulo, presetConfig = null) {
   return { id: cleanId, titulo: cleanTitle };
 }
 
+export async function excluirEvento(id) {
+  const cleanId = sanitizeEventId(id);
+  const listaAtual = getSavedEventosLista();
+  if (listaAtual.length <= 1) {
+    throw new Error('É necessário manter pelo menos 1 evento cadastrado no sistema.');
+  }
+
+  const novaLista = listaAtual.filter(e => e.id !== cleanId);
+  await salvarEventosLista(novaLista);
+
+  // Remove dados locais deste evento
+  localStorage.removeItem(`${EVENT_STORAGE_KEY}_${cleanId}`);
+  localStorage.removeItem(`${SESSION_STORAGE_KEY}_${cleanId}`);
+  localStorage.removeItem(`church_session_started_at_${cleanId}`);
+  localStorage.removeItem(`church_session_id_${cleanId}`);
+  localStorage.removeItem(`${QUESTIONS_STORAGE_KEY}_${cleanId}`);
+
+  if (isFirebaseReady()) {
+    try {
+      await deleteDoc(doc(db, 'eventos_titulos', cleanId));
+      await deleteDoc(doc(db, 'sessoes_eventos', cleanId));
+      await deleteDoc(doc(db, 'eventos_perguntas', cleanId));
+    } catch (e) {
+      console.warn('Erro ao limpar documentos do evento excluído:', e);
+    }
+  }
+
+  return novaLista;
+}
+
 export const DEFAULT_QUESTIONS_CONFIG = {
   // Tela 1
   pergunta1Titulo: 'Como você chegou aqui?',

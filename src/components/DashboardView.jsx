@@ -53,6 +53,7 @@ import {
   setActiveEventId,
   escutarEventosLista,
   criarNovoEvento,
+  excluirEvento,
   salvarEventoAtivoGlobal
 } from '../firebase';
 
@@ -82,6 +83,8 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
   const [eventosLista, setEventosLista] = useState([]);
   const [novoEventoNome, setNovoEventoNome] = useState('');
   const [criandoEvento, setCriandoEvento] = useState(false);
+  const [confirmDeleteEventId, setConfirmDeleteEventId] = useState(null);
+  const [excluindoEvento, setExcluindoEvento] = useState(false);
 
   // AVISO INLINE NO TOPO (SEM MODAL POR CIMA)
   const [inlineToast, setInlineToast] = useState(null);
@@ -168,6 +171,32 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
       mostrarAvisoInline('Erro ao Criar Evento', err?.message || String(err), 'erro');
     } finally {
       setCriandoEvento(false);
+    }
+  };
+
+  const handleExcluirEvento = async (ev) => {
+    if (eventosLista.length <= 1) {
+      mostrarAvisoInline('Ação Bloqueada', 'Você precisa manter pelo menos 1 evento ativo no sistema.', 'aviso');
+      setConfirmDeleteEventId(null);
+      return;
+    }
+    setExcluindoEvento(true);
+    try {
+      const novaLista = await excluirEvento(ev.id);
+      setConfirmDeleteEventId(null);
+      if (ev.id === activeEventId && novaLista.length > 0) {
+        const proximo = novaLista[0];
+        setActiveEventId(proximo.id);
+        setActiveEventIdState(proximo.id);
+        setEventoTitulo(proximo.titulo);
+        setInputTitulo(proximo.titulo);
+        await salvarEventoAtivoGlobal(proximo.id, proximo.titulo);
+      }
+      mostrarAvisoInline('Evento Excluído', `O evento "${ev.titulo}" foi removido com sucesso.`, 'sucesso');
+    } catch (err) {
+      mostrarAvisoInline('Erro ao Excluir Evento', err?.message || String(err), 'erro');
+    } finally {
+      setExcluindoEvento(false);
     }
   };
 
@@ -1156,23 +1185,30 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
                   const isSelected = ev.id === activeEventId;
                   const isLive = isSelected ? sessaoAtiva : Boolean(ev.sessaoAtiva);
                   const evLink = `${originUrl}/?e=${ev.id}`;
+                  const isConfirmingDelete = confirmDeleteEventId === ev.id;
 
                   return (
                     <div
                       key={ev.id}
-                      className={`p-4 rounded-xl border transition-all ${
+                      className={`p-4 rounded-xl border transition-all duration-200 ${
                         isSelected 
-                          ? 'bg-slate-800/60 border-sky-500/50 shadow-md' 
-                          : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
+                          ? 'bg-slate-800/80 border-sky-500/60 shadow-lg opacity-100 ring-1 ring-sky-500/20' 
+                          : 'bg-slate-950/40 border-slate-800/60 opacity-40 hover:opacity-65 grayscale-[35%]'
                       }`}
                     >
                       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <h4 className="text-sm font-black text-white truncate">{ev.titulo}</h4>
-                            {isSelected && (
+                            <h4 className={`text-sm font-black truncate ${isSelected ? 'text-white' : 'text-slate-400'}`}>
+                              {ev.titulo}
+                            </h4>
+                            {isSelected ? (
                               <span className="px-2 py-0.5 rounded text-[10px] font-black bg-sky-500/20 text-sky-300 border border-sky-500/30">
                                 SELECIONADO NO PAINEL
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-900 text-slate-500 border border-slate-800">
+                                INATIVO NO PAINEL
                               </span>
                             )}
                           </div>
@@ -1182,7 +1218,9 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
                             </code>
                             <button
                               onClick={() => copyToClipboard(evLink, `ev_${ev.id}`)}
-                              className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-semibold transition"
+                              className={`text-xs flex items-center gap-1 font-semibold transition ${
+                                isSelected ? 'text-emerald-400 hover:text-emerald-300' : 'text-slate-500 hover:text-slate-300'
+                              }`}
                             >
                               {copiedLink === `ev_${ev.id}` ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                               <span>{copiedLink === `ev_${ev.id}` ? 'Link Copiado!' : 'Copiar Link Celular'}</span>
@@ -1190,51 +1228,99 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end shrink-0">
+                        <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end shrink-0 flex-wrap">
                           <span
                             className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wider border ${
-                              isLive
+                              !isSelected
+                                ? 'bg-slate-900 text-slate-500 border-slate-800'
+                                : isLive
                                 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
                                 : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
                             }`}
                           >
-                            <span className={`w-2 h-2 rounded-full ${isLive ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'}`} />
+                            <span className={`w-2 h-2 rounded-full ${
+                              !isSelected ? 'bg-slate-600' : isLive ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'
+                            }`} />
                             {isLive ? 'AO VIVO' : 'PAUSADO'}
                           </span>
 
                           {isLive ? (
                             <button
                               onClick={() => handleToggleSessao(ev.id, false)}
-                              disabled={alternandoSessao}
-                              className="px-3.5 py-1.5 rounded-lg text-xs font-black bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/50 text-amber-300 flex items-center gap-1.5 transition active:scale-95"
+                              disabled={alternandoSessao || !isSelected}
+                              title={!isSelected ? 'Ative este evento no painel para controlar' : 'Pausar sessão'}
+                              className={`px-3.5 py-1.5 rounded-lg text-xs font-black border flex items-center gap-1.5 transition ${
+                                isSelected
+                                  ? 'bg-amber-500/20 hover:bg-amber-500/30 border-amber-500/50 text-amber-300 active:scale-95'
+                                  : 'bg-slate-900 border-slate-800 text-slate-500 cursor-not-allowed'
+                              }`}
                             >
-                              <Pause className="w-3.5 h-3.5 fill-amber-400" />
+                              <Pause className={`w-3.5 h-3.5 ${isSelected ? 'fill-amber-400' : 'fill-slate-600'}`} />
                               <span>Pausar</span>
                             </button>
                           ) : (
                             <button
                               onClick={() => handleToggleSessao(ev.id, true)}
-                              disabled={alternandoSessao}
-                              className="px-3.5 py-1.5 rounded-lg text-xs font-black bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/50 text-emerald-300 flex items-center gap-1.5 transition active:scale-95"
+                              disabled={alternandoSessao || !isSelected}
+                              title={!isSelected ? 'Ative este evento no painel para liberar' : 'Liberar sessão'}
+                              className={`px-3.5 py-1.5 rounded-lg text-xs font-black border flex items-center gap-1.5 transition ${
+                                isSelected
+                                  ? 'bg-emerald-500/20 hover:bg-emerald-500/30 border-emerald-500/50 text-emerald-300 active:scale-95'
+                                  : 'bg-slate-900 border-slate-800 text-slate-500 cursor-not-allowed'
+                              }`}
                             >
-                              <Play className="w-3.5 h-3.5 fill-emerald-400" />
+                              <Play className={`w-3.5 h-3.5 ${isSelected ? 'fill-emerald-400' : 'fill-slate-600'}`} />
                               <span>Liberar</span>
                             </button>
                           )}
 
                           {!isSelected && (
                             <button
-                              onClick={() => {
+                              onClick={async () => {
                                 setActiveEventId(ev.id);
                                 setActiveEventIdState(ev.id);
                                 if (ev.titulo) {
                                   setEventoTitulo(ev.titulo);
                                   setInputTitulo(ev.titulo);
                                 }
+                                await salvarEventoAtivoGlobal(ev.id, ev.titulo || '');
                               }}
-                              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 transition"
+                              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800/90 hover:bg-sky-500/20 hover:text-sky-300 hover:border-sky-500/40 border border-slate-700 text-slate-300 transition"
                             >
                               Ativar no Painel
+                            </button>
+                          )}
+
+                          {/* Botão Excluir Evento com Confirmação Inline */}
+                          {isConfirmingDelete ? (
+                            <div className="flex items-center gap-1.5 bg-rose-950/90 border border-rose-500/50 px-2 py-1 rounded-lg">
+                              <span className="text-[10px] font-bold text-rose-200">Excluir?</span>
+                              <button
+                                onClick={() => handleExcluirEvento(ev)}
+                                disabled={excluindoEvento}
+                                className="px-2 py-0.5 rounded bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-black transition"
+                              >
+                                {excluindoEvento ? '...' : 'Sim'}
+                              </button>
+                              <button
+                                onClick={() => setConfirmDeleteEventId(null)}
+                                className="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-bold transition"
+                              >
+                                Não
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => setConfirmDeleteEventId(ev.id)}
+                              disabled={eventosLista.length <= 1}
+                              title={eventosLista.length <= 1 ? 'Não é possível excluir o único evento' : `Excluir evento "${ev.titulo}"`}
+                              className={`p-1.5 rounded-lg border transition ${
+                                isSelected
+                                  ? 'bg-rose-500/10 hover:bg-rose-500/25 border-rose-500/30 text-rose-400 hover:text-rose-300'
+                                  : 'bg-slate-900 hover:bg-rose-500/20 border-slate-800 hover:border-rose-500/30 text-slate-500 hover:text-rose-300'
+                              } disabled:opacity-30 disabled:cursor-not-allowed`}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           )}
                         </div>
