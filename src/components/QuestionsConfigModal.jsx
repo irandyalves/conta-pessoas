@@ -244,7 +244,7 @@ const MODELOS_CELULARES = [
     marca: 'Apple',
     moldura: 'rounded-[38px] border-[5px] border-slate-700/90 shadow-2xl ring-1 ring-slate-800',
     largura: 'w-full max-w-[240px] sm:max-w-[255px]',
-    alturaTela: 'h-[440px]',
+    alturaTela: 'h-[374px]',
     tipoTopo: 'dynamic-island'
   },
   {
@@ -253,7 +253,7 @@ const MODELOS_CELULARES = [
     marca: 'Samsung',
     moldura: 'rounded-[14px] border-[4px] border-slate-700/80 shadow-2xl ring-1 ring-slate-800',
     largura: 'w-full max-w-[245px] sm:max-w-[260px]',
-    alturaTela: 'h-[440px]',
+    alturaTela: 'h-[374px]',
     tipoTopo: 'punch-hole-center'
   },
   {
@@ -262,7 +262,7 @@ const MODELOS_CELULARES = [
     marca: 'Xiaomi',
     moldura: 'rounded-[30px] border-[4px] border-slate-600/80 shadow-2xl ring-1 ring-slate-800',
     largura: 'w-full max-w-[242px] sm:max-w-[258px]',
-    alturaTela: 'h-[440px]',
+    alturaTela: 'h-[374px]',
     tipoTopo: 'punch-hole-center'
   },
   {
@@ -271,7 +271,7 @@ const MODELOS_CELULARES = [
     marca: 'Google',
     moldura: 'rounded-[36px] border-[4px] border-slate-700/90 shadow-2xl ring-1 ring-slate-800',
     largura: 'w-full max-w-[240px] sm:max-w-[255px]',
-    alturaTela: 'h-[440px]',
+    alturaTela: 'h-[374px]',
     tipoTopo: 'punch-hole-center'
   },
   {
@@ -280,7 +280,7 @@ const MODELOS_CELULARES = [
     marca: 'Apple',
     moldura: 'rounded-[34px] border-[5px] border-slate-800 shadow-2xl ring-1 ring-slate-750',
     largura: 'w-full max-w-[240px] sm:max-w-[255px]',
-    alturaTela: 'h-[440px]',
+    alturaTela: 'h-[374px]',
     tipoTopo: 'notch'
   },
   {
@@ -289,7 +289,7 @@ const MODELOS_CELULARES = [
     marca: 'Motorola',
     moldura: 'rounded-[24px] border-[4px] border-slate-600/70 shadow-2xl ring-1 ring-slate-800',
     largura: 'w-full max-w-[238px] sm:max-w-[252px]',
-    alturaTela: 'h-[440px]',
+    alturaTela: 'h-[374px]',
     tipoTopo: 'punch-hole-center'
   }
 ];
@@ -3487,7 +3487,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         </div>
                       </div>
 
-                      <div className="h-[440px] overflow-y-auto p-3 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between text-center select-none custom-scrollbar">
+                      <div className="h-[374px] overflow-y-auto p-3 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between text-center select-none custom-scrollbar">
                         <div className="flex flex-col items-center justify-center h-full space-y-4 my-auto">
                           <div className="relative w-14 h-14 flex items-center justify-center">
                             <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-amber-400 border-r-emerald-400 animate-spin" />
@@ -3559,7 +3559,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         </div>
                       </div>
 
-                      <div className="h-[440px] overflow-y-auto p-3 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between text-center select-none custom-scrollbar">
+                      <div className="h-[374px] overflow-y-auto p-3 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between text-center select-none custom-scrollbar">
                         <div className="flex flex-col justify-between h-full space-y-2">
                           <div className="shrink-0 space-y-1">
                             <p className="text-xs font-black text-emerald-400 tracking-wide">
@@ -3657,7 +3657,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         </div>
                       </div>
 
-                      <div className="h-[440px] overflow-y-auto p-3 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between text-center select-none custom-scrollbar">
+                      <div className="h-[374px] overflow-y-auto p-3 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between text-center select-none custom-scrollbar">
                         <div className="flex flex-col justify-between h-full space-y-2">
                           <div className="shrink-0 space-y-1">
                             <p className="text-xs font-black text-emerald-400 tracking-wide">
@@ -3903,7 +3903,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         </div>
                       </div>
 
-                      <div className="h-[440px] overflow-y-auto p-3 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between text-center select-none custom-scrollbar">
+                      <div className="h-[374px] overflow-y-auto p-3 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between text-center select-none custom-scrollbar">
                         <div className="flex flex-col justify-between h-full space-y-2">
                           <div className="shrink-0 space-y-1">
                             <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[9px] font-black uppercase">
@@ -4178,7 +4178,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         </div>
                       </div>
 
-                      <div className="h-[440px] overflow-y-auto p-3 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between text-center select-none custom-scrollbar">
+                      <div className="h-[374px] overflow-y-auto p-3 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between text-center select-none custom-scrollbar">
                         <div className="flex flex-col justify-between h-full space-y-2">
                           <div className="shrink-0 space-y-1">
                             <p className="text-xs font-black text-emerald-400 tracking-wide">
@@ -4307,7 +4307,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         </div>
                       </div>
 
-                      <div className="h-[440px] overflow-y-auto p-3 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between text-center select-none custom-scrollbar">
+                      <div className="h-[374px] overflow-y-auto p-3 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between text-center select-none custom-scrollbar">
                         <div className="flex flex-col items-center justify-center h-full space-y-3.5 my-auto px-2">
                           <div className="w-full bg-slate-900/95 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-3">
                             <h3 
