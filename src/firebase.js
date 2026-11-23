@@ -759,8 +759,30 @@ function normalizeQuestionsConfig(config) {
 
   merged.tela1Tipo = merged.tela1Tipo || 'cards';
   merged.tela1TextoPlaceholder = merged.tela1TextoPlaceholder || 'Digite sua resposta aqui...';
+  merged.tela1SliderMin = Number(merged.tela1SliderMin ?? 0);
+  merged.tela1SliderMax = Number(merged.tela1SliderMax ?? 10);
+  merged.tela1SliderStep = Number(merged.tela1SliderStep ?? 1);
+  merged.tela1SliderUnidade = merged.tela1SliderUnidade || '';
 
-  // Garantir que cada opção tenha o campo 'ativo', 'id' e suporte a gaveta condicional
+  const normalizeGaveta = (op) => {
+    if (!op?.temGaveta) return null;
+    const g = op.gaveta || {};
+    return {
+      tipo: g.tipo || 'texto_longo', // 'texto_longo' | 'texto_curto' | 'radio' | 'checkbox' | 'slider' | 'select' | 'data' | 'hora'
+      pergunta: g.pergunta || 'Por favor, detalhe sua resposta:',
+      placeholder: g.placeholder || 'Digite sua resposta aqui...',
+      obrigatorio: Boolean(g.obrigatorio),
+      linhas: Number(g.linhas) || 3,
+      sliderMin: Number(g.sliderMin ?? 0),
+      sliderMax: Number(g.sliderMax ?? 10),
+      sliderStep: Number(g.sliderStep ?? 1),
+      sliderUnidade: g.sliderUnidade || '',
+      botaoConfirmar: g.botaoConfirmar || 'Confirmar & Continuar',
+      opcoes: Array.isArray(g.opcoes) && g.opcoes.length > 0 ? g.opcoes : ['Opção 1', 'Opção 2', 'Opção 3']
+    };
+  };
+
+  // Garantir que cada opção tenha o campo 'ativo', 'id' e suporte a gaveta condicional rica
   if (Array.isArray(merged.opcoesChegada)) {
     merged.opcoesChegada = merged.opcoesChegada.map((op, idx) => ({
       id: op.id || `card_${idx + 1}`,
@@ -770,21 +792,13 @@ function normalizeQuestionsConfig(config) {
       icone: op.icone || 'Tag',
       cor: op.cor || 'amber',
       temGaveta: Boolean(op.temGaveta),
-      gaveta: op.temGaveta ? {
-        tipo: op.gaveta?.tipo || 'texto',
-        pergunta: op.gaveta?.pergunta || 'Por favor, detalhe sua resposta:',
-        placeholder: op.gaveta?.placeholder || 'Digite sua resposta aqui...',
-        obrigatorio: Boolean(op.gaveta?.obrigatorio),
-        linhas: Number(op.gaveta?.linhas) || 3,
-        botaoConfirmar: op.gaveta?.botaoConfirmar || 'Confirmar & Continuar',
-        opcoes: Array.isArray(op.gaveta?.opcoes) ? op.gaveta.opcoes : []
-      } : null
+      gaveta: normalizeGaveta(op)
     }));
   } else {
     merged.opcoesChegada = DEFAULT_QUESTIONS_CONFIG.opcoesChegada;
   }
 
-  // Garantir telas extras (somente telas reais criadas pelo usuário, cards ou dissertativas)
+  // Garantir telas extras com todos os tipos de componentes mundiais
   if (!Array.isArray(merged.telasExtras)) {
     merged.telasExtras = [];
   } else {
@@ -793,17 +807,24 @@ function normalizeQuestionsConfig(config) {
       .map((tela, idx) => ({
         id: tela.id || `extra_${idx + 1}`,
         ativa: true,
-        tipo: tela.tipo || 'cards', // 'cards' ou 'texto' (dissertativa/aberta)
+        // Tipos: 'cards' | 'radio' | 'checkbox' | 'dropdown' | 'slider' | 'rating' | 'texto_curto' | 'texto' | 'data' | 'hora'
+        tipo: tela.tipo || 'cards',
         titulo: tela.titulo || `Pergunta da Tela ${idx + 2}`,
         titulo1: tela.titulo1 || tela.titulo || `Pergunta da Tela ${idx + 2}`,
         titulo2: tela.titulo2 || '',
         subtitulo: tela.subtitulo || '',
         placeholder: tela.placeholder || 'Digite sua resposta aqui...',
-        multiline: tela.multiline !== false,
+        multiline: tela.tipo === 'texto_curto' ? false : (tela.multiline !== false),
         linhas: Number(tela.linhas) || 4,
         obrigatorio: Boolean(tela.obrigatorio),
         botaoTexto: tela.botaoTexto || 'Avançar',
-        cardsPorTela: Number(tela.cardsPorTela) || 3,
+        cardsPorTela: Number(tela.cardsPorTela) || 4,
+        sliderMin: Number(tela.sliderMin ?? 0),
+        sliderMax: Number(tela.sliderMax ?? 10),
+        sliderStep: Number(tela.sliderStep ?? 1),
+        sliderLabelMin: tela.sliderLabelMin || 'Mínimo',
+        sliderLabelMax: tela.sliderLabelMax || 'Máximo',
+        sliderUnidade: tela.sliderUnidade || '',
         opcoes: Array.isArray(tela.opcoes) ? tela.opcoes.map((op, oIdx) => ({
           id: op.id || `opt_${oIdx + 1}`,
           titulo: op.titulo || '',
@@ -812,15 +833,7 @@ function normalizeQuestionsConfig(config) {
           icone: op.icone || 'Sparkles',
           cor: op.cor || 'emerald',
           temGaveta: Boolean(op.temGaveta),
-          gaveta: op.temGaveta ? {
-            tipo: op.gaveta?.tipo || 'texto',
-            pergunta: op.gaveta?.pergunta || 'Por favor, detalhe sua resposta:',
-            placeholder: op.gaveta?.placeholder || 'Digite sua resposta aqui...',
-            obrigatorio: Boolean(op.gaveta?.obrigatorio),
-            linhas: Number(op.gaveta?.linhas) || 3,
-            botaoConfirmar: op.gaveta?.botaoConfirmar || 'Confirmar & Continuar',
-            opcoes: Array.isArray(op.gaveta?.opcoes) ? op.gaveta.opcoes : []
-          } : null
+          gaveta: normalizeGaveta(op)
         })) : []
       }));
   }

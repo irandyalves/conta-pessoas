@@ -392,6 +392,148 @@ export default function MobileForm() {
   // Telas extras ativas configuradas pelo admin
   const telasExtrasAtivas = (questionsConfig?.telasExtras || []).filter((t) => t.ativa !== false);
 
+  // Renderizador universal de conteúdo de Gaveta (Texto, Radio, Checkbox, Slide, Data, Hora)
+  const renderGavetaContent = (opcao, onConfirmar) => {
+    const g = opcao.gaveta || {};
+    const gTipo = g.tipo || 'texto_longo';
+    const valAtual = gavetaTextos[opcao.id] || '';
+    const opcoesLista = Array.isArray(g.opcoes) && g.opcoes.length > 0 ? g.opcoes : ['Opção 1', 'Opção 2'];
+    const selectedChecks = valAtual ? valAtual.split(', ').filter(Boolean) : [];
+
+    return (
+      <div className="p-4 rounded-2xl bg-slate-900/95 border-2 border-amber-500/50 shadow-xl space-y-3 animate-fade-in text-left">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-xs sm:text-sm font-black text-amber-300 flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <span>{g.pergunta || 'Por favor, detalhe sua resposta:'}</span>
+          </p>
+          {gavetaRespondidas[opcao.id] && (
+            <span className="text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
+              <CheckCircle2 className="w-3 h-3" /> Respondido
+            </span>
+          )}
+        </div>
+
+        {gTipo === 'radio' ? (
+          <div className="space-y-2">
+            {opcoesLista.map((itemStr, i) => (
+              <label
+                key={i}
+                onClick={() => setGavetaTextos((prev) => ({ ...prev, [opcao.id]: itemStr }))}
+                className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition ${
+                  valAtual === itemStr
+                    ? 'bg-amber-500/15 border-amber-400 text-white'
+                    : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name={`gav_radio_${opcao.id}`}
+                  checked={valAtual === itemStr}
+                  onChange={() => setGavetaTextos((prev) => ({ ...prev, [opcao.id]: itemStr }))}
+                  className="w-4 h-4 accent-amber-400"
+                />
+                <span className="text-xs sm:text-sm font-bold">{itemStr}</span>
+              </label>
+            ))}
+          </div>
+        ) : gTipo === 'checkbox' ? (
+          <div className="space-y-2">
+            {opcoesLista.map((itemStr, i) => {
+              const isChecked = selectedChecks.includes(itemStr);
+              return (
+                <label
+                  key={i}
+                  className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition ${
+                    isChecked
+                      ? 'bg-amber-500/15 border-amber-400 text-white'
+                      : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => {
+                      const next = isChecked
+                        ? selectedChecks.filter(x => x !== itemStr)
+                        : [...selectedChecks, itemStr];
+                      setGavetaTextos((prev) => ({ ...prev, [opcao.id]: next.join(', ') }));
+                    }}
+                    className="w-4 h-4 accent-amber-400 rounded"
+                  />
+                  <span className="text-xs sm:text-sm font-bold">{itemStr}</span>
+                </label>
+              );
+            })}
+          </div>
+        ) : gTipo === 'slider' ? (
+          <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2 text-center">
+            <div className="text-3xl font-black text-amber-400">
+              {valAtual || g.sliderMax || 10}{g.sliderUnidade || ''}
+            </div>
+            <input
+              type="range"
+              min={g.sliderMin ?? 0}
+              max={g.sliderMax ?? 10}
+              step={g.sliderStep ?? 1}
+              value={valAtual !== '' ? Number(valAtual) : (g.sliderMax ?? 10)}
+              onChange={(e) => setGavetaTextos((prev) => ({ ...prev, [opcao.id]: e.target.value }))}
+              className="w-full h-2.5 bg-slate-800 rounded-lg accent-amber-400 cursor-pointer"
+            />
+            <div className="flex justify-between text-xs font-mono text-slate-400">
+              <span>{g.sliderMin ?? 0}</span>
+              <span>{g.sliderMax ?? 10}</span>
+            </div>
+          </div>
+        ) : gTipo === 'data' ? (
+          <input
+            type="date"
+            value={valAtual}
+            onChange={(e) => setGavetaTextos((prev) => ({ ...prev, [opcao.id]: e.target.value }))}
+            className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl p-3 text-sm text-white focus:outline-none"
+          />
+        ) : gTipo === 'hora' ? (
+          <input
+            type="time"
+            value={valAtual}
+            onChange={(e) => setGavetaTextos((prev) => ({ ...prev, [opcao.id]: e.target.value }))}
+            className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl p-3 text-sm text-white focus:outline-none"
+          />
+        ) : gTipo === 'texto_curto' ? (
+          <input
+            type="text"
+            value={valAtual}
+            onChange={(e) => setGavetaTextos((prev) => ({ ...prev, [opcao.id]: e.target.value }))}
+            placeholder={g.placeholder || 'Digite sua resposta...'}
+            className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl p-3 text-sm text-white placeholder-slate-500 focus:outline-none"
+          />
+        ) : (
+          <textarea
+            rows={g.linhas || 3}
+            value={valAtual}
+            onChange={(e) => setGavetaTextos((prev) => ({ ...prev, [opcao.id]: e.target.value }))}
+            placeholder={g.placeholder || 'Digite aqui sua resposta, pedido ou comentário...'}
+            className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl p-3 text-sm text-white placeholder-slate-500 focus:outline-none transition resize-none shadow-inner"
+          />
+        )}
+
+        <div className="flex items-center justify-between pt-1">
+          <span className="text-[11px] text-slate-400">
+            {valAtual ? `Selecionado: ${valAtual}` : (g.obrigatorio ? '* Obrigatório' : 'Opcional')}
+          </span>
+          <button
+            type="button"
+            onClick={onConfirmar}
+            className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-xl shadow-lg active:scale-95 transition flex items-center gap-1.5"
+          >
+            <span>{g.botaoConfirmar || 'Confirmar & Avançar'}</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   // Avançar após selecionar um card na Pergunta 1
   const handleSelectComoChegou = (opcao) => {
     setComoChegou(opcao.titulo);
@@ -840,46 +982,8 @@ export default function MobileForm() {
                       </div>
                     </button>
 
-                    {/* GAVETA ACCORDION (CAMPO RETRÁTIL PARA DIGITAR - FICA ABERTO DESDE QUE RESPONDIDO) */}
-                    {opcao.temGaveta && isGavetaAberta && (
-                      <div className="p-4 rounded-2xl bg-slate-900/95 border-2 border-amber-500/50 shadow-xl space-y-3 animate-fade-in text-left">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="text-xs sm:text-sm font-black text-amber-300 flex items-center gap-1.5">
-                            <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                            <span>{opcao.gaveta?.pergunta || 'Por favor, detalhe sua resposta:'}</span>
-                          </p>
-                          {gavetaRespondidas[opcao.id] && (
-                            <span className="text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
-                              <CheckCircle2 className="w-3 h-3" /> Respondido
-                            </span>
-                          )}
-                        </div>
-
-                        <textarea
-                          rows={opcao.gaveta?.linhas || 3}
-                          value={gavetaTextos[opcao.id] || ''}
-                          onChange={(e) => setGavetaTextos((prev) => ({ ...prev, [opcao.id]: e.target.value }))}
-                          placeholder={opcao.gaveta?.placeholder || 'Digite aqui sua resposta, pedido ou comentário...'}
-                          className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl p-3 text-sm text-white placeholder-slate-500 focus:outline-none transition resize-none shadow-inner"
-                        />
-
-                        <div className="flex items-center justify-between pt-1">
-                          <span className="text-[11px] text-slate-400">
-                            {(gavetaTextos[opcao.id] || '').length > 0
-                              ? `${(gavetaTextos[opcao.id] || '').length} caracteres`
-                              : (opcao.gaveta?.obrigatorio ? '* Obrigatório' : 'Campo aberto')}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handleConfirmarGavetaP1(opcao)}
-                            className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-xl shadow-lg active:scale-95 transition flex items-center gap-1.5"
-                          >
-                            <span>{opcao.gaveta?.botaoConfirmar || 'Confirmar & Avançar'}</span>
-                            <ChevronRight className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    )}
+                    {/* GAVETA ACCORDION MULTI-COMPONENTE NA TELA 1 */}
+                    {opcao.temGaveta && isGavetaAberta && renderGavetaContent(opcao, () => handleConfirmarGavetaP1(opcao))}
                   </div>
                 );
               })}
@@ -913,66 +1017,240 @@ export default function MobileForm() {
         )}
 
         {/* ============================================================ */}
-        {/* TELAS EXTRAS (3, 4 E 5 TELAS ADICIONADAS PELO ADMIN)         */}
+        {/* TELAS EXTRAS (TODOS OS 10 COMPONENTES MUNDIAIS)              */}
         {/* ============================================================ */}
         {currentStep.startsWith('extra_') && (() => {
           const idx = parseInt(currentStep.split('_')[1], 10);
           const tela = telasExtrasAtivas[idx];
           if (!tela) return null;
 
-          if (tela.tipo === 'texto') {
+          const avancarParaProxima = (valorSalvo = null) => {
+            if (valorSalvo !== null) {
+              setDissertativaTextos((prev) => ({ ...prev, [tela.titulo || tela.id]: valorSalvo }));
+            }
+            setCampoObrigatorioErro(null);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            if (idx + 1 < telasExtrasAtivas.length) {
+              setCurrentStep(`extra_${idx + 1}`);
+            } else {
+              setCurrentStep('acompanhantes');
+            }
+          };
+
+          const voltarParaAnterior = () => {
+            if (idx === 0) {
+              setCurrentStep('p1');
+            } else {
+              setCurrentStep(`extra_${idx - 1}`);
+            }
+          };
+
+          const valKey = tela.titulo || tela.id;
+          const valAtual = dissertativaTextos[valKey] ?? '';
+
+          // 1. TEXTO LONGO, TEXTO CURTO, DATA, HORA, SLIDER, RATING, DROPDOWN, RADIO, CHECKBOX
+          if (['texto', 'texto_curto', 'data', 'hora', 'slider', 'rating', 'dropdown', 'radio', 'checkbox'].includes(tela.tipo)) {
+            const opcoesAtivas = (tela.opcoes || []).filter(o => o.ativo !== false);
+            const selectedChecks = valAtual ? String(valAtual).split(', ').filter(Boolean) : [];
+            const defaultSliderVal = Math.round(((tela.sliderMin ?? 0) + (tela.sliderMax ?? 10)) / 2);
+
             return (
               <div className="space-y-4 fade-in py-2">
-                <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl space-y-3.5">
+                <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
                   <div className="flex items-center justify-between">
                     <label className="text-xs sm:text-sm font-black text-amber-300 uppercase tracking-wider flex items-center gap-2">
                       <Sparkles className="w-4 h-4 text-amber-400" />
-                      <span>{tela.subtitulo || 'Digite sua resposta abaixo:'}</span>
+                      <span>{tela.subtitulo || 'Responda abaixo:'}</span>
                     </label>
-                    {dissertativaTextos[tela.id] && (
+                    {valAtual !== '' && (
                       <span className="text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full flex items-center gap-1">
                         <CheckCircle2 className="w-3 h-3" /> Preenchido
                       </span>
                     )}
                   </div>
 
-                  <textarea
-                    rows={tela.linhas || 4}
-                    value={dissertativaTextos[tela.id] || ''}
-                    onChange={(e) => setDissertativaTextos((prev) => ({ ...prev, [tela.id]: e.target.value }))}
-                    placeholder={tela.placeholder || 'Digite sua resposta aqui...'}
-                    className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-2xl p-4 text-sm sm:text-base text-white placeholder-slate-500 focus:outline-none transition resize-none shadow-inner"
-                  />
+                  {tela.tipo === 'texto' && (
+                    <textarea
+                      rows={tela.linhas || 4}
+                      value={valAtual}
+                      onChange={(e) => setDissertativaTextos((prev) => ({ ...prev, [valKey]: e.target.value }))}
+                      placeholder={tela.placeholder || 'Digite sua resposta aqui...'}
+                      className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-2xl p-4 text-sm sm:text-base text-white placeholder-slate-500 focus:outline-none transition resize-none shadow-inner"
+                    />
+                  )}
 
-                  <div className="flex items-center justify-between text-xs text-slate-400 px-1">
-                    <span>{tela.obrigatorio ? '* Resposta obrigatória' : 'Campo aberto (opcional)'}</span>
-                    <span>{(dissertativaTextos[tela.id] || '').length} caracteres</span>
-                  </div>
+                  {tela.tipo === 'texto_curto' && (
+                    <input
+                      type="text"
+                      value={valAtual}
+                      onChange={(e) => setDissertativaTextos((prev) => ({ ...prev, [valKey]: e.target.value }))}
+                      placeholder={tela.placeholder || 'Digite sua resposta curta...'}
+                      className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-2xl p-4 text-sm sm:text-base text-white placeholder-slate-500 focus:outline-none transition shadow-inner"
+                    />
+                  )}
+
+                  {tela.tipo === 'data' && (
+                    <input
+                      type="date"
+                      value={valAtual}
+                      onChange={(e) => setDissertativaTextos((prev) => ({ ...prev, [valKey]: e.target.value }))}
+                      className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-2xl p-4 text-base text-white focus:outline-none"
+                    />
+                  )}
+
+                  {tela.tipo === 'hora' && (
+                    <input
+                      type="time"
+                      value={valAtual}
+                      onChange={(e) => setDissertativaTextos((prev) => ({ ...prev, [valKey]: e.target.value }))}
+                      className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-2xl p-4 text-base text-white focus:outline-none"
+                    />
+                  )}
+
+                  {tela.tipo === 'slider' && (
+                    <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-4 text-center">
+                      <div className="text-4xl font-black text-amber-400">
+                        {valAtual !== '' ? valAtual : defaultSliderVal}{tela.sliderUnidade || ''}
+                      </div>
+                      <input
+                        type="range"
+                        min={tela.sliderMin ?? 0}
+                        max={tela.sliderMax ?? 10}
+                        step={tela.sliderStep ?? 1}
+                        value={valAtual !== '' ? Number(valAtual) : defaultSliderVal}
+                        onChange={(e) => setDissertativaTextos((prev) => ({ ...prev, [valKey]: e.target.value }))}
+                        className="w-full h-3 bg-slate-800 rounded-lg accent-amber-400 cursor-pointer"
+                      />
+                      <div className="flex justify-between text-xs font-mono text-slate-400">
+                        <span>{tela.sliderMin ?? 0}</span>
+                        <span>{tela.sliderMax ?? 10}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {tela.tipo === 'rating' && (
+                    <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-center gap-3">
+                      {[1, 2, 3, 4, 5].map((st) => {
+                        const activeStars = Number(valAtual || 5);
+                        return (
+                          <button
+                            key={st}
+                            type="button"
+                            onClick={() => setDissertativaTextos((prev) => ({ ...prev, [valKey]: `${st} estrelas` }))}
+                            className="p-1.5 transition active:scale-90"
+                          >
+                            <Star className={`w-9 h-9 ${st <= parseInt(activeStars, 10) ? 'text-amber-400 fill-amber-400' : 'text-slate-700'}`} />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {tela.tipo === 'dropdown' && (
+                    <select
+                      value={valAtual}
+                      onChange={(e) => setDissertativaTextos((prev) => ({ ...prev, [valKey]: e.target.value }))}
+                      className="w-full bg-slate-950 border border-amber-500/50 focus:border-amber-400 rounded-2xl p-4 text-sm sm:text-base font-bold text-white focus:outline-none"
+                    >
+                      <option value="">Toque para selecionar na lista...</option>
+                      {opcoesAtivas.map((opt) => (
+                        <option key={opt.id} value={opt.titulo}>{opt.titulo}</option>
+                      ))}
+                    </select>
+                  )}
+
+                  {tela.tipo === 'radio' && (
+                    <div className="space-y-2.5">
+                      {opcoesAtivas.map((opt) => {
+                        const isSel = valAtual === opt.titulo;
+                        const isGavetaAberta = Boolean(opt.temGaveta && isSel);
+                        return (
+                          <div key={opt.id} className="space-y-2">
+                            <label
+                              onClick={() => setDissertativaTextos((prev) => ({ ...prev, [valKey]: opt.titulo }))}
+                              className={`flex items-center gap-3.5 p-4 rounded-2xl border cursor-pointer transition ${
+                                isSel
+                                  ? 'bg-amber-500/15 border-amber-400 text-white shadow-md'
+                                  : 'bg-slate-950 border-slate-800 text-slate-200 hover:border-slate-700'
+                              }`}
+                            >
+                              <input
+                                type="radio"
+                                name={`extra_radio_${tela.id}`}
+                                checked={isSel}
+                                onChange={() => setDissertativaTextos((prev) => ({ ...prev, [valKey]: opt.titulo }))}
+                                className="w-5 h-5 accent-amber-400"
+                              />
+                              <div className="min-w-0 flex-1 text-left">
+                                <span className="text-sm font-bold block">{opt.titulo}</span>
+                                {opt.subtitulo && <span className="text-xs text-slate-400 block mt-0.5">{opt.subtitulo}</span>}
+                              </div>
+                            </label>
+                            {isGavetaAberta && renderGavetaContent(opt, () => avancarParaProxima(opt.titulo))}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {tela.tipo === 'checkbox' && (
+                    <div className="space-y-2.5">
+                      {opcoesAtivas.map((opt) => {
+                        const isChecked = selectedChecks.includes(opt.titulo);
+                        return (
+                          <div key={opt.id} className="space-y-2">
+                            <label
+                              className={`flex items-center gap-3.5 p-4 rounded-2xl border cursor-pointer transition ${
+                                isChecked
+                                  ? 'bg-amber-500/15 border-amber-400 text-white shadow-md'
+                                  : 'bg-slate-950 border-slate-800 text-slate-200 hover:border-slate-700'
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => {
+                                  const next = isChecked
+                                    ? selectedChecks.filter(x => x !== opt.titulo)
+                                    : [...selectedChecks, opt.titulo];
+                                  setDissertativaTextos((prev) => ({ ...prev, [valKey]: next.join(', ') }));
+                                }}
+                                className="w-5 h-5 accent-amber-400 rounded"
+                              />
+                              <div className="min-w-0 flex-1 text-left">
+                                <span className="text-sm font-bold block">{opt.titulo}</span>
+                                {opt.subtitulo && <span className="text-xs text-slate-400 block mt-0.5">{opt.subtitulo}</span>}
+                              </div>
+                            </label>
+                            {opt.temGaveta && isChecked && renderGavetaContent(opt, () => avancarParaProxima())}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
 
-                {/* Aviso se campo obrigatório estiver vazio */}
                 {campoObrigatorioErro === tela.id && (
                   <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-300 text-xs font-bold flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
-                    <span>Por favor, digite sua resposta antes de continuar.</span>
+                    <span>Por favor, preencha ou selecione uma resposta antes de continuar.</span>
                   </div>
                 )}
 
-                {/* Botão de Avançar com estilo 3D */}
                 <button
                   type="button"
                   onClick={() => {
-                    if (tela.obrigatorio && !(dissertativaTextos[tela.id] || '').trim()) {
+                    const finalValue = tela.tipo === 'slider' && valAtual === ''
+                      ? `${defaultSliderVal}${tela.sliderUnidade || ''}`
+                      : tela.tipo === 'rating' && valAtual === ''
+                      ? '5 estrelas'
+                      : valAtual;
+
+                    if (tela.obrigatorio && !String(finalValue || '').trim()) {
                       setCampoObrigatorioErro(tela.id);
                       return;
                     }
-                    setCampoObrigatorioErro(null);
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                    if (idx + 1 < telasExtrasAtivas.length) {
-                      setCurrentStep(`extra_${idx + 1}`);
-                    } else {
-                      setCurrentStep('acompanhantes');
-                    }
+                    avancarParaProxima(finalValue);
                   }}
                   className="w-full py-4 px-6 rounded-2xl font-black text-base bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-slate-950 shadow-xl shadow-amber-950/60 active:scale-[0.98] transition border border-amber-300 flex items-center justify-center gap-2"
                 >
@@ -980,17 +1258,10 @@ export default function MobileForm() {
                   <ChevronRight className="w-5 h-5" />
                 </button>
 
-                {/* Botão Voltar */}
                 <div className="pt-2 text-center">
                   <button
                     type="button"
-                    onClick={() => {
-                      if (idx === 0) {
-                        setCurrentStep('p1');
-                      } else {
-                        setCurrentStep(`extra_${idx - 1}`);
-                      }
-                    }}
+                    onClick={voltarParaAnterior}
                     className="text-xs text-slate-400 hover:text-white flex items-center justify-center gap-1 mx-auto py-1"
                   >
                     <ChevronLeft className="w-3.5 h-3.5" />
@@ -1061,46 +1332,8 @@ export default function MobileForm() {
                         </div>
                       </button>
 
-                      {/* GAVETA ACCORDION (CAMPO RETRÁTIL PARA DIGITAR EM TELA EXTRA) */}
-                      {opt.temGaveta && isGavetaAberta && (
-                        <div className="p-4 rounded-2xl bg-slate-900/95 border-2 border-amber-500/50 shadow-xl space-y-3 animate-fade-in text-left">
-                          <div className="flex items-center justify-between gap-2">
-                            <p className="text-xs sm:text-sm font-black text-amber-300 flex items-center gap-1.5">
-                              <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                              <span>{opt.gaveta?.pergunta || 'Por favor, detalhe sua resposta:'}</span>
-                            </p>
-                            {gavetaRespondidas[opt.id] && (
-                              <span className="text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
-                                <CheckCircle2 className="w-3 h-3" /> Respondido
-                              </span>
-                            )}
-                          </div>
-
-                          <textarea
-                            rows={opt.gaveta?.linhas || 3}
-                            value={gavetaTextos[opt.id] || ''}
-                            onChange={(e) => setGavetaTextos((prev) => ({ ...prev, [opt.id]: e.target.value }))}
-                            placeholder={opt.gaveta?.placeholder || 'Digite sua resposta ou observação...'}
-                            className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl p-3 text-sm text-white placeholder-slate-500 focus:outline-none transition resize-none shadow-inner"
-                          />
-
-                          <div className="flex items-center justify-between pt-1">
-                            <span className="text-[11px] text-slate-400">
-                              {(gavetaTextos[opt.id] || '').length > 0
-                                ? `${(gavetaTextos[opt.id] || '').length} caracteres`
-                                : (opt.gaveta?.obrigatorio ? '* Obrigatório' : 'Campo aberto')}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => handleConfirmarGavetaExtra(idx, opt)}
-                              className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-xl shadow-lg active:scale-95 transition flex items-center gap-1.5"
-                            >
-                              <span>{opt.gaveta?.botaoConfirmar || 'Confirmar & Avançar'}</span>
-                              <ChevronRight className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-                      )}
+                      {/* GAVETA ACCORDION MULTI-COMPONENTE EM TELA EXTRA */}
+                      {opt.temGaveta && isGavetaAberta && renderGavetaContent(opt, () => handleConfirmarGavetaExtra(idx, opt))}
                     </div>
                   );
                 })}

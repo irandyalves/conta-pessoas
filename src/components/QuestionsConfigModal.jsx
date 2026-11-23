@@ -50,8 +50,31 @@ import {
   saveEventTitle,
   DEFAULT_QUESTIONS_CONFIG 
 } from '../firebase';
-import { parseDocxFile, parseJsonOrText } from '../utils/formImporter';
+import { parseAnyFile, parseJsonOrText } from '../utils/formImporter';
 import { PRESETS_PESQUISAS } from '../utils/presets';
+
+export const TIPOS_PERGUNTA = [
+  { id: 'cards', label: '🃏 Cards Múltipla Escolha', short: 'Cards', desc: 'Cards grandes táteis com ícones e gavetas' },
+  { id: 'radio', label: '🔘 Radio Button (Escolha Única)', short: 'Radio Button', desc: 'Lista clássica com bolinhas de seleção única' },
+  { id: 'checkbox', label: '☑️ Checkbox (Múltipla Seleção)', short: 'Checkbox', desc: 'Caixas para marcar uma ou várias opções' },
+  { id: 'dropdown', label: '📋 Lista Suspensa (Dropdown)', short: 'Lista Suspensa', desc: 'Menu seletor compacto para listas de opções' },
+  { id: 'slider', label: '🎚️ Slide / Escala (0 a 10)', short: 'Slide / Escala', desc: 'Barra deslizante interativa para notas e NPS' },
+  { id: 'rating', label: '⭐ Avaliação Estrelas (1 a 5)', short: 'Estrelas', desc: 'Classificação rápida por estrelas' },
+  { id: 'texto_curto', label: '🔤 Texto Pequeno (Curto)', short: 'Texto Pequeno', desc: 'Campo de 1 linha (Nome, WhatsApp, Bairro, etc.)' },
+  { id: 'texto', label: '📝 Campo Longo (Dissertativo)', short: 'Campo Longo', desc: 'Caixa de texto ampla para comentários e sugestões' },
+  { id: 'data', label: '📅 Data (Calendário)', short: 'Data', desc: 'Seletor de data dia/mês/ano' },
+  { id: 'hora', label: '⏰ Hora (Relógio)', short: 'Hora', desc: 'Seletor de horário (hora:minuto)' }
+];
+
+export const TIPOS_GAVETA = [
+  { id: 'texto_longo', label: '📝 Campo Longo (Texto Aberto)' },
+  { id: 'texto_curto', label: '🔤 Texto Pequeno (1 Linha)' },
+  { id: 'radio', label: '🔘 Radio Button (Escolha Única)' },
+  { id: 'checkbox', label: '☑️ Checkbox (Várias Opções)' },
+  { id: 'slider', label: '🎚️ Slide / Escala Numérica' },
+  { id: 'data', label: '📅 Seletor de Data' },
+  { id: 'hora', label: '⏰ Seletor de Hora' }
+];
 
 // Lista de ícones amigáveis
 const ICONES = [
@@ -277,6 +300,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
   // Estado do Preview do Celular: 'inicio' | 'tela_1' | 'extra_0', 'extra_1'... | 'acompanhantes' | 'fim'
   const [previewScreen, setPreviewScreen] = useState('inicio');
   const [previewPage, setPreviewPage] = useState(0);
+  const [previewOpenGavetaId, setPreviewOpenGavetaId] = useState(null);
+  const [previewInteractiveVal, setPreviewInteractiveVal] = useState({});
 
   // Modais de Modelos Prontos e Importação de Arquivos / Formulários
   const [showPresetsModal, setShowPresetsModal] = useState(false);
@@ -408,84 +433,125 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
   };
 
   // ============================================================
-  // GESTÃO DE TELAS EXTRAS (CARDS OU CAMPOS ABERTOS PARA DIGITAR)
+  // GESTÃO DE TELAS EXTRAS (TODOS OS 10 COMPONENTES MUNDIAIS)
   // ============================================================
   const handleAdicionarTela = (tipo = 'cards') => {
     const totalExtras = (config.telasExtras || []).length;
-    const novoNumeroTela = totalExtras + 3; // Tela 1 e Tela 2 (Acompanhantes) já existem
     setShowTipoNovaTelaModal(false);
 
-    let novaTela;
-    if (tipo === 'texto') {
-      novaTela = {
-        id: `extra_${Date.now()}`,
-        ativa: true,
-        tipo: 'texto',
-        titulo: 'O que você achou do evento?',
-        titulo1: 'O que você achou',
-        titulo2: 'do evento?',
-        subtitulo: 'Escreva sua mensagem sincera ou sugestões:',
+    const defaultsByType = {
+      texto: {
+        titulo: 'Deixe seu comentário ou sugestão:',
+        titulo1: 'Deixe seu comentário',
+        titulo2: 'ou sugestão:',
+        subtitulo: 'Espaço aberto para você digitar livremente:',
         placeholder: 'Digite sua mensagem ou opinião aqui...',
         multiline: true,
         linhas: 4,
-        obrigatorio: false,
-        botaoTexto: 'Avançar',
         opcoes: []
-      };
-    } else {
-      novaTela = {
-        id: `extra_${Date.now()}`,
-        ativa: true,
-        tipo: 'cards',
+      },
+      texto_curto: {
+        titulo: 'Qual o seu nome ou contato?',
+        titulo1: 'Qual o seu nome',
+        titulo2: 'ou contato?',
+        subtitulo: 'Resposta curta em 1 linha:',
+        placeholder: 'Digite aqui...',
+        multiline: false,
+        linhas: 1,
+        opcoes: []
+      },
+      slider: {
+        titulo: 'De 0 a 10, qual sua nota para o evento?',
+        titulo1: 'De 0 a 10, qual sua nota',
+        titulo2: 'para o evento?',
+        subtitulo: 'Arraste o controle deslizante (Slide):',
+        sliderMin: 0,
+        sliderMax: 10,
+        sliderStep: 1,
+        sliderUnidade: '',
+        opcoes: []
+      },
+      rating: {
+        titulo: 'Como você avalia a programação?',
+        titulo1: 'Como você avalia',
+        titulo2: 'a programação?',
+        subtitulo: 'Toque nas estrelas de 1 a 5:',
+        opcoes: []
+      },
+      data: {
+        titulo: 'Selecione a data desejada:',
+        titulo1: 'Selecione a data',
+        titulo2: 'desejada:',
+        subtitulo: 'Escolha no calendário abaixo:',
+        opcoes: []
+      },
+      hora: {
+        titulo: 'Qual o melhor horário para você?',
+        titulo1: 'Qual o melhor horário',
+        titulo2: 'para você?',
+        subtitulo: 'Selecione o horário:',
+        opcoes: []
+      },
+      dropdown: {
+        titulo: 'Selecione uma opção na lista:',
+        titulo1: 'Selecione uma opção',
+        titulo2: 'na lista suspensa:',
+        subtitulo: 'Toque na caixa para abrir as opções:',
+        opcoes: [
+          { id: `opt_${Date.now()}_1`, titulo: 'Opção 1 da Lista', ativo: true, icone: 'Tag', cor: 'amber' },
+          { id: `opt_${Date.now()}_2`, titulo: 'Opção 2 da Lista', ativo: true, icone: 'Sparkles', cor: 'sky' },
+          { id: `opt_${Date.now()}_3`, titulo: 'Opção 3 da Lista', ativo: true, icone: 'Star', cor: 'emerald' }
+        ]
+      },
+      checkbox: {
+        titulo: 'Quais opções se aplicam a você?',
+        titulo1: 'Quais opções se aplicam',
+        titulo2: 'a você? (Marque várias)',
+        subtitulo: 'Você pode selecionar uma ou mais caixas:',
+        opcoes: [
+          { id: `opt_${Date.now()}_1`, titulo: 'Primeira opção selecionável', ativo: true, icone: 'Sparkles', cor: 'emerald' },
+          { id: `opt_${Date.now()}_2`, titulo: 'Segunda opção selecionável', ativo: true, icone: 'Star', cor: 'amber' },
+          { id: `opt_${Date.now()}_3`, titulo: 'Terceira opção selecionável', ativo: true, icone: 'Church', cor: 'sky' }
+        ]
+      },
+      radio: {
+        titulo: 'Escolha uma das alternativas abaixo:',
+        titulo1: 'Escolha uma das',
+        titulo2: 'alternativas abaixo:',
+        subtitulo: 'Seleção única (Radio Button):',
+        opcoes: [
+          { id: `opt_${Date.now()}_1`, titulo: 'Alternativa A', ativo: true, icone: 'Sparkles', cor: 'emerald', temGaveta: false, gaveta: null },
+          { id: `opt_${Date.now()}_2`, titulo: 'Alternativa B', ativo: true, icone: 'Star', cor: 'amber', temGaveta: false, gaveta: null },
+          { id: `opt_${Date.now()}_3`, titulo: 'Alternativa C', ativo: true, icone: 'Church', cor: 'sky', temGaveta: false, gaveta: null }
+        ]
+      },
+      cards: {
         titulo: 'É a sua primeira vez conosco?',
         titulo1: 'É a sua primeira vez',
         titulo2: 'conosco?',
         subtitulo: 'Queremos te dar as boas-vindas com muito carinho',
-        cardsPorTela: 4,
         opcoes: [
-          {
-            id: `opt_${Date.now()}_1`,
-            titulo: 'Sim, pela primeira vez',
-            subtitulo: 'Vim conhecer e prestigiar a programação',
-            ativo: true,
-            icone: 'Sparkles',
-            cor: 'emerald',
-            temGaveta: false,
-            gaveta: null
-          },
-          {
-            id: `opt_${Date.now()}_2`,
-            titulo: 'Já visitei em outras ocasiões',
-            subtitulo: 'Venho aos cultos e ocasiões especiais',
-            ativo: true,
-            icone: 'Star',
-            cor: 'amber',
-            temGaveta: false,
-            gaveta: null
-          },
-          {
-            id: `opt_${Date.now()}_3`,
-            titulo: 'Frequento com regularidade',
-            subtitulo: 'Já congrego ou acompanho os cultos',
-            ativo: true,
-            icone: 'Church',
-            cor: 'sky',
-            temGaveta: false,
-            gaveta: null
-          },
-          {
-            id: `opt_${Date.now()}_4`,
-            titulo: 'Vim com família ou amigos',
-            subtitulo: 'Convite especial de alguém querido',
-            ativo: true,
-            icone: 'HeartHandshake',
-            cor: 'rose',
-            temGaveta: false,
-            gaveta: null
-          }
+          { id: `opt_${Date.now()}_1`, titulo: 'Sim, pela primeira vez', subtitulo: 'Vim conhecer a programação', ativo: true, icone: 'Sparkles', cor: 'emerald', temGaveta: false, gaveta: null },
+          { id: `opt_${Date.now()}_2`, titulo: 'Já visitei em outras ocasiões', subtitulo: 'Venho em ocasiões especiais', ativo: true, icone: 'Star', cor: 'amber', temGaveta: false, gaveta: null },
+          { id: `opt_${Date.now()}_3`, titulo: 'Frequento regularmente', subtitulo: 'Já acompanho os encontros', ativo: true, icone: 'Church', cor: 'sky', temGaveta: false, gaveta: null }
         ]
-      };
-    }
+      }
+    };
+
+    const base = defaultsByType[tipo] || defaultsByType.cards;
+    const novaTela = {
+      id: `extra_${Date.now()}`,
+      ativa: true,
+      tipo,
+      cardsPorTela: 4,
+      obrigatorio: false,
+      botaoTexto: 'Avançar',
+      sliderMin: 0,
+      sliderMax: 10,
+      sliderStep: 1,
+      sliderUnidade: '',
+      ...base
+    };
 
     setConfig((prev) => ({
       ...prev,
@@ -506,17 +572,11 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
     setActiveTab('tela_1');
   };
 
-  // Importar arquivo (.docx / .txt / .json)
+  // Importar arquivo (.docx / .doc / .csv / .txt / .json) com IA
   const handleImportarArquivo = async (file) => {
     try {
       setImportando(true);
-      let imported = null;
-      if (file.name.endsWith('.docx')) {
-        imported = await parseDocxFile(file);
-      } else {
-        const text = await file.text();
-        imported = parseJsonOrText(text);
-      }
+      const imported = await parseAnyFile(file);
       setPreviewImportado(imported);
     } catch (err) {
       mostrarFeedback('Erro ao Importar Arquivo', err?.message || String(err), 'erro');
@@ -724,8 +784,13 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               <Sliders className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-base sm:text-lg font-black text-white">Configurar Abas & Telas do Celular</h2>
-              <p className="text-xs text-slate-400">Monte o fluxo de telas (Tela 1, Tela 2, Tela 3...), adicione mais abas e visualize à direita</p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-base sm:text-lg font-black text-white">Configurar Perguntas & Telas</h2>
+                <span className="px-2 py-0.5 rounded-full text-[11px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                  {eventoTitulo}
+                </span>
+              </div>
+              <p className="text-xs text-slate-400">Exclusivo deste evento • Tudo que você criar aparece ao vivo no celular à direita</p>
             </div>
           </div>
 
@@ -735,10 +800,10 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               type="button"
               onClick={() => setShowPresetsModal(true)}
               className="px-3 py-1.5 text-xs font-bold rounded-xl bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/40 text-sky-300 flex items-center gap-1.5 transition active:scale-95 shadow-sm"
-              title="Carregar modelos prontos (Culto, Ajuda Pastoral com Gaveta, Avaliação Dissertativa)"
+              title="Carregar modelos mundiais prontos (NPS, Checkbox, Gavetas, Inscrição)"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Modelos Prontos</span>
+              <span className="hidden sm:inline">Modelos Mundiais IA</span>
               <span className="sm:hidden">Modelos</span>
             </button>
 
@@ -747,11 +812,11 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               type="button"
               onClick={() => setShowImportModal(true)}
               className="px-3 py-1.5 text-xs font-bold rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 flex items-center gap-1.5 transition active:scale-95 shadow-sm"
-              title="Importar perguntas de arquivos Word (.docx) ou formulários do Google Forms"
+              title="Importar com IA arquivos .docx, .doc, .csv, .txt ou Google Forms"
             >
               <FileText className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Importar (.docx / Forms)</span>
-              <span className="sm:hidden">Importar</span>
+              <span className="hidden sm:inline">Importar IA (.docx / .doc / .csv / .txt)</span>
+              <span className="sm:hidden">Importar IA</span>
             </button>
 
             {!inline && onClose && (
@@ -1539,7 +1604,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                               </div>
                             </div>
 
-                            {/* CONFIGURAÇÃO DE GAVETA CONDICIONAL NA TELA 1 (CAMPO PARA DIGITAR) */}
+                            {/* CONFIGURAÇÃO DE GAVETA CONDICIONAL NA TELA 1 (MULTI-COMPONENTE) */}
                             <div className="pt-2 border-t border-slate-850">
                               <label className="flex items-center gap-2 cursor-pointer select-none">
                                 <input
@@ -1548,62 +1613,188 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                   onChange={(e) => {
                                     const checked = e.target.checked;
                                     handleUpdateOpcaoP1(idx, 'temGaveta', checked);
-                                    if (checked && !opcao.gaveta) {
-                                      handleUpdateOpcaoP1(idx, 'gaveta', {
-                                        tipo: 'texto',
-                                        pergunta: 'Por favor, detalhe sua resposta:',
-                                        placeholder: 'Digite sua resposta ou pedido...',
-                                        linhas: 3,
-                                        obrigatorio: false,
-                                        botaoConfirmar: 'Confirmar & Avançar'
-                                      });
+                                    if (checked) {
+                                      setPreviewOpenGavetaId(opcao.id);
+                                      if (!opcao.gaveta) {
+                                        handleUpdateOpcaoP1(idx, 'gaveta', {
+                                          tipo: 'texto_longo',
+                                          pergunta: 'Por favor, detalhe sua resposta:',
+                                          placeholder: 'Digite sua resposta ou pedido...',
+                                          linhas: 3,
+                                          sliderMin: 0,
+                                          sliderMax: 10,
+                                          sliderStep: 1,
+                                          opcoes: ['Opção 1', 'Opção 2', 'Opção 3'],
+                                          obrigatorio: false,
+                                          botaoConfirmar: 'Confirmar & Avançar'
+                                        });
+                                      }
+                                    } else if (previewOpenGavetaId === opcao.id) {
+                                      setPreviewOpenGavetaId(null);
                                     }
                                   }}
                                   className="w-4 h-4 rounded border-slate-700 bg-slate-900 text-amber-500 focus:ring-amber-400"
                                 />
                                 <span className={`text-xs font-bold ${opcao.temGaveta ? 'text-amber-300' : 'text-slate-400'}`}>
-                                  🗄️ Abrir Gaveta ao Selecionar (Campo para o Visitante Digitar)
+                                  🗄️ Abrir Gaveta ao Selecionar (Subpergunta: Texto, Radio Button, Checkbox, Slide, Data/Hora)
                                 </span>
                               </label>
 
                               {opcao.temGaveta && (
                                 <div className="mt-2.5 p-3 rounded-xl bg-slate-900/90 border border-amber-500/30 space-y-2.5 animate-fade-in">
-                                  <div>
-                                    <label className="text-[10px] font-bold text-amber-300 block mb-1">
-                                      Pergunta ou Instrução da Gaveta
-                                    </label>
-                                    <input
-                                      type="text"
-                                      value={opcao.gaveta?.pergunta || ''}
-                                      onChange={(e) => handleUpdateOpcaoP1(idx, 'gaveta', {
-                                        ...(opcao.gaveta || {}),
-                                        pergunta: e.target.value
-                                      })}
-                                      placeholder="Ex: Qual tipo de ajuda você precisa?"
-                                      className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1 text-xs text-white"
-                                    />
-                                  </div>
-
                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     <div>
-                                      <label className="text-[10px] font-bold text-slate-400 block mb-1">
-                                        Placeholder da Caixa de Texto
+                                      <label className="text-[10px] font-bold text-amber-300 block mb-1">
+                                        Tipo de Componente dentro da Gaveta
                                       </label>
-                                      <input
-                                        type="text"
-                                        value={opcao.gaveta?.placeholder || ''}
-                                        onChange={(e) => handleUpdateOpcaoP1(idx, 'gaveta', {
-                                          ...(opcao.gaveta || {}),
-                                          placeholder: e.target.value
-                                        })}
-                                        placeholder="Ex: Digite seu pedido..."
-                                        className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1 text-xs text-slate-200"
-                                      />
+                                      <select
+                                        value={opcao.gaveta?.tipo || 'texto_longo'}
+                                        onChange={(e) => {
+                                          setPreviewOpenGavetaId(opcao.id);
+                                          handleUpdateOpcaoP1(idx, 'gaveta', {
+                                            ...(opcao.gaveta || {}),
+                                            tipo: e.target.value,
+                                            opcoes: Array.isArray(opcao.gaveta?.opcoes) && opcao.gaveta.opcoes.length > 0
+                                              ? opcao.gaveta.opcoes
+                                              : ['Opção 1', 'Opção 2', 'Opção 3']
+                                          });
+                                        }}
+                                        className="w-full bg-slate-950 border border-amber-500/40 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-amber-200"
+                                      >
+                                        {TIPOS_GAVETA.map(tg => (
+                                          <option key={tg.id} value={tg.id}>{tg.label}</option>
+                                        ))}
+                                      </select>
                                     </div>
 
                                     <div>
+                                      <label className="text-[10px] font-bold text-amber-300 block mb-1">
+                                        Pergunta ou Instrução da Gaveta
+                                      </label>
+                                      <input
+                                        type="text"
+                                        value={opcao.gaveta?.pergunta || ''}
+                                        onChange={(e) => {
+                                          setPreviewOpenGavetaId(opcao.id);
+                                          handleUpdateOpcaoP1(idx, 'gaveta', {
+                                            ...(opcao.gaveta || {}),
+                                            pergunta: e.target.value
+                                          });
+                                        }}
+                                        placeholder="Ex: Qual tipo de ajuda você precisa?"
+                                        className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1 text-xs text-white"
+                                      />
+                                    </div>
+                                  </div>
+
+                                  {/* Opções da Gaveta se for Radio ou Checkbox */}
+                                  {(opcao.gaveta?.tipo === 'radio' || opcao.gaveta?.tipo === 'checkbox') && (
+                                    <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 space-y-2">
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-[10px] font-bold text-sky-300 uppercase">
+                                          Opções da Gaveta ({opcao.gaveta?.tipo === 'radio' ? 'Radio Button' : 'Checkbox'})
+                                        </span>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setPreviewOpenGavetaId(opcao.id);
+                                            const atuais = Array.isArray(opcao.gaveta?.opcoes) ? opcao.gaveta.opcoes : [];
+                                            handleUpdateOpcaoP1(idx, 'gaveta', {
+                                              ...(opcao.gaveta || {}),
+                                              opcoes: [...atuais, `Opção ${atuais.length + 1}`]
+                                            });
+                                          }}
+                                          className="px-2 py-0.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold flex items-center gap-1"
+                                        >
+                                          <Plus className="w-3 h-3" /> Adicionar
+                                        </button>
+                                      </div>
+                                      <div className="space-y-1.5">
+                                        {(opcao.gaveta?.opcoes || ['Opção 1', 'Opção 2']).map((gOpt, gIdx) => (
+                                          <div key={gIdx} className="flex items-center gap-1.5">
+                                            <input
+                                              type="text"
+                                              value={gOpt}
+                                              onChange={(e) => {
+                                                setPreviewOpenGavetaId(opcao.id);
+                                                const novas = [...(opcao.gaveta?.opcoes || [])];
+                                                novas[gIdx] = e.target.value;
+                                                handleUpdateOpcaoP1(idx, 'gaveta', { ...(opcao.gaveta || {}), opcoes: novas });
+                                              }}
+                                              className="flex-1 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white"
+                                            />
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                const novas = (opcao.gaveta?.opcoes || []).filter((_, i) => i !== gIdx);
+                                                handleUpdateOpcaoP1(idx, 'gaveta', { ...(opcao.gaveta || {}), opcoes: novas.length ? novas : ['Opção 1'] });
+                                              }}
+                                              className="p-1 text-slate-500 hover:text-rose-400"
+                                            >
+                                              <Trash2 className="w-3.5 h-3.5" />
+                                            </button>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Configuração de Slide dentro da Gaveta */}
+                                  {opcao.gaveta?.tipo === 'slider' && (
+                                    <div className="grid grid-cols-3 gap-2 p-2 rounded-lg bg-slate-950 border border-slate-800">
+                                      <div>
+                                        <label className="text-[10px] text-slate-400 block">Mínimo</label>
+                                        <input
+                                          type="number"
+                                          value={opcao.gaveta?.sliderMin ?? 0}
+                                          onChange={(e) => handleUpdateOpcaoP1(idx, 'gaveta', { ...(opcao.gaveta || {}), sliderMin: Number(e.target.value) })}
+                                          className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white"
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="text-[10px] text-slate-400 block">Máximo</label>
+                                        <input
+                                          type="number"
+                                          value={opcao.gaveta?.sliderMax ?? 10}
+                                          onChange={(e) => handleUpdateOpcaoP1(idx, 'gaveta', { ...(opcao.gaveta || {}), sliderMax: Number(e.target.value) })}
+                                          className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white"
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="text-[10px] text-slate-400 block">Unidade</label>
+                                        <input
+                                          type="text"
+                                          value={opcao.gaveta?.sliderUnidade || ''}
+                                          onChange={(e) => handleUpdateOpcaoP1(idx, 'gaveta', { ...(opcao.gaveta || {}), sliderUnidade: e.target.value })}
+                                          placeholder="Ex: pts, %"
+                                          className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white"
+                                        />
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    {(opcao.gaveta?.tipo === 'texto_longo' || opcao.gaveta?.tipo === 'texto_curto' || !opcao.gaveta?.tipo || opcao.gaveta?.tipo === 'texto') && (
+                                      <div>
+                                        <label className="text-[10px] font-bold text-slate-400 block mb-1">
+                                          Placeholder da Caixa de Texto
+                                        </label>
+                                        <input
+                                          type="text"
+                                          value={opcao.gaveta?.placeholder || ''}
+                                          onChange={(e) => handleUpdateOpcaoP1(idx, 'gaveta', {
+                                            ...(opcao.gaveta || {}),
+                                            placeholder: e.target.value
+                                          })}
+                                          placeholder="Ex: Digite seu pedido..."
+                                          className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1 text-xs text-slate-200"
+                                        />
+                                      </div>
+                                    )}
+
+                                    <div>
                                       <label className="text-[10px] font-bold text-slate-400 block mb-1">
-                                        Texto do Botão
+                                        Texto do Botão da Gaveta
                                       </label>
                                       <input
                                         type="text"
@@ -1655,32 +1846,27 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         </span>
                       </div>
 
-                      {/* Seletor de Tipo da Tela: Cards vs Dissertativa (Campo Aberto) */}
-                      <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
-                        <button
-                          type="button"
-                          onClick={() => handleUpdateTelaProp(extraIndex, 'tipo', 'cards')}
-                          className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
-                            telaAlvo.tipo !== 'texto'
-                              ? 'bg-amber-400 text-slate-950 shadow'
-                              : 'text-slate-400 hover:text-white'
-                          }`}
+                      {/* Seletor Completo de Tipo da Tela Extra (10 Tipos Mundiais) */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-bold text-slate-400">Tipo:</span>
+                        <select
+                          value={telaAlvo.tipo || 'cards'}
+                          onChange={(e) => {
+                            const novoTipo = e.target.value;
+                            handleUpdateTelaProp(extraIndex, 'tipo', novoTipo);
+                            if (['cards', 'radio', 'checkbox', 'dropdown'].includes(novoTipo) && (!telaAlvo.opcoes || telaAlvo.opcoes.length === 0)) {
+                              handleUpdateTelaProp(extraIndex, 'opcoes', [
+                                { id: `opt_${Date.now()}_1`, titulo: 'Opção 1', ativo: true, icone: 'Sparkles', cor: 'emerald' },
+                                { id: `opt_${Date.now()}_2`, titulo: 'Opção 2', ativo: true, icone: 'Star', cor: 'amber' }
+                              ]);
+                            }
+                          }}
+                          className="bg-slate-900 border border-amber-500/40 focus:border-amber-400 rounded-xl px-3 py-1.5 text-xs font-black text-amber-300"
                         >
-                          <Layers className="w-3.5 h-3.5" />
-                          <span>Cards</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleUpdateTelaProp(extraIndex, 'tipo', 'texto')}
-                          className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
-                            telaAlvo.tipo === 'texto'
-                              ? 'bg-amber-400 text-slate-950 shadow'
-                              : 'text-slate-400 hover:text-white'
-                          }`}
-                        >
-                          <AlignLeft className="w-3.5 h-3.5" />
-                          <span>Campo para Digitar</span>
-                        </button>
+                          {TIPOS_PERGUNTA.map(tp => (
+                            <option key={tp.id} value={tp.id}>{tp.label}</option>
+                          ))}
+                        </select>
                       </div>
 
                       <button
@@ -1744,29 +1930,73 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       </div>
                     </div>
 
-                    {/* CONFIGURAÇÃO ESPECÍFICA: TELA DISSERTATIVA (CAMPO PARA DIGITAR) */}
-                    {telaAlvo.tipo === 'texto' ? (
+                    {/* CONFIGURAÇÃO ESPECÍFICA CONFORME O TIPO DA TELA EXTRA */}
+                    {['texto', 'texto_curto', 'data', 'hora', 'slider', 'rating'].includes(telaAlvo.tipo) ? (
                       <div className="bg-slate-950 border border-amber-500/40 rounded-2xl p-4 space-y-3.5 shadow-lg animate-fade-in">
                         <div className="flex items-center gap-2 pb-2 border-b border-slate-800">
                           <AlignLeft className="w-4 h-4 text-amber-400" />
                           <span className="text-xs font-black text-amber-300 uppercase tracking-wider">
-                            Opções da Caixa de Texto no Celular
+                            {TIPOS_PERGUNTA.find(t => t.id === telaAlvo.tipo)?.label || 'Configurações do Campo'}
                           </span>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                          <div>
-                            <label className="text-[10px] font-bold text-slate-400 block mb-1">
-                              Placeholder da Caixa (Texto de Dica)
-                            </label>
-                            <input
-                              type="text"
-                              value={telaAlvo.placeholder || ''}
-                              onChange={(e) => handleUpdateTelaProp(extraIndex, 'placeholder', e.target.value)}
-                              placeholder="Ex: O que você achou do evento? Digite aqui..."
-                              className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-1.5 text-xs font-bold text-white shadow-inner"
-                            />
+                        {telaAlvo.tipo === 'slider' && (
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                            <div>
+                              <label className="text-[10px] font-bold text-slate-400 block mb-1">Valor Mínimo</label>
+                              <input
+                                type="number"
+                                value={telaAlvo.sliderMin ?? 0}
+                                onChange={(e) => handleUpdateTelaProp(extraIndex, 'sliderMin', Number(e.target.value))}
+                                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs font-bold text-white"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[10px] font-bold text-slate-400 block mb-1">Valor Máximo</label>
+                              <input
+                                type="number"
+                                value={telaAlvo.sliderMax ?? 10}
+                                onChange={(e) => handleUpdateTelaProp(extraIndex, 'sliderMax', Number(e.target.value))}
+                                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs font-bold text-white"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[10px] font-bold text-slate-400 block mb-1">Passo (Step)</label>
+                              <input
+                                type="number"
+                                value={telaAlvo.sliderStep ?? 1}
+                                onChange={(e) => handleUpdateTelaProp(extraIndex, 'sliderStep', Number(e.target.value) || 1)}
+                                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs font-bold text-white"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[10px] font-bold text-slate-400 block mb-1">Sufixo/Unidade</label>
+                              <input
+                                type="text"
+                                value={telaAlvo.sliderUnidade || ''}
+                                onChange={(e) => handleUpdateTelaProp(extraIndex, 'sliderUnidade', e.target.value)}
+                                placeholder="Ex: pts, %"
+                                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs font-bold text-amber-300"
+                              />
+                            </div>
                           </div>
+                        )}
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          {(telaAlvo.tipo === 'texto' || telaAlvo.tipo === 'texto_curto') && (
+                            <div>
+                              <label className="text-[10px] font-bold text-slate-400 block mb-1">
+                                Placeholder da Caixa (Texto de Dica)
+                              </label>
+                              <input
+                                type="text"
+                                value={telaAlvo.placeholder || ''}
+                                onChange={(e) => handleUpdateTelaProp(extraIndex, 'placeholder', e.target.value)}
+                                placeholder={telaAlvo.tipo === 'texto_curto' ? 'Ex: Digite seu nome ou WhatsApp...' : 'Ex: Digite sua sugestão ou comentário...'}
+                                className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-1.5 text-xs font-bold text-white shadow-inner"
+                              />
+                            </div>
+                          )}
 
                           <div>
                             <label className="text-[10px] font-bold text-slate-400 block mb-1">
@@ -1783,23 +2013,25 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2 border-t border-slate-850">
-                          <div className="flex items-center justify-between text-xs bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
-                            <span className="text-slate-300 font-bold">Altura (Linhas):</span>
-                            <div className="flex items-center gap-1">
-                              {[2, 3, 4, 5, 6].map((l) => (
-                                <button
-                                  key={l}
-                                  type="button"
-                                  onClick={() => handleUpdateTelaProp(extraIndex, 'linhas', l)}
-                                  className={`w-6 h-6 rounded-lg font-bold text-xs ${
-                                    (telaAlvo.linhas || 4) === l ? 'bg-amber-400 text-slate-950 font-black' : 'bg-slate-800 text-slate-400 hover:text-white'
-                                  }`}
-                                >
-                                  {l}
-                                </button>
-                              ))}
+                          {telaAlvo.tipo === 'texto' && (
+                            <div className="flex items-center justify-between text-xs bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
+                              <span className="text-slate-300 font-bold">Altura (Linhas):</span>
+                              <div className="flex items-center gap-1">
+                                {[2, 3, 4, 5, 6].map((l) => (
+                                  <button
+                                    key={l}
+                                    type="button"
+                                    onClick={() => handleUpdateTelaProp(extraIndex, 'linhas', l)}
+                                    className={`w-6 h-6 rounded-lg font-bold text-xs ${
+                                      (telaAlvo.linhas || 4) === l ? 'bg-amber-400 text-slate-950 font-black' : 'bg-slate-800 text-slate-400 hover:text-white'
+                                    }`}
+                                  >
+                                    {l}
+                                  </button>
+                                ))}
+                              </div>
                             </div>
-                          </div>
+                          )}
 
                           <div className="flex items-center justify-between text-xs bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
                             <span className="text-slate-300 font-bold">Obrigatoriedade:</span>
@@ -1818,33 +2050,35 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         </div>
                       </div>
                     ) : (
-                      /* CONFIGURAÇÃO ESPECÍFICA: TELA DE CARDS COM GAVETAS */
+                      /* CONFIGURAÇÃO ESPECÍFICA: CARDS, RADIO BUTTON, CHECKBOX OU LISTA SUSPENSA (COM GAVETAS) */
                       <div className="space-y-3">
-                        <div className="bg-slate-950 border border-slate-800 rounded-xl p-3 flex items-center justify-between text-xs">
-                          <span className="text-slate-300 font-bold">Cards por tela nesta etapa:</span>
-                          <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
-                            {[2, 3, 4, 5, 6].map((num) => (
-                              <button
-                                key={num}
-                                type="button"
-                                onClick={() => handleUpdateTelaProp(extraIndex, 'cardsPorTela', num)}
-                                className={`w-6 h-6 rounded-lg font-black text-[11px] transition ${
-                                  limitCards === num
-                                    ? 'bg-amber-400 text-slate-950 shadow'
-                                    : 'text-slate-400 hover:text-white'
-                                }`}
-                              >
-                                {num}
-                              </button>
-                            ))}
+                        {telaAlvo.tipo === 'cards' && (
+                          <div className="bg-slate-950 border border-slate-800 rounded-xl p-3 flex items-center justify-between text-xs">
+                            <span className="text-slate-300 font-bold">Cards por tela nesta etapa:</span>
+                            <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
+                              {[2, 3, 4, 5, 6].map((num) => (
+                                <button
+                                  key={num}
+                                  type="button"
+                                  onClick={() => handleUpdateTelaProp(extraIndex, 'cardsPorTela', num)}
+                                  className={`w-6 h-6 rounded-lg font-black text-[11px] transition ${
+                                    limitCards === num
+                                      ? 'bg-amber-400 text-slate-950 shadow'
+                                      : 'text-slate-400 hover:text-white'
+                                  }`}
+                                >
+                                  {num}
+                                </button>
+                              ))}
+                            </div>
                           </div>
-                        </div>
+                        )}
 
-                        {/* Cards desta Tela Extra */}
+                        {/* Opções desta Tela Extra */}
                         <div className="space-y-2.5">
                           <div className="flex items-center justify-between">
                             <span className="text-xs font-bold text-slate-300 uppercase tracking-wide">
-                              Cards Cadastrados na Tela {numTela} ({telaAlvo.opcoes?.length || 0})
+                              Opções Cadastradas ({telaAlvo.opcoes?.length || 0}) — {TIPOS_PERGUNTA.find(t => t.id === telaAlvo.tipo)?.short || 'Opções'}
                             </span>
 
                             <button
@@ -1853,7 +2087,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                               className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg shadow active:scale-95 transition flex items-center gap-1.5"
                             >
                               <Plus className="w-3.5 h-3.5" />
-                              <span>Adicionar Card</span>
+                              <span>Adicionar Opção</span>
                             </button>
                           </div>
 
@@ -1921,7 +2155,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     <div>
-                                      <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Título do Card</label>
+                                      <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Título da Opção</label>
                                       <input
                                         type="text"
                                         value={opcao.titulo || ''}
@@ -1936,13 +2170,13 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                         type="text"
                                         value={opcao.subtitulo || ''}
                                         onChange={(e) => handleUpdateCardExtra(extraIndex, optIdx, 'subtitulo', e.target.value)}
-                                        placeholder="Ex: Vim conhecer a igreja"
+                                        placeholder="Ex: Detalhe complementar"
                                         className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1 text-xs text-slate-300 shadow-inner"
                                       />
                                     </div>
                                   </div>
 
-                                  {/* CONFIGURAÇÃO DE GAVETA CONDICIONAL NO CARD EXTRA */}
+                                  {/* CONFIGURAÇÃO DE GAVETA CONDICIONAL MULTI-COMPONENTE NA OPÇÃO EXTRA */}
                                   <div className="pt-1.5 border-t border-slate-850">
                                     <label className="flex items-center gap-2 cursor-pointer select-none">
                                       <input
@@ -1951,58 +2185,143 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                         onChange={(e) => {
                                           const checked = e.target.checked;
                                           handleUpdateCardExtra(extraIndex, optIdx, 'temGaveta', checked);
-                                          if (checked && !opcao.gaveta) {
-                                            handleUpdateCardExtra(extraIndex, optIdx, 'gaveta', {
-                                              tipo: 'texto',
-                                              pergunta: 'Por favor, detalhe sua resposta:',
-                                              placeholder: 'Digite sua resposta ou observação...',
-                                              linhas: 3,
-                                              obrigatorio: false,
-                                              botaoConfirmar: 'Confirmar & Avançar'
-                                            });
+                                          if (checked) {
+                                            setPreviewOpenGavetaId(opcao.id);
+                                            if (!opcao.gaveta) {
+                                              handleUpdateCardExtra(extraIndex, optIdx, 'gaveta', {
+                                                tipo: 'texto_longo',
+                                                pergunta: 'Por favor, detalhe sua resposta:',
+                                                placeholder: 'Digite sua resposta ou observação...',
+                                                linhas: 3,
+                                                sliderMin: 0,
+                                                sliderMax: 10,
+                                                sliderStep: 1,
+                                                opcoes: ['Opção 1', 'Opção 2', 'Opção 3'],
+                                                obrigatorio: false,
+                                                botaoConfirmar: 'Confirmar & Avançar'
+                                              });
+                                            }
+                                          } else if (previewOpenGavetaId === opcao.id) {
+                                            setPreviewOpenGavetaId(null);
                                           }
                                         }}
                                         className="w-3.5 h-3.5 rounded border-slate-700 bg-slate-900 text-amber-500 focus:ring-amber-400"
                                       />
                                       <span className={`text-[11px] font-bold ${opcao.temGaveta ? 'text-amber-300' : 'text-slate-400'}`}>
-                                        🗄️ Abrir Gaveta ao Selecionar (Campo para Digitar)
+                                        🗄️ Abrir Gaveta ao Selecionar (Texto, Radio, Checkbox, Slide, Data/Hora)
                                       </span>
                                     </label>
 
                                     {opcao.temGaveta && (
                                       <div className="mt-2 p-2.5 rounded-lg bg-slate-900/95 border border-amber-500/30 space-y-2 animate-fade-in">
-                                        <div>
-                                          <label className="text-[10px] font-bold text-amber-300 block mb-0.5">
-                                            Pergunta da Gaveta
-                                          </label>
-                                          <input
-                                            type="text"
-                                            value={opcao.gaveta?.pergunta || ''}
-                                            onChange={(e) => handleUpdateCardExtra(extraIndex, optIdx, 'gaveta', {
-                                              ...(opcao.gaveta || {}),
-                                              pergunta: e.target.value
-                                            })}
-                                            placeholder="Ex: Qual o tipo de ajuda ou sugestão?"
-                                            className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-lg px-2 py-1 text-xs text-white"
-                                          />
-                                        </div>
-
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                           <div>
-                                            <label className="text-[10px] font-bold text-slate-400 block mb-0.5">
-                                              Placeholder
+                                            <label className="text-[10px] font-bold text-amber-300 block mb-0.5">
+                                              Tipo da Gaveta
+                                            </label>
+                                            <select
+                                              value={opcao.gaveta?.tipo || 'texto_longo'}
+                                              onChange={(e) => {
+                                                setPreviewOpenGavetaId(opcao.id);
+                                                handleUpdateCardExtra(extraIndex, optIdx, 'gaveta', {
+                                                  ...(opcao.gaveta || {}),
+                                                  tipo: e.target.value,
+                                                  opcoes: Array.isArray(opcao.gaveta?.opcoes) && opcao.gaveta.opcoes.length > 0
+                                                    ? opcao.gaveta.opcoes
+                                                    : ['Opção 1', 'Opção 2', 'Opção 3']
+                                                });
+                                              }}
+                                              className="w-full bg-slate-950 border border-amber-500/40 rounded-lg px-2 py-1 text-xs font-bold text-amber-200"
+                                            >
+                                              {TIPOS_GAVETA.map(tg => (
+                                                <option key={tg.id} value={tg.id}>{tg.label}</option>
+                                              ))}
+                                            </select>
+                                          </div>
+                                          <div>
+                                            <label className="text-[10px] font-bold text-amber-300 block mb-0.5">
+                                              Pergunta da Gaveta
                                             </label>
                                             <input
                                               type="text"
-                                              value={opcao.gaveta?.placeholder || ''}
-                                              onChange={(e) => handleUpdateCardExtra(extraIndex, optIdx, 'gaveta', {
-                                                ...(opcao.gaveta || {}),
-                                                placeholder: e.target.value
-                                              })}
-                                              placeholder="Digite aqui..."
-                                              className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-lg px-2 py-1 text-xs text-slate-200"
+                                              value={opcao.gaveta?.pergunta || ''}
+                                              onChange={(e) => {
+                                                setPreviewOpenGavetaId(opcao.id);
+                                                handleUpdateCardExtra(extraIndex, optIdx, 'gaveta', {
+                                                  ...(opcao.gaveta || {}),
+                                                  pergunta: e.target.value
+                                                });
+                                              }}
+                                              placeholder="Ex: Qual o tipo de ajuda ou sugestão?"
+                                              className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-lg px-2 py-1 text-xs text-white"
                                             />
                                           </div>
+                                        </div>
+
+                                        {(opcao.gaveta?.tipo === 'radio' || opcao.gaveta?.tipo === 'checkbox') && (
+                                          <div className="p-2 rounded-lg bg-slate-950 border border-slate-800 space-y-1.5">
+                                            <div className="flex items-center justify-between">
+                                              <span className="text-[10px] font-bold text-sky-300 uppercase">Opções da Gaveta</span>
+                                              <button
+                                                type="button"
+                                                onClick={() => {
+                                                  setPreviewOpenGavetaId(opcao.id);
+                                                  const atuais = Array.isArray(opcao.gaveta?.opcoes) ? opcao.gaveta.opcoes : [];
+                                                  handleUpdateCardExtra(extraIndex, optIdx, 'gaveta', {
+                                                    ...(opcao.gaveta || {}),
+                                                    opcoes: [...atuais, `Opção ${atuais.length + 1}`]
+                                                  });
+                                                }}
+                                                className="px-2 py-0.5 rounded bg-emerald-600 text-white text-[10px] font-bold"
+                                              >
+                                                + Opção
+                                              </button>
+                                            </div>
+                                            {(opcao.gaveta?.opcoes || ['Opção 1', 'Opção 2']).map((gOpt, gIdx) => (
+                                              <div key={gIdx} className="flex items-center gap-1.5">
+                                                <input
+                                                  type="text"
+                                                  value={gOpt}
+                                                  onChange={(e) => {
+                                                    const novas = [...(opcao.gaveta?.opcoes || [])];
+                                                    novas[gIdx] = e.target.value;
+                                                    handleUpdateCardExtra(extraIndex, optIdx, 'gaveta', { ...(opcao.gaveta || {}), opcoes: novas });
+                                                  }}
+                                                  className="flex-1 bg-slate-900 border border-slate-700 rounded px-2 py-0.5 text-xs text-white"
+                                                />
+                                                <button
+                                                  type="button"
+                                                  onClick={() => {
+                                                    const novas = (opcao.gaveta?.opcoes || []).filter((_, i) => i !== gIdx);
+                                                    handleUpdateCardExtra(extraIndex, optIdx, 'gaveta', { ...(opcao.gaveta || {}), opcoes: novas.length ? novas : ['Opção 1'] });
+                                                  }}
+                                                  className="p-1 text-slate-500 hover:text-rose-400"
+                                                >
+                                                  <Trash2 className="w-3 h-3" />
+                                                </button>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        )}
+
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                          {(opcao.gaveta?.tipo === 'texto_longo' || opcao.gaveta?.tipo === 'texto_curto' || !opcao.gaveta?.tipo || opcao.gaveta?.tipo === 'texto') && (
+                                            <div>
+                                              <label className="text-[10px] font-bold text-slate-400 block mb-0.5">
+                                                Placeholder
+                                              </label>
+                                              <input
+                                                type="text"
+                                                value={opcao.gaveta?.placeholder || ''}
+                                                onChange={(e) => handleUpdateCardExtra(extraIndex, optIdx, 'gaveta', {
+                                                  ...(opcao.gaveta || {}),
+                                                  placeholder: e.target.value
+                                                })}
+                                                placeholder="Digite aqui..."
+                                                className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-lg px-2 py-1 text-xs text-slate-200"
+                                              />
+                                            </div>
+                                          )}
                                           <div>
                                             <label className="text-[10px] font-bold text-slate-400 block mb-0.5">
                                               Texto do Botão
@@ -2803,7 +3122,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       )}
                     </div>
 
-                    {/* Cards da Tela 1 */}
+                    {/* Cards da Tela 1 (com Gaveta Interativa no Preview) */}
                     <div className="flex-1 my-auto space-y-2 py-1">
                       {cardsNaPaginaAtualP1.length === 0 ? (
                         <div className="py-8 text-center text-xs text-slate-500">
@@ -2813,40 +3132,120 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         cardsNaPaginaAtualP1.map((opcao) => {
                           const IconComp = getIconComponent(opcao.icone);
                           const corCls = getCorBadge(opcao.cor);
+                          const isGavetaOpen = Boolean(opcao.temGaveta && previewOpenGavetaId === opcao.id);
 
                           return (
-                            <div
-                              key={opcao.id}
-                              style={{ 
-                                minHeight: `${config.cardAltura || 82}px`,
-                                ...getEfeitoStyle(config.cardEfeitoEstilo, config.cardProfundidade)
-                              }}
-                              className={`w-full text-left p-2.5 rounded-xl flex items-center justify-between transition-all ${getCardFundoClass(config.cardFundoEstilo)}`}
-                            >
-                              <div className="flex items-center gap-2.5 pr-1 min-w-0">
-                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${corCls}`}>
-                                  <IconComp className="w-4 h-4" />
-                                </div>
-                                <div className="min-w-0">
-                                  <h4 
-                                    style={{ fontSize: `${config.cardFonteTitulo || 16}px` }}
-                                    className={`font-bold truncate leading-snug ${getCardFonteTituloClass(config.cardCorFonteTitulo)}`}
-                                  >
-                                    {opcao.titulo || 'Opção sem título'}
-                                  </h4>
-                                  {opcao.subtitulo && (
-                                    <p 
-                                      style={{ fontSize: `${config.cardFonteSubtitulo || 12}px` }}
-                                      className={`truncate mt-0.5 leading-snug ${getCardFonteSubtituloClass(config.cardCorFonteSubtitulo)}`}
+                            <div key={opcao.id} className="space-y-1.5">
+                              <div
+                                onClick={() => {
+                                  if (opcao.temGaveta) {
+                                    setPreviewOpenGavetaId(isGavetaOpen ? null : opcao.id);
+                                  }
+                                }}
+                                style={{ 
+                                  minHeight: `${config.cardAltura || 82}px`,
+                                  ...getEfeitoStyle(config.cardEfeitoEstilo, config.cardProfundidade)
+                                }}
+                                className={`w-full text-left p-2.5 rounded-xl flex items-center justify-between transition-all cursor-pointer ${getCardFundoClass(config.cardFundoEstilo)} ${
+                                  isGavetaOpen ? 'ring-1 ring-amber-400 border-amber-400/70' : ''
+                                }`}
+                              >
+                                <div className="flex items-center gap-2.5 pr-1 min-w-0">
+                                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${corCls}`}>
+                                    <IconComp className="w-4 h-4" />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <h4 
+                                      style={{ fontSize: `${config.cardFonteTitulo || 16}px` }}
+                                      className={`font-bold truncate leading-snug ${getCardFonteTituloClass(config.cardCorFonteTitulo)}`}
                                     >
-                                      {opcao.subtitulo}
-                                    </p>
+                                      {opcao.titulo || 'Opção sem título'}
+                                    </h4>
+                                    {opcao.subtitulo && (
+                                      <p 
+                                        style={{ fontSize: `${config.cardFonteSubtitulo || 12}px` }}
+                                        className={`truncate mt-0.5 leading-snug ${getCardFonteSubtituloClass(config.cardCorFonteSubtitulo)}`}
+                                      >
+                                        {opcao.subtitulo}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center shrink-0 text-slate-400">
+                                  {opcao.temGaveta ? (
+                                    <ChevronDown className={`w-3 h-3 transition-transform ${isGavetaOpen ? 'rotate-180 text-amber-400' : ''}`} />
+                                  ) : (
+                                    <ChevronRight className="w-3 h-3" />
                                   )}
                                 </div>
                               </div>
-                              <div className="w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center shrink-0 text-slate-400">
-                                <ChevronRight className="w-3 h-3" />
-                              </div>
+
+                              {/* Preview da Gaveta Aberta (Suporta Texto, Radio, Checkbox, Slide, Data e Hora) */}
+                              {isGavetaOpen && (
+                                <div className="p-2.5 rounded-xl bg-slate-900/95 border border-amber-500/50 text-left space-y-2 animate-fade-in">
+                                  <span className="text-[10px] font-black text-amber-300 block">
+                                    🗄️ {opcao.gaveta?.pergunta || 'Por favor, detalhe sua resposta:'}
+                                  </span>
+
+                                  {opcao.gaveta?.tipo === 'radio' ? (
+                                    <div className="space-y-1">
+                                      {(opcao.gaveta?.opcoes || ['Opção 1', 'Opção 2']).map((gOpt, gi) => (
+                                        <label key={gi} className="flex items-center gap-2 p-1.5 rounded-lg bg-slate-950 border border-slate-800 text-[10px] text-slate-200 cursor-pointer">
+                                          <input type="radio" name={`prev_gav_${opcao.id}`} defaultChecked={gi === 0} className="accent-amber-400" />
+                                          <span>{gOpt}</span>
+                                        </label>
+                                      ))}
+                                    </div>
+                                  ) : opcao.gaveta?.tipo === 'checkbox' ? (
+                                    <div className="space-y-1">
+                                      {(opcao.gaveta?.opcoes || ['Opção 1', 'Opção 2']).map((gOpt, gi) => (
+                                        <label key={gi} className="flex items-center gap-2 p-1.5 rounded-lg bg-slate-950 border border-slate-800 text-[10px] text-slate-200 cursor-pointer">
+                                          <input type="checkbox" defaultChecked={gi === 0} className="accent-amber-400 rounded" />
+                                          <span>{gOpt}</span>
+                                        </label>
+                                      ))}
+                                    </div>
+                                  ) : opcao.gaveta?.tipo === 'slider' ? (
+                                    <div className="p-2 rounded-lg bg-slate-950 border border-slate-800 space-y-1">
+                                      <div className="flex justify-between text-[10px] font-bold text-amber-300">
+                                        <span>Valor:</span>
+                                        <span>{previewInteractiveVal[`gav_${opcao.id}`] ?? opcao.gaveta?.sliderMax ?? 10}{opcao.gaveta?.sliderUnidade || ''}</span>
+                                      </div>
+                                      <input
+                                        type="range"
+                                        min={opcao.gaveta?.sliderMin ?? 0}
+                                        max={opcao.gaveta?.sliderMax ?? 10}
+                                        step={opcao.gaveta?.sliderStep ?? 1}
+                                        value={previewInteractiveVal[`gav_${opcao.id}`] ?? opcao.gaveta?.sliderMax ?? 10}
+                                        onChange={(e) => setPreviewInteractiveVal(p => ({ ...p, [`gav_${opcao.id}`]: e.target.value }))}
+                                        className="w-full h-1.5 bg-slate-800 rounded-lg accent-amber-400"
+                                      />
+                                    </div>
+                                  ) : opcao.gaveta?.tipo === 'data' ? (
+                                    <input type="date" className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-[10px] text-white" />
+                                  ) : opcao.gaveta?.tipo === 'hora' ? (
+                                    <input type="time" className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-[10px] text-white" />
+                                  ) : opcao.gaveta?.tipo === 'texto_curto' ? (
+                                    <input
+                                      type="text"
+                                      placeholder={opcao.gaveta?.placeholder || 'Digite aqui...'}
+                                      className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-[10px] text-white"
+                                    />
+                                  ) : (
+                                    <textarea
+                                      rows={2}
+                                      placeholder={opcao.gaveta?.placeholder || 'Digite sua resposta...'}
+                                      className="w-full bg-slate-950 border border-slate-700 rounded-lg p-1.5 text-[10px] text-white resize-none"
+                                    />
+                                  )}
+
+                                  <div className="text-right">
+                                    <span className="inline-block px-2.5 py-1 rounded-lg bg-amber-500 text-slate-950 font-black text-[9px]">
+                                      {opcao.gaveta?.botaoConfirmar || 'Confirmar & Avançar'} →
+                                    </span>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           );
                         })
@@ -2912,8 +3311,129 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         )}
                       </div>
 
-                      <div className="flex-1 my-auto space-y-2 py-1">
-                        {cardsAtivos.length === 0 ? (
+                      <div className="flex-1 my-auto space-y-2 py-1 text-left">
+                        {/* RENDERIZAÇÃO AO VIVO DE TODOS OS 10 TIPOS DE PERGUNTA NO SIMULADOR */}
+                        {telaExtra.tipo === 'texto' ? (
+                          <div className="p-3 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2.5">
+                            <textarea
+                              rows={telaExtra.linhas || 4}
+                              placeholder={telaExtra.placeholder || 'Digite sua resposta aqui...'}
+                              className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white placeholder-slate-500 resize-none"
+                            />
+                            <div className="w-full py-2.5 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
+                              {telaExtra.botaoTexto || 'Avançar'} →
+                            </div>
+                          </div>
+                        ) : telaExtra.tipo === 'texto_curto' ? (
+                          <div className="p-3 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2.5">
+                            <input
+                              type="text"
+                              placeholder={telaExtra.placeholder || 'Digite sua resposta curta...'}
+                              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white placeholder-slate-500"
+                            />
+                            <div className="w-full py-2.5 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
+                              {telaExtra.botaoTexto || 'Avançar'} →
+                            </div>
+                          </div>
+                        ) : telaExtra.tipo === 'slider' ? (
+                          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3 text-center">
+                            <div className="text-3xl font-black text-amber-400">
+                              {previewInteractiveVal[`extra_sl_${extraIdx}`] ?? Math.round(((telaExtra.sliderMin ?? 0) + (telaExtra.sliderMax ?? 10)) / 2)}{telaExtra.sliderUnidade || ''}
+                            </div>
+                            <input
+                              type="range"
+                              min={telaExtra.sliderMin ?? 0}
+                              max={telaExtra.sliderMax ?? 10}
+                              step={telaExtra.sliderStep ?? 1}
+                              value={previewInteractiveVal[`extra_sl_${extraIdx}`] ?? Math.round(((telaExtra.sliderMin ?? 0) + (telaExtra.sliderMax ?? 10)) / 2)}
+                              onChange={(e) => setPreviewInteractiveVal(p => ({ ...p, [`extra_sl_${extraIdx}`]: e.target.value }))}
+                              className="w-full h-2 bg-slate-800 rounded-lg accent-amber-400 cursor-pointer"
+                            />
+                            <div className="flex justify-between text-[10px] font-mono text-slate-400">
+                              <span>{telaExtra.sliderMin ?? 0}</span>
+                              <span>{telaExtra.sliderMax ?? 10}</span>
+                            </div>
+                            <div className="w-full py-2.5 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
+                              {telaExtra.botaoTexto || 'Avançar'} →
+                            </div>
+                          </div>
+                        ) : telaExtra.tipo === 'rating' ? (
+                          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3 text-center">
+                            <div className="flex items-center justify-center gap-2 py-2">
+                              {[1, 2, 3, 4, 5].map((st) => {
+                                const cur = previewInteractiveVal[`extra_rt_${extraIdx}`] ?? 5;
+                                return (
+                                  <button
+                                    key={st}
+                                    type="button"
+                                    onClick={() => setPreviewInteractiveVal(p => ({ ...p, [`extra_rt_${extraIdx}`]: st }))}
+                                    className="p-1 transition hover:scale-110"
+                                  >
+                                    <Star className={`w-7 h-7 ${st <= cur ? 'text-amber-400 fill-amber-400' : 'text-slate-700'}`} />
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            <div className="w-full py-2.5 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
+                              {telaExtra.botaoTexto || 'Avançar'} →
+                            </div>
+                          </div>
+                        ) : telaExtra.tipo === 'data' ? (
+                          <div className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
+                            <input
+                              type="date"
+                              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white"
+                            />
+                            <div className="w-full py-2.5 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
+                              {telaExtra.botaoTexto || 'Avançar'} →
+                            </div>
+                          </div>
+                        ) : telaExtra.tipo === 'hora' ? (
+                          <div className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
+                            <input
+                              type="time"
+                              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white"
+                            />
+                            <div className="w-full py-2.5 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
+                              {telaExtra.botaoTexto || 'Avançar'} →
+                            </div>
+                          </div>
+                        ) : telaExtra.tipo === 'dropdown' ? (
+                          <div className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
+                            <select className="w-full bg-slate-950 border border-amber-500/50 rounded-xl px-3 py-2.5 text-xs font-bold text-white">
+                              <option value="">Selecione uma opção...</option>
+                              {cardsAtivos.map((opt) => (
+                                <option key={opt.id} value={opt.titulo}>{opt.titulo}</option>
+                              ))}
+                            </select>
+                            <div className="w-full py-2.5 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
+                              {telaExtra.botaoTexto || 'Avançar'} →
+                            </div>
+                          </div>
+                        ) : telaExtra.tipo === 'radio' || telaExtra.tipo === 'checkbox' ? (
+                          <div className="space-y-2">
+                            {cardsAtivos.map((opt, oi) => (
+                              <label
+                                key={opt.id || oi}
+                                className="flex items-center gap-2.5 p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-amber-400/50 cursor-pointer"
+                              >
+                                <input
+                                  type={telaExtra.tipo === 'radio' ? 'radio' : 'checkbox'}
+                                  name={`prev_extra_${extraIdx}`}
+                                  defaultChecked={oi === 0}
+                                  className="w-4 h-4 accent-amber-400"
+                                />
+                                <div className="min-w-0 flex-1">
+                                  <span className="text-xs font-bold text-white block truncate">{opt.titulo}</span>
+                                  {opt.subtitulo && <span className="text-[10px] text-slate-400 block truncate">{opt.subtitulo}</span>}
+                                </div>
+                              </label>
+                            ))}
+                            <div className="w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow mt-2">
+                              {telaExtra.botaoTexto || 'Avançar'} →
+                            </div>
+                          </div>
+                        ) : cardsAtivos.length === 0 ? (
                           <div className="py-8 text-center text-xs text-slate-500">
                             Nenhum card ativo nesta tela.
                           </div>
@@ -2921,40 +3441,75 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                           cardsAtivos.map((opt) => {
                             const IconComp = getIconComponent(opt.icone);
                             const corCls = getCorBadge(opt.cor);
+                            const isGavetaOpen = Boolean(opt.temGaveta && previewOpenGavetaId === opt.id);
 
                             return (
-                              <div
-                                key={opt.id}
-                                style={{ 
-                                  minHeight: `${config.cardAltura || 82}px`,
-                                  ...getEfeitoStyle(config.cardEfeitoEstilo, config.cardProfundidade)
-                                }}
-                                className={`w-full text-left p-2.5 rounded-xl flex items-center justify-between transition-all ${getCardFundoClass(config.cardFundoEstilo)}`}
-                              >
-                                <div className="flex items-center gap-2.5 pr-1 min-w-0">
-                                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${corCls}`}>
-                                    <IconComp className="w-4 h-4" />
-                                  </div>
-                                  <div className="min-w-0">
-                                    <h4 
-                                      style={{ fontSize: `${config.cardFonteTitulo || 16}px` }}
-                                      className={`font-bold truncate leading-snug ${getCardFonteTituloClass(config.cardCorFonteTitulo)}`}
-                                    >
-                                      {opt.titulo || 'Opção sem título'}
-                                    </h4>
-                                    {opt.subtitulo && (
-                                      <p 
-                                        style={{ fontSize: `${config.cardFonteSubtitulo || 12}px` }}
-                                        className={`truncate mt-0.5 leading-snug ${getCardFonteSubtituloClass(config.cardCorFonteSubtitulo)}`}
+                              <div key={opt.id} className="space-y-1.5">
+                                <div
+                                  onClick={() => {
+                                    if (opt.temGaveta) {
+                                      setPreviewOpenGavetaId(isGavetaOpen ? null : opt.id);
+                                    }
+                                  }}
+                                  style={{ 
+                                    minHeight: `${config.cardAltura || 82}px`,
+                                    ...getEfeitoStyle(config.cardEfeitoEstilo, config.cardProfundidade)
+                                  }}
+                                  className={`w-full text-left p-2.5 rounded-xl flex items-center justify-between transition-all cursor-pointer ${getCardFundoClass(config.cardFundoEstilo)}`}
+                                >
+                                  <div className="flex items-center gap-2.5 pr-1 min-w-0">
+                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${corCls}`}>
+                                      <IconComp className="w-4 h-4" />
+                                    </div>
+                                    <div className="min-w-0">
+                                      <h4 
+                                        style={{ fontSize: `${config.cardFonteTitulo || 16}px` }}
+                                        className={`font-bold truncate leading-snug ${getCardFonteTituloClass(config.cardCorFonteTitulo)}`}
                                       >
-                                        {opt.subtitulo}
-                                      </p>
+                                        {opt.titulo || 'Opção sem título'}
+                                      </h4>
+                                      {opt.subtitulo && (
+                                        <p 
+                                          style={{ fontSize: `${config.cardFonteSubtitulo || 12}px` }}
+                                          className={`truncate mt-0.5 leading-snug ${getCardFonteSubtituloClass(config.cardCorFonteSubtitulo)}`}
+                                        >
+                                          {opt.subtitulo}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center shrink-0 text-slate-400">
+                                    {opt.temGaveta ? (
+                                      <ChevronDown className={`w-3 h-3 transition-transform ${isGavetaOpen ? 'rotate-180 text-amber-400' : ''}`} />
+                                    ) : (
+                                      <ChevronRight className="w-3 h-3" />
                                     )}
                                   </div>
                                 </div>
-                                <div className="w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center shrink-0 text-slate-400">
-                                  <ChevronRight className="w-3 h-3" />
-                                </div>
+
+                                {isGavetaOpen && (
+                                  <div className="p-2.5 rounded-xl bg-slate-900/95 border border-amber-500/50 text-left space-y-2">
+                                    <span className="text-[10px] font-black text-amber-300 block">
+                                      🗄️ {opt.gaveta?.pergunta || 'Por favor, detalhe sua resposta:'}
+                                    </span>
+                                    {opt.gaveta?.tipo === 'radio' || opt.gaveta?.tipo === 'checkbox' ? (
+                                      <div className="space-y-1">
+                                        {(opt.gaveta?.opcoes || ['Opção 1', 'Opção 2']).map((gOpt, gi) => (
+                                          <label key={gi} className="flex items-center gap-2 p-1.5 rounded-lg bg-slate-950 border border-slate-800 text-[10px] text-slate-200">
+                                            <input type={opt.gaveta?.tipo === 'radio' ? 'radio' : 'checkbox'} defaultChecked={gi === 0} className="accent-amber-400" />
+                                            <span>{gOpt}</span>
+                                          </label>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <input
+                                        type="text"
+                                        placeholder={opt.gaveta?.placeholder || 'Digite aqui...'}
+                                        className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-[10px] text-white"
+                                      />
+                                    )}
+                                  </div>
+                                )}
                               </div>
                             );
                           })
@@ -3167,7 +3722,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
         {/* ============================================================ */}
         {showTipoNovaTelaModal && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-            <div className="bg-slate-900 border border-slate-700 rounded-2xl p-5 max-w-md w-full shadow-2xl space-y-4">
+            <div className="bg-slate-900 border border-slate-700 rounded-2xl p-5 max-w-2xl w-full shadow-2xl space-y-4">
               <div className="flex items-center justify-between pb-2 border-b border-slate-800">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center">
@@ -3187,48 +3742,22 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 gap-2.5">
-                {/* Opção 1: Cards */}
-                <button
-                  type="button"
-                  onClick={() => handleAdicionarTela('cards')}
-                  className="p-4 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-400/80 hover:bg-slate-900 text-left transition group space-y-1 shadow-sm"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-lg bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                      <Layers className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-black text-white group-hover:text-amber-300 transition-colors">
-                        🃏 Tela de Cards (Múltipla Escolha)
-                      </h4>
-                      <p className="text-[11px] text-slate-400">
-                        O visitante escolhe tocando em cards visuais grandes (com suporte a gavetas retráteis).
-                      </p>
-                    </div>
-                  </div>
-                </button>
-
-                {/* Opção 2: Campo Dissertativo para Digitar */}
-                <button
-                  type="button"
-                  onClick={() => handleAdicionarTela('texto')}
-                  className="p-4 rounded-xl bg-slate-950 border border-slate-800 hover:border-emerald-400/80 hover:bg-slate-900 text-left transition group space-y-1 shadow-sm"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                      <AlignLeft className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-black text-white group-hover:text-emerald-300 transition-colors">
-                        ✍️ Campo Aberto (Pergunta Dissertativa)
-                      </h4>
-                      <p className="text-[11px] text-slate-400">
-                        Ex: "O que você achou do evento?" O visitante digita livremente sua resposta no celular.
-                      </p>
-                    </div>
-                  </div>
-                </button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[65vh] overflow-y-auto custom-scrollbar pr-1">
+                {TIPOS_PERGUNTA.map((tp) => (
+                  <button
+                    key={tp.id}
+                    type="button"
+                    onClick={() => handleAdicionarTela(tp.id)}
+                    className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-400/80 hover:bg-slate-900 text-left transition group space-y-1 shadow-sm"
+                  >
+                    <h4 className="text-xs font-black text-white group-hover:text-amber-300 transition-colors">
+                      {tp.label}
+                    </h4>
+                    <p className="text-[11px] text-slate-400 leading-snug">
+                      {tp.desc}
+                    </p>
+                  </button>
+                ))}
               </div>
 
               <div className="pt-1 text-right">
@@ -3339,16 +3868,16 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 </button>
               </div>
 
-              {/* Upload de Arquivo Word (.docx) */}
+              {/* Upload de Arquivo Word (.docx, .doc), Planilha (.csv) ou Texto (.txt, .json) */}
               <div className="p-4 rounded-2xl bg-slate-950 border-2 border-dashed border-slate-800 hover:border-emerald-500/50 transition text-center space-y-2">
                 <UploadCloud className="w-8 h-8 text-emerald-400 mx-auto" />
                 <div>
                   <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 font-bold text-xs hover:bg-emerald-500/25 active:scale-95 transition">
                     <FolderUp className="w-4 h-4" />
-                    <span>Selecionar Arquivo Word (.docx) ou Texto (.txt, .json)</span>
+                    <span>Selecionar Arquivo (.docx, .doc, .csv, .txt, .json)</span>
                     <input
                       type="file"
-                      accept=".docx,.txt,.json"
+                      accept=".docx,.doc,.csv,.txt,.json"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) handleImportarArquivo(file);
@@ -3358,7 +3887,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                   </label>
                 </div>
                 <p className="text-[11px] text-slate-500">
-                  O sistema extrai o texto do Word, identifica perguntas de múltipla escolha, campos para digitar e gavetas!
+                  A IA analisa o arquivo e monta automaticamente Cards, Checkboxes, Radio Buttons, Slides 0-10, Datas, Horas e Gavetas!
                 </p>
               </div>
 
