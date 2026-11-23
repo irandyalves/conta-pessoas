@@ -439,7 +439,7 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
                 onClick={() => selectMenu('eventos')}
                 title="Eventos Simultâneos e Controle de Pausa"
                 className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'justify-between px-3'} py-2.5 rounded-xl text-xs font-bold transition ${
-                  activeSection === 'eventos'
+                  activeSection === 'eventos' || activeSection === 'novo_evento'
                     ? 'bg-sky-500/15 text-sky-300 border border-sky-500/30 shadow-sm'
                     : 'text-slate-300 hover:bg-slate-800/70 hover:text-white border border-transparent'
                 }`}
@@ -453,19 +453,6 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
                     {eventosLista.length}
                   </span>
                 )}
-              </button>
-
-              <button
-                onClick={() => selectMenu('novo_evento')}
-                title="Criar Novo Evento"
-                className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-xl text-xs font-bold transition gap-3 ${
-                  activeSection === 'novo_evento'
-                    ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shadow-sm'
-                    : 'text-emerald-300 hover:bg-emerald-500/10 border border-transparent'
-                }`}
-              >
-                <Plus className="w-4 h-4 text-emerald-400 shrink-0" />
-                {!sidebarCollapsed && <span className="truncate">Novo Evento</span>}
               </button>
             </div>
 
@@ -659,7 +646,7 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
                       </option>
                     ))}
                     <option value="__novo__" className="bg-slate-900 text-emerald-400 font-bold">
-                      + Criar Novo Evento...
+                      Criar Novo Evento...
                     </option>
                   </select>
 
@@ -1176,7 +1163,7 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
                   className="px-4 py-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center gap-1.5 transition self-start sm:self-auto"
                 >
                   <Plus className="w-4 h-4" />
-                  <span>+ Criar Novo Evento</span>
+                  <span>Criar Novo Evento</span>
                 </button>
               </div>
 
@@ -1376,10 +1363,10 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
                 <div className="flex items-center gap-3 pt-2">
                   <button
                     type="button"
-                    onClick={() => setActiveSection('dashboard')}
+                    onClick={() => setActiveSection('eventos')}
                     className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition"
                   >
-                    Voltar ao Painel
+                    Voltar aos Eventos
                   </button>
                   <button
                     type="submit"
