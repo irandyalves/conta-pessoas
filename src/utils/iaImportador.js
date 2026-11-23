@@ -88,9 +88,21 @@ function montarSchema(Schema) {
   });
 }
 
+// App Check (reCAPTCHA v3): o Firebase AI Logic só aceita pedidos de apps verificados.
+// Coloque a chave do site do reCAPTCHA v3 aqui (ou em VITE_RECAPTCHA_SITE_KEY no .env).
+export const RECAPTCHA_SITE_KEY = import.meta.env?.VITE_RECAPTCHA_SITE_KEY || '';
+let appCheckPronto = false;
+async function garantirAppCheck(app) {
+  if (appCheckPronto || !RECAPTCHA_SITE_KEY) return;
+  const { initializeAppCheck, ReCaptchaV3Provider } = await import('firebase/app-check');
+  initializeAppCheck(app, { provider: new ReCaptchaV3Provider(RECAPTCHA_SITE_KEY), isTokenAutoRefreshEnabled: true });
+  appCheckPronto = true;
+}
+
 async function analisarComGemini(texto) {
   const app = getFirebaseApp();
   if (!app) throw new Error('Firebase não configurado.');
+  await garantirAppCheck(app);
   const { getAI, getGenerativeModel, GoogleAIBackend, Schema } = await import('firebase/ai');
   const ai = getAI(app, { backend: new GoogleAIBackend() });
   const model = getGenerativeModel(ai, {
@@ -109,60 +121,94 @@ async function analisarComGemini(texto) {
 }
 
 // ------------------------------------------
-// Leitura automática de SIMULADOS (sem IA)
-// "1. Pergunta" / "Questão 2 -" + alternativas a) b) (C) D. + "Gabarito: 1-A, 2-B"
+// Leitura automática de SIMULADOS e questionários numerados (sem IA)
+// "1. Pergunta" / "Questão 2 -" + alternativas a) b) (C) D. / ( ) ☐ [ ]
+// (na mesma linha ou uma por linha) + "Gabarito: 1-A, 2-B"
 // ------------------------------------------
 const RE_QUESTAO = /^\s*(?:quest[aã]o\s*)?(\d{1,3})\s*[.)\-–:]\s*(.+)$/i;
-const RE_ALTERNATIVA = /(?:^|\s)\(?([a-eA-E])\s*[).]\s+/g;
+const RE_LETRA = /\(?\b([a-eA-E])\s*[).]\s+/;          // a) b. (C)
+const RE_MARCA = /(?:\(\s*\)|\[\s*\]|☐|□|○)\s*/;        // ( ) [ ] ☐
+
+function separarAlternativas(texto) {
+  const t = ` ${texto}`;
+  let partes = t.split(/\s(?=\(?[a-eA-E]\s*[).]\s+)/).map((p) => p.trim()).filter(Boolean);
+  if (partes.length > 1 || RE_LETRA.test(partes[0] || '')) {
+    const lista = [];
+    partes.forEach((p) => {
+      const m = p.match(/^\(?([a-eA-E])\s*[).]\s+(.+)$/);
+      if (m) lista.push({ letra: m[1].toUpperCase(), titulo: m[2].trim() });
+    });
+    if (lista.length) return { enunciado: '', lista, tipoMarca: 'letra' };
+  }
+  partes = texto.split(/(?:\(\s*\)|\[\s*\]|☐|□|○)/).map((p) => p.trim());
+  if (partes.length > 1) {
+    return { enunciado: partes[0], lista: partes.slice(1).filter(Boolean).map((t) => ({ letra: '', titulo: t })), tipoMarca: 'marca' };
+  }
+  return null;
+}
 
 export function parseSimulado(texto) {
-  const linhas = String(texto || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const bruto = String(texto || '');
   const gabarito = {};
-  const gabTxt = (String(texto).match(/gabarito[\s\S]*$/i) || [''])[0];
+  const gabTxt = (bruto.match(/gabarito[\s\S]*$/i) || [''])[0];
   for (const m of gabTxt.matchAll(/(\d{1,3})\s*[-–:.)]\s*([a-eA-E])\b/g)) gabarito[m[1]] = m[2].toUpperCase();
 
+  const linhas = bruto.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
   const questoes = [];
   let titulo = '';
   let atual = null;
   for (const linha of linhas) {
     if (/^gabarito/i.test(linha)) break;
-    const q = linha.match(RE_QUESTAO);
-    const temAlt = /^\(?[a-eA-E]\s*[).]\s+/.test(linha);
-    if (q && !temAlt) {
+    const ehAlternativa = /^\(?[a-eA-E]\s*[).]\s+/.test(linha) || RE_MARCA.test(linha.slice(0, 3));
+    const q = !ehAlternativa && linha.match(RE_QUESTAO);
+    if (q) {
       atual = { numero: q[1], titulo: q[2].trim(), opcoes: [] };
+      const sep = separarAlternativas(atual.titulo);
+      if (sep && sep.lista.length >= 2) {
+        atual.titulo = sep.enunciado || atual.titulo.split(RE_MARCA)[0].trim();
+        atual.opcoes.push(...sep.lista);
+      }
       questoes.push(atual);
-      // alternativas na mesma linha da pergunta
       continue;
     }
     if (!atual) {
       if (!titulo) titulo = linha;
       continue;
     }
-    if (temAlt) {
-      const partes = linha.split(/(?=(?:^|\s)\(?[a-eA-E]\s*[).]\s+)/).map((p) => p.trim()).filter(Boolean);
-      partes.forEach((p) => {
-        const m = p.match(/^\(?([a-eA-E])\s*[).]\s+(.+)$/);
-        if (m) atual.opcoes.push({ letra: m[1].toUpperCase(), titulo: m[2].trim() });
-      });
-    } else if (atual.opcoes.length === 0) {
-      atual.titulo += ' ' + linha; // enunciado em várias linhas
-    } else {
-      atual.opcoes[atual.opcoes.length - 1].titulo += ' ' + linha;
-    }
+    const sep = ehAlternativa ? separarAlternativas(linha) : null;
+    if (sep) atual.opcoes.push(...sep.lista);
+    else if (atual.opcoes.length === 0) atual.titulo += ' ' + linha;
+    else atual.opcoes[atual.opcoes.length - 1].titulo += ' ' + linha;
   }
-  const validas = questoes.filter((q) => q.opcoes.length >= 2);
-  if (validas.length < 2 || validas.length < questoes.length * 0.6) return null;
+
+  const comLetras = questoes.filter((q) => q.opcoes.some((o) => o.letra)).length;
+  if (questoes.length < 2 || comLetras < 1) return null;
+
   return {
     titulo,
-    ehSimulado: true,
-    telas: validas.map((q) => {
-      const longas = q.opcoes.some((o) => o.titulo.length > 45) || q.opcoes.length > 6;
-      return {
-        tipo: longas ? 'radio' : 'cards',
-        titulo: q.titulo,
-        secao: `Questão ${q.numero}`,
-        opcoes: q.opcoes.map((o) => ({ titulo: o.titulo, correta: gabarito[q.numero] === o.letra }))
-      };
+    ehSimulado: Object.keys(gabarito).length > 0 || comLetras >= questoes.length * 0.6,
+    telas: questoes.map((q) => {
+      const enunciado = q.titulo.replace(/\s*_{3,}\s*$/, '').trim();
+      if (q.opcoes.length >= 2) {
+        const multipla = /marque (todas|mais de uma|quantas)|pode marcar|selecione as/i.test(q.titulo);
+        const longas = q.opcoes.some((o) => o.titulo.length > 45) || q.opcoes.length > 6;
+        return {
+          tipo: multipla ? 'checkbox' : longas ? 'radio' : 'cards',
+          titulo: enunciado,
+          secao: `Questão ${q.numero}`,
+          opcoes: q.opcoes.map((o) => ({
+            titulo: o.titulo.replace(/\s*_{2,}\s*$/, '').replace(/:\s*$/, '').trim(),
+            temCampoOutro: /^outr[oa]s?\b/i.test(o.titulo) && /:|_{2,}/.test(o.titulo),
+            correta: Boolean(o.letra) && gabarito[q.numero] === o.letra
+          }))
+        };
+      }
+      const escala = q.titulo.match(/(\d{1,2})\s*(?:a|-|–|até)\s*(\d{1,2})/i);
+      if (escala && Number(escala[2]) > Number(escala[1]) && Number(escala[2]) <= 10) {
+        return { tipo: 'slider', titulo: enunciado, secao: `Questão ${q.numero}`, sliderMin: Number(escala[1]), sliderMax: Number(escala[2]) };
+      }
+      const curta = /^(nome|e-?mail|telefone|whats|celular|cidade|idade|cargo|fun[cç][aã]o)\b/i.test(enunciado);
+      return { tipo: curta ? 'texto_curto' : 'texto', titulo: enunciado.replace(/:\s*$/, ''), secao: `Questão ${q.numero}` };
     })
   };
 }
@@ -276,7 +322,10 @@ export async function importarQuestionario({ arquivo, texto, url, usarIA = true 
       return { config: questionarioParaConfig(q), motor: 'ia', aviso: '' };
     } catch (e) {
       console.warn('IA indisponível, usando leitura automática:', e);
-      aviso = 'A IA não respondeu (' + (e?.message || 'erro') + '). Usamos a leitura automática — revise as telas.';
+      const appCheck = /app check/i.test(e?.message || '');
+      aviso = appCheck
+        ? 'A IA está bloqueada pela proteção App Check (falta a chave reCAPTCHA). Usamos a leitura automática — revise as telas.'
+        : 'A IA não respondeu (' + (e?.message || 'erro') + '). Usamos a leitura automática — revise as telas.';
     }
   }
 
