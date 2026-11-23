@@ -35,7 +35,7 @@ import {
   DEFAULT_EVENT_TITLE,
   DEFAULT_EVENT_ID
 } from '../firebase';
-import { getEfeitoStyle, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems } from '../utils/estilos';
+import { getFaixaFundoClass, estiloLinhas, getEfeitoStyle, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems } from '../utils/estilos';
 
 const DISPOSITIVO_BLOQUEADO_KEY = 'presenca_dispositivo_bloqueado_voto';
 const DISPOSITIVO_VOTO_TIME_KEY = 'presenca_dispositivo_hora_voto';
@@ -968,7 +968,7 @@ export default function MobileForm() {
         {currentStep === 'p1' && (questionsConfig.mostrarBotaoComecar === false || jaClicouComecar) && (
           <div className="mt-2 pt-2 space-y-2">
             {(questionsConfig.pergunta1Titulo || questionsConfig.pergunta1Titulo2 || questionsConfig.pergunta1Titulo3) && (
-              <div className={`space-y-1 ${getAlinhamentoClass(questionsConfig.pergunta1Alinhamento)} ${getCaptionFundoClass(questionsConfig.pergunta1CaptionFundo)}`}>
+              <div className={`space-y-1 ${getAlinhamentoClass(estiloLinhas(questionsConfig, 'pergunta1').tituloAl)} ${getFaixaFundoClass(estiloLinhas(questionsConfig, 'pergunta1').tituloFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}>
                 {questionsConfig.pergunta1Titulo && (
                   <h2 
                     style={{ fontSize: `${questionsConfig.pergunta1FonteTamanho || 22}px` }}
@@ -995,19 +995,14 @@ export default function MobileForm() {
                 )}
               </div>
             )}
-            {questionsConfig.pergunta1Subtitulo && (
-              <p className="text-xs sm:text-sm text-slate-400 mt-1">
-                {questionsConfig.pergunta1Subtitulo}
-              </p>
-            )}
-            {/* TEXTO DIGITADO ABAIXO DO TÍTULO NA TELA 1 */}
+            {/* SUBTÍTULO DA TELA 1 (alinhamento, tamanho e fundo próprios — igual ao preview) */}
             {questionsConfig.pergunta1TextoAbaixo && (
-              <div
+              <p
                 style={{ fontSize: `${questionsConfig.pergunta1TextoAbaixoTamanho || 14}px` }}
-                className={`p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 leading-relaxed whitespace-pre-line shadow-inner ${getCorTextoLinhaClass(questionsConfig.pergunta1TextoAbaixoCor, 'text-slate-200')}`}
+                className={`leading-relaxed whitespace-pre-line ${getAlinhamentoClass(estiloLinhas(questionsConfig, 'pergunta1').subAl)} ${getFaixaFundoClass(estiloLinhas(questionsConfig, 'pergunta1').subFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')} ${getCorTextoLinhaClass(questionsConfig.pergunta1TextoAbaixoCor, 'text-slate-300')}`}
               >
                 {questionsConfig.pergunta1TextoAbaixo}
-              </div>
+              </p>
             )}
           </div>
         )}
@@ -1019,7 +1014,8 @@ export default function MobileForm() {
           if (!tela) return null;
           const linha1 = tela.titulo1 || tela.titulo || `Pergunta da Tela ${idx + 2}`;
           return (
-            <div className={`mt-2 pt-2 border-t border-slate-800/60 space-y-1 ${getAlinhamentoClass(tela.alinhamento)} ${getCaptionFundoClass(tela.captionFundo)}`}>
+            <div className="mt-2 pt-2 border-t border-slate-800/60 space-y-1">
+              <div className={`space-y-1 ${getAlinhamentoClass(estiloLinhas(tela).tituloAl)} ${getFaixaFundoClass(estiloLinhas(tela).tituloFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}>
               <h2 style={{ fontSize: `${tela.titulo1Tamanho || 20}px` }} className={`font-black leading-tight ${getCorTextoLinhaClass(tela.titulo1Cor, 'text-white')}`}>
                 {linha1}
               </h2>
@@ -1033,8 +1029,9 @@ export default function MobileForm() {
                   {tela.titulo3}
                 </h2>
               )}
+              </div>
               {tela.subtitulo && (
-                <p style={{ fontSize: `${tela.subtituloTamanho || 13}px` }} className={`leading-snug mt-1 ${getCorTextoLinhaClass(tela.subtituloCor, 'text-slate-300')}`}>
+                <p style={{ fontSize: `${tela.subtituloTamanho || 13}px` }} className={`leading-snug ${getAlinhamentoClass(estiloLinhas(tela).subAl)} ${getFaixaFundoClass(estiloLinhas(tela).subFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')} ${getCorTextoLinhaClass(tela.subtituloCor, 'text-slate-300')}`}>
                   {tela.subtitulo}
                 </p>
               )}

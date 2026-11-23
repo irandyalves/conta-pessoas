@@ -97,3 +97,25 @@ export function getEfeitoStyle(efeito = 'padrao', profundidade = 5) {
       };
   }
 }
+
+// Faixa de fundo "de fora a fora" para UMA linha de texto (título OU subtítulo).
+// sangria = classes de margem negativa iguais ao padding do container (ex.: '-mx-2.5 px-2.5').
+export const getFaixaFundoClass = (fundoId = 'transparente', sangria = '') => {
+  const f = FUNDOS_CAPTION.find((x) => x.id === fundoId);
+  if (!f || !f.boxClass) return '';
+  const base = f.boxClass.replace(/rounded-\S+/g, '').replace(/px-\S+/g, '');
+  return `${base} border-x-0 rounded-none py-1.5 ${sangria}`;
+};
+
+// Estilo efetivo do título e do subtítulo (campos novos com fallback nos antigos, que valiam para os dois)
+export const estiloLinhas = (cfg = {}, prefixo = '') => {
+  const k = (n) => (prefixo ? prefixo + n.charAt(0).toUpperCase() + n.slice(1) : n);
+  const alGeral = cfg[k('alinhamento')] || 'center';
+  const fundoGeral = cfg[k('captionFundo')] || 'transparente';
+  return {
+    tituloAl: cfg[k('tituloAlinhamento')] || alGeral,
+    tituloFundo: cfg[k('tituloFundo')] || fundoGeral,
+    subAl: cfg[k('subAlinhamento')] || alGeral,
+    subFundo: cfg[k('subFundo')] || 'transparente'
+  };
+};

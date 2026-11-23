@@ -51,8 +51,9 @@ import {
   saveEventTitle,
   DEFAULT_QUESTIONS_CONFIG 
 } from '../firebase';
-import { getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems, getEfeitoStyle, CORES_TEXTO_LINHAS, ALINHAMENTOS_TEXTO, FUNDOS_CAPTION } from '../utils/estilos';
+import { getFaixaFundoClass, estiloLinhas, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems, getEfeitoStyle, CORES_TEXTO_LINHAS, ALINHAMENTOS_TEXTO, FUNDOS_CAPTION } from '../utils/estilos';
 import ImportadorIA from './ImportadorIA';
+import EstiloLinhasTitulo from './EstiloLinhasTitulo';
 import { PRESETS_PESQUISAS } from '../utils/presets';
 
 export const TIPOS_PERGUNTA = [
@@ -2244,7 +2245,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       </div>
 
                       {/* Slider de Altura dos Cards, Ícones, Alinhamento e Fundo debaixo dos Captions na Aba Tela 1 */}
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-800/70 items-center">
+                      <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-3 pt-2 border-t border-slate-800/70 items-center">
                         <div>
                           <div className="flex items-center justify-between text-xs mb-1">
                             <span className="font-bold text-slate-300">Altura dos Cards</span>
@@ -2300,48 +2301,16 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         </div>
                       </div>
 
-                      {/* Alinhamento Rápido e Fundo dos Captions na Aba Principal da Tela 1 */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-800/70 items-center">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-[11px] font-bold text-slate-400">Alinhar Títulos:</span>
-                          <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
-                            {ALINHAMENTOS_TEXTO.map((al) => (
-                              <button
-                                key={al.id}
-                                type="button"
-                                onClick={() => setConfig({ ...config, pergunta1Alinhamento: al.id })}
-                                className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition ${
-                                  (config.pergunta1Alinhamento || 'center') === al.id
-                                    ? 'bg-amber-400 text-slate-950 font-black shadow'
-                                    : 'text-slate-400 hover:text-white'
-                                }`}
-                              >
-                                {al.label}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-[11px] font-bold text-slate-400">Fundo Captions:</span>
-                          <div className="flex items-center gap-1.5 bg-slate-900 px-2 py-1 rounded-xl border border-slate-800">
-                            {FUNDOS_CAPTION.map((fc) => {
-                              const isSel = (config.pergunta1CaptionFundo || 'transparente') === fc.id;
-                              return (
-                                <button
-                                  key={fc.id}
-                                  type="button"
-                                  onClick={() => setConfig({ ...config, pergunta1CaptionFundo: fc.id })}
-                                  title={`Fundo: ${fc.label}`}
-                                  className={`w-4 h-4 rounded-full transition-all ${fc.dot} ${
-                                    isSel ? 'ring-2 ring-amber-400 ring-offset-1 ring-offset-slate-950 scale-110' : 'opacity-60 hover:opacity-100'
-                                  }`}
-                                />
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </div>
+                      {/* Título e Subtítulo: tamanho, alinhamento e fundo independentes */}
+                      <EstiloLinhasTitulo
+                        linhas={(() => {
+                          const e = estiloLinhas(config, 'pergunta1');
+                          return [
+                            { rotulo: 'Título', tamanho: config.pergunta1FonteTamanho || 18, min: 12, max: 34, onTamanho: (v) => setConfig((c) => ({ ...c, pergunta1FonteTamanho: v })), alinhamento: e.tituloAl, onAlinhamento: (v) => setConfig((c) => ({ ...c, pergunta1TituloAlinhamento: v })), fundo: e.tituloFundo, onFundo: (v) => setConfig((c) => ({ ...c, pergunta1TituloFundo: v })) },
+                            { rotulo: 'Subtítulo', tamanho: config.pergunta1TextoAbaixoTamanho || 14, min: 9, max: 26, onTamanho: (v) => setConfig((c) => ({ ...c, pergunta1TextoAbaixoTamanho: v })), alinhamento: e.subAl, onAlinhamento: (v) => setConfig((c) => ({ ...c, pergunta1SubAlinhamento: v })), fundo: e.subFundo, onFundo: (v) => setConfig((c) => ({ ...c, pergunta1SubFundo: v })) }
+                          ];
+                        })()}
+                      />
                     </div>
 
                     <div className="space-y-2.5">
@@ -3354,47 +3323,15 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="text-[11px] font-bold text-slate-400">Alinhar Títulos:</span>
-                              <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
-                                {ALINHAMENTOS_TEXTO.map((al) => (
-                                  <button
-                                    key={al.id}
-                                    type="button"
-                                    onClick={() => handleUpdateTelaProp(extraIndex, 'alinhamento', al.id)}
-                                    className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition ${
-                                      (telaAlvo.alinhamento || 'center') === al.id
-                                        ? 'bg-amber-400 text-slate-950 font-black shadow'
-                                        : 'text-slate-400 hover:text-white'
-                                    }`}
-                                  >
-                                    {al.label}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="text-[11px] font-bold text-slate-400">Fundo Captions:</span>
-                              <div className="flex items-center gap-1.5 bg-slate-900 px-2 py-1 rounded-xl border border-slate-800">
-                                {FUNDOS_CAPTION.map((fc) => {
-                                  const isSel = (telaAlvo.captionFundo || 'transparente') === fc.id;
-                                  return (
-                                    <button
-                                      key={fc.id}
-                                      type="button"
-                                      onClick={() => handleUpdateTelaProp(extraIndex, 'captionFundo', fc.id)}
-                                      title={`Fundo: ${fc.label}`}
-                                      className={`w-4 h-4 rounded-full transition-all ${fc.dot} ${
-                                        isSel ? 'ring-2 ring-amber-400 ring-offset-1 ring-offset-slate-950 scale-110' : 'opacity-60 hover:opacity-100'
-                                      }`}
-                                    />
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          </div>
+                          <EstiloLinhasTitulo
+                            linhas={(() => {
+                              const e = estiloLinhas(telaAlvo);
+                              return [
+                                { rotulo: 'Título', tamanho: telaAlvo.titulo1Tamanho || 18, min: 12, max: 34, onTamanho: (v) => handleUpdateTelaProp(extraIndex, 'titulo1Tamanho', v), alinhamento: e.tituloAl, onAlinhamento: (v) => handleUpdateTelaProp(extraIndex, 'tituloAlinhamento', v), fundo: e.tituloFundo, onFundo: (v) => handleUpdateTelaProp(extraIndex, 'tituloFundo', v) },
+                                { rotulo: 'Subtítulo', tamanho: telaAlvo.subtituloTamanho || 12, min: 9, max: 26, onTamanho: (v) => handleUpdateTelaProp(extraIndex, 'subtituloTamanho', v), alinhamento: e.subAl, onAlinhamento: (v) => handleUpdateTelaProp(extraIndex, 'subAlinhamento', v), fundo: e.subFundo, onFundo: (v) => handleUpdateTelaProp(extraIndex, 'subFundo', v) }
+                              ];
+                            })()}
+                          />
                         </div>
 
                     {/* CONFIGURAÇÃO ESPECÍFICA CONFORME O TIPO DA TELA EXTRA */}
@@ -4799,9 +4736,9 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       <div className="h-[374px] overflow-y-auto p-2.5 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between select-none custom-scrollbar">
                         <div className="flex flex-col justify-between h-full space-y-1.5">
                           <div className="shrink-0 space-y-1">
-                            <div className={`pt-0.5 ${getAlinhamentoClass(config.pergunta1Alinhamento)} ${getCaptionFundoClass(config.pergunta1CaptionFundo)}`}>
+                            <div className="pt-0.5 space-y-1">
                               {(config.pergunta1Titulo || config.pergunta1Titulo2 || config.pergunta1Titulo3) ? (
-                                <div className="space-y-0.5">
+                                <div className={`space-y-0.5 ${getAlinhamentoClass(estiloLinhas(config, 'pergunta1').tituloAl)} ${getFaixaFundoClass(estiloLinhas(config, 'pergunta1').tituloFundo, '-mx-2.5 px-2.5')}`}>
                                   {config.pergunta1Titulo && (
                                     <h3
                                       style={{ fontSize: `${(config.pergunta1FonteTamanho || 18) * 0.72}px` }}
@@ -4835,7 +4772,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                               {config.pergunta1TextoAbaixo && (
                                 <p
                                   style={{ fontSize: `${(config.pergunta1TextoAbaixoTamanho || 14) * 0.72}px` }}
-                                  className={`mt-0.5 leading-snug ${getCorTextoLinhaClass(config.pergunta1TextoAbaixoCor, 'text-slate-300')}`}
+                                  className={`leading-snug ${getAlinhamentoClass(estiloLinhas(config, 'pergunta1').subAl)} ${getFaixaFundoClass(estiloLinhas(config, 'pergunta1').subFundo, '-mx-2.5 px-2.5')} ${getCorTextoLinhaClass(config.pergunta1TextoAbaixoCor, 'text-slate-300')}`}
                                 >
                                   {config.pergunta1TextoAbaixo}
                                 </p>
@@ -5089,7 +5026,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
                       <div className="h-[374px] overflow-y-auto p-2.5 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between select-none custom-scrollbar">
                         <div className="flex flex-col justify-between h-full space-y-1.5">
-                          <div className={`shrink-0 space-y-0.5 pt-0.5 ${getAlinhamentoClass(telaExtra.alinhamento)} ${getCaptionFundoClass(telaExtra.captionFundo)}`}>
+                          <div className="shrink-0 space-y-1 pt-0.5">
+                            <div className={`space-y-0.5 ${getAlinhamentoClass(estiloLinhas(telaExtra).tituloAl)} ${getFaixaFundoClass(estiloLinhas(telaExtra).tituloFundo, '-mx-2.5 px-2.5')}`}>
                             {(telaExtra.titulo1 || telaExtra.titulo) && (
                               <h3
                                 style={{ fontSize: `${(telaExtra.titulo1Tamanho || 18) * 0.68}px` }}
@@ -5114,10 +5052,11 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                 {telaExtra.titulo3}
                               </h3>
                             )}
+                            </div>
                             {telaExtra.subtitulo && (
                               <p
                                 style={{ fontSize: `${(telaExtra.subtituloTamanho || 12) * 0.75}px` }}
-                                className={`leading-snug ${getCorTextoLinhaClass(telaExtra.subtituloCor, 'text-slate-300')}`}
+                                className={`leading-snug ${getAlinhamentoClass(estiloLinhas(telaExtra).subAl)} ${getFaixaFundoClass(estiloLinhas(telaExtra).subFundo, '-mx-2.5 px-2.5')} ${getCorTextoLinhaClass(telaExtra.subtituloCor, 'text-slate-300')}`}
                               >
                                 {telaExtra.subtitulo}
                               </p>
