@@ -4447,18 +4447,18 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             </div>
 
                           <div className="flex-1 flex flex-col justify-end py-3">
-                            <div className="relative p-[2px] rounded-2xl overflow-hidden shadow-lg shadow-amber-500/20 group cursor-pointer active:scale-95 transition">
+                            <div className="relative p-[2px] rounded-2xl overflow-hidden shadow-[0_0_22px_rgba(16,185,129,0.45)] group cursor-pointer active:scale-95 transition">
                               <div
                                 className="absolute inset-[-150%] animate-spin"
                                 style={{
-                                  animationDuration: '4s',
-                                  background: 'conic-gradient(from 0deg, transparent 0%, #f59e0b 25%, #10b981 50%, #38bdf8 75%, transparent 100%)'
+                                  animationDuration: '3.5s',
+                                  background: 'conic-gradient(from 0deg, transparent 0%, transparent 60%, #6ee7b7 80%, #10b981 90%, transparent 100%)'
                                 }}
                               />
-                              <div className="relative w-full py-3 px-4 rounded-[14px] bg-slate-950 text-amber-300 font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2">
-                                <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                              <div className="relative w-full py-3 px-4 rounded-[14px] bg-gradient-to-b from-emerald-500 to-emerald-700 text-white font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2">
+                                <Sparkles className="w-3.5 h-3.5 text-emerald-100 animate-pulse" />
                                 <span>{config.pergunta1BotaoComecarTexto || 'COMEÇAR'}</span>
-                                <ChevronRight className="w-3.5 h-3.5 text-emerald-400" />
+                                <ChevronRight className="w-3.5 h-3.5 text-emerald-100" />
                               </div>
                             </div>
                           </div>
@@ -4836,32 +4836,32 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
                           <div
                             style={{ gap: `${Math.max(2, Math.min(8, Math.round(((telaExtra.cardAltura || config.cardAltura || 36) - 14) * 0.18)))}px` }}
-                            className="flex-1 my-auto flex flex-col justify-center py-0.5 text-left"
+                            className="flex-1 flex flex-col justify-start py-0.5 text-left"
                           >
                             {telaExtra.tipo === 'texto' ? (
-                              <div className="p-3 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2.5" onClick={e => e.stopPropagation()}>
+                              <div className="flex-1 flex flex-col p-3 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2.5" onClick={e => e.stopPropagation()}>
                                 <textarea
                                   rows={telaExtra.linhas || 4}
                                   placeholder={telaExtra.placeholder || 'Digite sua resposta aqui...'}
                                   className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white placeholder-slate-500 resize-none"
                                 />
-                                <div className="w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
+                                <div className="mt-auto w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
                                   {telaExtra.botaoTexto || 'Avançar'} →
                                 </div>
                               </div>
                             ) : telaExtra.tipo === 'texto_curto' ? (
-                              <div className="p-3 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2.5" onClick={e => e.stopPropagation()}>
+                              <div className="flex-1 flex flex-col p-3 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2.5" onClick={e => e.stopPropagation()}>
                                 <input
                                   type="text"
                                   placeholder={telaExtra.placeholder || 'Digite sua resposta curta...'}
                                   className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white placeholder-slate-500"
                                 />
-                                <div className="w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
+                                <div className="mt-auto w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
                                   {telaExtra.botaoTexto || 'Avançar'} →
                                 </div>
                               </div>
                             ) : telaExtra.tipo === 'slider' ? (
-                              <div className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2.5 text-center" onClick={e => e.stopPropagation()}>
+                              <div className="flex-1 flex flex-col p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2.5 text-center" onClick={e => e.stopPropagation()}>
                                 {telaExtra.legendaEscala && (
                                   <div className="flex flex-wrap items-center justify-center gap-1 pb-1">
                                     {parseScaleLegendItems(telaExtra.legendaEscala).map((item, li) => (
@@ -4892,12 +4892,12 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                   <span>{telaExtra.sliderMin ?? 0}</span>
                                   <span>{telaExtra.sliderMax ?? 10}</span>
                                 </div>
-                                <div className="w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
+                                <div className="mt-auto w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
                                   {telaExtra.botaoTexto || 'Avançar'} →
                                 </div>
                               </div>
                             ) : telaExtra.tipo === 'rating' ? (
-                              <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3 text-center" onClick={e => e.stopPropagation()}>
+                              <div className="flex-1 flex flex-col p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3 text-center" onClick={e => e.stopPropagation()}>
                                 <div className="flex items-center justify-center gap-2 py-2">
                                   {[1, 2, 3, 4, 5].map((st) => {
                                     const cur = previewInteractiveVal[`extra_rt_${extraIdx}`] ?? 5;
@@ -4913,39 +4913,39 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                     );
                                   })}
                                 </div>
-                                <div className="w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
+                                <div className="mt-auto w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
                                   {telaExtra.botaoTexto || 'Avançar'} →
                                 </div>
                               </div>
                             ) : telaExtra.tipo === 'data' ? (
-                              <div className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3" onClick={e => e.stopPropagation()}>
+                              <div className="flex-1 flex flex-col p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3" onClick={e => e.stopPropagation()}>
                                 <input
                                   type="date"
                                   className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white"
                                 />
-                                <div className="w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
+                                <div className="mt-auto w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
                                   {telaExtra.botaoTexto || 'Avançar'} →
                                 </div>
                               </div>
                             ) : telaExtra.tipo === 'hora' ? (
-                              <div className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3" onClick={e => e.stopPropagation()}>
+                              <div className="flex-1 flex flex-col p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3" onClick={e => e.stopPropagation()}>
                                 <input
                                   type="time"
                                   className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white"
                                 />
-                                <div className="w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
+                                <div className="mt-auto w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
                                   {telaExtra.botaoTexto || 'Avançar'} →
                                 </div>
                               </div>
                             ) : telaExtra.tipo === 'dropdown' ? (
-                              <div className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3" onClick={e => e.stopPropagation()}>
+                              <div className="flex-1 flex flex-col p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3" onClick={e => e.stopPropagation()}>
                                 <select className="w-full bg-slate-950 border border-amber-500/50 rounded-xl px-3 py-2.5 text-xs font-bold text-white">
                                   <option value="">Selecione uma opção...</option>
                                   {cardsAtivos.map((opt) => (
                                     <option key={opt.id} value={opt.titulo}>{opt.titulo}</option>
                                   ))}
                                 </select>
-                                <div className="w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
+                                <div className="mt-auto w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow">
                                   {telaExtra.botaoTexto || 'Avançar'} →
                                 </div>
                               </div>
@@ -5021,7 +5021,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                     </div>
                                   );
                                 })}
-                                <div className="w-full py-1.5 rounded-xl bg-amber-400 text-slate-950 font-black text-[11px] text-center shadow mt-1">
+                                <div className="mt-auto w-full py-1.5 rounded-xl bg-amber-400 text-slate-950 font-black text-[11px] text-center shadow mt-1">
                                   {telaExtra.botaoTexto || 'Avançar'} →
                                 </div>
                               </div>
@@ -5069,7 +5069,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                     </label>
                                   );
                                 })}
-                                <div className="w-full py-1.5 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow mt-1">
+                                <div className="mt-auto w-full py-1.5 rounded-xl bg-amber-400 text-slate-950 font-black text-xs text-center shadow mt-1">
                                   {telaExtra.botaoTexto || 'Avançar'} →
                                 </div>
                               </div>

@@ -1083,27 +1083,30 @@ export default function MobileForm() {
             
             {/* SE O BOTÃO COMEÇAR ESTIVER HABILITADO E O USUÁRIO AINDA NÃO CLICOU NELE: EXIBE APENAS O BOTÃO COMEÇAR */}
             {questionsConfig.mostrarBotaoComecar !== false && !jaClicouComecar ? (
-              <div className="pt-6 pb-2">
+              <>
+              <div className="h-24" />
+              <div className="fixed bottom-0 inset-x-0 z-30 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent">
                 <button
                   type="button"
                   onClick={handleClicarComecar}
-                  className="relative w-full p-[2.5px] rounded-2xl overflow-hidden shadow-2xl shadow-amber-500/25 active:scale-[0.98] transition-all group"
+                  className="relative max-w-md mx-auto block w-full p-[2.5px] rounded-2xl overflow-hidden shadow-[0_0_28px_rgba(16,185,129,0.5)] active:scale-[0.98] transition-all group"
                 >
-                  {/* Luzes girando suave no contorno */}
+                  {/* Brilho suave girando no contorno (sentido horário) */}
                   <div
                     className="absolute inset-[-200%] animate-spin"
                     style={{
-                      animationDuration: '4s',
-                      background: 'conic-gradient(from 0deg, transparent 0%, #f59e0b 25%, #10b981 50%, #38bdf8 75%, transparent 100%)'
+                      animationDuration: '3.5s',
+                      background: 'conic-gradient(from 0deg, transparent 0%, transparent 60%, #6ee7b7 80%, #10b981 90%, transparent 100%)'
                     }}
                   />
-                  <div className="relative w-full py-4 px-6 rounded-[14px] bg-slate-950/95 group-hover:bg-slate-900/95 text-amber-300 font-black text-base uppercase tracking-widest flex items-center justify-center gap-2.5">
-                    <Sparkles className="w-5 h-5 text-amber-400 animate-pulse" />
+                  <div className="relative w-full py-4 px-6 rounded-[14px] bg-gradient-to-b from-emerald-500 to-emerald-700 text-white font-black text-base uppercase tracking-widest flex items-center justify-center gap-2.5">
+                    <Sparkles className="w-5 h-5 text-emerald-100 animate-pulse" />
                     <span>{questionsConfig.pergunta1BotaoComecarTexto || 'COMEÇAR'}</span>
-                    <ChevronRight className="w-5 h-5 text-emerald-400 group-hover:translate-x-1 transition-transform" />
+                    <ChevronRight className="w-5 h-5 text-emerald-100 group-hover:translate-x-1 transition-transform" />
                   </div>
                 </button>
               </div>
+              </>
             ) : (
               <>
                 {/* SE DESABILITADO (COMEÇA DIRETO) OU JÁ CLICOU EM COMEÇAR: MOSTRA AS PERGUNTAS/OPÇÕES */}
@@ -1546,6 +1549,10 @@ export default function MobileForm() {
                   </div>
                 )}
 
+                {/* Espaço para o rodapé fixo não cobrir o conteúdo */}
+                <div className="h-28" />
+                <div className="fixed bottom-0 inset-x-0 z-30 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent">
+                <div className="max-w-md mx-auto">
                 <button
                   type="button"
                   onClick={() => {
@@ -1575,6 +1582,8 @@ export default function MobileForm() {
                     <ChevronLeft className="w-3.5 h-3.5" />
                     <span>Voltar à pergunta anterior</span>
                   </button>
+                </div>
+                </div>
                 </div>
               </div>
             );
