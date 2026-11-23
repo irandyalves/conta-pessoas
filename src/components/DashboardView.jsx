@@ -479,15 +479,15 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
 
               <button
                 onClick={() => selectMenu('qrcode')}
-                title="QR Code Fixo do Evento"
+                title="QR Code Fixo & Links de Acesso"
                 className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-xl text-xs font-bold transition gap-3 ${
-                  activeSection === 'qrcode'
+                  activeSection === 'qrcode' || activeSection === 'links'
                     ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shadow-sm'
                     : 'text-slate-300 hover:bg-slate-800/70 hover:text-white border border-transparent'
                 }`}
               >
                 <QrCode className="w-4 h-4 text-emerald-400 shrink-0" />
-                {!sidebarCollapsed && <span className="truncate">QR Code Fixo</span>}
+                {!sidebarCollapsed && <span className="truncate">QR Code & Links</span>}
               </button>
 
               <button
@@ -497,19 +497,6 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
               >
                 <Tv className="w-4 h-4 text-purple-400 shrink-0" />
                 {!sidebarCollapsed && <span className="truncate">Abrir Telão</span>}
-              </button>
-
-              <button
-                onClick={() => selectMenu('links')}
-                title="Links Rápidos (Celular, Telão e Admin)"
-                className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-xl text-xs font-bold transition gap-3 ${
-                  activeSection === 'links'
-                    ? 'bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 shadow-sm'
-                    : 'text-slate-300 hover:bg-slate-800/70 hover:text-white border border-transparent'
-                }`}
-              >
-                <Share2 className="w-4 h-4 text-indigo-400 shrink-0" />
-                {!sidebarCollapsed && <span className="truncate">Links de Acesso</span>}
               </button>
             </div>
 
@@ -595,7 +582,7 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
         
         {/* TOPBAR FIXA: SELETOR DE EVENTO + CONTROLE DE SESSÃO + FILTRO */}
         <header className="print:hidden sticky top-0 z-30 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80 px-4 md:px-6 py-3">
-          <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div className="w-full flex flex-col md:flex-row md:items-center justify-between gap-3">
             
             {/* Esquerda: Botão Menu Mobile + Seletor do Evento Ativo */}
             <div className="flex items-center gap-2.5">
@@ -739,7 +726,7 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
         <main className={`flex-1 w-full space-y-4 ${
           activeSection === 'perguntas'
             ? 'p-0 md:py-3 md:pr-4 md:pl-0 max-w-none'
-            : 'p-3 md:p-5 max-w-7xl mx-auto'
+            : 'p-3 md:p-5 max-w-none'
         }`}>
           
           {/* BANNER DE AVISO INLINE (SE HOUVER) */}
@@ -804,187 +791,170 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
           {/* ============================================================== */}
           {activeSection === 'dashboard' && (
             <div className="space-y-4">
-              {/* FAIXA DE STATUS E LINKS RÁPIDOS */}
-              <div className="print:hidden grid grid-cols-1 xl:grid-cols-12 gap-4">
-                {/* Banner Status do Evento */}
-                <div className={`xl:col-span-7 p-4 rounded-2xl border transition-all shadow-lg flex items-center justify-between gap-4 ${
+              {/* TOPO DO DASHBOARD UNIFICADO & ESMAGADO EM UMA LINHA SÓ DE PONTA A PONTA */}
+              <div className="print:hidden grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 xl:grid-cols-12 gap-2.5 items-stretch">
+                {/* 1. Status do Evento (Ao Vivo / Em Espera) */}
+                <div className={`col-span-2 sm:col-span-3 md:col-span-3 xl:col-span-3 p-3 rounded-2xl border transition-all shadow-md flex items-center justify-between gap-3 ${
                   sessaoAtiva 
                     ? 'bg-gradient-to-r from-emerald-950/80 via-slate-900 to-emerald-950/60 border-emerald-500/40' 
                     : 'bg-gradient-to-r from-amber-950/80 via-slate-900 to-amber-950/60 border-amber-500/40'
                 }`}>
-                  <div className="flex items-center gap-3.5 min-w-0">
-                    <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border shadow-md ${
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border shadow-sm ${
                       sessaoAtiva 
                         ? 'bg-emerald-500/20 border-emerald-400/50 text-emerald-400' 
                         : 'bg-amber-500/20 border-amber-400/50 text-amber-400'
                     }`}>
-                      {sessaoAtiva ? <Radio className="w-5 h-5 animate-pulse" /> : <Pause className="w-5 h-5 fill-amber-400" />}
+                      {sessaoAtiva ? <Radio className="w-4 h-4 animate-pulse" /> : <Pause className="w-4 h-4 fill-amber-400" />}
                     </div>
                     <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                          sessaoAtiva 
-                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' 
-                            : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                        }`}>
-                          <span className={`w-2 h-2 rounded-full ${sessaoAtiva ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'}`} />
-                          {sessaoAtiva ? 'RECEBENDO RESPOSTAS AO VIVO' : 'EM ESPERA (AGUARDANDO LIBERAÇÃO)'}
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-300 mt-1 line-clamp-2">
-                        {sessaoAtiva 
-                          ? `Celulares conectados em "${eventoTitulo}" estão liberados para votar.` 
-                          : `Os celulares em "${eventoTitulo}" estão na tela de espera aguardando você liberar.`}
+                      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                        sessaoAtiva 
+                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' 
+                          : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                      }`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${sessaoAtiva ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'}`} />
+                        {sessaoAtiva ? 'AO VIVO' : 'EM ESPERA'}
+                      </span>
+                      <p className="text-[11px] text-slate-300 truncate mt-0.5" title={eventoTitulo}>
+                        {eventoTitulo}
                       </p>
                     </div>
                   </div>
 
-                  <div className="hidden sm:flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-1.5 shrink-0">
                     <button
                       onClick={() => setActiveSection('qrcode')}
-                      className="p-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-emerald-300 transition"
-                      title="Abrir Aba QR Code Fixo"
+                      className="p-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-emerald-300 transition"
+                      title="Abrir QR Code & Links"
                     >
-                      <QrCode className="w-4 h-4" />
+                      <QrCode className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => onChangeView('telao')}
-                      className="p-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-sky-300 transition"
+                      className="p-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-sky-300 transition"
                       title="Abrir Telão"
                     >
-                      <Tv className="w-4 h-4" />
+                      <Tv className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
 
-                {/* Card Compacto de Links Diretos */}
-                <div className="xl:col-span-5 bg-slate-900/90 border border-slate-800 rounded-2xl p-3.5 flex flex-col justify-center gap-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-black text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-                      <Smartphone className="w-3.5 h-3.5 text-amber-400" /> Links do Evento Ativo
-                    </span>
-                    <span className="text-[10px] font-mono text-slate-400 truncate max-w-[160px]">
-                      ID: {activeEventId}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2">
-                    <button
-                      onClick={() => copyToClipboard(linkMobile, 'mobile')}
-                      className="bg-slate-950/90 hover:bg-slate-950 border border-emerald-900/50 hover:border-emerald-500/50 rounded-xl px-2.5 py-2 flex items-center justify-between gap-1.5 transition group"
-                      title="Copiar link para celulares"
-                    >
-                      <span className="text-xs font-bold text-emerald-300 truncate">📱 Celular</span>
-                      <span className="px-2 py-0.5 bg-emerald-600 group-hover:bg-emerald-500 text-white rounded text-[10px] font-bold shrink-0">
-                        {copiedLink === 'mobile' ? '✓' : 'Copiar'}
-                      </span>
-                    </button>
-
-                    <button
-                      onClick={() => copyToClipboard(linkTelao, 'telao')}
-                      className="bg-slate-950/90 hover:bg-slate-950 border border-sky-900/50 hover:border-sky-500/50 rounded-xl px-2.5 py-2 flex items-center justify-between gap-1.5 transition group"
-                      title="Copiar link do Telão"
-                    >
-                      <span className="text-xs font-bold text-sky-300 truncate">📺 Telão</span>
-                      <span className="px-2 py-0.5 bg-sky-600 group-hover:bg-sky-500 text-white rounded text-[10px] font-bold shrink-0">
-                        {copiedLink === 'telao' ? '✓' : 'Copiar'}
-                      </span>
-                    </button>
-
-                    <button
-                      onClick={() => copyToClipboard(linkAdmin, 'admin')}
-                      className="bg-slate-950/90 hover:bg-slate-950 border border-indigo-900/50 hover:border-indigo-500/50 rounded-xl px-2.5 py-2 flex items-center justify-between gap-1.5 transition group"
-                      title="Copiar link deste Painel Admin"
-                    >
-                      <span className="text-xs font-bold text-indigo-300 truncate">📊 Admin</span>
-                      <span className="px-2 py-0.5 bg-indigo-600 group-hover:bg-indigo-500 text-white rounded text-[10px] font-bold shrink-0">
-                        {copiedLink === 'admin' ? '✓' : 'Copiar'}
-                      </span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* CARDS DE KPI / MÉTRICAS (4 COLUNAS) */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 print:hidden">
-                <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl flex items-center justify-between gap-3 shadow-sm">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/25 text-amber-400 flex items-center justify-center shrink-0">
-                      <Users className="w-5 h-5" />
+                {/* 2. Total Pessoas */}
+                <div className="col-span-1 sm:col-span-1 md:col-span-1 xl:col-span-1 bg-slate-900/90 border border-slate-800 p-2.5 rounded-2xl flex items-center justify-between gap-2 shadow-sm">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/25 text-amber-400 flex items-center justify-center shrink-0">
+                      <Users className="w-4 h-4" />
                     </div>
                     <div className="min-w-0">
-                      <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block truncate">Total Pessoas</span>
-                      <span className="text-2xl font-black text-white leading-tight">{totalPessoas}</span>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block truncate">Pessoas</span>
+                      <span className="text-xl font-black text-white leading-tight">{totalPessoas}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl flex items-center justify-between gap-3 shadow-sm">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-xl bg-blue-500/15 border border-blue-500/25 text-blue-400 flex items-center justify-center shrink-0">
-                      <UserCheck className="w-5 h-5" />
+                {/* 3. Respostas */}
+                <div className="col-span-1 sm:col-span-1 md:col-span-1 xl:col-span-1 bg-slate-900/90 border border-slate-800 p-2.5 rounded-2xl flex items-center justify-between gap-2 shadow-sm">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-blue-500/15 border border-blue-500/25 text-blue-400 flex items-center justify-center shrink-0">
+                      <UserCheck className="w-4 h-4" />
                     </div>
                     <div className="min-w-0">
-                      <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block truncate">Respostas</span>
-                      <div className="flex items-baseline gap-1.5">
-                        <span className="text-2xl font-black text-white leading-tight">{totalCheckins}</span>
-                        {totalCheckins > 0 && (
-                          <span className="text-[11px] text-slate-400 font-medium">({mediaPorGrupo}/grupo)</span>
-                        )}
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block truncate">Respostas</span>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-xl font-black text-white leading-tight">{totalCheckins}</span>
                       </div>
                     </div>
                   </div>
                 </div>
 
+                {/* 4. Cards Ativos */}
                 <div 
                   onClick={() => setActiveSection('perguntas')}
-                  className="bg-slate-900/90 hover:bg-slate-900 border border-slate-800 hover:border-emerald-500/40 p-4 rounded-2xl flex items-center justify-between gap-3 shadow-sm cursor-pointer transition"
-                  title="Clique para abrir a aba Configurar Perguntas"
+                  className="col-span-1 sm:col-span-1 md:col-span-1 xl:col-span-1 bg-slate-900/90 hover:bg-slate-800/80 border border-slate-800 hover:border-emerald-500/40 p-2.5 rounded-2xl flex items-center justify-between gap-2 shadow-sm cursor-pointer transition"
+                  title="Configurar Perguntas / Telas"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 flex items-center justify-center shrink-0">
-                      <Sliders className="w-5 h-5" />
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 flex items-center justify-center shrink-0">
+                      <Sliders className="w-4 h-4" />
                     </div>
                     <div className="min-w-0">
-                      <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider block truncate">Cards Ativos</span>
-                      <span className="text-2xl font-black text-emerald-300 leading-tight">
+                      <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block truncate">Cards</span>
+                      <span className="text-xl font-black text-emerald-300 leading-tight">
                         {listaOpcoesConfig.filter(c => c.ativo !== false).length}
                       </span>
                     </div>
                   </div>
                 </div>
 
+                {/* 5. Botão de Status / Liberar / Pausar */}
                 <button
                   type="button"
                   onClick={() => handleToggleSessao(activeEventId)}
                   disabled={alternandoSessao}
                   title={sessaoAtiva ? 'Clique para pausar a pesquisa' : 'Clique para liberar a pesquisa'}
-                  className={`p-4 rounded-2xl border flex items-center justify-between gap-3 transition active:scale-95 text-left shadow-sm cursor-pointer ${
+                  className={`col-span-1 sm:col-span-1 md:col-span-1 xl:col-span-2 p-2.5 rounded-2xl border flex items-center justify-between gap-2 transition active:scale-95 text-left shadow-sm cursor-pointer ${
                     sessaoAtiva 
                       ? 'bg-emerald-950/40 border-emerald-500/40 hover:border-emerald-400/80' 
                       : 'bg-amber-950/40 border-amber-500/40 hover:border-amber-400/80'
                   }`}
                 >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
                       sessaoAtiva ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
                     }`}>
-                      {sessaoAtiva ? <Pause className="w-5 h-5 fill-emerald-400" /> : <Play className="w-5 h-5 fill-amber-400" />}
+                      {sessaoAtiva ? <Pause className="w-4 h-4 fill-emerald-400" /> : <Play className="w-4 h-4 fill-amber-400" />}
                     </div>
                     <div className="min-w-0">
-                      <span className={`text-[11px] font-bold uppercase tracking-wider block truncate ${
+                      <span className={`text-[9px] font-bold uppercase tracking-wider block truncate ${
                         sessaoAtiva ? 'text-emerald-400' : 'text-amber-400'
                       }`}>
-                        Status
+                        Sessão
                       </span>
-                      <span className={`text-lg font-black leading-tight ${
+                      <span className={`text-xs font-black leading-tight ${
                         sessaoAtiva ? 'text-emerald-300' : 'text-amber-300'
                       }`}>
-                        {sessaoAtiva ? 'AO VIVO' : 'EM ESPERA'}
+                        {sessaoAtiva ? 'PAUSAR' : 'LIBERAR'}
                       </span>
                     </div>
                   </div>
                 </button>
+
+                {/* 6. Links Rápidos (Celular, Telão, Admin) */}
+                <div className="col-span-2 sm:col-span-2 md:col-span-2 xl:col-span-4 bg-slate-900/90 border border-slate-800 rounded-2xl p-2 flex items-center justify-between gap-1.5">
+                  <button
+                    onClick={() => copyToClipboard(linkMobile, 'mobile')}
+                    className="flex-1 bg-slate-950/90 hover:bg-slate-950 border border-emerald-900/50 hover:border-emerald-500/50 rounded-xl px-2 py-1.5 flex items-center justify-center gap-1 transition group text-center"
+                    title="Copiar link para celulares"
+                  >
+                    <span className="text-[11px] font-bold text-emerald-300 truncate">📱 Celular</span>
+                    <span className="px-1.5 py-0.5 bg-emerald-600 text-white rounded text-[9px] font-bold shrink-0">
+                      {copiedLink === 'mobile' ? '✓' : 'Copiar'}
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => copyToClipboard(linkTelao, 'telao')}
+                    className="flex-1 bg-slate-950/90 hover:bg-slate-950 border border-sky-900/50 hover:border-sky-500/50 rounded-xl px-2 py-1.5 flex items-center justify-center gap-1 transition group text-center"
+                    title="Copiar link do Telão"
+                  >
+                    <span className="text-[11px] font-bold text-sky-300 truncate">📺 Telão</span>
+                    <span className="px-1.5 py-0.5 bg-sky-600 text-white rounded text-[9px] font-bold shrink-0">
+                      {copiedLink === 'telao' ? '✓' : 'Copiar'}
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => copyToClipboard(linkAdmin, 'admin')}
+                    className="flex-1 bg-slate-950/90 hover:bg-slate-950 border border-indigo-900/50 hover:border-indigo-500/50 rounded-xl px-2 py-1.5 flex items-center justify-center gap-1 transition group text-center"
+                    title="Copiar link deste Painel Admin"
+                  >
+                    <span className="text-[11px] font-bold text-indigo-300 truncate">📊 Admin</span>
+                    <span className="px-1.5 py-0.5 bg-indigo-600 text-white rounded text-[9px] font-bold shrink-0">
+                      {copiedLink === 'admin' ? '✓' : 'Copiar'}
+                    </span>
+                  </button>
+                </div>
               </div>
 
               {/* GRID PRINCIPAL: DISTRIBUIÇÃO & REGISTROS */}
@@ -1327,7 +1297,7 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
           {/* ABA 3: CRIAR NOVO EVENTO (ABA INLINE)                          */}
           {/* ============================================================== */}
           {activeSection === 'novo_evento' && (
-            <div className="print:hidden bg-slate-900/90 border border-slate-800 rounded-2xl p-6 max-w-2xl shadow-xl space-y-5">
+            <div className="print:hidden bg-slate-900/90 border border-slate-800 rounded-2xl p-6 w-full max-w-3xl shadow-xl space-y-5">
               <div className="flex items-center gap-3 pb-4 border-b border-slate-800">
                 <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center shrink-0">
                   <Plus className="w-5 h-5" />
@@ -1400,175 +1370,184 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
           )}
 
           {/* ============================================================== */}
-          {/* ABA 5: QR CODE FIXO DO EVENTO (ABA INLINE)                     */}
+          {/* ABA UNIFICADA: QR CODE FIXO & LINKS DE ACESSO (2 COLUNAS)     */}
           {/* ============================================================== */}
-          {activeSection === 'qrcode' && (
-            <div className="print:hidden bg-slate-900/90 border border-slate-800 rounded-2xl p-6 max-w-4xl shadow-xl space-y-6 overflow-hidden">
-              <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+          {(activeSection === 'qrcode' || activeSection === 'links') && (
+            <div className="print:hidden bg-slate-900/90 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl space-y-6 w-full">
+              {/* CABEÇALHO DA ABA */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/20 to-indigo-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center shrink-0">
                     <QrCode className="w-5 h-5" />
                   </div>
                   <div className="min-w-0">
-                    <h2 className="text-base sm:text-lg font-black text-white truncate">QR Code Fixo — {eventoTitulo}</h2>
-                    <p className="text-xs text-slate-400 font-mono truncate">ID do Evento: {activeEventId}</p>
+                    <h2 className="text-base sm:text-lg font-black text-white truncate">
+                      QR Code Fixo & Links de Acesso — {eventoTitulo}
+                    </h2>
+                    <p className="text-xs text-slate-400 font-mono truncate">
+                      ID do Evento: {activeEventId} • Acesso permanente e instantâneo
+                    </p>
                   </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => onChangeView('telao')}
+                    className="px-3.5 py-2 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/40 text-sky-300 font-bold text-xs transition flex items-center gap-1.5"
+                  >
+                    <Tv className="w-4 h-4" />
+                    <span>Abrir Telão</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => window.print()}
+                    className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition flex items-center gap-1.5"
+                  >
+                    <Printer className="w-4 h-4" />
+                    <span>Imprimir Folha</span>
+                  </button>
                 </div>
               </div>
 
-              <div className="flex flex-col md:flex-row items-center gap-6">
-                <div className="bg-white p-5 rounded-2xl shadow-xl border-4 border-emerald-400/30 shrink-0">
-                  <QRCodeSVG
-                    value={linkMobile}
-                    size={220}
-                    level="H"
-                    includeMargin={false}
-                  />
-                </div>
-
-                <div className="space-y-4 flex-1 min-w-0 w-full">
-                  <div className="space-y-1.5 text-xs text-slate-300">
-                    <p className="font-bold text-amber-300 text-sm">
-                      🔒 QR Code 100% Permanente e Imutável
-                    </p>
-                    <p className="text-slate-400 leading-relaxed break-words">
-                      Este QR Code aponta diretamente para o evento <strong>{eventoTitulo}</strong>. Você pode imprimir em cartazes, boletins ou projetar no telão com antecedência — o endereço nunca muda.
-                    </p>
+              {/* 2 COLUNAS: ESQUERDA = QR CODE FIXO | DIREITA = LINKS DE ACESSO */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                
+                {/* COLUNA 1: QR CODE FIXO (5 colunas) */}
+                <div className="lg:col-span-5 bg-slate-950/70 border border-slate-800/80 rounded-2xl p-5 space-y-4 shadow-inner">
+                  <div className="flex items-center gap-2 pb-2 border-b border-slate-800">
+                    <QrCode className="w-4 h-4 text-emerald-400" />
+                    <h3 className="text-xs font-black text-white uppercase tracking-wider">
+                      QR Code Oficial do Evento
+                    </h3>
                   </div>
 
-                  <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between gap-2 min-w-0">
-                    <span className="text-xs font-mono text-emerald-400 truncate select-all min-w-0 flex-1">
+                  <div className="flex flex-col sm:flex-row items-center gap-4">
+                    <div className="bg-white p-3.5 rounded-2xl shadow-xl border-4 border-emerald-400/30 shrink-0 mx-auto sm:mx-0">
+                      <QRCodeSVG
+                        value={linkMobile}
+                        size={170}
+                        level="H"
+                        includeMargin={false}
+                      />
+                    </div>
+
+                    <div className="space-y-2 text-xs text-slate-300 flex-1">
+                      <p className="font-bold text-amber-300 text-xs">
+                        🔒 Imutável & Permanente
+                      </p>
+                      <p className="text-[11px] text-slate-400 leading-relaxed">
+                        Este código aponta diretamente para o formulário de <strong>{eventoTitulo}</strong>. Nunca expira e pode ser impresso em cartazes ou folhas.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-between gap-2 min-w-0">
+                    <span className="text-[11px] font-mono text-emerald-400 truncate select-all min-w-0 flex-1">
                       {linkMobile}
                     </span>
                     <button
                       onClick={() => copyToClipboard(linkMobile, 'qrcode_tab')}
-                      className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold shrink-0 transition flex items-center gap-1.5"
+                      className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[11px] font-bold shrink-0 transition flex items-center gap-1"
                     >
                       {copiedLink === 'qrcode_tab' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                      <span>{copiedLink === 'qrcode_tab' ? 'Copiado!' : 'Copiar Link'}</span>
-                    </button>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-3 pt-1">
-                    <button
-                      type="button"
-                      onClick={() => onChangeView('telao')}
-                      className="px-4 py-2.5 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/40 text-sky-300 font-bold text-xs transition flex items-center gap-2"
-                    >
-                      <Tv className="w-4 h-4" />
-                      <span>Exibir no Telão</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => window.print()}
-                      className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition flex items-center gap-2"
-                    >
-                      <Printer className="w-4 h-4" />
-                      <span>Imprimir Folha</span>
+                      <span>{copiedLink === 'qrcode_tab' ? 'Copiado!' : 'Copiar'}</span>
                     </button>
                   </div>
                 </div>
-              </div>
-            </div>
-          )}
 
-          {/* ============================================================== */}
-          {/* ABA 6: LINKS DE ACESSO DO EVENTO (ABA INLINE)                  */}
-          {/* ============================================================== */}
-          {activeSection === 'links' && (
-            <div className="print:hidden bg-slate-900/90 border border-slate-800 rounded-2xl p-6 max-w-3xl shadow-xl space-y-5">
-              <div className="flex items-center gap-3 pb-4 border-b border-slate-800">
-                <div className="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/40 flex items-center justify-center">
-                  <Share2 className="w-5 h-5" />
-                </div>
-                <div>
-                  <h2 className="text-base sm:text-lg font-black text-white">Links Diretos — {eventoTitulo}</h2>
-                  <p className="text-xs text-slate-400">Compartilhe ou abra cada módulo do evento ativo</p>
-                </div>
-              </div>
+                {/* COLUNA 2: LINKS DE ACESSO (7 colunas) */}
+                <div className="lg:col-span-7 space-y-3">
+                  <div className="flex items-center gap-2 pb-2 border-b border-slate-800">
+                    <Share2 className="w-4 h-4 text-indigo-400" />
+                    <h3 className="text-xs font-black text-white uppercase tracking-wider">
+                      Links Diretos para Compartilhar & Projetar
+                    </h3>
+                  </div>
 
-              <div className="space-y-3">
-                {/* Link Celular */}
-                <div className="p-4 rounded-xl bg-slate-950/90 border border-emerald-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <span className="text-xs font-black text-emerald-300 uppercase tracking-wider block">
-                      📱 Link do Formulário Mobile (Visitantes & Membros)
-                    </span>
-                    <span className="text-xs font-mono text-slate-300 truncate block mt-1 select-all">
-                      {linkMobile}
-                    </span>
+                  {/* Link Celular */}
+                  <div className="p-3.5 rounded-xl bg-slate-950/80 border border-emerald-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                    <div className="min-w-0 flex-1">
+                      <span className="text-xs font-black text-emerald-300 uppercase tracking-wider block">
+                        📱 Link Mobile (Visitantes & Membros)
+                      </span>
+                      <span className="text-[11px] font-mono text-slate-300 truncate block mt-0.5 select-all">
+                        {linkMobile}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => copyToClipboard(linkMobile, 'tab_mobile')}
+                        className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition"
+                      >
+                        {copiedLink === 'tab_mobile' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>{copiedLink === 'tab_mobile' ? 'Copiado!' : 'Copiar Link'}</span>
+                      </button>
+                      <a
+                        href={linkMobile}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="p-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white transition"
+                        title="Abrir em nova guia"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      onClick={() => copyToClipboard(linkMobile, 'tab_mobile')}
-                      className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition"
-                    >
-                      {copiedLink === 'tab_mobile' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                      <span>{copiedLink === 'tab_mobile' ? 'Copiado!' : 'Copiar Link'}</span>
-                    </button>
-                    <a
-                      href={linkMobile}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white transition"
-                      title="Abrir em nova guia"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                    </a>
+
+                  {/* Link Telão */}
+                  <div className="p-3.5 rounded-xl bg-slate-950/80 border border-sky-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                    <div className="min-w-0 flex-1">
+                      <span className="text-xs font-black text-sky-300 uppercase tracking-wider block">
+                        📺 Link do Telão (Projeção com QR Code Ao Vivo)
+                      </span>
+                      <span className="text-[11px] font-mono text-slate-300 truncate block mt-0.5 select-all">
+                        {linkTelao}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => copyToClipboard(linkTelao, 'tab_telao')}
+                        className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition"
+                      >
+                        {copiedLink === 'tab_telao' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>{copiedLink === 'tab_telao' ? 'Copiado!' : 'Copiar Link'}</span>
+                      </button>
+                      <a
+                        href={linkTelao}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="p-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white transition"
+                        title="Abrir em nova guia"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    </div>
                   </div>
+
+                  {/* Link Admin */}
+                  <div className="p-3.5 rounded-xl bg-slate-950/80 border border-indigo-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                    <div className="min-w-0 flex-1">
+                      <span className="text-xs font-black text-indigo-300 uppercase tracking-wider block">
+                        📊 Link deste Painel Admin
+                      </span>
+                      <span className="text-[11px] font-mono text-slate-300 truncate block mt-0.5 select-all">
+                        {linkAdmin}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => copyToClipboard(linkAdmin, 'tab_admin')}
+                        className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition"
+                      >
+                        {copiedLink === 'tab_admin' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>{copiedLink === 'tab_admin' ? 'Copiado!' : 'Copiar Link'}</span>
+                      </button>
+                    </div>
+                  </div>
+
                 </div>
 
-                {/* Link Telão */}
-                <div className="p-4 rounded-xl bg-slate-950/90 border border-sky-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <span className="text-xs font-black text-sky-300 uppercase tracking-wider block">
-                      📺 Link do Telão da Igreja (Projeção com QR Code Ao Vivo)
-                    </span>
-                    <span className="text-xs font-mono text-slate-300 truncate block mt-1 select-all">
-                      {linkTelao}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      onClick={() => copyToClipboard(linkTelao, 'tab_telao')}
-                      className="px-3.5 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition"
-                    >
-                      {copiedLink === 'tab_telao' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                      <span>{copiedLink === 'tab_telao' ? 'Copiado!' : 'Copiar Link'}</span>
-                    </button>
-                    <a
-                      href={linkTelao}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white transition"
-                      title="Abrir em nova guia"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                    </a>
-                  </div>
-                </div>
-
-                {/* Link Admin */}
-                <div className="p-4 rounded-xl bg-slate-950/90 border border-indigo-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <span className="text-xs font-black text-indigo-300 uppercase tracking-wider block">
-                      📊 Link Direto deste Painel Admin
-                    </span>
-                    <span className="text-xs font-mono text-slate-300 truncate block mt-1 select-all">
-                      {linkAdmin}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      onClick={() => copyToClipboard(linkAdmin, 'tab_admin')}
-                      className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition"
-                    >
-                      {copiedLink === 'tab_admin' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                      <span>{copiedLink === 'tab_admin' ? 'Copiado!' : 'Copiar Link'}</span>
-                    </button>
-                  </div>
-                </div>
               </div>
             </div>
           )}
@@ -1577,7 +1556,7 @@ export default function DashboardView({ onOpenConfig, onChangeView }) {
           {/* ABA 7: ZERAR DADOS DO EVENTO (ABA INLINE)                      */}
           {/* ============================================================== */}
           {activeSection === 'zerar' && (
-            <div className="print:hidden bg-slate-900/90 border border-red-500/30 rounded-2xl p-6 max-w-xl shadow-xl space-y-5">
+            <div className="print:hidden bg-slate-900/90 border border-red-500/30 rounded-2xl p-6 w-full max-w-2xl shadow-xl space-y-5">
               <div className="flex items-start gap-3.5 pb-4 border-b border-slate-800">
                 <div className="w-11 h-11 rounded-2xl bg-red-500/15 border border-red-500/30 text-red-400 flex items-center justify-center shrink-0">
                   <AlertTriangle className="w-6 h-6" />
