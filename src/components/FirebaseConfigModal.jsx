@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { getSavedFirebaseConfig, saveFirebaseConfig, isFirebaseReady } from '../firebase';
 
-export default function FirebaseConfigModal({ isOpen, onClose }) {
+export default function FirebaseConfigModal({ isOpen, onClose, inline = false }) {
   const current = getSavedFirebaseConfig() || {};
   const [apiKey, setApiKey] = useState(current.apiKey || '');
   const [projectId, setProjectId] = useState(current.projectId || '');
@@ -24,7 +24,7 @@ export default function FirebaseConfigModal({ isOpen, onClose }) {
   const [aviso, setAviso] = useState('');
   const [showConfirmReset, setShowConfirmReset] = useState(false);
 
-  if (!isOpen) return null;
+  if (!isOpen && !inline) return null;
 
   const handlePasteRaw = (text) => {
     setRawConfig(text);
@@ -70,8 +70,8 @@ export default function FirebaseConfigModal({ isOpen, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className={inline ? "w-full animate-fade-in" : "fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"}>
+      <div className={inline ? "bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl shadow-xl overflow-hidden flex flex-col" : "bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"}>
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-slate-800 bg-slate-800/40">
           <div className="flex items-center gap-3">
@@ -83,12 +83,14 @@ export default function FirebaseConfigModal({ isOpen, onClose }) {
               <p className="text-xs text-slate-400">Conecte com seu banco de dados Firestore</p>
             </div>
           </div>
-          <button 
-            onClick={onClose}
-            className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          {!inline && onClose && (
+            <button 
+              onClick={onClose}
+              className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
         </div>
 
         {/* Status atual */}
@@ -235,12 +237,14 @@ export default function FirebaseConfigModal({ isOpen, onClose }) {
           ) : <div />}
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition"
-            >
-              Cancelar
-            </button>
+            {!inline && onClose && (
+              <button
+                onClick={onClose}
+                className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition"
+              >
+                Cancelar
+              </button>
+            )}
             <button
               onClick={handleSave}
               className="px-5 py-2 text-sm font-bold bg-sky-500 hover:bg-sky-400 text-white rounded-xl shadow-lg shadow-sky-500/25 transition active:scale-95"

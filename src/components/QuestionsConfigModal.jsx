@@ -259,7 +259,7 @@ const MODELOS_CELULARES = [
   }
 ];
 
-export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = null, eventTitle = '' }) {
+export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = null, eventTitle = '', inline = false }) {
   // Abas: 'inicio' | 'tela_1' | 'extra_0', 'extra_1'... | 'acompanhantes' | 'fim'
   const [activeTab, setActiveTab] = useState('inicio');
   const [config, setConfig] = useState(DEFAULT_QUESTIONS_CONFIG);
@@ -319,7 +319,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
   };
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen || inline) {
       setConfig(getSavedQuestionsConfig(activeEventId));
       setEventoTitulo(eventTitle || getSavedEventTitle(activeEventId) || 'CANTATA DE NATAL 2026');
       setSalvo(false);
@@ -327,7 +327,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
       setPreviewScreen('inicio');
       setPreviewPage(0);
     }
-  }, [isOpen, activeEventId, eventTitle]);
+  }, [isOpen, inline, activeEventId, eventTitle]);
 
   // Alinha a tela do preview sempre que a aba ativa mudar
   useEffect(() => {
@@ -335,7 +335,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
     setPreviewPage(0);
   }, [activeTab]);
 
-  if (!isOpen) return null;
+  if (!isOpen && !inline) return null;
 
   const modeloAtual = MODELOS_CELULARES.find(m => m.id === modeloCelularId) || MODELOS_CELULARES[0];
 
@@ -648,7 +648,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
       setSalvo(true);
       setTimeout(() => {
         setSalvo(false);
-        onClose();
+        if (!inline && onClose) onClose();
       }, 1000);
     } catch (e) {
       mostrarFeedback('Erro ao Salvar no Firebase', e?.message || String(e), 'erro');
@@ -712,8 +712,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-2 sm:pt-4 p-2 sm:p-4 bg-black/85 backdrop-blur-md overflow-y-auto animate-fade-in">
-      <div className="relative w-[96vw] max-w-6xl bg-slate-900 border border-slate-700 rounded-3xl shadow-2xl flex flex-col max-h-[94vh] overflow-hidden shrink-0">
+    <div className={inline ? "w-full animate-fade-in" : "fixed inset-0 z-50 flex items-start justify-center pt-2 sm:pt-4 p-2 sm:p-4 bg-black/85 backdrop-blur-md overflow-y-auto animate-fade-in"}>
+      <div className={inline ? "relative w-full bg-slate-900 border border-slate-800 rounded-2xl shadow-xl flex flex-col overflow-hidden" : "relative w-[96vw] max-w-6xl bg-slate-900 border border-slate-700 rounded-3xl shadow-2xl flex flex-col max-h-[94vh] overflow-hidden shrink-0"}>
         
         {/* ============================================================ */}
         {/* CABEÇALHO DO MODAL (FIXO NO TOPO)                            */}
@@ -754,12 +754,14 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               <span className="sm:hidden">Importar</span>
             </button>
 
-            <button
-              onClick={onClose}
-              className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition ml-1"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            {!inline && onClose && (
+              <button
+                onClick={onClose}
+                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition ml-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
           </div>
         </div>
 
@@ -3126,14 +3128,16 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
           </button>
 
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={salvando}
-              className="px-4 py-1.5 text-xs font-bold text-slate-300 hover:text-white rounded-xl bg-slate-800 hover:bg-slate-750 transition"
-            >
-              Cancelar
-            </button>
+            {!inline && onClose && (
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={salvando}
+                className="px-4 py-1.5 text-xs font-bold text-slate-300 hover:text-white rounded-xl bg-slate-800 hover:bg-slate-750 transition"
+              >
+                Cancelar
+              </button>
+            )}
 
             <button
               type="button"
