@@ -741,7 +741,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
       ...prev,
       ...previewImportado
     }));
-    if (previewImportado.importedFormTitle && !eventoTitulo) {
+    if (previewImportado.importedFormTitle) {
       setEventoTitulo(previewImportado.importedFormTitle);
     }
     setPreviewImportado(null);
@@ -1286,12 +1286,12 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
-                      <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Título 1 (1ª Linha)</label>
+                      <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Título 1 (1ª Linha da Capa)</label>
                       <input
                         type="text"
-                        value={config.pergunta1Titulo ?? ''}
-                        onChange={(e) => setConfig({ ...config, pergunta1Titulo: e.target.value })}
-                        placeholder="Ex: Seja muito bem-vindo!"
+                        value={config.capaTitulo1 ?? ''}
+                        onChange={(e) => setConfig({ ...config, capaTitulo1: e.target.value })}
+                        placeholder="Título principal da capa..."
                         className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-white shadow-inner"
                       />
                     </div>
@@ -1299,47 +1299,23 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Título 2 (2ª Linha - Opcional)</label>
                       <input
                         type="text"
-                        value={config.pergunta1Titulo2 ?? ''}
-                        onChange={(e) => setConfig({ ...config, pergunta1Titulo2: e.target.value })}
-                        placeholder="Complemento do título (opcional)..."
+                        value={config.capaTitulo2 ?? ''}
+                        onChange={(e) => setConfig({ ...config, capaTitulo2: e.target.value })}
+                        placeholder="Subtítulo ou complemento (opcional)..."
                         className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-amber-300 shadow-inner"
                       />
-                    </div>
-                  </div>
-
-                  {/* Slider de Tamanho da Fonte do Título */}
-                  <div className="pt-2 border-t border-slate-800/80">
-                    <div className="flex items-center justify-between text-xs mb-1">
-                      <span className="font-bold text-slate-300">Tamanho da Fonte do Título</span>
-                      <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
-                        {config.pergunta1FonteTamanho || 18}px
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min="14"
-                      max="32"
-                      step="1"
-                      value={config.pergunta1FonteTamanho || 18}
-                      onChange={(e) => setConfig({ ...config, pergunta1FonteTamanho: Number(e.target.value) })}
-                      className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                    />
-                    <div className="flex justify-between text-[9px] text-slate-500 font-mono">
-                      <span>14px (Menor)</span>
-                      <span>18px (Padrão)</span>
-                      <span>32px (Maior)</span>
                     </div>
                   </div>
 
                   {/* Texto Abaixo do Título */}
                   <div>
                     <label className="text-[10px] font-bold text-emerald-300 block mb-1">
-                      Texto Abaixo do Título (Boas-vindas, Instrução ou Explicação)
+                      Texto Abaixo do Título (Instrução ou Explicação na Capa)
                     </label>
                     <textarea
-                      rows={2}
-                      value={config.pergunta1TextoAbaixo ?? ''}
-                      onChange={(e) => setConfig({ ...config, pergunta1TextoAbaixo: e.target.value })}
+                      rows={3}
+                      value={config.capaTextoAbaixo ?? ''}
+                      onChange={(e) => setConfig({ ...config, capaTextoAbaixo: e.target.value })}
                       placeholder="Digite aqui um texto explicativo para aparecer na Tela de Início..."
                       className="w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-lg px-3 py-2 text-xs text-slate-200 placeholder-slate-500 shadow-inner resize-none"
                     />
@@ -1376,6 +1352,30 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         />
                       </div>
                     )}
+                  </div>
+
+                  {/* Slider de Tamanho da Fonte do Título (EMBAIXO) */}
+                  <div className="pt-3 border-t border-slate-800/80">
+                    <div className="flex items-center justify-between text-xs mb-1">
+                      <span className="font-bold text-slate-300">Tamanho da Fonte do Título</span>
+                      <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
+                        {config.capaFonteTamanho || 16}px
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="12"
+                      max="30"
+                      step="1"
+                      value={config.capaFonteTamanho || 16}
+                      onChange={(e) => setConfig({ ...config, capaFonteTamanho: Number(e.target.value) })}
+                      className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                    />
+                    <div className="flex justify-between text-[9px] text-slate-500 font-mono">
+                      <span>12px (Menor)</span>
+                      <span>16px (Padrão)</span>
+                      <span>30px (Maior)</span>
+                    </div>
                   </div>
                 </div>
               )}
@@ -1843,7 +1843,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       </button>
                     </div>
 
-                    {/* Campo Rápido de Texto Abaixo do Título & Botão COMEÇAR também visíveis direto na aba principal da Tela 1 */}
+                    {/* Campo Rápido de Título & Altura dos Cards diretamente na aba principal da Tela 1 */}
                     <div className="pt-3 border-t border-slate-800 space-y-2.5">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div>
@@ -1860,43 +1860,57 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         </div>
                         <div>
                           <label className="text-[10px] font-bold text-emerald-300 block mb-0.5">
-                            Texto Abaixo do Título (Tela 1)
+                            Subtítulo / Instrução (Tela 1)
                           </label>
                           <input
                             type="text"
                             value={config.pergunta1TextoAbaixo ?? ''}
                             onChange={(e) => setConfig({ ...config, pergunta1TextoAbaixo: e.target.value })}
-                            placeholder="Texto complementar abaixo do título..."
+                            placeholder="Texto complementar abaixo do título (opcional)..."
                             className="w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-lg px-2.5 py-1.5 text-xs text-slate-200"
                           />
                         </div>
                       </div>
 
-                      <div className="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-slate-800/60">
-                        <label className="flex items-center gap-2 cursor-pointer select-none">
+                      {/* Slider de Altura dos Cards diretamente na Aba Tela 1 */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-800/70 items-center">
+                        <div>
+                          <div className="flex items-center justify-between text-xs mb-1">
+                            <span className="font-bold text-slate-300">Altura dos Cards (Tela 1)</span>
+                            <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
+                              {config.cardAltura || 68}px
+                            </span>
+                          </div>
                           <input
-                            type="checkbox"
-                            checked={config.mostrarBotaoComecar !== false}
-                            onChange={(e) => {
-                              setConfig({ ...config, mostrarBotaoComecar: e.target.checked });
-                              setPreviewInteractiveVal(p => ({ ...p, previewStarted: false }));
-                            }}
-                            className="w-3.5 h-3.5 rounded accent-amber-400"
+                            type="range"
+                            min="32"
+                            max="130"
+                            step="2"
+                            value={config.cardAltura || 68}
+                            onChange={(e) => setConfig({ ...config, cardAltura: Number(e.target.value) })}
+                            className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
                           />
-                          <span className="text-[11px] font-bold text-amber-300">
-                            ✨ Exigir Clique em "{config.pergunta1BotaoComecarTexto || 'COMEÇAR'}" (Desmarcado = começa direto)
-                          </span>
-                        </label>
-                        {config.mostrarBotaoComecar !== false && (
-                          <input
-                            type="text"
-                            value={config.pergunta1BotaoComecarTexto ?? 'COMEÇAR'}
-                            onChange={(e) => setConfig({ ...config, pergunta1BotaoComecarTexto: e.target.value })}
-                            placeholder="Caption do botão..."
-                            title="Editar texto (caption) do botão"
-                            className="bg-slate-900 border border-amber-500/40 focus:border-amber-400 rounded-lg px-2.5 py-1 text-[11px] font-black text-amber-300 w-36 text-center"
-                          />
-                        )}
+                        </div>
+
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-slate-300 font-bold">Cards por página:</span>
+                          <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
+                            {[3, 4, 5, 6, 8, 10, 12].map((num) => (
+                              <button
+                                key={num}
+                                type="button"
+                                onClick={() => setConfig({ ...config, cardsPorTela: num })}
+                                className={`px-1.5 h-6 rounded-lg font-black text-[10px] transition ${
+                                  (config.cardsPorTela || 4) === num
+                                    ? 'bg-amber-400 text-slate-950 shadow'
+                                    : 'text-slate-400 hover:text-white'
+                                }`}
+                              >
+                                {num}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
                       </div>
                     </div>
 
@@ -2475,27 +2489,48 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     ) : (
                       /* CONFIGURAÇÃO ESPECÍFICA: CARDS, GRADE/MATRIZ, RADIO BUTTON, CHECKBOX OU LISTA SUSPENSA */
                       <div className="space-y-3">
-                        {telaAlvo.tipo === 'cards' && (
-                          <div className="flex items-center justify-between text-xs py-1.5 border-b border-slate-800/80">
-                            <span className="text-slate-300 font-bold">Cards por tela nesta etapa:</span>
-                            <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
-                              {[2, 3, 4, 5, 6, 8, 10].map((num) => (
-                                <button
-                                  key={num}
-                                  type="button"
-                                  onClick={() => handleUpdateTelaProp(extraIndex, 'cardsPorTela', num)}
-                                  className={`px-2 h-6 rounded-lg font-black text-[11px] transition ${
-                                    limitCards === num
-                                      ? 'bg-amber-400 text-slate-950 shadow'
-                                      : 'text-slate-400 hover:text-white'
-                                  }`}
-                                >
-                                  {num}
-                                </button>
-                              ))}
+                        {/* CONTROLE DE ALTURA DOS CARDS / ITENS EM CADA ABA */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 py-2 border-b border-slate-800/80 items-center">
+                          <div>
+                            <div className="flex items-center justify-between text-xs mb-1">
+                              <span className="font-bold text-slate-300">Altura dos Cards / Itens (Tela {numTela})</span>
+                              <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
+                                {telaAlvo.cardAltura || config.cardAltura || 60}px
+                              </span>
                             </div>
+                            <input
+                              type="range"
+                              min="32"
+                              max="130"
+                              step="2"
+                              value={telaAlvo.cardAltura || config.cardAltura || 60}
+                              onChange={(e) => handleUpdateTelaProp(extraIndex, 'cardAltura', Number(e.target.value))}
+                              className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                            />
                           </div>
-                        )}
+
+                          {telaAlvo.tipo === 'cards' && (
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-slate-300 font-bold">Cards por tela:</span>
+                              <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
+                                {[2, 3, 4, 5, 6, 8, 10].map((num) => (
+                                  <button
+                                    key={num}
+                                    type="button"
+                                    onClick={() => handleUpdateTelaProp(extraIndex, 'cardsPorTela', num)}
+                                    className={`px-2 h-6 rounded-lg font-black text-[11px] transition ${
+                                      limitCards === num
+                                        ? 'bg-amber-400 text-slate-950 shadow'
+                                        : 'text-slate-400 hover:text-white'
+                                    }`}
+                                  >
+                                    {num}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
 
                         {telaAlvo.tipo === 'grade' && (
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 py-2 border-b border-slate-800/80">
@@ -3597,46 +3632,29 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
                       <div className="h-[374px] overflow-y-auto p-3 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between text-center select-none custom-scrollbar">
                         <div className="flex flex-col justify-between h-full space-y-2">
-                          <div className="shrink-0 space-y-1">
-                            <p className="text-xs font-black text-emerald-400 tracking-wide">
-                              Seja muito bem-vindo!
-                            </p>
-                            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-900/90 border border-amber-500/40 text-amber-300 shadow">
-                              <TreePine className="w-3 h-3 text-emerald-400 shrink-0" />
-                              <span className="text-[10px] font-black tracking-wide uppercase truncate max-w-[180px]">
-                                {eventoTitulo}
-                              </span>
-                            </div>
+                          <div className="shrink-0 space-y-2 pt-2">
+                            {(config.capaTitulo1 || config.capaTitulo2) ? (
+                              <h3 
+                                style={{ fontSize: `${(config.capaFonteTamanho || 16) * 0.72}px` }}
+                                className="font-black text-white leading-tight space-y-1"
+                              >
+                                {config.capaTitulo1 && <span className="block">{config.capaTitulo1}</span>}
+                                {config.capaTitulo2 && <span className="block text-amber-300">{config.capaTitulo2}</span>}
+                              </h3>
+                            ) : (
+                              <h3 className="text-xs font-bold text-slate-500 italic">
+                                (Sem título na capa de início)
+                              </h3>
+                            )}
 
-                            <div className="pt-1 border-t border-slate-800/60">
-                              {(config.pergunta1Titulo || config.pergunta1Titulo2) && (
-                                <h3 
-                                  style={{ fontSize: `${(config.pergunta1FonteTamanho || 18) * 0.72}px` }}
-                                  className="font-black text-white leading-tight"
-                                >
-                                  {config.pergunta1Titulo2 ? (
-                                    <>
-                                      <span className="block">{config.pergunta1Titulo}</span>
-                                      <span className="block">{config.pergunta1Titulo2}</span>
-                                    </>
-                                  ) : (
-                                    config.pergunta1Titulo
-                                  )}
-                                </h3>
-                              )}
-
-                              {config.pergunta1TextoAbaixo && (
-                                <p className="text-[11px] text-slate-300 mt-1.5 leading-relaxed whitespace-pre-line bg-slate-900/60 border border-slate-800/80 rounded-xl p-2">
-                                  {config.pergunta1TextoAbaixo}
-                                </p>
-                              )}
-                            </div>
+                            {config.capaTextoAbaixo && (
+                              <p className="text-[10.5px] text-slate-300 mt-1.5 leading-relaxed whitespace-pre-line bg-slate-900/60 border border-slate-800/80 rounded-xl p-2.5">
+                                {config.capaTextoAbaixo}
+                              </p>
+                            )}
                           </div>
 
-                          <div className="flex-1 flex flex-col justify-end py-3 space-y-3">
-                            <div className="my-auto px-3 py-4 rounded-2xl bg-slate-900/40 border border-slate-800/70 text-[10px] text-slate-400">
-                              🔒 O botão <strong>"{config.pergunta1BotaoComecarTexto || 'COMEÇAR'}"</strong> está habilitado.
-                            </div>
+                          <div className="flex-1 flex flex-col justify-end py-3">
                             <div className="relative p-[2px] rounded-2xl overflow-hidden shadow-lg shadow-amber-500/20 group cursor-pointer active:scale-95 transition">
                               <div
                                 className="absolute inset-[-150%] animate-spin"
@@ -3696,9 +3714,9 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       <div className="h-[374px] overflow-y-auto p-3 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between text-center select-none custom-scrollbar">
                         <div className="flex flex-col justify-between h-full space-y-2">
                           <div className="shrink-0 space-y-1">
-                            <p className="text-xs font-black text-emerald-400 tracking-wide">
-                              {eventoTitulo}
-                            </p>
+                            <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[9px] font-black uppercase">
+                              <span>Tela 1 de {1 + (config.telasExtras || []).length}</span>
+                            </div>
                             <div className="pt-1 border-t border-slate-800/60">
                               {(config.pergunta1Titulo || config.pergunta1Titulo2) ? (
                                 <h3 
@@ -4074,7 +4092,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                   return (
                                     <div
                                       key={opt.id || oi}
-                                      className="p-2.5 rounded-xl bg-slate-900/95 border border-slate-800 space-y-1.5"
+                                      style={{ minHeight: `${telaExtra.cardAltura || config.cardAltura || 60}px` }}
+                                      className="p-2.5 rounded-xl bg-slate-900/95 border border-slate-800 space-y-1.5 flex flex-col justify-center"
                                     >
                                       <span className="text-[11px] font-bold text-white block leading-snug">
                                         {opt.titulo}
@@ -4110,6 +4129,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                 {cardsAtivos.map((opt, oi) => (
                                   <label
                                     key={opt.id || oi}
+                                    style={{ minHeight: `${telaExtra.cardAltura || config.cardAltura || 52}px` }}
                                     className="flex items-center gap-2.5 p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-amber-400/50 cursor-pointer"
                                   >
                                     <input
@@ -4148,7 +4168,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                         }
                                       }}
                                       style={{ 
-                                        minHeight: `${config.cardAltura || 82}px`,
+                                        minHeight: `${telaExtra.cardAltura || config.cardAltura || 60}px`,
                                         ...getEfeitoStyle(config.cardEfeitoEstilo, config.cardProfundidade)
                                       }}
                                       className={`w-full text-left p-2.5 rounded-xl flex items-center justify-between transition-all cursor-pointer ${getCardFundoClass(config.cardFundoEstilo)}`}
@@ -4261,9 +4281,6 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       <div className="h-[374px] overflow-y-auto p-3 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between text-center select-none custom-scrollbar">
                         <div className="flex flex-col justify-between h-full space-y-2">
                           <div className="shrink-0 space-y-1">
-                            <p className="text-xs font-black text-emerald-400 tracking-wide">
-                              Seja muito bem-vindo!
-                            </p>
                             <h3 
                               style={{ fontSize: `${(config.pergunta2FonteTamanho || 18) * 0.72}px` }}
                               className="font-black text-white leading-tight"
@@ -4404,17 +4421,16 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                               )}
                             </h3>
 
-                            <div className="space-y-0.5">
-                              <span className="block text-[11px] font-black bg-gradient-to-r from-amber-300 to-amber-400 bg-clip-text text-transparent uppercase tracking-wide">
-                                A {eventoTitulo}
-                              </span>
-                              <span 
-                                style={{ fontSize: `${(config.finalMensagemFonteTamanho || 16) * 0.65}px` }}
-                                className="block font-extrabold text-amber-400"
-                              >
-                                {config.finalMensagem || 'será espetacular!'}
-                              </span>
-                            </div>
+                            {config.finalMensagem && (
+                              <div className="space-y-0.5">
+                                <span 
+                                  style={{ fontSize: `${(config.finalMensagemFonteTamanho || 16) * 0.65}px` }}
+                                  className="block font-extrabold text-amber-400"
+                                >
+                                  {config.finalMensagem}
+                                </span>
+                              </div>
+                            )}
 
                             <div className="pt-2 border-t border-slate-800 space-y-1">
                               <div className="w-full bg-slate-950 rounded-full h-1 overflow-hidden mb-2">

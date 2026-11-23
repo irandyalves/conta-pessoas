@@ -741,8 +741,8 @@ function normalizeQuestionsConfig(config) {
   if (merged.cardFonteSubtitulo < 9) merged.cardFonteSubtitulo = 9;
   if (merged.cardFonteSubtitulo > 20) merged.cardFonteSubtitulo = 20;
 
-  merged.cardAltura = Number(merged.cardAltura) || 82;
-  if (merged.cardAltura < 50) merged.cardAltura = 50;
+  merged.cardAltura = Number(merged.cardAltura) || 68;
+  if (merged.cardAltura < 32) merged.cardAltura = 32;
   if (merged.cardAltura > 150) merged.cardAltura = 150;
 
   // Fundo, efeitos e cores de fontes dos cards
@@ -754,9 +754,10 @@ function normalizeQuestionsConfig(config) {
   merged.cardCorFonteTitulo = merged.cardCorFonteTitulo || 'branco';
   merged.cardCorFonteSubtitulo = merged.cardCorFonteSubtitulo || 'cinza';
 
-  // Garantir tela inicial (espera)
+  // Garantir tela inicial (espera) sem "AVALIAÇÃO DE REAÇÃO" legado
   merged.esperaLinha1 = (merged.esperaLinha1 || 'DENTRO DE INSTANTES').trim();
-  merged.esperaLinha2 = (merged.esperaLinha2 || 'ESTARÁ LIBERADO').trim();
+  const rawEspera2 = (merged.esperaLinha2 || 'ESTARÁ LIBERADO').trim();
+  merged.esperaLinha2 = /avalia[cç][aã]o de rea[cç][aã]o/i.test(rawEspera2) ? 'ESTARÁ LIBERADO' : rawEspera2;
   merged.esperaLinha3 = (merged.esperaLinha3 || 'PARA RESPONDER.').trim();
   const baseEspera = Number(merged.esperaFonteTamanho) || 26;
   merged.esperaLinha1Tamanho = Number(merged.esperaLinha1Tamanho) || baseEspera;
@@ -792,6 +793,10 @@ function normalizeQuestionsConfig(config) {
   // Tela 1 e Tela 2 (Perguntas) - Se for evento criado em branco, preserva strings vazias e arrays vazios
   const isBlank = Boolean(config.isBlankEvent);
   merged.isBlankEvent = isBlank;
+  merged.capaTitulo1 = config.capaTitulo1 !== undefined ? config.capaTitulo1 : (config.importedFormTitle || '');
+  merged.capaTitulo2 = config.capaTitulo2 !== undefined ? config.capaTitulo2 : (config.importedFormSubtitle || '');
+  merged.capaTextoAbaixo = config.capaTextoAbaixo !== undefined ? config.capaTextoAbaixo : (config.importedIntroText || config.pergunta1TextoAbaixo || '');
+  merged.capaFonteTamanho = Number(config.capaFonteTamanho) || 16;
   merged.pergunta1Titulo = config.pergunta1Titulo !== undefined ? config.pergunta1Titulo : (isBlank ? '' : 'Como você chegou aqui?');
   merged.pergunta1Titulo2 = config.pergunta1Titulo2 || '';
   merged.pergunta1Subtitulo = config.pergunta1Subtitulo || '';
@@ -885,6 +890,7 @@ function normalizeQuestionsConfig(config) {
         linhas: Number(tela.linhas) || 4,
         obrigatorio: Boolean(tela.obrigatorio),
         botaoTexto: tela.botaoTexto || 'Avançar',
+        cardAltura: Number(tela.cardAltura) || merged.cardAltura || 60,
         cardsPorTela: Number(tela.cardsPorTela) || 4,
         sliderMin: Number(tela.sliderMin ?? 0),
         sliderMax: Number(tela.sliderMax ?? 10),

@@ -728,17 +728,16 @@ export default function MobileForm() {
               )}
             </h1>
 
-            <div className="space-y-1">
-              <span className="block text-[17px] sm:text-[20px] font-black bg-gradient-to-r from-amber-300 via-orange-300 to-amber-400 bg-clip-text text-transparent uppercase tracking-wide leading-tight">
-                A {eventoTitulo}
-              </span>
-              <span 
-                style={{ fontSize: `${questionsConfig.finalMensagemFonteTamanho || 16}px` }}
-                className="block font-extrabold text-amber-400 tracking-wide leading-tight"
-              >
-                {questionsConfig.finalMensagem || 'será espetacular!'}
-              </span>
-            </div>
+            {questionsConfig.finalMensagem && (
+              <div className="space-y-1">
+                <span 
+                  style={{ fontSize: `${questionsConfig.finalMensagemFonteTamanho || 16}px` }}
+                  className="block font-extrabold text-amber-400 tracking-wide leading-tight"
+                >
+                  {questionsConfig.finalMensagem}
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="pt-5 border-t border-slate-800/80 space-y-3">
@@ -774,12 +773,6 @@ export default function MobileForm() {
 
         <div className="w-full max-w-sm bg-slate-900/90 border border-slate-800 rounded-3xl p-8 sm:p-9 shadow-2xl relative space-y-7 flex flex-col items-center">
           
-          {/* Nome do Evento discreto no topo */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-950 border border-slate-800 text-amber-300 text-xs font-bold uppercase tracking-wider shadow-inner">
-            <TreePine className="w-4 h-4 text-emerald-400 shrink-0" />
-            <span className="truncate max-w-[220px]">{eventoTitulo}</span>
-          </div>
-
           {/* RODA DE EFEITOS (SHOW DE PROCESSAMENTO TECNOLÓGICO) */}
           <div className="relative w-32 h-32 flex items-center justify-center my-1">
             <div 
@@ -841,23 +834,32 @@ export default function MobileForm() {
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between p-4 sm:p-6 max-w-md mx-auto">
       
       {/* ============================================================ */}
-      {/* CABEÇALHO DO EVENTO                                          */}
+      {/* CABEÇALHO DA ETAPA ATUAL                                     */}
       {/* ============================================================ */}
       <header className="w-full pt-2 pb-2 text-center">
-        <p className="text-lg sm:text-xl font-extrabold text-emerald-400 tracking-wide drop-shadow-sm">
-          Seja muito bem-vindo!
-        </p>
-
-        <div className="inline-flex items-center justify-center gap-2.5 px-5 py-2 rounded-2xl bg-slate-900/95 border-2 border-amber-500/40 text-amber-300 mt-2 mb-2 shadow-lg">
-          <TreePine className="w-5 h-5 text-emerald-400 shrink-0" />
-          <h1 className="text-base sm:text-lg md:text-xl font-black tracking-wider uppercase text-amber-300 drop-shadow">
-            {eventoTitulo}
-          </h1>
-        </div>
+        {/* TÍTULO DA CAPA (QUANDO BOTÃO COMEÇAR ESTÁ ATIVO E AINDA NÃO CLICOU) */}
+        {currentStep === 'p1' && questionsConfig.mostrarBotaoComecar !== false && !jaClicouComecar && (
+          <div className="mt-2 pt-2 space-y-3">
+            {(questionsConfig.capaTitulo1 || questionsConfig.capaTitulo2) && (
+              <h2 
+                style={{ fontSize: `${questionsConfig.capaFonteTamanho || 20}px` }}
+                className="font-black text-white leading-tight space-y-1"
+              >
+                {questionsConfig.capaTitulo1 && <span className="block">{questionsConfig.capaTitulo1}</span>}
+                {questionsConfig.capaTitulo2 && <span className="block text-amber-300">{questionsConfig.capaTitulo2}</span>}
+              </h2>
+            )}
+            {questionsConfig.capaTextoAbaixo && (
+              <div className="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 text-xs sm:text-sm text-slate-200 leading-relaxed whitespace-pre-line shadow-inner">
+                {questionsConfig.capaTextoAbaixo}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* TÍTULO DA ETAPA ATUAL: TELA 1 */}
-        {currentStep === 'p1' && (
-          <div className="mt-2 pt-2 border-t border-slate-800/60 space-y-2">
+        {currentStep === 'p1' && (questionsConfig.mostrarBotaoComecar === false || jaClicouComecar) && (
+          <div className="mt-2 pt-2 space-y-2">
             {(questionsConfig.pergunta1Titulo || questionsConfig.pergunta1Titulo2) && (
               <h2 
                 style={{ fontSize: `${questionsConfig.pergunta1FonteTamanho || 22}px` }}
@@ -1452,7 +1454,7 @@ export default function MobileForm() {
                       <button
                         type="button"
                         onClick={() => handleSelectOpcaoExtra(idx, opt)}
-                        style={{ minHeight: `${questionsConfig.cardAltura || 82}px`, ...cardEfeitoInline }}
+                        style={{ minHeight: `${tela.cardAltura || questionsConfig.cardAltura || 60}px`, ...cardEfeitoInline }}
                         className={`w-full text-left p-4 sm:p-5 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-between group border ${cardFundoCls} ${
                           isGavetaAberta ? 'border-amber-400/80 ring-1 ring-amber-400/40' : ''
                         }`}

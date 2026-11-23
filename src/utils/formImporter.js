@@ -1338,47 +1338,58 @@ export function parseTextToQuestions(rawText, fileName = '') {
 function buildConfigFromParsedScreens(screens, meta = {}) {
   const tela1 = screens[0];
   const telasExtras = screens.slice(1);
+  const t1Count = (tela1?.opcoes || []).length;
 
   return {
     isBlankEvent: false,
+    esperaLinha1: 'DENTRO DE INSTANTES',
+    esperaLinha2: 'ESTARÁ LIBERADO',
+    esperaLinha3: 'PARA RESPONDER.',
     importedFormTitle: meta.eventTitle || '',
     importedFormSubtitle: meta.eventSubtitle || '',
     importedIntroText: meta.introText || '',
-    capaTitulo1: meta.eventSubtitle || meta.eventTitle || '',
-    capaTitulo2: '',
+    capaTitulo1: meta.eventTitle || '',
+    capaTitulo2: meta.eventSubtitle || '',
+    capaTextoAbaixo: meta.introText || '',
+    capaFonteTamanho: 16,
     pergunta1Titulo: tela1?.titulo || 'Pergunta 1',
     pergunta1Titulo2: tela1?.titulo2 || '',
     pergunta1Subtitulo: tela1?.subtitulo || '',
-    pergunta1TextoAbaixo: meta.introText || tela1?.subtitulo || '',
+    pergunta1TextoAbaixo: tela1?.subtitulo || '',
     pergunta1BotaoComecarTexto: 'COMEÇAR',
     mostrarBotaoComecar: true,
     pergunta1FonteTamanho: 18,
-    cardsPorTela: tela1?.cardsPorTela || Math.min(12, Math.max(4, (tela1?.opcoes || []).length)),
+    cardAltura: t1Count >= 6 ? 48 : 68,
+    cardsPorTela: tela1?.cardsPorTela || Math.min(12, Math.max(4, t1Count)),
     tela1Tipo: tela1?.tipo || 'cards',
     tela1TextoPlaceholder: tela1?.placeholder || 'Digite sua resposta...',
     opcoesChegada: (tela1?.opcoes && tela1.opcoes.length > 0) ? tela1.opcoes : [],
     mostrarTelaAcompanhantes: false,
-    telasExtras: telasExtras.map((t, idx) => ({
-      id: t.id || `extra_${idx}`,
-      ativa: true,
-      tipo: t.tipo || 'cards',
-      titulo: t.titulo || `Pergunta ${idx + 2}`,
-      titulo1: t.titulo1 || t.titulo || `Pergunta ${idx + 2}`,
-      titulo2: t.titulo2 || '',
-      subtitulo: t.subtitulo || '',
-      legendaEscala: t.legendaEscala || '',
-      colunasGrade: t.colunasGrade || ['1', '2', '3', '4', '5', 'NA'],
-      placeholder: t.placeholder || 'Digite sua resposta...',
-      multiline: t.tipo === 'texto',
-      linhas: t.linhas || 4,
-      obrigatorio: false,
-      botaoTexto: 'Avançar',
-      cardsPorTela: t.cardsPorTela || Math.min(12, Math.max(4, (t.opcoes || []).length)),
-      sliderMin: t.sliderMin ?? 0,
-      sliderMax: t.sliderMax ?? 10,
-      sliderStep: t.sliderStep ?? 1,
-      opcoes: (t.opcoes && t.opcoes.length > 0) ? t.opcoes : getDefaultOptionsForType(t.tipo)
-    }))
+    telasExtras: telasExtras.map((t, idx) => {
+      const optCount = (t.opcoes || []).length;
+      return {
+        id: t.id || `extra_${idx}`,
+        ativa: true,
+        tipo: t.tipo || 'cards',
+        titulo: t.titulo || `Pergunta ${idx + 2}`,
+        titulo1: t.titulo1 || t.titulo || `Pergunta ${idx + 2}`,
+        titulo2: t.titulo2 || '',
+        subtitulo: t.subtitulo || '',
+        legendaEscala: t.legendaEscala || '',
+        colunasGrade: t.colunasGrade || ['1', '2', '3', '4', '5', 'NA'],
+        placeholder: t.placeholder || 'Digite sua resposta...',
+        multiline: t.tipo === 'texto',
+        linhas: t.linhas || 4,
+        obrigatorio: false,
+        botaoTexto: 'Avançar',
+        cardAltura: optCount >= 6 ? 48 : 64,
+        cardsPorTela: t.cardsPorTela || Math.min(12, Math.max(4, optCount)),
+        sliderMin: t.sliderMin ?? 0,
+        sliderMax: t.sliderMax ?? 10,
+        sliderStep: t.sliderStep ?? 1,
+        opcoes: (t.opcoes && t.opcoes.length > 0) ? t.opcoes : getDefaultOptionsForType(t.tipo)
+      };
+    })
   };
 }
 
