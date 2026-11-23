@@ -468,7 +468,13 @@ const currentConfig = getSavedFirebaseConfig();
 if (currentConfig && currentConfig.apiKey && currentConfig.projectId) {
   try {
     const isNewApp = getApps().length === 0;
-    app = isNewApp ? initializeApp(currentConfig) : getApp();
+    // No site publicado, o login usa o próprio domínio (evita falha do redirecionamento
+    // em navegadores que bloqueiam cookies de terceiros)
+    const host = typeof window !== 'undefined' ? window.location.hostname : '';
+    const appConfig = host.endsWith('.web.app') || host.endsWith('.firebaseapp.com')
+      ? { ...currentConfig, authDomain: host }
+      : currentConfig;
+    app = isNewApp ? initializeApp(appConfig) : getApp();
     try {
       // Cache persistente: gravações feitas sem internet ficam guardadas no aparelho
       // e são enviadas automaticamente quando a conexão voltar (mesmo após recarregar).
