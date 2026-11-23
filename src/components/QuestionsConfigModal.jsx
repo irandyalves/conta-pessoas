@@ -51,11 +51,11 @@ import {
   saveEventTitle,
   DEFAULT_QUESTIONS_CONFIG 
 } from '../firebase';
-import { continuaNaMesmaPagina, extrairEstilo, aplicarEstilo, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems, getEfeitoStyle, CORES_TEXTO_LINHAS, ALINHAMENTOS_TEXTO, FUNDOS_CAPTION } from '../utils/estilos';
+import { espacos, continuaNaMesmaPagina, extrairEstilo, aplicarEstilo, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems, getEfeitoStyle, CORES_TEXTO_LINHAS, ALINHAMENTOS_TEXTO, FUNDOS_CAPTION } from '../utils/estilos';
 import ImportadorIA from './ImportadorIA';
 import IconeEspera, { ICONES_ESPERA } from './IconeEspera';
 import EscalaVisual, { ESTILOS_ESCALA } from './EscalaVisual';
-import EstiloLinhasTitulo from './EstiloLinhasTitulo';
+import EstiloLinhasTitulo, { ControleEspacos } from './EstiloLinhasTitulo';
 import { PRESETS_PESQUISAS } from '../utils/presets';
 
 export const TIPOS_PERGUNTA = [
@@ -400,6 +400,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, inline, activeEventId]);
 
+  // Fora do mapa das telas extras não há grupo (evita erro nas telas Acompanhantes/Fim)
+  const grupoPreview = [];
   const TIPOS_CAMPO_PAGINA = ['texto', 'texto_curto', 'data', 'hora', 'slider', 'rating', 'dropdown', 'radio', 'checkbox', 'grade'];
 
   // COPIAR / COLAR / REPLICAR FORMATAÇÃO ENTRE TELAS
@@ -2151,6 +2153,10 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                           ];
                         })()}
                       />
+                      <ControleEspacos
+                        valores={espacos(config, true)}
+                        onChange={(k, v) => setConfig((c) => ({ ...c, ['pergunta1' + { tit: 'EspacoTitulos', sub: 'EspacoSub', cards: 'EspacoCards' }[k]]: v }))}
+                      />
                       <BarraFormatacao ehP1 />
                     </div>
 
@@ -3172,6 +3178,10 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                 { rotulo: 'Subtítulo', tamanho: telaAlvo.subtituloTamanho || 12, min: 9, max: 26, onTamanho: (v) => handleUpdateTelaProp(extraIndex, 'subtituloTamanho', v), cor: telaAlvo.subtituloCor || 'cinza', onCor: (v) => handleUpdateTelaProp(extraIndex, 'subtituloCor', v), bold: Boolean(telaAlvo.subBold), onBold: (v) => handleUpdateTelaProp(extraIndex, 'subBold', v), alinhamento: e.subAl, onAlinhamento: (v) => handleUpdateTelaProp(extraIndex, 'subAlinhamento', v), fundo: e.subFundo, onFundo: (v) => handleUpdateTelaProp(extraIndex, 'subFundo', v) }
                               ];
                             })()}
+                          />
+                          <ControleEspacos
+                            valores={espacos(telaAlvo, false)}
+                            onChange={(k, v) => handleUpdateTelaProp(extraIndex, { tit: 'espacoTitulos', sub: 'espacoSub', cards: 'espacoCards' }[k], v)}
                           />
                           <BarraFormatacao ehP1={false} extraIndex={extraIndex} />
                           {extraIndex > 0 && TIPOS_CAMPO_PAGINA.includes(telaAlvo.tipo) && TIPOS_CAMPO_PAGINA.includes((config.telasExtras || [])[extraIndex - 1]?.tipo) && (() => {
@@ -4619,9 +4629,9 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       <div className="h-[374px] overflow-y-auto p-2.5 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between select-none custom-scrollbar">
                         <div className="flex flex-col justify-between h-full space-y-1.5">
                           <div className="shrink-0 space-y-1">
-                            <div className="pt-0.5 space-y-1">
+                            <div className="pt-0.5 flex flex-col" style={{ gap: espacos(config, true, 0.68).sub, marginBottom: espacos(config, true, 0.68).cards }}>
                               {(config.pergunta1Titulo || config.pergunta1Titulo2 || config.pergunta1Titulo3) ? (
-                                <div className={`space-y-0.5 ${getAlinhamentoClass(estiloLinhas(config, 'pergunta1').tituloAl)} ${getFaixaFundoClass(estiloLinhas(config, 'pergunta1').tituloFundo, '-mx-2.5 px-2.5')}`}>
+                                <div style={{ gap: espacos(config, true, 0.68).tit }} className={`flex flex-col ${getAlinhamentoClass(estiloLinhas(config, 'pergunta1').tituloAl)} ${getFaixaFundoClass(estiloLinhas(config, 'pergunta1').tituloFundo, '-mx-2.5 px-2.5')}`}>
                                   {config.pergunta1Titulo && (
                                     <h3
                                       style={{ fontSize: `${(config.pergunta1FonteTamanho || 18) * 0.72}px` }}
@@ -4914,8 +4924,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
                       <div className="h-[374px] overflow-y-auto p-2.5 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between select-none custom-scrollbar">
                         <div className="flex flex-col justify-between h-full space-y-1.5">
-                          <div className="shrink-0 space-y-1 pt-0.5">
-                            <div className={`space-y-0.5 ${getAlinhamentoClass(estiloLinhas(telaExtra).tituloAl)} ${getFaixaFundoClass(estiloLinhas(telaExtra).tituloFundo, '-mx-2.5 px-2.5')}`}>
+                          <div className="shrink-0 pt-0.5 flex flex-col" style={{ gap: espacos(telaExtra, false, 0.68).sub, marginBottom: espacos(telaExtra, false, 0.68).cards }}>
+                            <div style={{ gap: espacos(telaExtra, false, 0.68).tit }} className={`flex flex-col ${getAlinhamentoClass(estiloLinhas(telaExtra).tituloAl)} ${getFaixaFundoClass(estiloLinhas(telaExtra).tituloFundo, '-mx-2.5 px-2.5')}`}>
                             {(telaExtra.titulo1 || telaExtra.titulo) && (
                               <h3
                                 style={{ fontSize: `${(telaExtra.titulo1Tamanho || 18) * 0.68}px` }}

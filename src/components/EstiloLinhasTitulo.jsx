@@ -106,3 +106,31 @@ export default function EstiloLinhasTitulo({ linhas }) {
     </div>
   );
 }
+
+// Espaços entre títulos, subtítulo e cards (valores em px)
+export function ControleEspacos({ valores, onChange }) {
+  const itens = [
+    { k: 'tit', rotulo: 'Entre títulos', max: 30 },
+    { k: 'sub', rotulo: 'Antes do subtítulo', max: 40 },
+    { k: 'cards', rotulo: 'Antes dos cards', max: 60 }
+  ];
+  return (
+    <div className="p-2.5 rounded-xl bg-slate-900/70 border border-slate-800 space-y-1.5 mt-2">
+      <span className="text-[11px] font-black text-amber-300">Espaçamento</span>
+      {itens.map((i) => (
+        <div key={i.k} className="flex items-center gap-2">
+          <span className="text-[10px] text-slate-400 w-28 shrink-0">{i.rotulo}</span>
+          <input
+            type="range"
+            min={0}
+            max={i.max}
+            value={valores[i.k]}
+            onChange={(e) => onChange(i.k, Number(e.target.value))}
+            className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+          />
+          <span className="font-mono text-[10px] font-bold text-amber-400 w-9 text-right">{valores[i.k]}px</span>
+        </div>
+      ))}
+    </div>
+  );
+}

@@ -37,7 +37,7 @@ import {
   DEFAULT_EVENT_TITLE,
   DEFAULT_EVENT_ID
 } from '../firebase';
-import { getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getEfeitoStyle, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems } from '../utils/estilos';
+import { espacos, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getEfeitoStyle, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems } from '../utils/estilos';
 
 const DISPOSITIVO_BLOQUEADO_KEY = 'presenca_dispositivo_bloqueado_voto';
 const DISPOSITIVO_VOTO_TIME_KEY = 'presenca_dispositivo_hora_voto';
@@ -383,6 +383,23 @@ export default function MobileForm() {
   const telasExtrasAtivas = (questionsConfig?.telasExtras || []).filter((t) => t.ativa !== false);
 
   // Renderizador universal de conteúdo de Gaveta (Texto, Radio, Checkbox, Slide, Data, Hora)
+  // ---------- toque nas opções: vibra, destaca e só avança depois de 500ms ----------
+  const [clicado, setClicado] = useState(null);
+  const cliqueRef = useRef(false);
+  const comFeedback = (chave, acao, imediato = false) => {
+    if (cliqueRef.current) return;
+    try { navigator.vibrate?.(45); } catch (e) {}
+    setClicado(chave);
+    if (imediato) { acao(); setTimeout(() => setClicado(null), 500); return; }
+    cliqueRef.current = true;
+    setTimeout(() => {
+      cliqueRef.current = false;
+      setClicado(null);
+      acao();
+    }, 500);
+  };
+  const efeitoClique = (chave) => (clicado === chave ? 'efeito-clique ring-2 ring-emerald-400 shadow-[0_0_26px_rgba(16,185,129,0.65)]' : '');
+
   // ---------- páginas com várias perguntas ----------
   const TIPOS_CAMPO = ['texto', 'texto_curto', 'data', 'hora', 'slider', 'rating', 'dropdown', 'radio', 'checkbox', 'grade'];
   const ehTelaCampo = (t) => Boolean(t) && TIPOS_CAMPO.includes(t.tipo);
@@ -971,9 +988,9 @@ export default function MobileForm() {
 
         {/* TÍTULO DA ETAPA ATUAL: TELA 1 */}
         {currentStep === 'p1' && (questionsConfig.mostrarBotaoComecar === false || jaClicouComecar) && (
-          <div className="mt-2 pt-2 space-y-2">
+          <div className="mt-2 pt-2 flex flex-col" style={{ gap: espacos(questionsConfig, true).sub, marginBottom: espacos(questionsConfig, true).cards }}>
             {(questionsConfig.pergunta1Titulo || questionsConfig.pergunta1Titulo2 || questionsConfig.pergunta1Titulo3) && (
-              <div className={`space-y-1 ${getAlinhamentoClass(estiloLinhas(questionsConfig, 'pergunta1').tituloAl)} ${getFaixaFundoClass(estiloLinhas(questionsConfig, 'pergunta1').tituloFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}>
+              <div style={{ gap: espacos(questionsConfig, true).tit }} className={`flex flex-col ${getAlinhamentoClass(estiloLinhas(questionsConfig, 'pergunta1').tituloAl)} ${getFaixaFundoClass(estiloLinhas(questionsConfig, 'pergunta1').tituloFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}>
                 {questionsConfig.pergunta1Titulo && (
                   <h2 
                     style={{ fontSize: `${questionsConfig.pergunta1FonteTamanho || 22}px` }}
@@ -1019,8 +1036,8 @@ export default function MobileForm() {
           if (!tela) return null;
           const linha1 = tela.titulo1 || tela.titulo || `Pergunta da Tela ${idx + 2}`;
           return (
-            <div className="mt-2 pt-2 border-t border-slate-800/60 space-y-1">
-              <div className={`space-y-1 ${getAlinhamentoClass(estiloLinhas(tela).tituloAl)} ${getFaixaFundoClass(estiloLinhas(tela).tituloFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}>
+            <div className="mt-2 pt-2 border-t border-slate-800/60 flex flex-col" style={{ gap: espacos(tela).sub, marginBottom: espacos(tela).cards }}>
+              <div style={{ gap: espacos(tela).tit }} className={`flex flex-col ${getAlinhamentoClass(estiloLinhas(tela).tituloAl)} ${getFaixaFundoClass(estiloLinhas(tela).tituloFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}>
               <h2 style={{ fontSize: `${tela.titulo1Tamanho || 20}px` }} className={`${pesoFonte(tela.tituloBold)} leading-tight ${getCorTextoLinhaClass(tela.titulo1Cor, 'text-white')}`}>
                 {linha1}
               </h2>
@@ -1147,10 +1164,11 @@ export default function MobileForm() {
                       <div key={opcao.id} className="space-y-2">
                         <button
                           type="button"
-                          onClick={() => handleSelectComoChegou(opcao)}
+                          onClick={() => comFeedback(`p1_${opcao.id}`, () => handleSelectComoChegou(opcao), opcao.temGaveta)}
                           style={{ minHeight: `${questionsConfig.cardAltura || 82}px`, ...cardEfeitoInline }}
                           className={`w-full text-left p-4 sm:p-5 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-between group border ${cardFundoCls} ${
                             isGavetaAberta ? 'border-amber-400/80 ring-1 ring-amber-400/40' : ''
+                          } ${efeitoClique(`p1_${opcao.id}`)
                           }`}
                         >
                           <div className="flex items-center gap-4 pr-2 min-w-0">
@@ -1664,10 +1682,11 @@ export default function MobileForm() {
                     <div key={opt.id} className="space-y-2">
                       <button
                         type="button"
-                        onClick={() => handleSelectOpcaoExtra(idx, opt)}
+                        onClick={() => comFeedback(`ex_${tela.id}_${opt.id}`, () => handleSelectOpcaoExtra(idx, opt), opt.temGaveta)}
                         style={{ minHeight: `${tela.cardAltura || questionsConfig.cardAltura || 60}px`, ...cardEfeitoInline }}
                         className={`w-full text-left p-4 sm:p-5 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-between group border ${cardFundoCls} ${
                           isGavetaAberta ? 'border-amber-400/80 ring-1 ring-amber-400/40' : ''
+                        } ${efeitoClique(`ex_${tela.id}_${opt.id}`)
                         }`}
                       >
                         <div className="flex items-center gap-4 pr-2 min-w-0">
@@ -1748,8 +1767,8 @@ export default function MobileForm() {
           <div className="space-y-4 fade-in">
             {/* Opção em Destaque: SÓ EU (BOTÃO 3D TÁTIL) */}
             <button
-              onClick={() => handleSelectQtd(1)}
-              className="w-full p-5 sm:p-6 min-h-[96px] rounded-3xl border border-emerald-500/30 border-b-[6px] border-b-emerald-950 bg-gradient-to-b from-emerald-600 via-emerald-700 to-emerald-800 active:translate-y-1.5 active:border-b-2 active:shadow-md transition-all flex items-center justify-between shadow-xl shadow-emerald-950/60"
+              onClick={() => comFeedback('qtd_1', () => handleSelectQtd(1))}
+              className={`${efeitoClique('qtd_1')} w-full p-5 sm:p-6 min-h-[96px] rounded-3xl border border-emerald-500/30 border-b-[6px] border-b-emerald-950 bg-gradient-to-b from-emerald-600 via-emerald-700 to-emerald-800 active:translate-y-1.5 active:border-b-2 active:shadow-md transition-all flex items-center justify-between shadow-xl shadow-emerald-950/60`}
             >
               <div className="flex items-center gap-4">
                 <div className="w-14 h-14 rounded-2xl bg-emerald-900/60 border border-emerald-400/40 flex items-center justify-center text-emerald-200 p-2.5 shadow-inner">
@@ -1804,7 +1823,7 @@ export default function MobileForm() {
                 return (
                   <button
                     key={op.valor}
-                    onClick={() => handleSelectQtd(op.valor)}
+                    onClick={() => comFeedback(`qtd_${op.valor}`, () => handleSelectQtd(op.valor))}
                     style={{ 
                       minHeight: `${btnAltura}px`, 
                       width: btnLargura,
@@ -1812,7 +1831,7 @@ export default function MobileForm() {
                       margin: '0 auto',
                       ...btnEfeitoInline 
                     }}
-                    className={`px-2 py-2 rounded-2xl active:scale-[0.98] transition-all flex flex-col items-center justify-center group ${btnCorCls}`}
+                    className={`px-2 py-2 rounded-2xl active:scale-[0.98] transition-all flex flex-col items-center justify-center group ${btnCorCls} ${efeitoClique(`qtd_${op.valor}`)}`}
                   >
                     <span 
                       style={{ fontSize: `${numFonte}px` }}

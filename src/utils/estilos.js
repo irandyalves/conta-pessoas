@@ -149,14 +149,16 @@ const MAPA_P1 = {
   tituloAlinhamento: 'pergunta1TituloAlinhamento', tituloFundo: 'pergunta1TituloFundo',
   subTamanho: 'pergunta1TextoAbaixoTamanho', subCor: 'pergunta1TextoAbaixoCor', subBold: 'pergunta1SubBold',
   subAlinhamento: 'pergunta1SubAlinhamento', subFundo: 'pergunta1SubFundo',
-  mostrarIcones: 'mostrarIconesCards'
+  mostrarIcones: 'mostrarIconesCards',
+  espacoTitulos: 'pergunta1EspacoTitulos', espacoSub: 'pergunta1EspacoSub', espacoCards: 'pergunta1EspacoCards'
 };
 const MAPA_EXTRA = {
   tituloTamanho: 'titulo1Tamanho', tituloCor: 'titulo1Cor', tituloBold: 'tituloBold',
   tituloAlinhamento: 'tituloAlinhamento', tituloFundo: 'tituloFundo',
   subTamanho: 'subtituloTamanho', subCor: 'subtituloCor', subBold: 'subBold',
   subAlinhamento: 'subAlinhamento', subFundo: 'subFundo',
-  mostrarIcones: 'mostrarIcones'
+  mostrarIcones: 'mostrarIcones',
+  espacoTitulos: 'espacoTitulos', espacoSub: 'espacoSub', espacoCards: 'espacoCards'
 };
 // Campos com o mesmo nome nos dois lugares
 const COMUNS = ['cardAltura', 'cardsPorTela', 'cardFundoEstilo', 'cardEfeitoEstilo', 'cardProfundidade', 'cardCorFonteTitulo',
@@ -190,4 +192,10 @@ export const continuaNaMesmaPagina = (anterior, atual) => {
   if (atual.mesmaPagina === true) return true;
   if (atual.mesmaPagina === false) return false;
   return atual.tipo === 'texto' && anterior.tipo === 'texto';
+};
+
+// Espaços (px) entre as linhas de título, antes do subtítulo e antes dos cards/campo
+export const espacos = (cfg = {}, ehP1 = false, escala = 1) => {
+  const g = (n, padrao) => Math.round((Number(cfg[ehP1 ? 'pergunta1' + n : 'e' + n.slice(1)]) || (cfg[ehP1 ? 'pergunta1' + n : 'e' + n.slice(1)] === 0 ? 0 : padrao)) * escala);
+  return { tit: g('EspacoTitulos', 4), sub: g('EspacoSub', 6), cards: g('EspacoCards', 12) };
 };
