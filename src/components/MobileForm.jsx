@@ -23,6 +23,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import IconeEspera from './IconeEspera';
 import { 
   registrarPresenca, 
   escutarTituloEvento, 
@@ -858,22 +859,8 @@ export default function MobileForm() {
 
         <div className="w-full max-w-sm bg-slate-900/90 border border-slate-800 rounded-3xl p-8 sm:p-9 shadow-2xl relative space-y-7 flex flex-col items-center">
           
-          {/* RODA DE EFEITOS (SHOW DE PROCESSAMENTO TECNOLÓGICO) */}
-          <div className="relative w-32 h-32 flex items-center justify-center my-1">
-            <div 
-              className="absolute inset-0 rounded-full border-4 border-transparent border-t-amber-400 border-r-emerald-400 animate-spin"
-              style={{ animationDuration: '2.5s' }}
-            />
-            <div 
-              className="absolute inset-2.5 rounded-full border-4 border-transparent border-b-sky-400 border-l-amber-300 animate-spin"
-              style={{ animationDuration: '4s', animationDirection: 'reverse' }}
-            />
-            <div className="absolute inset-5 rounded-full bg-gradient-to-tr from-amber-500/20 via-emerald-500/20 to-sky-500/20 border border-white/10 animate-pulse backdrop-blur-sm" />
-            <div className="relative w-14 h-14 rounded-full bg-slate-950 border-2 border-slate-700/80 flex items-center justify-center shadow-xl">
-              <Sparkles className="w-7 h-7 text-amber-300 animate-pulse" />
-            </div>
-            <div className="absolute inset-0 rounded-full bg-amber-400/15 blur-xl pointer-events-none animate-pulse" />
-          </div>
+          {/* ÍCONE ANIMADO ESCOLHIDO PELO ADMIN */}
+          <IconeEspera tipo={questionsConfig.esperaIcone || 'lapis'} tamanho={128} />
 
           {/* TEXTO EM EXATAS 3 LINHAS COM FONTES E CORES INDIVIDUAIS */}
           <div className="space-y-1 text-center">

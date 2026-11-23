@@ -35,3 +35,31 @@
 *::-webkit-scrollbar-track { background: transparent; }
 *::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
 *::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+/* ===== Ícones animados da tela de espera ===== */
+.ie-lapis, .ie-girar-lento, .ie-ponteiro-rapido, .ie-ponteiro-lento, .ie-vibrar, .ie-batida, .ie-balancar, .ie-brilho, .ie-pulo { transform-box: fill-box; }
+.ie-lapis { animation: ieLapis 2.4s ease-in-out infinite; transform-origin: 0% 100%; }
+@keyframes ieLapis { 0%{transform:translate(-22px,-24px)} 25%{transform:translate(-2px,-24px)} 30%{transform:translate(-22px,-16px)} 55%{transform:translate(-2px,-16px)} 60%{transform:translate(-22px,-8px)} 85%{transform:translate(-10px,-8px)} 100%{transform:translate(-22px,-24px)} }
+.ie-escrever { stroke-dasharray: 60; animation: ieEscrever 2.4s linear infinite; }
+@keyframes ieEscrever { 0%{stroke-dashoffset:60} 85%{stroke-dashoffset:0} 100%{stroke-dashoffset:0} }
+.ie-check { stroke-dasharray: 20; stroke-dashoffset: 20; animation: ieCheck 3s ease-out infinite; }
+@keyframes ieCheck { 0%,10%{stroke-dashoffset:20} 30%,85%{stroke-dashoffset:0} 100%{stroke-dashoffset:20} }
+.ie-d1 { animation-delay: 0s; } .ie-d2 { animation-delay: .4s; } .ie-d3 { animation-delay: .8s; }
+.ie-girar-lento { transform-origin: 50% 50%; animation: ieGirar 3s ease-in-out infinite; }
+@keyframes ieGirar { 0%,80%{transform:rotate(0)} 100%{transform:rotate(180deg)} }
+.ie-areia { animation: iePiscar 1.5s ease-in-out infinite; }
+.ie-ponteiro-rapido { transform-origin: 50% 100%; animation: ieGirarSempre 2s linear infinite; }
+.ie-ponteiro-lento { transform-origin: 0% 50%; animation: ieGirarSempre 12s linear infinite; }
+@keyframes ieGirarSempre { to { transform: rotate(360deg); } }
+.ie-vibrar { transform-origin: 50% 50%; animation: ieVibrar 1.6s ease-in-out infinite; }
+@keyframes ieVibrar { 0%,60%,100%{transform:rotate(0)} 65%{transform:rotate(-6deg)} 70%{transform:rotate(6deg)} 75%{transform:rotate(-6deg)} 80%{transform:rotate(6deg)} 85%{transform:rotate(0)} }
+.ie-piscar { animation: iePiscar 1.6s ease-in-out infinite; }
+@keyframes iePiscar { 0%,100%{opacity:.2} 50%{opacity:1} }
+.ie-pulo { animation: iePulo 1.2s ease-in-out infinite; }
+@keyframes iePulo { 0%,60%,100%{transform:translateY(0);opacity:.5} 30%{transform:translateY(-6px);opacity:1} }
+.ie-batida { transform-origin: 50% 50%; animation: ieBatida 1.3s ease-in-out infinite; }
+@keyframes ieBatida { 0%,100%{transform:scale(1)} 15%{transform:scale(1.15)} 30%{transform:scale(.98)} 45%{transform:scale(1.1)} }
+.ie-balancar { transform-origin: 50% 0%; animation: ieBalancar 2s ease-in-out infinite; }
+@keyframes ieBalancar { 0%,100%{transform:rotate(0)} 20%{transform:rotate(14deg)} 40%{transform:rotate(-12deg)} 60%{transform:rotate(7deg)} 80%{transform:rotate(-4deg)} }
+.ie-brilho { transform-origin: 50% 50%; animation: ieBrilho 1.8s ease-in-out infinite; }
+@keyframes ieBrilho { 0%,100%{transform:scale(.7);opacity:.5} 50%{transform:scale(1.05);opacity:1} }

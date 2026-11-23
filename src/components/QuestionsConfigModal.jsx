@@ -53,6 +53,7 @@ import {
 } from '../firebase';
 import { getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems, getEfeitoStyle, CORES_TEXTO_LINHAS, ALINHAMENTOS_TEXTO, FUNDOS_CAPTION } from '../utils/estilos';
 import ImportadorIA from './ImportadorIA';
+import IconeEspera, { ICONES_ESPERA } from './IconeEspera';
 import EstiloLinhasTitulo from './EstiloLinhasTitulo';
 import { PRESETS_PESQUISAS } from '../utils/presets';
 
@@ -397,6 +398,24 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
     // eventTitle fora das dependências: mudar o título não pode apagar edições não salvas
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, inline, activeEventId]);
+
+  // SALVAMENTO AUTOMÁTICO NO BANCO: 1,5s depois da última alteração
+  const [autoSalvo, setAutoSalvo] = useState('');
+  useEffect(() => {
+    if (!(isOpen || inline) || !configBaseRef.current || config === configBaseRef.current) return;
+    setAutoSalvo('pendente');
+    const t = setTimeout(async () => {
+      try {
+        await saveQuestionsConfig(config, activeEventId);
+        configBaseRef.current = config;
+        setAutoSalvo('salvo');
+      } catch (e) {
+        setAutoSalvo('erro');
+      }
+    }, 1500);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config]);
 
   useEffect(() => {
     if (eventTitle && configAtualRef.current === configBaseRef.current) {
@@ -1102,6 +1121,28 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     <p className="text-[11px] text-slate-400 mt-0.5">
                       Exibido no celular enquanto a pesquisa não for iniciada ou estiver pausada pelo admin.
                     </p>
+                  </div>
+
+                  {/* Ícone animado da tela de espera */}
+                  <div className="p-2.5 rounded-xl bg-slate-900/70 border border-slate-800">
+                    <span className="text-[11px] font-black text-amber-300 block mb-2">Ícone animado</span>
+                    <div className="grid grid-cols-5 gap-1.5">
+                      {ICONES_ESPERA.map((ic) => {
+                        const sel = (config.esperaIcone || 'lapis') === ic.id;
+                        return (
+                          <button
+                            key={ic.id}
+                            type="button"
+                            title={ic.label}
+                            onClick={() => setConfig((c) => ({ ...c, esperaIcone: ic.id }))}
+                            className={`flex flex-col items-center gap-0.5 p-1.5 rounded-lg border transition ${sel ? 'bg-amber-500/15 border-amber-400' : 'bg-slate-950 border-slate-800 hover:border-slate-600'}`}
+                          >
+                            <IconeEspera tipo={ic.id} tamanho={38} />
+                            <span className={`text-[9px] leading-tight text-center ${sel ? 'text-amber-200' : 'text-slate-500'}`}>{ic.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
 
                   {/* Título 1 / 1ª Linha + Slide + Bolinhas de Cores */}
@@ -4330,12 +4371,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
                       <div className="h-[374px] overflow-y-auto p-3 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between text-center select-none custom-scrollbar">
                         <div className="flex flex-col items-center justify-center h-full space-y-4 my-auto">
-                          <div className="relative w-14 h-14 flex items-center justify-center">
-                            <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-amber-400 border-r-emerald-400 animate-spin" />
-                            <div className="relative w-6 h-6 rounded-full bg-slate-950 border border-slate-700 flex items-center justify-center">
-                              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                            </div>
-                          </div>
+                          <IconeEspera tipo={config.esperaIcone || 'lapis'} tamanho={64} />
                           <div className="space-y-1 text-center px-1">
                             <span 
                               style={{ fontSize: `${(config.esperaLinha1Tamanho || config.esperaFonteTamanho || 26) * 0.52}px` }}
@@ -5426,6 +5462,9 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               </button>
             )}
 
+            <span className={`text-[11px] font-bold ${autoSalvo === 'erro' ? 'text-rose-300' : autoSalvo === 'pendente' ? 'text-amber-300' : 'text-emerald-400'}`}>
+              {autoSalvo === 'pendente' ? 'Salvando automaticamente...' : autoSalvo === 'salvo' ? '✓ Salvo no banco' : autoSalvo === 'erro' ? 'Erro ao salvar — verifique o login' : ''}
+            </span>
             <button
               type="button"
               onClick={handleSalvar}

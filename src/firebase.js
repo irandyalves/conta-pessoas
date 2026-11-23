@@ -966,6 +966,7 @@ function normalizeQuestionsConfig(config) {
   // Garantir que cada opção tenha o campo 'ativo', 'id' e suporte a gaveta condicional rica
   if (Array.isArray(config.opcoesChegada)) {
     merged.opcoesChegada = config.opcoesChegada.map((op, idx) => ({
+      ...op,
       id: op.id || `card_${idx + 1}`,
       titulo: op.titulo || '',
       subtitulo: op.subtitulo || '',
@@ -988,6 +989,7 @@ function normalizeQuestionsConfig(config) {
       // Remove apenas a "tela fantasma" antiga (id extra_1 SEM nenhum conteúdo próprio)
       .filter(t => t && !(t.id === 'extra_1' && !t.titulo && !(Array.isArray(t.opcoes) && t.opcoes.length)))
       .map((tela, idx) => ({
+        ...tela,
         // id estável e que nunca colide com o filtro acima
         id: tela.id || `tela_auto_${idx + 1}`,
         ativa: tela.ativa !== false,
@@ -1033,6 +1035,7 @@ function normalizeQuestionsConfig(config) {
         sliderLabelMax: tela.sliderLabelMax || 'Máximo',
         sliderUnidade: tela.sliderUnidade || '',
         opcoes: Array.isArray(tela.opcoes) ? tela.opcoes.map((op, oIdx) => ({
+          ...op,
           id: op.id || `opt_${oIdx + 1}`,
           titulo: op.titulo || '',
           subtitulo: op.subtitulo || '',
