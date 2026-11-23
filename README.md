@@ -1,4 +1,4 @@
-# ⛪ Sistema de Presença no Culto (Mobile + Telão + Painel Admin + Firebase)
+# ⛪ RESPONDER - Sistema de Presença no Culto (Mobile + Telão + Painel Admin + Firebase)
 
 Sistema completo com banco de dados no **Firebase Firestore**, hospedagem pronta para **Firebase Hosting**, layout mobile e módulo de **extração de relatórios para Excel e PDF**.
 
