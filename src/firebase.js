@@ -855,7 +855,7 @@ export function normalizeQuestionsConfig(config) {
   merged.esperaFonteTamanho = baseEspera;
 
   // Garantir tela final (agradecimento) com Titulo 1 e Titulo 2 para quebrar
-  if (!merged.finalTitulo1 && !merged.finalTitulo2) {
+  if (merged.finalTitulo1 == null && merged.finalTitulo2 == null) {
     if (merged.finalTitulo && merged.finalTitulo.includes('PELA SUA PRESENÇA')) {
       merged.finalTitulo1 = 'MUITO OBRIGADO';
       merged.finalTitulo2 = 'PELA SUA PRESENÇA.';

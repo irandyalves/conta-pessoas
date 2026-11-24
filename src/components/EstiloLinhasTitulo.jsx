@@ -17,7 +17,7 @@ import { Alinhamento, Alternar, BarraFormato, Cores, MiniSlider, QuestaoArrastav
  * onOrdem (opcional): liga o arrastar e soltar das linhas que têm "chave"; recebe as chaves visíveis na ordem nova.
  * slotAcoes: elemento do cabeçalho (linha do entalhe) que recebe os botões de adicionar.
  * espacoResposta: controle que fica logo abaixo do campo do último título (distância até a resposta).
- * topo (opcional): configuração que vale para a lista, acima dos textos. removivel: lixeira vermelha acima do nome da linha.
+ * topo (opcional): configuração que vale para a lista, acima dos textos. Todo texto tem a lixeira à direita do campo; removivel: false tira.
  * Linha { separador: true, ligado, onLigado } = linha divisória.
  */
 export default function EstiloLinhasTitulo({ linhas, onOrdem, topo = null, slotAcoes = null, espacoResposta = null }) {
@@ -27,6 +27,7 @@ export default function EstiloLinhasTitulo({ linhas, onOrdem, topo = null, slotA
   const idDe = (l) => l.chave || l.rotulo;
   const manter = (l) => setMantidas((m) => (m[idDe(l)] ? m : { ...m, [idDe(l)]: true }));
   const remover = (l) => { setMantidas((m) => ({ ...m, [idDe(l)]: false })); l.onTexto(''); };
+  const removivel = (l) => Boolean(l.onTexto) && l.removivel !== false;
   const visivel = (l) => l.separador || Boolean(String(l.texto || '').trim()) || Boolean(mantidas[idDe(l)]);
   // numerar: o número segue a posição na tela, não o nome do campo
   let conta = 0;
@@ -77,7 +78,6 @@ export default function EstiloLinhasTitulo({ linhas, onOrdem, topo = null, slotA
         const editar = (e) => { manter(l); l.onTexto(e.target.value); };
         return Item(l, i, (
           <>
-            {l.removivel && <button type="button" className="texto-lixeira" title={`Remover ${l.rotulo}`} aria-label={`Remover ${l.rotulo}`} onClick={() => remover(l)}><Trash2 className="w-[14px] h-[14px]" /></button>}
             <BarraFormato>
               {l.onFamilia && <SeletorFonte rotulo="" valor={l.familia} onChange={l.onFamilia} />}
               {l.onTamanho && <MiniSlider rotulo="Tamanho" icone="tamanho" valor={l.tamanho} min={l.min ?? 9} max={l.max ?? 32} onChange={l.onTamanho} />}
@@ -106,14 +106,15 @@ export default function EstiloLinhasTitulo({ linhas, onOrdem, topo = null, slotA
               {l.onEspaco && <MiniSlider rotulo="Espaço até o próximo texto" icone="espaco" valor={l.espaco} min={0} max={80} onChange={l.onEspaco} />}
               {l.extra}
             </BarraFormato>
-            <div className="flex items-start gap-2">
-              <span className="texto-nome pt-[7px]">{l.rotulo}</span>
+            <div className="texto-corpo">
+              <span className="texto-nome">{l.rotulo}</span>
               {!l.onTexto
                 ? <span className="flex-1 min-w-0 truncate text-[13px] text-slate-300 py-[5px]" title={l.texto}>{l.texto}</span>
                 : l.multilinha
                   ? <textarea rows={1} aria-label={l.rotulo} value={l.texto ?? ''} placeholder={l.placeholder || 'Vazio, não aparece no celular'} onChange={editar} className="texto-campo texto-campo-cresce" />
                   : <input type="text" aria-label={l.rotulo} value={l.texto ?? ''} placeholder={l.placeholder || 'Vazio, não aparece no celular'} onChange={editar} className="texto-campo" />}
               {l.aoLado}
+              {removivel(l) ? <button type="button" className="texto-lixeira" title={`Remover ${l.rotulo}`} aria-label={`Remover ${l.rotulo}`} onClick={() => remover(l)}><Trash2 className="w-[14px] h-[14px]" /></button> : <span className="texto-lixeira" aria-hidden="true" />}
             </div>
             {l.abaixo}
             {l === ultimoTitulo && <div className="texto-abaixo">{espacoResposta}</div>}
