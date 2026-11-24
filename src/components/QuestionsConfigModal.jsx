@@ -2914,7 +2914,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               {/* ====================================================== */}
               {activeTab === 'acompanhantes' && (
                 <div className="painel-tela">
-                  <TopoPainel titulo={telaOculta('acompanhantes') ? 'Acompanhantes' : `Tela ${paginasExtras.length + 2}`} />
+                  <TopoPainel slot={setSlotAcoes} titulo={telaOculta('acompanhantes') ? 'Acompanhantes' : `Tela ${paginasExtras.length + 2}`} />
                   <SubAbas
                     valor={subTabTela2}
                     onChange={setSubTabTela2}
@@ -2960,7 +2960,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                   {subTabTela2 === 'individual' && (() => {
                     const espaco = (campo, rotulo) => <EspacoAte rotulo={rotulo} max={120} valor={espacoAcomp(config, campo)} onChange={(v) => setCampo(campo, v)} />;
                     const linha = (id, campo, rotulo, placeholder, tamanho, max, caixa, abaixo) => ({
-                      chave: id, rotulo, placeholder, fixa: true,
+                      chave: id, rotulo, placeholder, removivel: true,
                       texto: config[campo] ?? '', onTexto: (v) => setCampo(campo, v),
                       tamanho: config[`${id}Tamanho`] || tamanho, min: 10, max, onTamanho: (v) => setCampo(`${id}Tamanho`, v),
                       familia: config[`${id}Familia`], onFamilia: (v) => setCampo(`${id}Familia`, v),
@@ -2973,10 +2973,12 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     return (
                       <>
                         <EstiloLinhasTitulo
+                          key={activeTab}
+                          slotAcoes={slotAcoes}
                           linhas={[
                             linha('soeuTitulo', 'opcaoIndividualTitulo', 'Botão', 'SÓ EU', 24, 40, false),
                             linha('soeuCompl', 'opcaoIndividualSubtitulo', 'Ao lado', 'Vazio, não aparece no celular', 14, 30, false),
-                            linha('divisorQtd', 'divisorQtdTexto', 'Divisor', 'Vazio, fica só a linha', 12, 26, true, <div className="texto-abaixo">{espaco('divisorAntesEspaco', 'Espaço antes')}{espaco('divisorDepoisEspaco', 'Espaço depois')}</div>)
+                            linha('divisorQtd', 'divisorQtdTexto', 'Divisor', 'Vazio, não aparece no celular', 12, 26, true, <div className="texto-abaixo">{espaco('divisorAntesEspaco', 'Espaço antes')}{espaco('divisorDepoisEspaco', 'Espaço depois')}</div>)
                           ]}
                         />
                         {EfeitosBotao({

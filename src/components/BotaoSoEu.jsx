@@ -32,6 +32,7 @@ export default function BotaoSoEu({ config, className = '', onClick }) {
   };
   const titulo = estiloTexto(config, 'soeuTitulo');
   const compl = estiloTexto(config, 'soeuCompl');
+  const nome = config.opcaoIndividualTitulo ?? 'SÓ EU';
   const complemento = config.opcaoIndividualSubtitulo ?? ', vim sozinho';
   // a base grossa escura é do botão original: com cor, borda ou efeito próprios ela sai
   const semBase = st.background || st.borderColor || st.boxShadow ? { borderBottomWidth: st.borderWidth ?? '1px' } : {};
@@ -39,6 +40,7 @@ export default function BotaoSoEu({ config, className = '', onClick }) {
   return (
     <button
       type="button"
+      aria-label={[nome, complemento].join('').trim() || 'Vim sozinho'}
       onClick={onClick}
       style={{ ...semBase, ...st, ...(altura ? { minHeight: 0 } : {}), width: `${largura}%`, marginLeft: 'auto', marginRight: 'auto', marginTop: espacoAcomp(config, 'soeuAntesEspaco') }}
       className={`${className} t-avancar t-soeu p-5 sm:p-6 min-h-[96px] rounded-3xl border border-emerald-500/30 border-b-[6px] border-b-emerald-950 bg-gradient-to-b from-emerald-600 via-emerald-700 to-emerald-800 active:translate-y-1.5 active:border-b-2 active:shadow-md transition-all flex items-center justify-between shadow-xl shadow-emerald-950/60`}
@@ -49,7 +51,7 @@ export default function BotaoSoEu({ config, className = '', onClick }) {
         </div>
         <div className="text-left min-w-0">
           <h3 style={herdar} className="font-black text-2xl text-amber-300 drop-shadow-md flex items-baseline gap-1 flex-wrap leading-tight">
-            <span className={propria(titulo)} style={titulo}>{config.opcaoIndividualTitulo || 'SÓ EU'}</span>
+            {nome && <span className={propria(titulo)} style={titulo}>{nome}</span>}
             {complemento && (
               <span className={`text-sm sm:text-base font-semibold text-white ${propria(compl)}`} style={{ ...herdar, ...compl, color: compl.color || herdar.color }}>
                 {complemento}
@@ -68,14 +70,14 @@ export default function BotaoSoEu({ config, className = '', onClick }) {
 export function DivisorQtd({ config }) {
   const st = estiloTexto(config, 'divisorQtd');
   const texto = config.divisorQtdTexto ?? 'Quantas pessoas vieram com você?';
+  // sem texto não há divisor, só o espaço até os botões
+  if (!String(texto).trim()) return <div style={{ height: espacoAcomp(config, 'divisorAntesEspaco') }} aria-hidden="true" />;
   return (
     <div className="relative flex items-center" style={{ marginTop: espacoAcomp(config, 'divisorAntesEspaco'), marginBottom: espacoAcomp(config, 'divisorDepoisEspaco') }}>
       <div className="flex-grow border-t border-slate-800/80" />
-      {texto && (
-        <span style={st} className="t-cor flex-shrink mx-3 text-xs sm:text-sm font-black text-amber-300 uppercase tracking-wider text-center">
-          {texto}
-        </span>
-      )}
+      <span style={st} className="t-cor flex-shrink mx-3 text-xs sm:text-sm font-black text-amber-300 uppercase tracking-wider text-center">
+        {texto}
+      </span>
       <div className="flex-grow border-t border-slate-800/80" />
     </div>
   );

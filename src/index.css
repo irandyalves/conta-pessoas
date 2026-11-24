@@ -261,8 +261,10 @@
 .texto-add-2 { background: rgba(148, 163, 184, .14); color: #cbd5e1; font-weight: 600; }
 .texto-add-2:hover { background: rgba(148, 163, 184, .26); color: #fff; }
 .texto-add-2 svg { color: #34d399; }
-.texto-lixeira { flex: none; display: grid; place-items: center; width: 28px; height: 30px; border-radius: 7px; color: #64748b; transition: background .15s, color .15s; }
-.texto-lixeira:hover { background: rgba(239, 68, 68, .18); color: #f87171; }
+.texto-linha { position: relative; }
+.texto-lixeira { position: absolute; left: 3px; top: 7px; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 7px; color: #f87171; transition: background .15s, color .15s; }
+.texto-linha-movel .texto-lixeira { left: 17px; }
+.texto-lixeira:hover { background: rgba(239, 68, 68, .2); color: #fca5a5; }
 
 /* Campos de digitar: luz fina em cima que desce pelos lados afinando até sumir */
 :is(.editor, .campos-luz) :is(input:not([type]), input[type='text'], input[type='search'], input[type='number'], input[type='email'], input[type='url'], textarea) {
