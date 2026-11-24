@@ -57,7 +57,7 @@ export function MiniSlider({ rotulo, icone, valor, min, max, passo = 1, unidade 
   const Icone = ICONE_SLIDER[icone];
   return (
     <label className={`flex items-center shrink-0 ${Icone ? 'gap-0.5' : 'gap-1.5'}`} title={rotulo}>
-      {Icone ? <Icone className="w-4 h-4 text-slate-400" aria-hidden="true" /> : <span className="text-[11px] text-slate-400">{rotulo}</span>}
+      {Icone ? <Icone className="w-[14px] h-[14px] text-slate-400" aria-hidden="true" /> : <span className="text-[11px] text-slate-400">{rotulo}</span>}
       <input
         type="range"
         aria-label={rotulo}
@@ -140,7 +140,7 @@ export function SeletorFonte({ valor, onChange, rotulo = 'Fonte' }) {
     <div className="ed-cel relative flex items-center gap-2 min-w-0">
       {rotulo && <span className={ROTULO}>{rotulo}</span>}
       <button type="button" aria-expanded={aberto} onClick={() => setAberto(!aberto)}
-        className={`flex items-center justify-between gap-1 rounded-md bg-slate-950/60 border text-[12px] text-white ${rotulo ? 'w-[150px] px-2 py-1 border-slate-700 hover:border-slate-500' : 'w-[92px] h-6 px-1.5 border-transparent hover:border-slate-600'}`}>
+        className={`flex items-center justify-between gap-1 rounded-md bg-slate-950/60 border text-[12px] text-white ${rotulo ? 'w-[150px] px-2 py-1 border-slate-700 hover:border-slate-500' : 'w-[92px] h-[22px] px-1.5 border-transparent hover:border-slate-600'}`}>
         <span className="truncate" style={{ fontFamily: familiaCss(valor) }}>{atual?.nome || 'Padrão'}</span>
         <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
       </button>
@@ -170,8 +170,8 @@ export function Alinhamento({ valor, onChange }) {
         const Icone = ICONE_ALINHAMENTO[id];
         return (
           <button key={id} type="button" title={nome} aria-label={nome} aria-pressed={valor === id} onClick={() => onChange(id)}
-            className={`w-[22px] h-5 rounded flex items-center justify-center transition ${valor === id ? 'bg-slate-100 text-slate-900' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>
-            <Icone className="w-3 h-3" />
+            className={`w-[19px] h-[17px] rounded flex items-center justify-center transition ${valor === id ? 'bg-slate-100 text-slate-900' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>
+            <Icone className="w-[10px] h-[10px]" />
           </button>
         );
       })}
@@ -183,7 +183,7 @@ export function Alinhamento({ valor, onChange }) {
 export function Alternar({ rotulo, nome, valor, onChange }) {
   return (
     <button type="button" title={nome} aria-label={nome} aria-pressed={Boolean(valor)} onClick={() => onChange(!valor)}
-      className={`px-1 min-w-[23px] h-6 rounded-md text-[11px] font-bold transition ${valor ? 'bg-slate-100 text-slate-900' : 'bg-slate-950/60 text-slate-400 hover:text-white'}`}>
+      className={`px-0.5 min-w-[20px] h-[20px] rounded-[5px] text-[10px] font-bold transition ${valor ? 'bg-slate-100 text-slate-900' : 'bg-slate-950/60 text-slate-400 hover:text-white'}`}>
       {rotulo}
     </button>
   );
@@ -276,7 +276,7 @@ export function QuestaoArrastavel({ lista, indice, total, onMover, className = '
         className="absolute left-0 top-4 w-4 sm:w-5 h-7 flex items-center justify-center text-slate-500 hover:text-white"
         style={{ cursor: 'grab' }}
       >
-        <GripVertical className="w-4 h-4" />
+        <GripVertical className="w-[14px] h-[14px]" />
       </button>
       {children}
     </div>

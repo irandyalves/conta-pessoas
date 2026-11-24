@@ -163,7 +163,7 @@
 }
 
 /* ===== PADRÃO DE FORMATAÇÃO DO EDITOR ===== */
-.barra-formato { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; padding: 3px; border-radius: 9px; background: rgba(2, 6, 23, .42); min-height: 32px; }
+.barra-formato { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; padding: 3px; border-radius: 9px; background: rgba(2, 6, 23, .42); min-height: 28px; }
 .texto-lista { border-radius: 12px; overflow: clip; overflow-clip-margin: 0; border: 1px solid #263246; }
 .texto-linha { display: flex; flex-direction: column; gap: 5px; padding: 8px; }
 .texto-linha + .texto-linha { border-top: 1px dashed #475569; }
@@ -176,7 +176,7 @@
 .texto-campo::placeholder { color: #64748b; }
 .texto-campo-cresce { field-sizing: content; max-height: 130px; min-height: 30px; }
 
-.cor-chip { position: relative; display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 6px; border-radius: 7px; background: rgba(15, 23, 42, .9); font-size: 12px; font-weight: 700; white-space: nowrap; cursor: pointer; transition: box-shadow .15s; }
+.cor-chip { position: relative; display: inline-flex; align-items: center; gap: 5px; height: 21px; padding: 0 6px; border-radius: 7px; background: rgba(15, 23, 42, .9); font-size: 12px; font-weight: 700; white-space: nowrap; cursor: pointer; transition: box-shadow .15s; }
 .cor-chip:hover, .cor-chip[aria-expanded='true'] { box-shadow: 0 0 0 1px #64748b; }
 .cor-chip:disabled { opacity: .38; cursor: not-allowed; box-shadow: none; }
 .cor-chip-claro { background: #e2e8f0; }
@@ -186,7 +186,7 @@
 .cor-chip-fundo .cor-cheia { border-radius: 7px; }
 .cor-contorno { border: 2px solid #64748b; }
 .cor-vazia { background: transparent !important; border: 1px dashed #64748b !important; }
-.cor-ponto { width: 13px; height: 13px; flex: none; }
+.cor-ponto { width: 11px; height: 11px; flex: none; }
 .cor-cartao { position: fixed; z-index: 90; width: max-content; max-width: min(318px, calc(100vw - 16px)); padding: 10px; border-radius: 13px; background: #1b2536; border: 1px solid #3b4a63; box-shadow: 0 18px 50px rgba(0, 0, 0, .6); animation: corAbre .13s ease-out; transform-origin: 18px 18px; }
 .cor-cartao p { display: flex; justify-content: space-between; gap: 18px; margin-bottom: 7px; font-size: 11px; color: #94a3b8; }
 .cor-cartao p b { color: #f1f5f9; font-weight: 700; }
