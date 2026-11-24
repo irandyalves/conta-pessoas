@@ -170,3 +170,38 @@ export function Dobra({ titulo, resumo, lateral, aberta: inicial = false, childr
     </div>
   );
 }
+
+// Escolha do ícone de um card, vendo os desenhos. "Automático" escolhe pelo texto da opção.
+export function SeletorIcone({ opcoes, atual, manual, onChange }) {
+  const [aberto, setAberto] = useState(false);
+  const Atual = (opcoes.find((o) => o.id === atual) || opcoes[0]).icon;
+  const escolher = (id) => { onChange(id); setAberto(false); };
+  return (
+    <div className="relative">
+      <button type="button" aria-expanded={aberto} title="Trocar ícone" onClick={() => setAberto(!aberto)}
+        className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-200">
+        <Atual className="w-4 h-4" />
+        <span>{manual ? 'Ícone' : 'Automático'}</span>
+        <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+      </button>
+      {aberto && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setAberto(false)} />
+          <div className="absolute right-0 top-full mt-1 z-50 w-72 rounded-xl bg-slate-800 border border-slate-700 shadow-2xl p-2">
+            <button type="button" onClick={() => escolher(null)} className={`w-full text-left px-2.5 py-2 rounded-lg text-xs mb-1 ${manual ? 'text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-900 font-semibold'}`}>
+              Automático, pelo texto da opção
+            </button>
+            <div className="grid grid-cols-8 gap-0.5 max-h-56 overflow-y-auto">
+              {opcoes.map(({ id, label, icon: Icone }) => (
+                <button key={id} type="button" title={label} aria-label={label} onClick={() => escolher(id)}
+                  className={`h-8 rounded-md flex items-center justify-center ${id === atual ? 'bg-slate-100 text-slate-900' : 'text-slate-300 hover:bg-slate-700 hover:text-white'}`}>
+                  <Icone className="w-4 h-4" />
+                </button>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}

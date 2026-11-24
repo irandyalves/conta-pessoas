@@ -38,27 +38,11 @@ import {
   DEFAULT_EVENT_TITLE,
   DEFAULT_EVENT_ID
 } from '../firebase';
-import { linhasCapa, medidasCard, espacos, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getEfeitoStyle, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems } from '../utils/estilos';
+import { componenteIcone, iconesDaTela } from '../utils/icones';
+import { faixaEstilo, linhasCapa, medidasCard, espacos, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getEfeitoStyle, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems } from '../utils/estilos';
 
 const DISPOSITIVO_BLOQUEADO_KEY = 'presenca_dispositivo_bloqueado_voto';
 const DISPOSITIVO_VOTO_TIME_KEY = 'presenca_dispositivo_hora_voto';
-
-// Dicionário de ícones dinâmicos
-const ICON_COMPONENTS = {
-  Tag,
-  Church,
-  HeartHandshake,
-  Share2,
-  Compass,
-  Sparkles,
-  Star,
-  Smile,
-  MapPin,
-  MessageCircle,
-  Users,
-  User,
-  HelpCircle
-};
 
 const COR_CLASSES = {
   amber: 'text-amber-400 bg-amber-500/15 border-amber-500/30 group-hover:border-amber-400',
@@ -471,6 +455,7 @@ export default function MobileForm({ preview = false }) {
   // Lista de cards ativos da Pergunta 1
   const todosCardsP1 = questionsConfig?.opcoesChegada || DEFAULT_QUESTIONS_CONFIG.opcoesChegada;
   const cardsAtivosP1 = todosCardsP1.filter((c) => c.ativo !== false);
+  const iconesP1 = iconesDaTela(cardsAtivosP1);
   const cardsPorTela = Number(questionsConfig?.cardsPorTela) || 4;
   
   // Total de slides da Pergunta 1
@@ -1077,7 +1062,7 @@ export default function MobileForm({ preview = false }) {
         {currentStep === 'p1' && (questionsConfig.mostrarBotaoComecar === false || jaClicouComecar) && (
           <div className="mt-2 pt-2 flex flex-col" style={{ gap: espacos(questionsConfig, true).sub, marginBottom: espacos(questionsConfig, true).cards }}>
             {(questionsConfig.pergunta1Titulo || questionsConfig.pergunta1Titulo2 || questionsConfig.pergunta1Titulo3) && (
-              <div style={{ gap: espacos(questionsConfig, true).tit }} className={`flex flex-col ${getAlinhamentoClass(estiloLinhas(questionsConfig, 'pergunta1').tituloAl)} ${getFaixaFundoClass(estiloLinhas(questionsConfig, 'pergunta1').tituloFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}>
+              <div style={{ gap: espacos(questionsConfig, true).tit, ...faixaEstilo(estiloLinhas(questionsConfig, 'pergunta1').tituloFundo, questionsConfig.pergunta1TituloFaixa) }} className={`flex flex-col ${getAlinhamentoClass(estiloLinhas(questionsConfig, 'pergunta1').tituloAl)} ${getFaixaFundoClass(estiloLinhas(questionsConfig, 'pergunta1').tituloFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}>
                 {questionsConfig.pergunta1Titulo && (
                   <h2 
                     style={{ fontSize: `${questionsConfig.pergunta1FonteTamanho || 22}px` }}
@@ -1107,7 +1092,7 @@ export default function MobileForm({ preview = false }) {
             {/* SUBTÍTULO DA TELA 1 (alinhamento, tamanho e fundo próprios — igual ao preview) */}
             {questionsConfig.pergunta1TextoAbaixo && (
               <p
-                style={{ fontSize: `${questionsConfig.pergunta1TextoAbaixoTamanho || 14}px` }}
+                style={{ fontSize: `${questionsConfig.pergunta1TextoAbaixoTamanho || 14}px`, ...faixaEstilo(estiloLinhas(questionsConfig, 'pergunta1').subFundo, questionsConfig.pergunta1SubFaixa) }}
                 className={`leading-relaxed whitespace-pre-line ${getAlinhamentoClass(estiloLinhas(questionsConfig, 'pergunta1').subAl)} ${getFaixaFundoClass(estiloLinhas(questionsConfig, 'pergunta1').subFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')} ${questionsConfig.pergunta1SubBold ? 'font-bold' : ''} ${getCorTextoLinhaClass(questionsConfig.pergunta1TextoAbaixoCor, 'text-slate-300')}`}
               >
                 {questionsConfig.pergunta1TextoAbaixo}
@@ -1124,7 +1109,7 @@ export default function MobileForm({ preview = false }) {
           const linha1 = tela.titulo1 || tela.titulo || `Pergunta da Tela ${idx + 2}`;
           return (
             <div className="mt-2 pt-2 border-t border-slate-800/60 flex flex-col" style={{ gap: espacos(tela).sub, marginBottom: espacos(tela).cards }}>
-              <div style={{ gap: espacos(tela).tit }} className={`flex flex-col ${getAlinhamentoClass(estiloLinhas(tela).tituloAl)} ${getFaixaFundoClass(estiloLinhas(tela).tituloFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}>
+              <div style={{ gap: espacos(tela).tit, ...faixaEstilo(estiloLinhas(tela).tituloFundo, tela.tituloFaixa) }} className={`flex flex-col ${getAlinhamentoClass(estiloLinhas(tela).tituloAl)} ${getFaixaFundoClass(estiloLinhas(tela).tituloFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}>
               <h2 style={{ fontSize: `${tela.titulo1Tamanho || 20}px` }} className={`${pesoFonte(tela.tituloBold)} leading-tight ${getCorTextoLinhaClass(tela.titulo1Cor, 'text-white')}`}>
                 {linha1}
               </h2>
@@ -1140,7 +1125,7 @@ export default function MobileForm({ preview = false }) {
               )}
               </div>
               {tela.subtitulo && (
-                <p style={{ fontSize: `${tela.subtituloTamanho || 13}px` }} className={`leading-snug ${getAlinhamentoClass(estiloLinhas(tela).subAl)} ${getFaixaFundoClass(estiloLinhas(tela).subFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')} ${tela.subBold ? 'font-bold' : ''} ${getCorTextoLinhaClass(tela.subtituloCor, 'text-slate-300')}`}>
+                <p style={{ fontSize: `${tela.subtituloTamanho || 13}px`, ...faixaEstilo(estiloLinhas(tela).subFundo, tela.subFaixa) }} className={`leading-snug ${getAlinhamentoClass(estiloLinhas(tela).subAl)} ${getFaixaFundoClass(estiloLinhas(tela).subFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')} ${tela.subBold ? 'font-bold' : ''} ${getCorTextoLinhaClass(tela.subtituloCor, 'text-slate-300')}`}>
                   {tela.subtitulo}
                 </p>
               )}
@@ -1238,7 +1223,7 @@ export default function MobileForm({ preview = false }) {
                 {/* Cards do Slide Atual */}
                 <div className="space-y-3">
                   {cardsDoSlideAtual.map((opcao) => {
-                    const IconComponent = ICON_COMPONENTS[opcao.icone] || Tag;
+                    const IconComponent = componenteIcone(iconesP1[opcao.id]);
                     const corCls = COR_CLASSES[opcao.cor] || COR_CLASSES.amber;
                     const cardFundoCls = CARD_FUNDO_CLASSES[questionsConfig?.cardFundoEstilo] || CARD_FUNDO_CLASSES.escuro;
                     const cardFonteTituloCls = CARD_FONTE_TITULO_CLASSES[questionsConfig?.cardCorFonteTitulo] || 'text-white';
@@ -1597,7 +1582,7 @@ export default function MobileForm({ preview = false }) {
                     <div className="space-y-2">
                       {tela.legendaEscala && (
                         <p
-                          style={{ fontSize: `${tela.escalaTamanho || 9}px` }}
+                          style={{ fontSize: `${tela.escalaTamanho || 9}px`, ...faixaEstilo(tela.legendaFundo || 'escuro', tela.legendaFaixa) }}
                           className={`text-center leading-snug ${tela.legendaBold ? 'font-bold' : ''} ${getCorTextoLinhaClass(tela.legendaCor, 'text-slate-300')} ${getFaixaFundoClass(tela.legendaFundo || 'escuro', '-mx-5 px-5 sm:-mx-6 sm:px-6')}`}
                         >
                           {parseScaleLegendItems(tela.legendaEscala).map((item, li) => (
@@ -1633,6 +1618,7 @@ export default function MobileForm({ preview = false }) {
                         return (
                           <div
                             key={opt.id || oi}
+                            style={faixaEstilo(tela.itemFundo || 'escuro', tela.itemFaixa)}
                             className={`space-y-2 text-left border-y ${getFaixaFundoClass(tela.itemFundo || 'escuro', '-mx-5 px-5 sm:-mx-6 sm:px-6')} rounded-none`}
                           >
                             <span
@@ -1732,6 +1718,7 @@ export default function MobileForm({ preview = false }) {
 
           // Estilo próprio da tela (definido no editor) com fallback para o estilo geral
           const opcoesTela = (tela.opcoes || []).filter(o => o.ativo !== false);
+          const iconesTela = iconesDaTela(opcoesTela);
           const porPagina = Math.max(1, Number(tela.cardsPorTela) || opcoesTela.length || 1);
           const totalPaginas = Math.max(1, Math.ceil(opcoesTela.length / porPagina));
           const paginaAtual = Math.min(extraSlideIndex, totalPaginas - 1);
@@ -1757,7 +1744,7 @@ export default function MobileForm({ preview = false }) {
               )}
               <div className="space-y-3">
                 {opcoesPagina.map((opt) => {
-                  const IconComp = ICON_COMPONENTS[opt.icone] || Sparkles;
+                  const IconComp = componenteIcone(iconesTela[opt.id]);
                   const corCls = COR_CLASSES[opt.cor] || COR_CLASSES.emerald;
                   const cardFundoCls = CARD_FUNDO_CLASSES[estiloFundo] || CARD_FUNDO_CLASSES.escuro;
                   const cardFonteTituloCls = CARD_FONTE_TITULO_CLASSES[tela.cardCorFonteTitulo || questionsConfig?.cardCorFonteTitulo] || 'text-white';

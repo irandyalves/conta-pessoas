@@ -120,7 +120,6 @@ export const medidasCard = (valor) => {
 // TELA DE INÍCIO (CAPA): cada título é um card com espaço, altura e acabamento
 // ==========================================
 export const CAPA_ESPACO_PADRAO = 10;
-export const CAPA_ALTURA_MIN = 60; // % da altura original
 const RGB_FUNDO = {
   escuro: '148, 163, 184', dourado: '251, 191, 36', verde: '16, 185, 129', azul: '14, 165, 233',
   roxo: '168, 85, 247', laranja: '249, 115, 22', rosa: '244, 63, 94'
@@ -129,9 +128,6 @@ const RGB_FUNDO = {
 export const linhasCapa = (cfg = {}) => {
   const ehCard = (cfg.capaFormato || 'card') === 'card';
   const efeito = cfg.capaEfeito || 'alto_relevo';
-  const altura = Math.max(CAPA_ALTURA_MIN, Math.min(150, Number(cfg.capaAltura) || 100)) / 100;
-  const padY = Math.max(0, (altura - 0.6) * 15);
-
   const base = [
     { id: 'capaTitulo1', conteudo: cfg.capaTitulo1, tamanho: cfg.capaFonteTamanho || 18, cor: 'branco', fundo: cfg.capaCaptionFundo || 'transparente' },
     { id: 'capaTitulo2', conteudo: cfg.capaTitulo2, tamanho: 16, cor: 'dourado', fundo: 'transparente' },
@@ -142,6 +138,8 @@ export const linhasCapa = (cfg = {}) => {
   return base.filter((l) => l.conteudo).map((l) => {
     const fundo = cfg[`${l.id}Fundo`] || l.fundo;
     const classes = getCaptionFundoClass(fundo);
+    const pct = alturaFaixa(cfg[`${l.id}Altura`] ?? cfg.capaAltura);
+    const aperto = Math.min(1, pct / 100); // abaixo de 100% as linhas do texto também se aproximam
     const cor = classes.split(' ').filter((c) => /^(bg-|border)/.test(c)).join(' ');
     return {
       id: l.id,
@@ -152,17 +150,26 @@ export const linhasCapa = (cfg = {}) => {
       bold: cfg[`${l.id}Bold`],
       alinhamento: cfg[`${l.id}Alinhamento`] || cfg.capaAlinhamento || 'center',
       espaco: Number(cfg[`${l.id}Espaco`] ?? CAPA_ESPACO_PADRAO),
-      entrelinha: l.texto ? Math.max(1.12, 1.6 * altura) : Math.max(1.05, 1.25 * altura),
+      entrelinha: l.texto ? Math.max(1.12, 1.6 * aperto) : Math.max(1.05, 1.25 * aperto),
       classeCaixa: !classes ? '' : ehCard ? `${cor} rounded-2xl` : `${cor} border-x-0 -mx-4 sm:-mx-6`,
       caixa: {
-        paddingTop: padY,
-        paddingBottom: padY,
+        ...faixaEstilo(fundo, pct),
         paddingLeft: classes ? 14 : 0,
         paddingRight: classes ? 14 : 0,
         ...(classes && ehCard ? getEfeitoStyle(efeito, cfg.capaProfundidade || 5, RGB_FUNDO[fundo]) : {})
       }
     };
   });
+};
+
+// Altura da faixa de fundo, em % (100 = altura original). 60% cola no texto; 300% é uma faixa bem alta.
+export const FAIXA_MIN = 60;
+export const FAIXA_MAX = 300;
+export const alturaFaixa = (valor) => Math.max(FAIXA_MIN, Math.min(FAIXA_MAX, Number(valor) || 100));
+export const faixaEstilo = (fundo, valor) => {
+  if (!getCaptionFundoClass(fundo)) return {};
+  const y = (alturaFaixa(valor) - FAIXA_MIN) * 0.15;
+  return { paddingTop: y, paddingBottom: y };
 };
 
 // Faixa de fundo "de fora a fora" para UMA linha de texto (título OU subtítulo).
@@ -213,6 +220,7 @@ export const corGradeSelecionada = (col, cols = []) => {
 // ==========================================
 const MAPA_P1 = {
   tituloTamanho: 'pergunta1FonteTamanho', tituloCor: 'pergunta1TituloCor', tituloBold: 'pergunta1TituloBold',
+  tituloFaixa: 'pergunta1TituloFaixa', subFaixa: 'pergunta1SubFaixa',
   tituloAlinhamento: 'pergunta1TituloAlinhamento', tituloFundo: 'pergunta1TituloFundo',
   subTamanho: 'pergunta1TextoAbaixoTamanho', subCor: 'pergunta1TextoAbaixoCor', subBold: 'pergunta1SubBold',
   subAlinhamento: 'pergunta1SubAlinhamento', subFundo: 'pergunta1SubFundo',
@@ -221,6 +229,7 @@ const MAPA_P1 = {
 };
 const MAPA_EXTRA = {
   tituloTamanho: 'titulo1Tamanho', tituloCor: 'titulo1Cor', tituloBold: 'tituloBold',
+  tituloFaixa: 'tituloFaixa', subFaixa: 'subFaixa',
   tituloAlinhamento: 'tituloAlinhamento', tituloFundo: 'tituloFundo',
   subTamanho: 'subtituloTamanho', subCor: 'subtituloCor', subBold: 'subBold',
   subAlinhamento: 'subAlinhamento', subFundo: 'subFundo',
@@ -230,7 +239,7 @@ const MAPA_EXTRA = {
 // Campos com o mesmo nome nos dois lugares
 const COMUNS = ['cardAltura', 'cardsPorTela', 'cardFundoEstilo', 'cardEfeitoEstilo', 'cardProfundidade', 'cardCorFonteTitulo',
   'cardCorFonteSubtitulo', 'cardFonteTitulo', 'cardFonteSubtitulo', 'escalaTamanho', 'legendaCor', 'legendaBold', 'legendaFundo',
-  'itemTamanho', 'itemCor', 'itemBold', 'itemFundo'];
+  'itemTamanho', 'itemCor', 'itemBold', 'itemFundo', 'legendaFaixa', 'itemFaixa'];
 
 export function extrairEstilo(origem, ehP1) {
   const mapa = ehP1 ? MAPA_P1 : MAPA_EXTRA;

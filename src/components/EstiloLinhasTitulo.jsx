@@ -1,13 +1,14 @@
 import React from 'react';
 import { MoveVertical } from 'lucide-react';
-import { FUNDOS_CAPTION, CORES_TEXTO_LINHAS } from '../utils/estilos';
+import { alturaFaixa, FAIXA_MAX, FAIXA_MIN, FUNDOS_CAPTION, CORES_TEXTO_LINHAS } from '../utils/estilos';
 import { Alinhamento, Campo, Cores, Deslizante, Dobra, Secao } from './Controles';
 
 /**
  * Textos de uma tela, um por linha, na mesma ordem em que aparecem no celular.
  * Cada linha mostra só os controles cujo "on..." foi informado:
  * { rotulo, texto?, onTexto?, multilinha?, tamanho, min, max, onTamanho, cor, onCor, bold, onBold,
- *   alinhamento, onAlinhamento, fundo, onFundo, espaco, onEspaco }
+ *   alinhamento, onAlinhamento, fundo, onFundo, faixa, onFaixa, espaco, onEspaco }
+ * onFaixa: slider da altura da faixa (aparece quando a linha tem cor de fundo).
  * onEspaco: mostra o slider de distância ENTRE esta linha e a próxima.
  */
 export default function EstiloLinhasTitulo({ linhas }) {
@@ -34,6 +35,7 @@ export default function EstiloLinhasTitulo({ linhas }) {
               {l.onTamanho && <Deslizante rotulo="Tamanho" valor={l.tamanho} min={l.min ?? 9} max={l.max ?? 32} onChange={l.onTamanho} />}
               {l.onCor && <Cores rotulo="Cor do texto" opcoes={CORES_TEXTO_LINHAS} valor={l.cor} onChange={l.onCor} />}
               {l.onFundo && <Cores rotulo="Cor de fundo" opcoes={FUNDOS_CAPTION} campo="dot" valor={l.fundo} onChange={l.onFundo} />}
+              {l.onFaixa && fundo && <Deslizante rotulo="Altura da faixa" valor={alturaFaixa(l.faixa)} min={FAIXA_MIN} max={FAIXA_MAX} passo={5} unidade="%" onChange={l.onFaixa} />}
               {(l.onAlinhamento || l.onBold) && (
                 <div className="flex items-center gap-3">
                   <span className="text-xs text-slate-400 w-28 shrink-0">Estilo</span>
