@@ -304,17 +304,11 @@ export const pesoFonte = (bold, padraoNegrito = true) => ((bold ?? padraoNegrito
 
 // Cor do botão MARCADO na grade/escala: menor nota vermelha → laranja → amarelo → azul → maior verde (com brilho).
 // Colunas não numéricas (NA) ficam cinza.
-const CORES_ESCALA = [
-  'bg-rose-500 text-white border-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.75)]',
-  'bg-orange-500 text-white border-orange-300 shadow-[0_0_12px_rgba(249,115,22,0.75)]',
-  'bg-amber-400 text-slate-950 border-amber-200 shadow-[0_0_12px_rgba(251,191,36,0.75)]',
-  'bg-sky-500 text-white border-sky-300 shadow-[0_0_12px_rgba(14,165,233,0.75)]',
-  'bg-emerald-500 text-slate-950 border-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.8)]'
-];
+const CORES_ESCALA = ['nota-viva nota-1', 'nota-viva nota-2', 'nota-viva nota-3', 'nota-viva nota-4', 'nota-viva nota-5']; // cores e brilho em index.css
 export const corGradeSelecionada = (col, cols = []) => {
   const numericas = cols.filter((c) => /^\d+([.,]\d+)?$/.test(String(c).trim()));
   const i = numericas.indexOf(col);
-  if (i < 0) return 'bg-slate-500 text-white border-slate-300 shadow-[0_0_10px_rgba(148,163,184,0.6)]';
+  if (i < 0) return 'nota-viva nota-na';
   const pos = numericas.length <= 1 ? CORES_ESCALA.length - 1 : Math.round((i / (numericas.length - 1)) * (CORES_ESCALA.length - 1));
   return CORES_ESCALA[pos];
 };
@@ -343,7 +337,7 @@ const MAPA_EXTRA = {
 };
 // Campos com o mesmo nome nos dois lugares
 const COMUNS = ['cardFamilia', 'cardBorda', 'cardBordaLargura', 'gradeFamilia', 'legendaFamilia', 'legendaBorda', 'legendaBordaLargura', 'itemFamilia', 'itemBorda', 'itemBordaLargura', 'gradeFormato', 'gradeEfeito', 'gradeProfundidade', 'gradeCor', 'gradeCorTexto', 'gradeLinha', 'gradeLinhaEspessura', 'gradeAltura', 'gradeRaio', 'cardAltura', 'cardEspaco', 'cardRaio', 'cardsPorTela', 'cardFundoEstilo', 'cardEfeitoEstilo', 'cardProfundidade', 'cardCorFonteTitulo',
-  'cardCorFonteSubtitulo', 'cardFonteTitulo', 'cardFonteSubtitulo', 'escalaTamanho', 'legendaCor', 'legendaBold', 'legendaFundo',
+  'cardCorFonteSubtitulo', 'cardFonteTitulo', 'cardFonteSubtitulo', 'escalaTamanho', 'legendaCor', 'legendaBold', 'legendaFundo', 'legendaAlinhamento', 'legendaColunas', 'legendaIcones',
   'itemTamanho', 'itemCor', 'itemBold', 'itemFundo', 'legendaFaixa', 'itemFaixa', 'legendaCaixa', 'itemCaixa'];
 
 export function extrairEstilo(origem, ehP1) {

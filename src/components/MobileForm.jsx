@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Church, 
   Users, 
@@ -20,7 +21,8 @@ import {
   HelpCircle,
   Radio,
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  Ban
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import IconeEspera from './IconeEspera';
@@ -41,6 +43,7 @@ import {
 import { componenteIcone, iconesDaTela } from '../utils/icones';
 import { configSeta } from '../utils/setas';
 import Rosto from './Rosto';
+import BarraProgresso from './BarraProgresso';
 import { carregarFonteTema, classeTema } from '../utils/temas';
 import { carregarFontes, fontesEmUso } from '../utils/fontes';
 import { fonteEBorda, partesTitulo, subtituloRepeteLegenda, corLinhaHex, lerGeral, caixaAlta, telaP1Cantos, estiloBotao, cantosCard, CARD_ESPACO_PADRAO, faixaEstilo, linhasCapa, medidasCard, espacos, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getEfeitoStyle, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems } from '../utils/estilos';
@@ -173,6 +176,35 @@ const humorColuna = (col, cols) => {
   return i < 0 ? null : nums.length < 2 ? 1 : i / (nums.length - 1);
 };
 
+// Legenda da grade: alinhamento, 1 ou 2 colunas (ou corrida) e ícones opcionais
+function LegendaGrade({ tela, className, style }) {
+  const itens = parseScaleLegendItems(tela.legendaEscala);
+  const cods = itens.map((i) => i.code).filter(Boolean);
+  const colunas = Number(tela.legendaColunas) || 0;
+  const al = tela.legendaAlinhamento || 'center';
+  const lado = { left: 'start', center: 'center', right: 'end' }[al];
+  const tam = Math.max(16, Math.round((tela.escalaTamanho || 9) * 1.7));
+  const forma = colunas
+    ? { display: 'grid', gridTemplateColumns: `repeat(${colunas}, minmax(0, max-content))`, gridTemplateRows: `repeat(${Math.ceil(itens.length / colunas)}, auto)`, gridAutoFlow: 'column', justifyContent: lado, columnGap: '1.6em', rowGap: '.5em', textAlign: 'left' }
+    : { textAlign: al, justifyContent: lado, ...(tela.legendaIcones ? { display: 'flex', flexWrap: 'wrap', gap: '.4em 1em' } : {}) };
+  const icone = (code) => {
+    const p = humorColuna(code, cods);
+    return p === null ? <Ban width={tam} height={tam} className="shrink-0 opacity-70" aria-hidden="true" /> : <span className="shrink-0"><Rosto p={p} tamanho={tam} vivo={false} /></span>;
+  };
+  return (
+    <p style={{ ...style, ...forma }} className={className}>
+      {itens.map((item, li) => (
+        <span key={li} className="t-leg" style={colunas || tela.legendaIcones ? { display: 'inline-flex', alignItems: 'center', gap: '.45em' } : undefined}>
+          {li > 0 && !colunas && !tela.legendaIcones && <span className="t-sep opacity-40"> · </span>}
+          {tela.legendaIcones && item.code && icone(item.code)}
+          {item.code && <strong className="text-amber-400 font-black">{item.code} </strong>}
+          <span>{item.label}</span>
+        </span>
+      ))}
+    </p>
+  );
+}
+
 // Rodapé das telas sem botão Avançar: ← ANTERIOR • PRÓXIMA →
 // PRÓXIMA só aparece quando a página não é obrigatória (ou já foi respondida).
 function RodapeSetas({ onAnterior, onProxima, aceso, seta }) {
@@ -297,6 +329,13 @@ export default function MobileForm({ preview = false }) {
   const [gavetaRespondidas, setGavetaRespondidas] = useState({});
   const [dissertativaTextos, setDissertativaTextos] = useState({});
   const [campoObrigatorioErro, setCampoObrigatorioErro] = useState(null);
+  const [avisoGrade, setAvisoGrade] = useState(null); // { id, faltam, vez }
+  useEffect(() => {
+    if (!avisoGrade) return undefined;
+    const t = setTimeout(() => setAvisoGrade((a) => (a === avisoGrade ? { ...a, oculto: true } : a)), 3800);
+    return () => clearTimeout(t);
+  }, [avisoGrade]);
+  useEffect(() => { setAvisoGrade(null); }, [currentStep]);
   const [jaClicouComecar, setJaClicouComecar] = useState(false);
   const [extraSlideIndex, setExtraSlideIndex] = useState(0);
   const [enviando, setEnviando] = useState(false);
@@ -1170,9 +1209,7 @@ export default function MobileForm({ preview = false }) {
       {/* CABEÇALHO DA ETAPA ATUAL                                     */}
       {/* ============================================================ */}
       {questionsConfig?.mostrarProgresso && !(currentStep === 'p1' && questionsConfig?.mostrarBotaoComecar !== false && !jaClicouComecar) && (
-        <div className="t-progresso" aria-hidden="true">
-          <i style={{ width: `${Math.round(progresso * 100)}%` }} />
-        </div>
+        <BarraProgresso config={questionsConfig} valor={progresso} etapas={etapas} />
       )}
       <header
         ref={cabecalhoRef}
@@ -1767,18 +1804,11 @@ export default function MobileForm({ preview = false }) {
                   {tela.tipo === 'grade' && (
                     <div className="space-y-2">
                       {tela.legendaEscala && (
-                        <p
+                        <LegendaGrade
+                          tela={tela}
                           style={{ fontSize: `${tela.escalaTamanho || 9}px`, ...faixaEstilo(tela.legendaFundo || 'escuro', tela.legendaFaixa), ...fonteEBorda(tela, 'legenda', tela.legendaFundo !== 'transparente') }}
-                          className={`t-legenda text-center leading-snug ${tela.legendaBold ? 'font-bold' : ''} ${caixaAlta(tela.legendaCaixa)} ${getCorTextoLinhaClass(tela.legendaCor, 'text-slate-300')} ${getFaixaFundoClass(tela.legendaFundo || 'escuro', '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}
-                        >
-                          {parseScaleLegendItems(tela.legendaEscala).map((item, li) => (
-                            <span key={li} className="t-leg">
-                              {li > 0 && <span className="t-sep opacity-40"> · </span>}
-                              {item.code && <strong className="text-amber-400 font-black">{item.code} </strong>}
-                              {item.label}
-                            </span>
-                          ))}
-                        </p>
+                          className={`t-legenda leading-snug ${tela.legendaBold ? 'font-bold' : ''} ${caixaAlta(tela.legendaCaixa)} ${getCorTextoLinhaClass(tela.legendaCor, 'text-slate-300')} ${getFaixaFundoClass(tela.legendaFundo || 'escuro', '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}
+                        />
                       )}
 
                       {opcoesAtivas.map((opt, oi) => {
@@ -1805,7 +1835,8 @@ export default function MobileForm({ preview = false }) {
                           <div
                             key={opt.id || oi}
                             style={{ ...faixaEstilo(tela.itemFundo || 'escuro', tela.itemFaixa), ...fonteEBorda(tela, 'item', tela.itemFundo !== 'transparente') }}
-                            className={`t-item space-y-2 text-left border-y ${getFaixaFundoClass(tela.itemFundo || 'escuro', '-mx-4 px-4 sm:-mx-6 sm:px-6')} rounded-none`}
+                            id={`item_${valKey}_${oi}`}
+                            className={`t-item ${avisoGrade?.id === tela.id && !currentItemVal ? 'item-falta' : ''} space-y-2 text-left border-y ${getFaixaFundoClass(tela.itemFundo || 'escuro', '-mx-4 px-4 sm:-mx-6 sm:px-6')} rounded-none`}
                           >
                             <span
                               style={{ fontSize: `${tela.itemTamanho || 13}px` }}
@@ -1861,7 +1892,10 @@ export default function MobileForm({ preview = false }) {
               return t.tipo === 'slider' && v === '' && ESCALA_COM_VALOR_INICIAL.includes(t.estiloEscala || 'slider') ? `${dsv}${t.sliderUnidade || ''}` : v;
             };
 
-            const faltaObrigatoria = grupo.some((t) => t.obrigatorio && !temValor(valorFinal(t)));
+            // Grade obrigatória só está respondida com TODOS os itens marcados
+            const itensFaltando = (t) => (t.tipo !== 'grade' ? [] : (t.opcoes || []).filter((o) => o.ativo !== false).map((_, i) => i).filter((i) => !temValor(dissertativaTextos[`${t.id}__item_${i}`])));
+            const faltaResposta = (t) => t.obrigatorio && (t.tipo === 'grade' ? itensFaltando(t).length > 0 : !temValor(valorFinal(t)));
+            const faltaObrigatoria = grupo.some(faltaResposta);
 
             return (
               <div
@@ -1869,6 +1903,17 @@ export default function MobileForm({ preview = false }) {
                 style={cabeTudo ? { minHeight: 'calc(100dvh - 80px)' } : undefined}
               >
                 {grupo.map((t, gi) => renderCampoTela(t, grupo.length > 1, gi === 0))}
+
+                {avisoGrade && !avisoGrade.oculto && createPortal(
+                  <div className="aviso-desce" role="alert" onClick={() => setAvisoGrade((a) => a && { ...a, oculto: true })}>
+                    <AlertTriangle className="w-7 h-7" aria-hidden="true" />
+                    <div>
+                      <strong>Você deve marcar todas as opções</strong>
+                      <span>{avisoGrade.faltam === 1 ? 'Falta 1 item, marcado em vermelho.' : `Faltam ${avisoGrade.faltam} itens, marcados em vermelho.`}</span>
+                    </div>
+                  </div>,
+                  document.body
+                )}
 
                 {/* Espaço para o rodapé fixo não cobrir o conteúdo */}
                 <div className={cabeTudo ? 'h-20 shrink-0' : 'h-28'} />
@@ -1886,7 +1931,14 @@ export default function MobileForm({ preview = false }) {
                   type="button"
                   onClick={() => comFeedback(`avancar_${tela.id}`, () => {
                     // Valida TODAS as perguntas desta página (estrelas não tocadas não viram "5 estrelas")
-                    const faltando = grupo.find((t) => t.obrigatorio && !temValor(valorFinal(t)));
+                    const faltando = grupo.find(faltaResposta);
+                    if (faltando?.tipo === 'grade') {
+                      const itens = itensFaltando(faltando);
+                      setCampoObrigatorioErro(null);
+                      setAvisoGrade({ id: faltando.id, faltam: itens.length });
+                      document.getElementById(`item_${faltando.id}_${itens[0]}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      return;
+                    }
                     if (faltando) {
                       setCampoObrigatorioErro(faltando.id);
                       document.getElementById(`campo_${faltando.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });

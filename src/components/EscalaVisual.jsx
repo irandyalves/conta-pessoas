@@ -1,13 +1,17 @@
 import React from 'react';
 import Rosto, { Boneco, corHumor } from './Rosto';
+import { Coruja, Gato, Robo } from './Avatares';
 
-// 8 estilos de escala para telas do tipo "slider" (nota de X a Y).
+// Estilos de escala para telas do tipo "slider" (nota de X a Y).
 // O MESMO componente é usado no celular e no preview do editor (escala = zoom do preview).
 export const ESTILOS_ESCALA = [
   { id: 'slider', label: 'Slide clássico' },
   { id: 'numero', label: 'Número animado' },
   { id: 'carinhas', label: 'Carinha viva' },
   { id: 'boneco', label: 'Boneco' },
+  { id: 'coruja', label: 'Coruja azul' },
+  { id: 'gato', label: 'Gato' },
+  { id: 'robo', label: 'Robô' },
   { id: 'nps', label: 'Botões coloridos' },
   { id: 'estrelas', label: 'Estrelas' },
   { id: 'coracoes', label: 'Corações' },
@@ -16,11 +20,12 @@ export const ESTILOS_ESCALA = [
 ];
 
 // Estilos que mostram um valor inicial (o participante só arrasta)
-export const ESCALA_COM_VALOR_INICIAL = ['slider', 'numero', 'carinhas', 'boneco', 'termometro'];
+export const ESCALA_COM_VALOR_INICIAL = ['slider', 'numero', 'carinhas', 'boneco', 'coruja', 'gato', 'robo', 'termometro'];
+const AVATARES = { boneco: Boneco, coruja: Coruja, gato: Gato, robo: Robo };
 
 const corDoValor = (v, min, max) => corHumor(max > min ? (v - min) / (max - min) : 1);
 
-export default function EscalaVisual({ tela, valor, onChange, escala = 1 }) {
+export default function EscalaVisual({ tela, valor, onChange, escala = 1, mini = false }) {
   const min = Number(tela.sliderMin ?? 0);
   const max = Number(tela.sliderMax ?? 10);
   const step = Number(tela.sliderStep ?? 1) || 1;
@@ -35,7 +40,8 @@ export default function EscalaVisual({ tela, valor, onChange, escala = 1 }) {
   const valores = [];
   for (let x = min; x <= max && valores.length < 21; x += step) valores.push(x);
 
-  const rotulos = (
+  // mini = miniatura do editor: sem os rótulos, para nada ficar cortado
+  const rotulos = mini ? null : (
     <div className="flex justify-between font-mono text-slate-400" style={{ fontSize: px(11) }}>
       <span>{min}{tela.sliderLabelMin && tela.sliderLabelMin !== 'Mínimo' ? ` · ${tela.sliderLabelMin}` : ''}</span>
       <span>{tela.sliderLabelMax && tela.sliderLabelMax !== 'Máximo' ? `${tela.sliderLabelMax} · ` : ''}{max}</span>
@@ -63,7 +69,7 @@ export default function EscalaVisual({ tela, valor, onChange, escala = 1 }) {
         <div
           key={v}
           className="font-black tabular-nums transition-all duration-300 animate-[esNum_.35s_ease-out]"
-          style={{ fontSize: px(64), color: cor, textShadow: `0 0 ${px(24)} ${cor}` }}
+          style={{ fontSize: px(64), lineHeight: 1.1, color: cor, textShadow: `0 0 ${px(24)} ${cor}` }}
         >
           {v}{unidade}
         </div>
@@ -73,11 +79,13 @@ export default function EscalaVisual({ tela, valor, onChange, escala = 1 }) {
     );
   }
 
-  if (estilo === 'carinhas' || estilo === 'boneco') {
+  if (estilo === 'carinhas' || AVATARES[estilo]) {
+    const Avatar = AVATARES[estilo];
+    if (mini) return <div className="flex justify-center">{Avatar ? <Avatar p={p} tamanho={72} /> : <Rosto p={p} tamanho={62} />}</div>;
     return (
       <div className="space-y-2 text-center">
         <div className="flex justify-center">
-          {estilo === 'boneco' ? <Boneco p={p} tamanho={Math.round(170 * escala)} /> : <Rosto p={p} tamanho={Math.round(116 * escala)} />}
+          {Avatar ? <Avatar p={p} tamanho={Math.round(170 * escala)} /> : <Rosto p={p} tamanho={Math.round(116 * escala)} />}
         </div>
         <div className="font-black tabular-nums" style={{ fontSize: px(26), color: cor }}>{v}{unidade}</div>
         {range()}

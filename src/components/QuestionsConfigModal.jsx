@@ -58,6 +58,8 @@ import { alturaFaixa, FAIXA_MAX, FAIXA_MIN, gravarFaixaPadrao, lerGeral, gravarH
 import ImportadorIA from './ImportadorIA';
 import IconeEspera, { ICONES_ESPERA } from './IconeEspera';
 import PreviewCelular from './PreviewCelular';
+import BarraProgresso, { CORES_PROGRESSO, CORES_PROGRESSO_LAYOUT, ESTILOS_PROGRESSO, usaDuasCores } from './BarraProgresso';
+import { Columns2, Rows3, Smile as IconeRosto, WrapText } from 'lucide-react';
 import EscalaVisual, { ESTILOS_ESCALA } from './EscalaVisual';
 import EstiloLinhasTitulo, { ControleEspacos } from './EstiloLinhasTitulo';
 import { BotaoObrigatorio, Campo, Chave, Cores, Deslizante, Lista, MiniSlider, QuestaoArrastavel, Secao, Segmentos, SeletorFonte, SeletorIcone } from './Controles';
@@ -1435,7 +1437,41 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       atual={config.tema}
                       onEscolher={(id) => setConfig((c) => aplicarTema(c, id))}
                     />
-                    <Chave rotulo="Barra de progresso" descricao="Linha fina no alto do celular mostrando quanto falta." valor={Boolean(config.mostrarProgresso)} onChange={(v) => setCampo('mostrarProgresso', v)} />
+                  </Secao>
+
+                  <Secao titulo="Barra de progresso" descricao="No alto do celular, mostra quanto falta para terminar.">
+                    <Chave rotulo="Mostrar barra" valor={Boolean(config.mostrarProgresso)} onChange={(v) => setCampo('mostrarProgresso', v)} />
+                    {config.mostrarProgresso && (
+                      <>
+                        <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-2">
+                          {ESTILOS_PROGRESSO.map((e) => {
+                            const ativo = (config.progressoEstilo || 'cor') === e.id;
+                            return (
+                              <button
+                                key={e.id}
+                                type="button"
+                                aria-pressed={ativo}
+                                onClick={() => setCampo('progressoEstilo', e.id)}
+                                className={`rounded-lg p-2.5 text-left bg-slate-950/60 transition ${ativo ? 'ring-2 ring-white' : 'hover:bg-slate-800'}`}
+                              >
+                                <span className="h-5 flex items-center"><BarraProgresso demo config={{ ...config, progressoEstilo: e.id }} valor={0.75} etapas={8} /></span>
+                                <span className="block mt-1.5 text-xs font-semibold text-slate-100">{e.nome}</span>
+                                <span className="block text-[11px] leading-tight text-slate-400">{e.detalhe}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {usaDuasCores(config.progressoEstilo) ? (
+                          <>
+                            <Cores rotulo="Começa em" campo="hex" opcoes={CORES_PROGRESSO} valor={config.progressoCor1 || 'vermelho'} onChange={(v) => setCampo('progressoCor1', v)} lateral={<span />} />
+                            <Cores rotulo="Termina em" campo="hex" opcoes={CORES_PROGRESSO} valor={config.progressoCor2 || 'verde'} onChange={(v) => setCampo('progressoCor2', v)} lateral={<span />} />
+                          </>
+                        ) : (
+                          <Cores rotulo="Cor" campo="hex" opcoes={CORES_PROGRESSO_LAYOUT} valor={config.progressoCor || 'layout'} onChange={(v) => setCampo('progressoCor', v)} lateral={<span />} />
+                        )}
+                        <Deslizante rotulo="Altura" valor={Number(config.progressoAltura) || 4} min={2} max={14} onChange={(v) => setCampo('progressoAltura', v)} />
+                      </>
+                    )}
                   </Secao>
 
                   <Secao titulo="Cabeçalho">
@@ -2183,7 +2219,31 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                               { rotulo: 'Título 3', texto: telaAlvo.titulo3 ?? '', onTexto: set('titulo3'), tamanho: telaAlvo.titulo3Tamanho || 14, min: 11, max: 36, onTamanho: set('titulo3Tamanho'), cor: telaAlvo.titulo3Cor || 'verde', onCor: set('titulo3Cor') },
                               { rotulo: 'Texto abaixo', texto: telaAlvo.subtitulo ?? '', onTexto: set('subtitulo'), multilinha: true, tamanho: telaAlvo.subtituloTamanho || 12, min: 9, max: 26, onTamanho: set('subtituloTamanho'), cor: telaAlvo.subtituloCor || 'cinza', onCor: set('subtituloCor'), bold: Boolean(telaAlvo.subBold), onBold: set('subBold'), caixa: telaAlvo.subCaixa, onCaixa: set('subCaixa'), ...fonteBordaLinha((k) => telaAlvo[`sub${k}`], (k, v) => handleUpdateTelaProp(extraIndex, `sub${k}`, v)), alinhamento: e.subAl, onAlinhamento: set('subAlinhamento'), fundo: e.subFundo, onFundo: set('subFundo'), faixa: telaAlvo.subFaixa ?? config.faixaPadrao, onFaixa: (v) => gravarEstilo(extraIndex, 'subFaixa', v) },
                               ...(telaAlvo.tipo === 'grade' ? [
-                                { rotulo: 'Legenda', texto: telaAlvo.legendaEscala ?? '', onTexto: set('legendaEscala'), placeholder: '1 = Péssimo; 5 = Ótimo; NA = Não se aplica', tamanho: telaAlvo.escalaTamanho || 9, min: 7, max: 18, onTamanho: set('escalaTamanho'), cor: telaAlvo.legendaCor || 'cinza', onCor: set('legendaCor'), bold: Boolean(telaAlvo.legendaBold), onBold: set('legendaBold'), caixa: telaAlvo.legendaCaixa, onCaixa: set('legendaCaixa'), ...fonteBordaLinha((k) => telaAlvo[`legenda${k}`], (k, v) => handleUpdateTelaProp(extraIndex, `legenda${k}`, v)), fundo: telaAlvo.legendaFundo || 'escuro', onFundo: set('legendaFundo'), faixa: telaAlvo.legendaFaixa, onFaixa: set('legendaFaixa') },
+                                { rotulo: 'Legenda', texto: telaAlvo.legendaEscala ?? '', onTexto: set('legendaEscala'), placeholder: '1 = Péssimo; 5 = Ótimo; NA = Não se aplica', tamanho: telaAlvo.escalaTamanho || 9, min: 7, max: 18, onTamanho: set('escalaTamanho'), cor: telaAlvo.legendaCor || 'cinza', onCor: set('legendaCor'), alinhamento: telaAlvo.legendaAlinhamento || 'center', onAlinhamento: set('legendaAlinhamento'),
+                                  extra: (
+                                    <>
+                                      <Segmentos
+                                        rotulo=""
+                                        opcoes={[
+                                          { id: 0, label: 'Corrida', dica: 'Uma ao lado da outra', conteudo: <WrapText className="w-3.5 h-3.5" /> },
+                                          { id: 1, label: '1 coluna', conteudo: <span className="flex items-center gap-1"><Rows3 className="w-3.5 h-3.5" />1</span> },
+                                          { id: 2, label: '2 colunas', conteudo: <span className="flex items-center gap-1"><Columns2 className="w-3.5 h-3.5" />2</span> }
+                                        ]}
+                                        valor={Number(telaAlvo.legendaColunas) || 0}
+                                        onChange={set('legendaColunas')}
+                                      />
+                                      <button
+                                        type="button"
+                                        aria-pressed={Boolean(telaAlvo.legendaIcones)}
+                                        title="Mostrar uma carinha ao lado de cada nota da legenda"
+                                        onClick={() => set('legendaIcones')(!telaAlvo.legendaIcones)}
+                                        className={`flex items-center gap-1 px-2 h-6 rounded-md text-[11px] font-semibold transition ${telaAlvo.legendaIcones ? 'bg-slate-100 text-slate-900' : 'bg-slate-950/60 text-slate-400 hover:text-white'}`}
+                                      >
+                                        <IconeRosto className="w-3.5 h-3.5" /> Ícones
+                                      </button>
+                                    </>
+                                  ),
+                                  bold: Boolean(telaAlvo.legendaBold), onBold: set('legendaBold'), caixa: telaAlvo.legendaCaixa, onCaixa: set('legendaCaixa'), ...fonteBordaLinha((k) => telaAlvo[`legenda${k}`], (k, v) => handleUpdateTelaProp(extraIndex, `legenda${k}`, v)), fundo: telaAlvo.legendaFundo || 'escuro', onFundo: set('legendaFundo'), faixa: telaAlvo.legendaFaixa, onFaixa: set('legendaFaixa') },
                                 { rotulo: 'Itens da grade', texto: cardsAtivos.map((o) => o.titulo).join(', '), tamanho: telaAlvo.itemTamanho || 12, min: 8, max: 20, onTamanho: set('itemTamanho'), cor: telaAlvo.itemCor || 'branco', onCor: set('itemCor'), bold: telaAlvo.itemBold !== false, onBold: set('itemBold'), caixa: telaAlvo.itemCaixa, onCaixa: set('itemCaixa'), ...fonteBordaLinha((k) => telaAlvo[`item${k}`], (k, v) => handleUpdateTelaProp(extraIndex, `item${k}`, v)), fundo: telaAlvo.itemFundo || 'escuro', onFundo: set('itemFundo'), faixa: telaAlvo.itemFaixa, onFaixa: set('itemFaixa') }
                               ] : [])
                             ];
@@ -2256,8 +2316,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                     onClick={() => handleUpdateTelaProp(extraIndex, 'estiloEscala', es.id)}
                                     className={`p-2 rounded-xl border text-left transition ${sel ? 'bg-slate-700/40 border-slate-200' : 'bg-slate-950 border-slate-800 hover:border-slate-600'}`}
                                   >
-                                    <div className="pointer-events-none h-[74px] overflow-hidden flex items-center">
-                                      <div className="w-full"><EscalaVisual tela={{ ...telaAlvo, estiloEscala: es.id }} escala={0.45} valor={String(Math.round(((telaAlvo.sliderMin ?? 0) + (telaAlvo.sliderMax ?? 10)) * 0.7))} onChange={() => {}} /></div>
+                                    <div className="pointer-events-none h-[86px] overflow-hidden flex items-center">
+                                      <div className="w-full"><EscalaVisual tela={{ ...telaAlvo, estiloEscala: es.id }} mini escala={0.45} valor={String(Math.round(((telaAlvo.sliderMin ?? 0) + (telaAlvo.sliderMax ?? 10)) * (es.id === 'carinhas' || ['boneco', 'coruja', 'gato', 'robo'].includes(es.id) ? 0.8 : 0.7)))} onChange={() => {}} /></div>
                                     </div>
                                     <span className={`block text-[11px] font-bold mt-1 ${sel ? 'text-slate-200' : 'text-slate-400'}`}>{es.label}</span>
                                   </button>

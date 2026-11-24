@@ -12,7 +12,6 @@ import {
   Smartphone,
   CheckCircle2,
   Filter,
-  BarChart2,
   FileText,
   Edit3,
   Save,
@@ -42,6 +41,8 @@ import { QRCodeSVG } from 'qrcode.react';
 import QuestionsConfigModal from './QuestionsConfigModal';
 import FirebaseConfigModal from './FirebaseConfigModal';
 import ImportadorIA from './ImportadorIA';
+import Acompanhamento from './acompanhamento/Acompanhamento';
+import { exportar } from '../utils/exportar';
 import { 
   escutarPresencas, 
   limparDadosLocais, 
@@ -316,31 +317,25 @@ export default function DashboardView({ onChangeView }) {
   const totalCheckins = presencasFiltradas.length;
   const mediaPorGrupo = totalCheckins > 0 ? (totalPessoas / totalCheckins).toFixed(1) : '0';
 
-  // Contagens por categoria
-  const contagemCategorias = presencasFiltradas.reduce((acc, curr) => {
-    const cat = curr.comoChegou || 'Outro';
-    const qtd = Number(curr.qtdPessoas) || 1;
-    acc[cat] = (acc[cat] || 0) + qtd;
-    return acc;
-  }, {});
-
-  // Lista dinâmica de categorias unindo o que está cadastrado e o que recebeu votos
   const listaOpcoesConfig = questionsConfig?.opcoesChegada || [];
-  const categoriasUnicas = Array.from(new Set([
-    ...listaOpcoesConfig.filter(o => o.ativo !== false).map(o => o.titulo),
-    ...Object.keys(contagemCategorias)
-  ])).filter(Boolean);
+  const periodoTexto = filtroData === 'hoje' ? hoje : filtroData === 'personalizado' ? dataPersonalizada.split('-').reverse().join('/') : 'todas as datas';
 
-  const paletteColors = [
-    'bg-amber-500 text-amber-300',
-    'bg-sky-500 text-sky-300',
-    'bg-emerald-500 text-emerald-300',
-    'bg-purple-500 text-purple-300',
-    'bg-rose-500 text-rose-300',
-    'bg-teal-500 text-teal-300',
-    'bg-indigo-500 text-indigo-300',
-    'bg-orange-500 text-orange-300'
-  ];
+  const [exportando, setExportando] = useState('');
+  const handleExportar = async (formato) => {
+    if (presencasFiltradas.length === 0) {
+      mostrarAvisoInline('Nada para exportar', 'Não há registros no período selecionado.', 'aviso');
+      return;
+    }
+    setExportando(formato);
+    try {
+      const nome = await exportar(formato, { presencas: presencasFiltradas, config: questionsConfig, titulo: eventoTitulo, periodo: periodoTexto });
+      mostrarAvisoInline('Arquivo baixado', nome, 'sucesso');
+    } catch (e) {
+      mostrarAvisoInline('O arquivo não foi gerado', e?.message || String(e), 'erro');
+    } finally {
+      setExportando('');
+    }
+  };
 
   // Exportar para CSV / Excel com UTF-8
   const handleExportCSV = () => {
@@ -391,10 +386,6 @@ export default function DashboardView({ onChangeView }) {
     link.click();
     document.body.removeChild(link);
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-  };
-
-  const handlePrint = () => {
-    window.print();
   };
 
   const handleLimpar = () => {
@@ -568,26 +559,30 @@ export default function DashboardView({ onChangeView }) {
                 </span>
               )}
 
-              <button
-                onClick={() => {
-                  setActiveSection('dashboard');
-                  closeMobileMenu();
-                  setTimeout(() => handlePrint(), 150);
-                }}
-                title="Imprimir ou Salvar Relatório PDF"
-                className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800/70 hover:text-white transition gap-3 border border-transparent`}
-              >
-                <Printer className="w-4 h-4 text-sky-400 shrink-0" />
-                {!sidebarCollapsed && <span className="truncate">Imprimir / PDF</span>}
-              </button>
+              {[
+                { id: 'pdf', nome: 'Baixar PDF', Icone: Printer, cor: 'text-sky-400' },
+                { id: 'xlsx', nome: 'Baixar Excel (.xlsx)', Icone: FileSpreadsheet, cor: 'text-emerald-400' },
+                { id: 'xls', nome: 'Baixar Excel antigo (.xls)', Icone: FileSpreadsheet, cor: 'text-emerald-400' }
+              ].map(({ id, nome, Icone, cor }) => (
+                <button
+                  key={id}
+                  onClick={() => { handleExportar(id); closeMobileMenu(); }}
+                  disabled={Boolean(exportando)}
+                  title={nome}
+                  className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800/70 hover:text-white transition gap-3 border border-transparent disabled:opacity-60`}
+                >
+                  <Icone className={`w-4 h-4 ${cor} shrink-0`} />
+                  {!sidebarCollapsed && <span className="truncate">{exportando === id ? 'Gerando arquivo...' : nome}</span>}
+                </button>
+              ))}
 
               <button
                 onClick={() => { handleExportCSV(); closeMobileMenu(); }}
-                title="Exportar Planilha Excel (CSV)"
+                title="Baixar CSV"
                 className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800/70 hover:text-white transition gap-3 border border-transparent`}
               >
                 <FileSpreadsheet className="w-4 h-4 text-emerald-400 shrink-0" />
-                {!sidebarCollapsed && <span className="truncate">Exportar Excel (CSV)</span>}
+                {!sidebarCollapsed && <span className="truncate">Baixar CSV</span>}
               </button>
 
               <button
@@ -994,58 +989,20 @@ export default function DashboardView({ onChangeView }) {
                 </div>
               </div>
 
-              {/* GRID PRINCIPAL: DISTRIBUIÇÃO & REGISTROS */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-                
-                {/* COLUNA ESQUERDA: DISTRIBUIÇÃO DAS RESPOSTAS */}
-                <div className="lg:col-span-5 bg-slate-900/90 border border-slate-800 p-4 rounded-2xl space-y-3.5 print:hidden">
-                  <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
-                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                      <BarChart2 className="w-4 h-4 text-amber-400" />
-                      <span>Distribuição das Respostas</span>
-                    </h3>
-                    <span className="text-[11px] text-slate-400 bg-slate-950 px-2.5 py-0.5 rounded-full border border-slate-800">
-                      {categoriasUnicas.length} {categoriasUnicas.length === 1 ? 'opção' : 'opções'}
-                    </span>
-                  </div>
+              {/* ACOMPANHAMENTO AO VIVO (gráficos 2D/3D e exportações) */}
+              <Acompanhamento
+                key={activeEventId}
+                presencas={presencasFiltradas}
+                config={questionsConfig}
+                titulo={eventoTitulo}
+                periodo={periodoTexto}
+                sessaoAtiva={sessaoAtiva}
+                onAviso={mostrarAvisoInline}
+              />
 
-                  <div className="space-y-3 pt-1">
-                    {categoriasUnicas.length === 0 ? (
-                      <p className="text-xs text-slate-400 py-6 text-center">Nenhum card cadastrado ou votado ainda.</p>
-                    ) : (
-                      categoriasUnicas.map((catNome, idx) => {
-                        const qtd = contagemCategorias[catNome] || 0;
-                        const pct = totalPessoas > 0 ? Math.round((qtd / totalPessoas) * 100) : 0;
-                        const corEstilo = paletteColors[idx % paletteColors.length];
-                        const corBg = corEstilo.split(' ')[0];
-                        const corTexto = corEstilo.split(' ')[1];
-
-                        return (
-                          <div key={catNome} className="space-y-1.5 bg-slate-950/50 p-3 rounded-xl border border-slate-800/60">
-                            <div className="flex justify-between items-center text-xs font-semibold gap-2">
-                              <span className={`flex items-center gap-1.5 truncate ${corTexto}`}>
-                                <Tag className="w-3.5 h-3.5 shrink-0" />
-                                <span className="truncate">{catNome}</span>
-                              </span>
-                              <span className="text-slate-300 font-mono shrink-0">
-                                {qtd} ({pct}%)
-                              </span>
-                            </div>
-                            <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                              <div 
-                                className={`${corBg} h-full rounded-full transition-all duration-500`}
-                                style={{ width: `${pct}%` }}
-                              />
-                            </div>
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
-                </div>
-
-                {/* COLUNA DIREITA: TABELA DE REGISTROS INDIVIDUAIS */}
-                <div className="lg:col-span-7 bg-slate-900/90 border border-slate-800 rounded-2xl overflow-hidden print:border-slate-300 print:bg-white print:text-black">
+              <div className="space-y-4">
+                {/* TABELA DE REGISTROS INDIVIDUAIS */}
+                <div className="bg-slate-900/90 border border-slate-800 rounded-2xl overflow-hidden print:border-slate-300 print:bg-white print:text-black">
                   <div className="p-4 border-b border-slate-800 flex items-center justify-between print:border-slate-300">
                     <div className="flex items-center gap-2">
                       <FileText className="w-4 h-4 text-amber-400 print:text-black" />
