@@ -510,6 +510,15 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
     telas.splice(depoisDe + 1, 0, nova);
     return { ...c, telasExtras: telas };
   });
+  const excluirPagina = (indices, numero) => mostrarConfirm(
+    'Excluir página',
+    `A Tela ${numero} tem ${indices.length} perguntas. Excluir a página com todas elas?`,
+    () => {
+      setConfig((c) => ({ ...c, telasExtras: c.telasExtras.filter((_, i) => !indices.includes(i)) }));
+      setActiveTab('inicio');
+    },
+    'Excluir'
+  );
   const excluirPergunta = (indices, pos) => mostrarConfirm(
     'Excluir pergunta',
     'Excluir esta pergunta da página?',
@@ -610,6 +619,29 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
   const modeloAtual = MODELOS_CELULARES.find(m => m.id === modeloCelularId) || MODELOS_CELULARES[0];
 
   // Cálculos dinâmicos da Tela 1
+  // Uma aba por PÁGINA do celular: perguntas na mesma página ficam juntas numa aba só
+  const paginasExtras = [];
+  {
+    let anterior = null;
+    (config.telasExtras || []).forEach((t, i) => {
+      if (!t) return;
+      const ativa = t.ativa !== false;
+      if (ativa && anterior && continuaNaMesmaPagina(anterior.tela, t)) {
+        anterior.pagina.membros.push(i);
+        anterior = { tela: t, pagina: anterior.pagina };
+        return;
+      }
+      const pagina = { membros: [i], numero: paginasExtras.length + 2 };
+      paginasExtras.push(pagina);
+      if (ativa) anterior = { tela: t, pagina };
+    });
+  }
+  const numeroDaTela = (i) => paginasExtras.find((pg) => pg.membros.includes(i))?.numero ?? i + 2;
+  const abrirPagina = (membros) => {
+    setActiveTab(`extra_${membros[0]}`);
+    if (membros.length > 1) setSubTabExtra('lista');
+  };
+
   const cardsAtivosP1 = (config.opcoesChegada || []).filter(c => c.ativo !== false);
   const subAtualP1 = subTabTela1 === 'aparencia' && cardsAtivosP1.length === 0 ? 'opcoes' : subTabTela1;
   const cardsPorTelaP1 = Number(config.cardsPorTela) || 4;
@@ -898,7 +930,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
   };
 
   const handleExcluirTela = (extraIndex) => {
-    const numTela = extraIndex + 2;
+    const numTela = numeroDaTela(extraIndex);
     mostrarConfirm(
       'Excluir Tela',
       `Tem certeza que deseja excluir a Tela ${numTela}?`,
@@ -1199,25 +1231,26 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               </button>
 
               {/* Telas Extras Criadas Dinamicamente (Tela 2, Tela 3, etc. conforme ordem real) */}
-              {(config.telasExtras || []).map((tela, idx) => {
+              {paginasExtras.map(({ membros, numero: numTela }) => {
+                const idx = membros[0];
+                const tela = config.telasExtras[idx];
                 const tabKey = `extra_${idx}`;
-                const numTela = idx + 2;
                 const cardsAtivos = (tela.opcoes || []).filter(o => o.ativo !== false).length;
                 return (
                   <button
                     key={tela.id || idx}
                     type="button"
-                    onClick={() => setActiveTab(tabKey)}
+                    onClick={() => abrirPagina(membros)}
                     className={`pb-2.5 px-3 text-xs sm:text-sm font-bold border-b-2 transition flex items-center gap-1.5 whitespace-nowrap ${
-                      activeTab === tabKey
+                      membros.some((m) => activeTab === `extra_${m}`)
                         ? 'border-slate-200 text-slate-200'
                         : 'border-transparent text-slate-400 hover:text-slate-200'
                     }`}
                   >
                     <span>Tela {numTela}</span>
-                    {['cards', 'radio', 'checkbox', 'dropdown', 'grade'].includes(tela.tipo || 'cards') && (
+                    {(membros.length > 1 || ['cards', 'radio', 'checkbox', 'dropdown', 'grade'].includes(tela.tipo || 'cards')) && (
                       <span className="text-[11px] bg-slate-800 text-slate-300 px-1.5 py-0.2 rounded-full tabular-nums">
-                        {cardsAtivos}
+                        {membros.length > 1 ? membros.length : cardsAtivos}
                       </span>
                     )}
                   </button>
@@ -1236,7 +1269,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                   }`}
                 >
                   <Users className="w-4 h-4" />
-                  <span>Tela {(config.telasExtras || []).length + 2}</span>
+                  <span>Tela {paginasExtras.length + 2}</span>
                 </button>
               ) : (
                 <button
@@ -1810,7 +1843,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 const telaAlvo = (config.telasExtras || [])[extraIndex];
                 if (!telaAlvo) return null;
 
-                const numTela = extraIndex + 2;
+                const numTela = numeroDaTela(extraIndex);
                 const cardsAtivos = (telaAlvo.opcoes || []).filter(o => o.ativo !== false);
                 const limitCards = Number(telaAlvo.cardsPorTela) || 4;
                 const iconesEditorTela = iconesDaTela(cardsAtivos);
@@ -1874,7 +1907,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
                       <button
                         type="button"
-                        onClick={() => handleExcluirTela(extraIndex)}
+                        onClick={() => (membros.length > 1 ? excluirPagina(membros, numTela) : handleExcluirTela(extraIndex))}
                         className="px-2.5 py-1 text-xs font-bold text-slate-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition flex items-center gap-1"
                         title="Excluir esta tela inteira do fluxo"
                       >
@@ -1929,7 +1962,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                 className="-mx-4 sm:-mx-5 px-4 sm:px-5 py-4 flex flex-col gap-3 border-t border-dashed border-slate-600"
                               >
                                 <div className="flex flex-wrap items-center gap-2">
-                                  <span className="text-xs text-slate-400">Tela {iTela + 2}</span>
+                                  <span className="text-xs font-semibold text-slate-200 w-4">{pos + 1}</span>
                                   <BotaoObrigatorio valor={t.obrigatorio} onChange={set('obrigatorio')} />
                                   <select
                                     value={t.tipo}
@@ -1999,6 +2032,14 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
                     {subAtual === 'pergunta' && (
                       <div className="space-y-4">
+                        {membros.length > 1 && (
+                          <Segmentos
+                            rotulo="Formatar pergunta"
+                            opcoes={membros.map((m, i) => ({ id: m, label: String(i + 1) }))}
+                            valor={extraIndex}
+                            onChange={(m) => setActiveTab(`extra_${m}`)}
+                          />
+                        )}
                         <EstiloLinhasTitulo
                           key={activeTab}
                           linhas={(() => {
@@ -2655,7 +2696,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                   if (ai > 0 && continuaNaMesmaPagina(ativas[ai - 1].t, t)) return;
                   const membros = [i];
                   for (let k = ai + 1; k < ativas.length && continuaNaMesmaPagina(ativas[k - 1].t, ativas[k].t); k++) membros.push(ativas[k].i);
-                  telas.push({ chave: `extra_${i}`, membros: membros.map((m) => `extra_${m}`), passo: `extra_${ai}`, rotulo: `Tela ${i + 2}${membros.length > 1 ? ` a ${membros[membros.length - 1] + 2}` : ''}` });
+                  telas.push({ chave: `extra_${i}`, membros: membros.map((m) => `extra_${m}`), passo: `extra_${ai}`, indices: membros, rotulo: `Tela ${numeroDaTela(i)}` });
                 });
                 if (config.mostrarTelaAcompanhantes !== false) telas.push({ chave: 'acompanhantes', passo: 'acompanhantes', rotulo: 'Acompanhantes' });
                 telas.push({ chave: 'fim', passo: 'final', rotulo: 'Tela final' });
@@ -2674,12 +2715,12 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         moldura={modeloAtual.moldura}
                         rotulo={tl.rotulo}
                         selecionado={(tl.membros || [tl.chave]).includes(activeTab)}
-                        onSelecionar={() => setActiveTab(tl.chave)}
+                        onSelecionar={() => (tl.indices ? abrirPagina(tl.indices) : setActiveTab(tl.chave))}
                         onNavegar={(passo) => {
                           const m = /^extra_(\d+)$/.exec(passo);
                           const chaveReal = m && ativas[Number(m[1])] ? `extra_${ativas[Number(m[1])].i}` : null;
                           const alvo = telas.find((t) => t.passo === passo) || telas.find((t) => chaveReal && (t.membros || []).includes(chaveReal));
-                          if (alvo) setActiveTab(alvo.chave);
+                          if (alvo) { if (alvo.indices) abrirPagina(alvo.indices); else setActiveTab(alvo.chave); }
                         }}
                       />
                     ))}
@@ -2693,7 +2734,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                           activeTab === `extra_${i}` ? 'border-slate-200 text-slate-200' : 'border-slate-700 text-slate-500'
                         }`}
                       >
-                        Tela {i + 2} está desativada e não aparece no celular
+                        Tela {numeroDaTela(i)} está desativada e não aparece no celular
                       </button>
                     ))}
                   </>
