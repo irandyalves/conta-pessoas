@@ -65,7 +65,7 @@ import BarraProgresso, { CORES_PROGRESSO, CORES_PROGRESSO_LAYOUT, ESTILOS_PROGRE
 import { Columns2, Rows3, Smile as IconeRosto, WrapText } from 'lucide-react';
 import EscalaVisual, { ESTILOS_ESCALA, INSTRUCAO_PADRAO, instrucaoDaEscala } from './EscalaVisual';
 import EstiloLinhasTitulo, { ControleEspacos } from './EstiloLinhasTitulo';
-import { Alternar, BarraFormato, BotaoObrigatorio, OlhoTela, Campo, Chave, Cores, Deslizante, Lista, MiniSlider, QuestaoArrastavel, Secao, Segmentos, SeletorFonte, SeletorIcone } from './Controles';
+import { LinhaEfeito, TopoPainel, Alternar, BarraFormato, BotaoObrigatorio, OlhoTela, Campo, Chave, Cores, Deslizante, Lista, MiniSlider, QuestaoArrastavel, Secao, Segmentos, SeletorFonte, SeletorIcone } from './Controles';
 import { ICONES_CARDS, iconesDaTela } from '../utils/icones';
 import { PRESETS_PESQUISAS } from '../utils/presets';
 
@@ -587,8 +587,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
           <Cores rotulo="Borda" opcoes={CORES_LINHA} campo="hex" valor={ler('Linha') || 'padrao'} onChange={(v) => gravar('Linha', v)} lateral={<MiniSlider rotulo="Largura" valor={ler('LinhaEspessura') ?? espessuraPadrao} min={0} max={6} passo={0.5} onChange={(v) => gravar('LinhaEspessura', v)} />} />
           <Alternar rotulo={<em>I</em>} nome="Itálico" valor={ler('Italico')} onChange={(v) => gravar('Italico', v)} />
         </BarraFormato>
-        <Segmentos rotulo="Efeito" opcoes={EFEITOS_CAPA} valor={efeito} onChange={(v) => gravar('Efeito', v)} />
-        {efeito !== 'nenhum' && <Deslizante rotulo="Profundidade" valor={ler('Profundidade') || 5} min={1} max={10} unidade="" onChange={(v) => gravar('Profundidade', v)} />}
+        <LinhaEfeito rotulo="Efeito" opcoes={EFEITOS_CAPA} valor={efeito} onChange={(v) => gravar('Efeito', v)} intensidade={efeito !== 'nenhum' && { valor: ler('Profundidade') || 5, onChange: (v) => gravar('Profundidade', v) }} />
         {comLargura && <Deslizante rotulo="Largura" valor={ler('Largura') ?? 100} min={40} max={100} passo={5} unidade="%" onChange={(v) => gravar('Largura', v)} />}
         <Deslizante rotulo="Altura" valor={ler('Altura') ?? alturaPadrao} min={28} max={alturaMax} onChange={(v) => gravar('Altura', v)} />
         <Deslizante rotulo="Cantos" valor={ler('Raio') ?? raioPadrao} min={0} max={40} onChange={(v) => gravar('Raio', v)} />
@@ -601,18 +600,19 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
     const seta = configSeta(ler);
     return (
       <Secao titulo="Setas Anterior e Próxima">
-        <Segmentos
-          rotulo="Desenho"
-          opcoes={DESENHOS_SETA.map(({ id, label, esq: Esq, dir: Dir }) => ({ id, label, dica: label, conteudo: <span className="flex items-center gap-0.5"><Esq className="w-4 h-4" /><Dir className="w-4 h-4" /></span> }))}
-          valor={ler('Desenho') || 'seta'}
-          onChange={(v) => gravar('Desenho', v)}
-        />
-        <BarraFormato><Cores rotulo="Cor" opcoes={CORES_SETA} campo="hex" valor={ler('Cor') || 'branco'} onChange={(v) => gravar('Cor', v)} /></BarraFormato>
-        <Deslizante rotulo="Tamanho" valor={seta.tamanho} min={16} max={36} onChange={(v) => gravar('Tamanho', v)} />
-        <Deslizante rotulo="Espessura" valor={seta.espessura} min={1} max={4} passo={0.25} unidade="" onChange={(v) => gravar('Espessura', v)} />
-        <div className="grid grid-cols-2 gap-3">
-          <Campo rotulo="Texto da esquerda" valor={seta.anterior} onChange={(v) => gravar('TextoAnterior', v)} placeholder="ANTERIOR" />
-          <Campo rotulo="Texto da direita" valor={seta.proxima} onChange={(v) => gravar('TextoProxima', v)} placeholder="PRÓXIMA" />
+        <BarraFormato>
+          <Segmentos
+            opcoes={DESENHOS_SETA.map(({ id, label, esq: Esq, dir: Dir }) => ({ id, label, dica: label, conteudo: <span className="flex items-center gap-0.5"><Esq className="w-4 h-4" /><Dir className="w-4 h-4" /></span> }))}
+            valor={ler('Desenho') || 'seta'}
+            onChange={(v) => gravar('Desenho', v)}
+          />
+          <Cores rotulo="Cor" opcoes={CORES_SETA} campo="hex" valor={ler('Cor') || 'branco'} onChange={(v) => gravar('Cor', v)} />
+          <MiniSlider rotulo="Tamanho da seta" icone="tamanho" valor={seta.tamanho} min={16} max={36} onChange={(v) => gravar('Tamanho', v)} />
+          <MiniSlider rotulo="Espessura do traço" icone="espessura" valor={seta.espessura} min={1} max={4} passo={0.25} unidade="" onChange={(v) => gravar('Espessura', v)} />
+        </BarraFormato>
+        <div className="grid grid-cols-2 gap-2">
+          <Campo valor={seta.anterior} onChange={(v) => gravar('TextoAnterior', v)} placeholder="Texto da esquerda" />
+          <Campo valor={seta.proxima} onChange={(v) => gravar('TextoProxima', v)} placeholder="Texto da direita" />
         </div>
       </Secao>
     );
@@ -626,7 +626,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
     const herda = herdaEstilo(config, lista[0]);
     return (
       <Chave
-        rotulo="Herdar configurações"
+        rotulo="Herdar configs"
         descricao={herda ? 'Ligado: cards, botões, setas e altura das faixas são os mesmos de todas as páginas' : 'Desligado: esta página tem configurações próprias'}
         valor={herda}
         onChange={() => mostrarConfirm(
@@ -660,18 +660,15 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
         </BarraFormato>
       </Secao>
       <Secao titulo="Tamanho">
-        <Deslizante rotulo="Altura do card" valor={alturaCard(ler('cardAltura'))} min={CARD_ALTURA_MIN} max={CARD_ALTURA_MAX} onChange={(v) => gravar('cardAltura', v)} />
-        <Deslizante rotulo="Espaço entre cards" valor={Number(ler('cardEspaco') ?? CARD_ESPACO_PADRAO)} min={0} max={40} onChange={(v) => gravar('cardEspaco', v)} />
-        <div className="flex flex-wrap gap-x-6 gap-y-2">
-          <Deslizante rotulo="Cantos esquerda" valor={raios.esq} min={0} max={40} onChange={(v) => gravar('cardRaioEsq', v)} />
-          <Deslizante rotulo="Cantos direita" valor={raios.dir} min={0} max={40} onChange={(v) => gravar('cardRaioDir', v)} />
-        </div>
-        {opcoes.length > 2 && <Deslizante rotulo="Cards por página" valor={Math.min(15, porPagina)} min={2} max={15} unidade="" onChange={(v) => gravar('cardsPorTela', v)} />}
-        <Chave rotulo="Mostrar ícones nos cards" valor={ler(campoIcones) !== false} onChange={(v) => gravar('mostrarIcones', v)} />
+        <Deslizante rotulo="Altura" valor={alturaCard(ler('cardAltura'))} min={CARD_ALTURA_MIN} max={CARD_ALTURA_MAX} onChange={(v) => gravar('cardAltura', v)} />
+        <Deslizante rotulo="Espaço" valor={Number(ler('cardEspaco') ?? CARD_ESPACO_PADRAO)} min={0} max={40} onChange={(v) => gravar('cardEspaco', v)} />
+        {opcoes.length > 2 && <Deslizante rotulo="Por página" valor={Math.min(15, porPagina)} min={2} max={15} unidade="" onChange={(v) => gravar('cardsPorTela', v)} />}
+        <Deslizante rotulo="Canto esq." valor={raios.esq} min={0} max={40} onChange={(v) => gravar('cardRaioEsq', v)} />
+        <Deslizante rotulo="Canto dir." valor={raios.dir} min={0} max={40} onChange={(v) => gravar('cardRaioDir', v)} />
+        <Chave rotulo="Ícones nos cards" valor={ler(campoIcones) !== false} onChange={(v) => gravar('mostrarIcones', v)} />
       </Secao>
       <Secao titulo="Efeito">
-        <Segmentos rotulo="Acabamento" opcoes={EFEITOS_CARDS} valor={ler('cardEfeitoEstilo') || 'padrao'} onChange={(v) => gravar('cardEfeitoEstilo', v)} />
-        <Deslizante rotulo="Intensidade" valor={ler('cardProfundidade') || 5} min={1} max={10} unidade="" onChange={(v) => gravar('cardProfundidade', v)} />
+        <LinhaEfeito opcoes={EFEITOS_CARDS} valor={ler('cardEfeitoEstilo') || 'padrao'} onChange={(v) => gravar('cardEfeitoEstilo', v)} intensidade={{ valor: ler('cardProfundidade') || 5, onChange: (v) => gravar('cardProfundidade', v) }} />
       </Secao>
     </>
     );
@@ -1351,7 +1348,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               {/* ABA: BOAS-VINDAS (ESPERA / START DO ADMIN)             */}
               {/* ====================================================== */}
               {activeTab === 'inicio' && (
-                <div className="space-y-2.5">
+                <div className="painel-tela">
+                  <TopoPainel titulo="Boas-vindas" />
                   <Secao titulo="Ícone animado" descricao="Aparece no celular enquanto a pesquisa não foi liberada.">
                     <div className="grid grid-cols-5 gap-1.5">
                       {ICONES_ESPERA.map((ic) => {
@@ -1441,7 +1439,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                   </Secao>
 
                   <Secao titulo="Cabeçalho">
-                    <Deslizante rotulo="Altura dos fundos" valor={alturaFaixa(config.faixaPadrao)} min={FAIXA_MIN} max={FAIXA_MAX} passo={5} unidade="%" onChange={(v) => setConfig((c) => gravarFaixaPadrao(c, v))} />
+                    <Deslizante rotulo="Altura fundos" valor={alturaFaixa(config.faixaPadrao)} min={FAIXA_MIN} max={FAIXA_MAX} passo={5} unidade="%" onChange={(v) => setConfig((c) => gravarFaixaPadrao(c, v))} />
                     <Chave rotulo="Travar cabeçalho" descricao="O título fica preso no alto do celular enquanto a pessoa rola a página." valor={config.travarCabecalho !== false} onChange={(v) => setCampo('travarCabecalho', v)} />
                   </Secao>
 
@@ -1486,7 +1484,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               {/* ABA: INÍCIO (CAPA DO EVENTO COM BOTÃO COMEÇAR)         */}
               {/* ====================================================== */}
               {activeTab === 'inicio_comecar' && (
-                <div className="space-y-2.5">
+                <div className="painel-tela">
+                  <TopoPainel titulo="Início" />
                   {/* Mesma ordem do celular: o slider entre dois títulos é o espaço entre eles */}
                   <EstiloLinhasTitulo
                     key={activeTab}
@@ -1529,12 +1528,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                   <Secao titulo="Cards dos títulos" descricao="Vale para os títulos que têm cor de fundo. A altura de cada um fica dentro do título.">
                     <Segmentos rotulo="Formato" opcoes={[{ id: 'card', label: 'Card' }, { id: 'faixa', label: 'Faixa de ponta a ponta' }]} valor={config.capaFormato || 'card'} onChange={(v) => setCampo('capaFormato', v)} />
                     {(config.capaFormato || 'card') === 'card' && (
-                      <>
-                        <Segmentos rotulo="Efeito" opcoes={EFEITOS_CAPA} valor={config.capaEfeito || 'alto_relevo'} onChange={(v) => setCampo('capaEfeito', v)} />
-                        {config.capaEfeito !== 'nenhum' && (
-                          <Deslizante rotulo="Intensidade" valor={config.capaProfundidade || 5} min={1} max={10} unidade="" onChange={(v) => setCampo('capaProfundidade', v)} />
-                        )}
-                      </>
+                      <LinhaEfeito rotulo="Efeito" opcoes={EFEITOS_CAPA} valor={config.capaEfeito || 'alto_relevo'} onChange={(v) => setCampo('capaEfeito', v)} intensidade={config.capaEfeito !== 'nenhum' && { valor: config.capaProfundidade || 5, onChange: (v) => setCampo('capaProfundidade', v) }} />
                     )}
                   </Secao>
                   )}
@@ -1546,6 +1540,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               {/* ====================================================== */}
               {activeTab === 'tela_1' && (
                 <div className="painel-tela">
+                  <TopoPainel titulo="Tela 1" />
                   <SubAbas
                     valor={subAtualP1}
                     onChange={setSubTabTela1}
@@ -1553,7 +1548,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     opcoes={[
                       { id: 'pergunta', label: 'Títulos' },
                       { id: 'opcoes', label: rotuloPerguntas(cardsAtivosP1.length) },
-                      ...(cardsAtivosP1.length > 0 ? [{ id: 'aparencia', label: 'Aparência dos cards' }] : [])
+                      ...(cardsAtivosP1.length > 0 ? [{ id: 'aparencia', label: 'Cards' }] : [])
                     ]}
                   />
 
@@ -1997,13 +1992,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 return (
                   <div className="painel-tela">
                     {/* Barra Superior da Tela Extra */}
-                    <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-slate-800">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-slate-200">
-                          Tela {numTela}
-                        </span>
-                      </div>
-
+                    <TopoPainel titulo={`Tela ${numTela}`} onExcluir={() => (membros.length > 1 ? excluirPagina(membros, numTela) : handleExcluirTela(extraIndex))}>
                       {/* Seletor Completo de Tipo da Tela Extra (10 Tipos Mundiais) */}
                       <div className="flex items-center gap-2">
                         <span className="text-[11px] font-bold text-slate-400">Tipo:</span>
@@ -2026,17 +2015,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                           ))}
                         </select>
                       </div>
-
-                      <button
-                        type="button"
-                        onClick={() => (membros.length > 1 ? excluirPagina(membros, numTela) : handleExcluirTela(extraIndex))}
-                        className="px-2.5 py-1 text-xs font-bold text-slate-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition flex items-center gap-1"
-                        title="Excluir esta tela inteira do fluxo"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        <span>Excluir Tela {numTela}</span>
-                      </button>
-                    </div>
+                    </TopoPainel>
 
                     <SubAbas
                       valor={subAtual}
@@ -2048,10 +2027,10 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         ...(semCampo ? [] : [{
                           id: 'opcoes',
                           label: ['texto', 'texto_curto', 'data', 'hora', 'slider', 'rating'].includes(telaAlvo.tipo)
-                            ? 'Campo de resposta'
-                            : temLista ? `Itens da Tela ${numTela} (${cardsAtivos.length})` : rotuloPerguntas(cardsAtivos.length)
+                            ? 'Resposta'
+                            : temLista ? `Itens (${cardsAtivos.length})` : rotuloPerguntas(cardsAtivos.length)
                         }]),
-                        ...(temAparencia ? [{ id: 'aparencia', label: 'Aparência dos cards' }] : []),
+                        ...(temAparencia ? [{ id: 'aparencia', label: 'Cards' }] : []),
                         ...(temEfeitos ? [{ id: 'efeitos', label: 'Efeitos' }] : [])
                       ]}
                     />
@@ -2149,7 +2128,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                   <Chave rotulo={t.formatoCampo === 'nome' ? 'Nome sempre em MAIÚSCULAS' : 'Resposta sempre em MAIÚSCULAS'} descricao="Mesmo que a pessoa digite em minúsculas, aparece e fica gravado em maiúsculas." valor={Boolean(t.maiusculas)} onChange={set('maiusculas')} />
                                 )}
                                 {t.tipo === 'texto' && membros.length === 1 && (
-                                  <Deslizante rotulo="Altura do campo" valor={t.linhas || 4} min={2} max={10} unidade=" linhas" onChange={set('linhas')} />
+                                  <Deslizante rotulo="Altura" valor={t.linhas || 4} min={2} max={10} unidade=" linhas" onChange={set('linhas')} />
                                 )}
                               </QuestaoArrastavel>
                             );
@@ -2754,6 +2733,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               {/* ABA: TELA FINAL (AGRADECIMENTO / CONCLUÍDO)            */}
               {/* ====================================================== */}
               {activeTab === 'fim' && (
+                <div className="painel-tela">
+                <TopoPainel titulo="Tela final" />
                 <EstiloLinhasTitulo
                   key={activeTab}
                   onOrdem={(ids) => setConfig((c) => ({ ...c, finalOrdem: reordenarFinal(c, ids) }))}
@@ -2786,13 +2767,15 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     };
                   })}
                 />
+                </div>
               )}
 
               {/* ====================================================== */}
               {/* ABA: TELA DE ACOMPANHANTES (OPCIONAL)                  */}
               {/* ====================================================== */}
               {activeTab === 'acompanhantes' && (
-                <div className="space-y-2.5">
+                <div className="painel-tela">
+                  <TopoPainel titulo={telaOculta('acompanhantes') ? 'Acompanhantes' : `Tela ${paginasExtras.length + 2}`} />
                   <SubAbas
                     valor={subTabTela2}
                     onChange={setSubTabTela2}
@@ -2824,8 +2807,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       </Secao>
                       <Secao titulo="Cor e efeito">
                         <BarraFormato><Cores rotulo="Botão" opcoes={CORES_BOTAO_QTD} campo="dot" valor={config.btnQtdCor || 'slate'} onChange={(v) => setCampo('btnQtdCor', v)} /></BarraFormato>
-                        <Segmentos rotulo="Efeito" opcoes={EFEITOS_CARDS} valor={config.btnQtdEfeito || 'efeito_3d'} onChange={(v) => setCampo('btnQtdEfeito', v)} />
-                        <Deslizante rotulo="Intensidade" valor={config.btnQtdProfundidade || 5} min={1} max={10} unidade="" onChange={(v) => setCampo('btnQtdProfundidade', v)} />
+                        <LinhaEfeito opcoes={EFEITOS_CARDS} valor={config.btnQtdEfeito || 'efeito_3d'} onChange={(v) => setCampo('btnQtdEfeito', v)} intensidade={{ valor: config.btnQtdProfundidade || 5, onChange: (v) => setCampo('btnQtdProfundidade', v) }} />
                       </Secao>
                       <Secao titulo="Número e legenda">
                         <Deslizante rotulo="Número" valor={config.btnQtdFonteNumero || 34} min={18} max={48} onChange={(v) => setCampo('btnQtdFonteNumero', v)} />

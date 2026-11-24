@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { AlignLeft, AlignCenter, AlignRight, ChevronDown, GripVertical, Eye, EyeOff, ALargeSmall, MoveVertical } from 'lucide-react';
+import { AlignLeft, AlignCenter, AlignRight, ChevronDown, GripVertical, Eye, EyeOff, ALargeSmall, MoveVertical, PenLine, Trash2 } from 'lucide-react';
 import { carregarFontes, familiaCss, FONTES, fontePorId } from '../utils/fontes';
 import Cores from './SeletorCor';
 
@@ -14,7 +14,7 @@ export { Cores };
 // Barra única de formatação: tudo o que muda a aparência de um texto ou botão, na mesma linha e na mesma ordem
 export const BarraFormato = ({ children }) => <div className="barra-formato">{children}</div>;
 
-const ROTULO = 'text-[11px] leading-tight text-slate-400 w-[74px] shrink-0';
+const ROTULO = 'text-[11px] leading-tight text-slate-400 w-[74px] shrink-0 whitespace-nowrap';
 
 // Os ajustes pequenos (.ed-cel) ficam lado a lado em colunas; o resto ocupa a linha toda.
 export function Secao({ titulo, descricao, acao, children }) {
@@ -33,7 +33,7 @@ export function Secao({ titulo, descricao, acao, children }) {
 
 export function Deslizante({ rotulo, valor, min, max, passo = 1, unidade = 'px', onChange }) {
   return (
-    <label className="ed-cel flex items-center gap-2 min-w-0">
+    <label className="ed-cel flex items-center gap-1.5 min-w-0">
       <span className={ROTULO}>{rotulo}</span>
       <input
         type="range"
@@ -43,7 +43,7 @@ export function Deslizante({ rotulo, valor, min, max, passo = 1, unidade = 'px',
         value={valor}
         aria-label={rotulo}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="ed-range flex-1 min-w-[50px] max-w-[130px]"
+        className="ed-range flex-1 min-w-[40px] max-w-[64px]"
         style={{ '--p': `${Math.max(0, Math.min(100, ((valor - min) / (max - min)) * 100))}%` }}
       />
       <span className="text-[11px] tabular-nums text-slate-200 w-10 shrink-0 whitespace-nowrap">{valor}{unidade}</span>
@@ -52,7 +52,7 @@ export function Deslizante({ rotulo, valor, min, max, passo = 1, unidade = 'px',
 }
 
 // Slider curtinho, para usar ao lado de cores
-const ICONE_SLIDER = { tamanho: ALargeSmall, espaco: MoveVertical };
+const ICONE_SLIDER = { tamanho: ALargeSmall, espaco: MoveVertical, espessura: PenLine };
 export function MiniSlider({ rotulo, icone, valor, min, max, passo = 1, unidade = 'px', onChange }) {
   const Icone = ICONE_SLIDER[icone];
   return (
@@ -69,7 +69,7 @@ export function MiniSlider({ rotulo, icone, valor, min, max, passo = 1, unidade 
         className={`ed-range ${Icone ? 'w-[42px]' : 'w-[72px]'}`}
         style={{ '--p': `${Math.max(0, Math.min(100, ((valor - min) / (max - min)) * 100))}%` }}
       />
-      <span className={`text-[11px] tabular-nums text-slate-200 ${Icone ? 'w-5' : 'w-9'}`}>{valor}{Icone ? '' : unidade}</span>
+      <span className={`text-[11px] tabular-nums text-slate-200 ${!Icone ? 'w-9' : passo < 1 ? 'w-7' : 'w-5'}`}>{valor}{Icone ? '' : unidade}</span>
     </label>
   );
 }
@@ -285,7 +285,7 @@ export function QuestaoArrastavel({ lista, indice, total, onMover, className = '
 
 // Pergunta obrigatória ou opcional. Vermelho = obrigatória.
 export function BotaoObrigatorio({ valor, onChange }) {
-  return <Chave vermelha rotulo="Resposta obrigatória" descricao={valor ? 'A pessoa só avança se responder' : 'A pessoa pode pular esta pergunta'} valor={Boolean(valor)} onChange={onChange} />;
+  return <Chave vermelha rotulo="Resp. obrigatória" descricao={valor ? 'A pessoa só avança se responder' : 'A pessoa pode pular esta pergunta'} valor={Boolean(valor)} onChange={onChange} />;
 }
 
 // Olho: mostra ou oculta uma tela da pesquisa
@@ -300,5 +300,33 @@ export function OlhoTela({ oculta, rotulo, onClick, className = '' }) {
     >
       <Icone className="w-4 h-4" />
     </button>
+  );
+}
+
+// Efeito e intensidade na mesma linha, em todo o sistema
+export function LinhaEfeito({ rotulo, opcoes, valor, onChange, intensidade }) {
+  return (
+    <div className="linha-efeito">
+      {rotulo && <span>{rotulo}</span>}
+      <Segmentos opcoes={opcoes} valor={valor} onChange={onChange} />
+      {intensidade && <MiniSlider rotulo="Intensidade" min={1} max={10} unidade="" {...intensidade} />}
+    </div>
+  );
+}
+
+// Cabeçalho de seção em entalhe: nome da tela em amarelo pastel e, quando dá para excluir, a lixeira
+export function TopoPainel({ titulo, onExcluir, children }) {
+  return (
+    <div className="painel-topo">
+      <div className="entalhe">
+        <h2>{titulo}</h2>
+        {onExcluir && (
+          <button type="button" className="entalhe-lixeira" title={`Excluir ${titulo}`} aria-label={`Excluir ${titulo}`} onClick={onExcluir}>
+            <Trash2 className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+      {children && <div className="painel-topo-lado">{children}</div>}
+    </div>
   );
 }

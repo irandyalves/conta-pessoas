@@ -114,8 +114,8 @@ export function ControleEspacos({ valores, onChange, titulos = [], subtitulo = '
   return (
     <Secao titulo="Espaçamento">
       {qtd > 1 && <Deslizante rotulo="Entre títulos" valor={valores.tit} min={0} max={40} onChange={(v) => onChange('tit', v)} />}
-      {qtd > 0 && temTexto && <Deslizante rotulo="Antes do texto" valor={valores.sub} min={0} max={60} onChange={(v) => onChange('sub', v)} />}
-      <Deslizante rotulo="Antes da resposta" valor={valores.cards} min={0} max={80} onChange={(v) => onChange('cards', v)} />
+      {qtd > 0 && temTexto && <Deslizante rotulo="Até o texto" valor={valores.sub} min={0} max={60} onChange={(v) => onChange('sub', v)} />}
+      <Deslizante rotulo="Até a resposta" valor={valores.cards} min={0} max={80} onChange={(v) => onChange('cards', v)} />
     </Secao>
   );
 }
