@@ -3,6 +3,8 @@
 // Fonte única: o que o admin vê no preview é o que o público vê.
 // ==========================================
 
+import { familiaCss } from './fontes';
+
 export const CORES_TEXTO_LINHAS = [
   { id: 'tema', label: 'Do layout', bg: 'amostra-tema', textClass: 't-cor' },
   { id: 'branco', label: 'Branco', bg: 'bg-white', textClass: 'text-white' },
@@ -141,6 +143,23 @@ const hexDe = (lista, id) => (id && id !== 'padrao' ? lista.find((c) => c.id ===
 const rgbDe = (hex) => (/^#[0-9a-f]{6}$/i.test(hex || '') ? [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(', ') : undefined);
 
 export const corLinhaHex = (id) => hexDe(CORES_LINHA, id);
+// Fonte e borda de um título, subtítulo ou card. Campos: <prefixo>Familia, Borda, BordaLargura.
+// faixa = fundo de ponta a ponta (borda só em cima e embaixo)
+export const fonteEBorda = (obj, prefixo, temFundo = true, faixa = true) => {
+  const st = {};
+  const familia = familiaCss(obj?.[`${prefixo}Familia`]);
+  if (familia) st.fontFamily = familia;
+  const cor = hexDe(CORES_LINHA, obj?.[`${prefixo}Borda`]);
+  const largura = obj?.[`${prefixo}BordaLargura`];
+  if (temFundo && (cor || largura != null)) {
+    const w = `${largura ?? 1}px`;
+    st.borderStyle = 'solid';
+    if (faixa) Object.assign(st, { borderTopWidth: w, borderBottomWidth: w, borderLeftWidth: 0, borderRightWidth: 0 });
+    else st.borderWidth = w;
+    if (cor) st.borderColor = cor;
+  }
+  return st;
+};
 // ler = (campo) => valor. soForma: botão já marcado/vermelho mantém a própria cor e só muda o formato.
 export const estiloBotao = (ler, soForma = false) => {
   const efeito = ler('Efeito');
@@ -152,6 +171,7 @@ export const estiloBotao = (ler, soForma = false) => {
   const st = {};
   if (ler('LinhaEspessura') != null) st.borderWidth = `${ler('LinhaEspessura')}px`;
   if (ler('Raio') != null) st.borderRadius = `${ler('Raio')}px`;
+  if (familiaCss(ler('Familia'))) st.fontFamily = familiaCss(ler('Familia'));
   if (ler('Fonte') != null) st.fontSize = `${ler('Fonte')}px`;
   if (ler('Altura') != null) Object.assign(st, { height: `${ler('Altura')}px`, paddingTop: 0, paddingBottom: 0 });
   if (soForma) return st;
@@ -238,7 +258,8 @@ export const linhasCapa = (cfg = {}) => {
         ...faixaEstilo(fundo, pct),
         paddingLeft: classes ? 14 : 0,
         paddingRight: classes ? 14 : 0,
-        ...(classes && ehCard ? getEfeitoStyle(efeito, cfg.capaProfundidade || 5, RGB_FUNDO[fundo]) : {})
+        ...(classes && ehCard ? getEfeitoStyle(efeito, cfg.capaProfundidade || 5, RGB_FUNDO[fundo]) : {}),
+        ...fonteEBorda(cfg, l.id, Boolean(classes), !ehCard)
       }
     };
   });
@@ -304,7 +325,7 @@ export const corGradeSelecionada = (col, cols = []) => {
 // ==========================================
 const MAPA_P1 = {
   tituloTamanho: 'pergunta1FonteTamanho', tituloCor: 'pergunta1TituloCor', tituloBold: 'pergunta1TituloBold',
-  tituloFaixa: 'pergunta1TituloFaixa', subFaixa: 'pergunta1SubFaixa', tituloCaixa: 'pergunta1TituloCaixa', subCaixa: 'pergunta1SubCaixa',
+  tituloFaixa: 'pergunta1TituloFaixa', subFaixa: 'pergunta1SubFaixa', tituloCaixa: 'pergunta1TituloCaixa', tituloFamilia: 'pergunta1TituloFamilia', tituloBorda: 'pergunta1TituloBorda', tituloBordaLargura: 'pergunta1TituloBordaLargura', subFamilia: 'pergunta1SubFamilia', subBorda: 'pergunta1SubBorda', subBordaLargura: 'pergunta1SubBordaLargura', subCaixa: 'pergunta1SubCaixa',
   tituloAlinhamento: 'pergunta1TituloAlinhamento', tituloFundo: 'pergunta1TituloFundo',
   subTamanho: 'pergunta1TextoAbaixoTamanho', subCor: 'pergunta1TextoAbaixoCor', subBold: 'pergunta1SubBold',
   subAlinhamento: 'pergunta1SubAlinhamento', subFundo: 'pergunta1SubFundo',
@@ -313,7 +334,7 @@ const MAPA_P1 = {
 };
 const MAPA_EXTRA = {
   tituloTamanho: 'titulo1Tamanho', tituloCor: 'titulo1Cor', tituloBold: 'tituloBold',
-  tituloFaixa: 'tituloFaixa', subFaixa: 'subFaixa', tituloCaixa: 'tituloCaixa', subCaixa: 'subCaixa',
+  tituloFaixa: 'tituloFaixa', subFaixa: 'subFaixa', tituloCaixa: 'tituloCaixa', tituloFamilia: 'tituloFamilia', tituloBorda: 'tituloBorda', tituloBordaLargura: 'tituloBordaLargura', subFamilia: 'subFamilia', subBorda: 'subBorda', subBordaLargura: 'subBordaLargura', subCaixa: 'subCaixa',
   tituloAlinhamento: 'tituloAlinhamento', tituloFundo: 'tituloFundo',
   subTamanho: 'subtituloTamanho', subCor: 'subtituloCor', subBold: 'subBold',
   subAlinhamento: 'subAlinhamento', subFundo: 'subFundo',
@@ -321,7 +342,7 @@ const MAPA_EXTRA = {
   espacoTitulos: 'espacoTitulos', espacoSub: 'espacoSub', espacoCards: 'espacoCards'
 };
 // Campos com o mesmo nome nos dois lugares
-const COMUNS = ['gradeFormato', 'gradeEfeito', 'gradeProfundidade', 'gradeCor', 'gradeCorTexto', 'gradeLinha', 'gradeLinhaEspessura', 'gradeAltura', 'gradeRaio', 'cardAltura', 'cardEspaco', 'cardRaio', 'cardsPorTela', 'cardFundoEstilo', 'cardEfeitoEstilo', 'cardProfundidade', 'cardCorFonteTitulo',
+const COMUNS = ['cardFamilia', 'cardBorda', 'cardBordaLargura', 'gradeFamilia', 'legendaFamilia', 'legendaBorda', 'legendaBordaLargura', 'itemFamilia', 'itemBorda', 'itemBordaLargura', 'gradeFormato', 'gradeEfeito', 'gradeProfundidade', 'gradeCor', 'gradeCorTexto', 'gradeLinha', 'gradeLinhaEspessura', 'gradeAltura', 'gradeRaio', 'cardAltura', 'cardEspaco', 'cardRaio', 'cardsPorTela', 'cardFundoEstilo', 'cardEfeitoEstilo', 'cardProfundidade', 'cardCorFonteTitulo',
   'cardCorFonteSubtitulo', 'cardFonteTitulo', 'cardFonteSubtitulo', 'escalaTamanho', 'legendaCor', 'legendaBold', 'legendaFundo',
   'itemTamanho', 'itemCor', 'itemBold', 'itemFundo', 'legendaFaixa', 'itemFaixa', 'legendaCaixa', 'itemCaixa'];
 
@@ -368,6 +389,7 @@ export const espacos = (cfg = {}, ehP1 = false, escala = 1) => {
 const PADROES_HERDADOS = {
   cardAltura: 82, cardEspaco: CARD_ESPACO_PADRAO, cardsPorTela: 4, cardFundoEstilo: 'escuro', cardEfeitoEstilo: 'padrao',
   cardProfundidade: 5, cardCorFonteTitulo: 'branco', cardCorFonteSubtitulo: 'cinza', cardFonteTitulo: 16, cardFonteSubtitulo: 12,
+  cardFamilia: 'padrao', cardBorda: 'padrao', cardBordaLargura: null, gradeFamilia: 'padrao',
   mostrarIcones: true, tituloFaixa: 100, subFaixa: 100,
   gradeEfeito: 'nenhum', gradeProfundidade: 5, gradeCor: 'padrao', gradeCorTexto: 'padrao', gradeLinha: 'padrao',
   gradeLinhaEspessura: 1, gradeAltura: 38, gradeRaio: 12, gradeFormato: 'numeros'

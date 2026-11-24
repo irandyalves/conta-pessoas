@@ -5,13 +5,13 @@ import { TEMAS, carregarFonteTema, classeTema, temaPorId } from '../utils/temas'
 function Miniatura({ id, raio }) {
   if (id === 'original') {
     return (
-      <div className="tema-mini bg-slate-950 h-[168px] flex items-center justify-center text-center text-xs text-slate-400 border border-dashed border-slate-600">
+      <div className="tema-mini bg-slate-950 h-[184px] flex items-center justify-center text-center text-xs text-slate-400 border border-dashed border-slate-600">
         O visual que você montou
       </div>
     );
   }
   return (
-    <div className={`tema-mini t-pagina ${classeTema(id)} h-[168px]`} aria-hidden="true">
+    <div className={`tema-mini t-pagina ${classeTema(id)} h-[184px]`} aria-hidden="true">
       <div className="t-titulo t-faixa pb-1.5" style={{ fontSize: 12 }}>
         <h2 className="t-cor font-bold leading-tight" style={{ fontSize: 12 }}>
           <span className="t-numero">1</span><span className="t-texto">Como foi?</span>
@@ -41,18 +41,18 @@ export default function GaleriaTemas({ atual, onEscolher }) {
   const selecionado = temaPorId(atual) ? atual : 'original';
   const itens = [{ id: 'original', nome: 'Meu layout', descricao: 'Seus ajustes' }, ...TEMAS];
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+    <div className="grid grid-cols-[repeat(auto-fill,minmax(132px,1fr))] gap-2">
       {itens.map((t) => (
         <button
           key={t.id}
           type="button"
           aria-pressed={selecionado === t.id}
           onClick={() => selecionado !== t.id && onEscolher(t.id, t.nome)}
-          className={`rounded-2xl p-1.5 text-left transition ${selecionado === t.id ? 'ring-2 ring-white' : 'hover:bg-slate-100/5'}`}
+          className={`rounded-xl p-1 text-left transition ${selecionado === t.id ? 'ring-2 ring-white' : 'hover:bg-slate-100/5'}`}
         >
           <Miniatura id={t.id} raio={t.raio} />
-          <span className="block mt-1.5 px-1 text-xs font-semibold text-slate-100">{t.nome}</span>
-          <span className="block px-1 text-xs text-slate-400">{t.descricao}</span>
+          <span className="block mt-1 px-1 text-xs font-semibold text-slate-100">{t.nome}</span>
+          <span className="block px-1 text-[11px] leading-tight text-slate-400">{t.descricao}</span>
         </button>
       ))}
     </div>

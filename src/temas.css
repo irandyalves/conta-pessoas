@@ -104,7 +104,7 @@
 .tema-papel .t-card:active { background: #fff6cf; border-color: #14203a; }
 .tema-papel .t-num:not(.t-num-on) { border-width: 1.5px; }
 .tema-papel .text-slate-400, .tema-papel .text-slate-300, .tema-papel .text-slate-200 { color: var(--suave); }
-.tema-papel .text-amber-300, .tema-papel .text-amber-400 { color: #8a5a00; }
+.tema-papel .text-amber-300, .tema-papel .text-amber-400:not(.t-icone) { color: #8a5a00; }
 .tema-papel .t-gaveta { background: #fff; border-color: #1b49d6; }
 .tema-papel .t-gaveta :is(input, textarea, select, label, .bg-slate-950) { background: #fff; color: #14203a; }
 .tema-papel .t-capa-texto.t-faixa { background: #fff; border-radius: 10px; padding: 14px !important; }
@@ -214,4 +214,126 @@
 
 @media (prefers-reduced-motion: reduce) {
   .tema-aurora.t-pagina::before, .rosto-olhos, .rosto-lagrima, .boneco-corpo, .boneco-festa .boneco-corpo { animation: none; }
+}
+
+/* =====================================================================
+   QUADRO: lousa verde, giz e caligrafia de professor.
+   ===================================================================== */
+.tema-quadro {
+  --fundo: radial-gradient(60% 30% at 20% 30%, rgba(255, 255, 255, .06), transparent), radial-gradient(70% 30% at 80% 75%, rgba(255, 255, 255, .05), transparent), #20443a; --fundo-solido: #20443a; --tinta: #f6f8f3; --suave: #c5d6cb;
+  --acento: #f7e27a; --sobre-acento: #2b2a10; --destaque: #f7e27a;
+  --card: rgba(255, 255, 255, .03); --card-borda: rgba(246, 248, 243, .75); --icone-fundo: transparent; --icone: #f7e27a;
+  --linha: rgba(246, 248, 243, .28); --num: transparent; --num-borda: rgba(246, 248, 243, .7); --campo: rgba(0, 0, 0, .18); --campo-borda: rgba(246, 248, 243, .6);
+  --acao: #f7e27a; --sobre-acao: #2b2a10; --selo: rgba(246, 248, 243, .16); --selo-tinta: #f6f8f3;
+  --raio-botao: 50%; --raio-num: 50%; --fonte-titulo: 'Kalam', cursive; --fonte-texto: 'Kalam', cursive;
+}
+.tema-quadro .t-card, .tema-quadro .t-campo, .tema-quadro .t-num { border-style: dashed; }
+.tema-quadro .t-titulo { padding-bottom: 8px !important; border-bottom: 3px solid rgba(246, 248, 243, .55); }
+.tema-quadro .t-numero { background: none; color: var(--acento); border: 2px solid var(--acento); }
+.tema-quadro .t-card:active { background: rgba(247, 226, 122, .2); border-color: #f7e27a; }
+.tema-quadro .t-capa.t-faixa { border: 0; padding-bottom: 8px; }
+.tema-quadro .t-capa-texto.t-faixa { border: 2px dashed rgba(246, 248, 243, .5); border-radius: 14px; padding: 14px !important; }
+
+/* =====================================================================
+   BILHETE: ingressos picotados sobre verde-petróleo.
+   ===================================================================== */
+.tema-bilhete {
+  --fundo: #0d5560; --fundo-solido: #0d5560; --tinta: #f2fbf9; --suave: #b5dcd9;
+  --acento: #ff7466; --sobre-acento: #35070a; --destaque: #ffb4a8;
+  --card: #f4fbfa; --card-borda: #f4fbfa; --icone-fundo: #d5eeeb; --icone: #0d5560;
+  --linha: rgba(255, 255, 255, .22); --num: #f4fbfa; --num-borda: #f4fbfa; --campo: #f4fbfa; --campo-borda: #f4fbfa;
+  --acao: #ff7466; --sobre-acao: #35070a; --selo: #ff7466; --selo-tinta: #35070a;
+  --raio-botao: 8px; --raio-num: 6px; --fonte-titulo: 'Barlow Condensed', 'Segoe UI', sans-serif; --fonte-texto: 'Barlow', 'Segoe UI', sans-serif;
+}
+.tema-bilhete .t-card, .tema-bilhete .t-comecar, .tema-bilhete .t-avancar { -webkit-mask: radial-gradient(circle 7px at 0 50%, #0000 96%, #000) 0 0 / 51% 100% no-repeat, radial-gradient(circle 7px at 100% 50%, #0000 96%, #000) 100% 0 / 51% 100% no-repeat; mask: radial-gradient(circle 7px at 0 50%, #0000 96%, #000) 0 0 / 51% 100% no-repeat, radial-gradient(circle 7px at 100% 50%, #0000 96%, #000) 100% 0 / 51% 100% no-repeat; }
+.tema-bilhete .t-card .t-cor { color: #0b333a; }
+.tema-bilhete .t-card .t-desc.t-cor { color: #3d666b; }
+.tema-bilhete .t-ir { border: 0; border-left: 2px dashed #8fbdb9; border-radius: 0; width: 30px; height: 100%; color: #0d5560; }
+.tema-bilhete .t-card:active { background: #ffd9d3; }
+.tema-bilhete .t-num:not(.t-num-on), .tema-bilhete .t-campo { color: #0b333a; }
+.tema-bilhete .t-num { border-style: dashed; }
+.tema-bilhete .t-campo::placeholder { color: #4d7377; }
+.tema-bilhete .t-titulo h2, .tema-bilhete .t-titulo h3 { letter-spacing: .01em; }
+.tema-bilhete .t-capa-texto.t-faixa { background: #f4fbfa; border-radius: 12px; padding: 16px !important; border-top: 3px dashed #8fbdb9; }
+.tema-bilhete .t-capa-texto .t-cor { color: #0b333a; }
+.tema-bilhete .t-caixa, .tema-bilhete .t-painel, .tema-bilhete .t-opcao:not(.border-amber-400) { background: #083f48; border-color: rgba(255, 255, 255, .25); color: var(--tinta); }
+
+/* =====================================================================
+   GIBI: traço grosso, retícula e sombra chapada.
+   ===================================================================== */
+.tema-gibi {
+  --fundo: radial-gradient(circle, rgba(255, 150, 0, .28) 1.6px, transparent 2px) 0 0 / 11px 11px, #ffdf43; --fundo-solido: #ffdf43; --tinta: #141414; --suave: #4a4020;
+  --acento: #e4262c; --sobre-acento: #fff; --destaque: #c2161c;
+  --card: #fff; --card-borda: #141414; --icone-fundo: #37b8f0; --icone: #141414;
+  --linha: #141414; --num: #fff; --num-borda: #141414; --campo: #fff; --campo-borda: #141414;
+  --acao: #e4262c; --sobre-acao: #fff; --acao-sombra: 4px 4px 0 #141414; --selo: #141414; --selo-tinta: #ffdf43;
+  --raio-botao: 10px; --raio-num: 50%; --fonte-titulo: 'Bangers', 'Comic Sans MS', cursive; --fonte-texto: 'Comic Neue', 'Comic Sans MS', sans-serif;
+}
+.tema-gibi .t-titulo h2, .tema-gibi .t-titulo h3 { letter-spacing: .04em; font-weight: 400; }
+.tema-gibi .t-numero { border: 3px solid #141414; box-shadow: 2px 2px 0 #141414; }
+.tema-gibi .t-card { border-width: 3px; box-shadow: 4px 4px 0 #141414; }
+.tema-gibi .t-card:active, .tema-gibi .t-avancar:active { transform: translate(4px, 4px); box-shadow: 0 0 0 #141414; }
+.tema-gibi .t-icone { border: 2px solid #141414; }
+.tema-gibi .t-linha:nth-child(3n+2) .t-icone { background: #ff7ac0; }
+.tema-gibi .t-linha:nth-child(3n+3) .t-icone { background: #6fdc6a; }
+.tema-gibi .t-num { border-width: 2.5px; }
+.tema-gibi .t-num:not(.t-num-on) { box-shadow: 2px 2px 0 #141414; }
+.tema-gibi .t-num-on { border-color: #141414; transform: translate(2px, 2px); box-shadow: none; }
+.tema-gibi .t-item { border-color: transparent; }
+.tema-gibi .t-campo { border-width: 3px; box-shadow: 4px 4px 0 #141414; }
+.tema-gibi .t-numero { font-weight: 400; }
+.tema-gibi .t-avancar, .tema-gibi .t-comecar { font-weight: 400; font-size: 1.2em; border: 3px solid #141414; letter-spacing: .06em; }
+.tema-gibi .t-comecar-borda { overflow: visible; padding-right: 6px; padding-bottom: 6px; }
+.tema-gibi .t-painel, .tema-gibi .t-caixa { border: 3px solid #141414; box-shadow: 5px 5px 0 #141414; }
+.tema-gibi .t-capa-texto.t-faixa { background: #fff; border: 3px solid #141414; border-radius: 22px 22px 22px 4px; padding: 16px !important; box-shadow: 4px 4px 0 #141414; }
+
+/* =====================================================================
+   JARDIM: folhas, verde claro e uma flor no número.
+   ===================================================================== */
+.tema-jardim {
+  --fundo: radial-gradient(50% 24% at 100% 0%, #cfe8cb, transparent), radial-gradient(60% 24% at 0% 100%, #d6ecd9, transparent), #eff6ec; --fundo-solido: #eff6ec; --tinta: #1c3426; --suave: #4d6a57;
+  --acento: #d2457c; --sobre-acento: #fff; --destaque: #b32c63;
+  --card: #fff; --card-borda: #bcd6bd; --icone-fundo: #dff0dc; --icone: #2b7a4b;
+  --linha: #c9dfc9; --num: #fff; --num-borda: #94bd9b; --campo: #fff; --campo-borda: #94bd9b;
+  --acao: #2b7a4b; --sobre-acao: #fff; --selo: #2b7a4b; --selo-tinta: #fff;
+  --raio-botao: 16px 5px 16px 5px; --raio-num: 62% 38% 62% 38%; --fonte-titulo: 'Fraunces', Georgia, serif; --fonte-texto: 'Nunito', 'Segoe UI', sans-serif;
+}
+.tema-jardim .t-card { border-left: 5px solid #2b7a4b; box-shadow: 0 2px 8px rgba(43, 122, 75, .12); }
+.tema-jardim .t-card:active { background: #fde7f0; border-color: #d2457c; }
+.tema-jardim .t-icone { border-radius: 60% 40% 60% 40%; }
+.tema-jardim .t-capa-texto.t-faixa { background: #fff; border-radius: 26px 8px 26px 8px; padding: 16px !important; border-left: 5px solid #2b7a4b; }
+.tema-jardim .t-painel { box-shadow: 0 6px 24px rgba(43, 122, 75, .16); }
+
+/* =====================================================================
+   PAINEL: placa de embarque, letras que viram.
+   ===================================================================== */
+.tema-painel {
+  --fundo: #1a1e25; --fundo-solido: #1a1e25; --tinta: #f3f0e6; --suave: #a7adb8;
+  --acento: #ffc93d; --sobre-acento: #251a00; --destaque: #ffc93d;
+  --placa: linear-gradient(#3a404c 0 50%, #292e38 50%);
+  --card: #2d323c; --card-borda: #0c0e12; --icone-fundo: transparent; --icone: #ffc93d;
+  --linha: #0c0e12; --num: #2d323c; --num-borda: #0c0e12; --campo: #0f1217; --campo-borda: #454c59;
+  --acao: #ffc93d; --sobre-acao: #251a00; --selo: #0c0e12; --selo-tinta: #ffc93d;
+  --raio-botao: 6px; --raio-num: 5px; --fonte-titulo: 'B612 Mono', Consolas, monospace; --fonte-texto: 'B612', 'Segoe UI', sans-serif;
+}
+.tema-painel .t-numero { background: var(--placa); color: #ffc93d; border: 1px solid #0c0e12; }
+.tema-painel .t-titulo h2 { color: #ffc93d; }
+.tema-painel .t-secao { color: var(--suave); }
+.tema-painel .t-fundo, .tema-painel .t-num:not(.t-num-on) { background: var(--placa); }
+.tema-painel .t-card { border-width: 2px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12); }
+.tema-painel .t-card .t-cor, .tema-painel .t-num:not(.t-num-on) { text-shadow: 0 1px 0 #000; }
+.tema-painel .t-card:active { animation: painelVira .3s; }
+@keyframes painelVira { 50% { transform: perspective(400px) rotateX(70deg); } }
+.tema-painel .t-num-on { animation: painelVira .35s; }
+.tema-painel .t-capa-texto.t-faixa { background: #0f1217; border: 2px solid #0c0e12; border-radius: 6px; padding: 14px !important; }
+
+/* Layouts claros: textos fixos do formulário precisam escurecer */
+:is(.tema-gibi, .tema-jardim) :is(.text-slate-400, .text-slate-300, .text-slate-200) { color: var(--suave); }
+:is(.tema-gibi, .tema-jardim) :is(.text-amber-300, .text-amber-400):not(.t-icone) { color: var(--destaque); }
+:is(.tema-gibi, .tema-jardim, .tema-bilhete) .t-gaveta { background: #fff; border-color: var(--acento); }
+:is(.tema-gibi, .tema-jardim, .tema-bilhete) .t-gaveta :is(input, textarea, select, label, span, p, .bg-slate-950) { background: #fff; color: #14203a; }
+:is(.tema-gibi, .tema-jardim, .tema-papel, .tema-bilhete) .t-gaveta button, :is(.tema-gibi, .tema-jardim, .tema-papel, .tema-bilhete) .t-gaveta button span { background: var(--acao); color: var(--sobre-acao); }
+
+@media (prefers-reduced-motion: reduce) {
+  .tema-painel .t-card:active, .tema-painel .t-num-on { animation: none; }
 }

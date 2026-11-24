@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AlignLeft, AlignCenter, AlignRight, ChevronDown, GripVertical } from 'lucide-react';
+import { carregarFontes, familiaCss, FONTES, fontePorId } from '../utils/fontes';
 
 // =====================================================================
 // CONTROLES DO EDITOR
@@ -7,28 +8,26 @@ import { AlignLeft, AlignCenter, AlignRight, ChevronDown, GripVertical } from 'l
 // Todo ajuste é uma linha: nome à esquerda, controle à direita.
 // =====================================================================
 
-const ROTULO = 'text-xs text-slate-400 w-28 shrink-0';
+const ROTULO = 'text-[11px] leading-tight text-slate-400 w-[74px] shrink-0';
 
+// Os ajustes pequenos (.ed-cel) ficam lado a lado em colunas; o resto ocupa a linha toda.
 export function Secao({ titulo, descricao, acao, children }) {
   return (
-    <section className="rounded-xl bg-slate-800/40 p-4 space-y-3.5">
+    <section className="rounded-lg bg-slate-800/40 px-3 py-2.5">
       {(titulo || acao) && (
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h3 className="text-sm font-semibold text-slate-100">{titulo}</h3>
-            {descricao && <p className="text-xs text-slate-400 mt-0.5">{descricao}</p>}
-          </div>
+        <div className="flex items-baseline justify-between gap-3 mb-2">
+          <h3 className="text-xs font-semibold text-slate-100">{titulo}{descricao && <span className="ml-2 font-normal text-[11px] text-slate-400">{descricao}</span>}</h3>
           {acao}
         </div>
       )}
-      {children}
+      <div className="ed-grade">{children}</div>
     </section>
   );
 }
 
 export function Deslizante({ rotulo, valor, min, max, passo = 1, unidade = 'px', onChange }) {
   return (
-    <label className="flex items-center gap-3">
+    <label className="ed-cel flex items-center gap-2 min-w-0">
       <span className={ROTULO}>{rotulo}</span>
       <input
         type="range"
@@ -38,15 +37,36 @@ export function Deslizante({ rotulo, valor, min, max, passo = 1, unidade = 'px',
         value={valor}
         aria-label={rotulo}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="ed-range flex-1 min-w-0"
+        className="ed-range flex-1 min-w-[50px] max-w-[130px]"
         style={{ '--p': `${Math.max(0, Math.min(100, ((valor - min) / (max - min)) * 100))}%` }}
       />
-      <span className="text-xs tabular-nums text-slate-200 w-12 text-right shrink-0">{valor}{unidade}</span>
+      <span className="text-[11px] tabular-nums text-slate-200 w-10 shrink-0 whitespace-nowrap">{valor}{unidade}</span>
     </label>
   );
 }
 
-// Amostra de cor: bolinha (13px) ou quadrinho (20px). A área de toque é maior que o desenho.
+// Slider curtinho, para usar ao lado de cores
+export function MiniSlider({ rotulo, valor, min, max, passo = 1, unidade = 'px', onChange }) {
+  return (
+    <label className="flex items-center gap-1.5 shrink-0" title={rotulo}>
+      <span className="text-[11px] text-slate-400">{rotulo}</span>
+      <input
+        type="range"
+        aria-label={rotulo}
+        min={min}
+        max={max}
+        step={passo}
+        value={valor}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="ed-range w-[72px]"
+        style={{ '--p': `${Math.max(0, Math.min(100, ((valor - min) / (max - min)) * 100))}%` }}
+      />
+      <span className="text-[11px] tabular-nums text-slate-200 w-9">{valor}{unidade}</span>
+    </label>
+  );
+}
+
+// Amostra de cor: bolinha ou quadrinho. A área de toque é maior que o desenho.
 function Amostra({ classe, hex, quadrado, selecionada, nome, onClick }) {
   return (
     <button
@@ -55,11 +75,11 @@ function Amostra({ classe, hex, quadrado, selecionada, nome, onClick }) {
       aria-label={nome}
       aria-pressed={selecionada}
       onClick={onClick}
-      className={`p-1 rounded-md transition ${selecionada ? 'bg-slate-100/15' : 'hover:bg-slate-100/10'}`}
+      className={`p-[3px] rounded transition ${selecionada ? '' : 'hover:bg-slate-100/10'}`}
     >
       <span
         style={hex ? { background: hex } : undefined}
-        className={`block ${quadrado ? 'w-5 h-5 rounded border border-white/20' : 'w-[13px] h-[13px] rounded-full'} ${classe || ''} ${selecionada ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-800' : ''}`}
+        className={`block ${quadrado ? 'w-[18px] h-[18px] rounded border border-white/20' : 'w-3 h-3 rounded-full'} ${classe || ''} ${selecionada ? 'ring-2 ring-white ring-offset-1 ring-offset-slate-800' : ''}`}
       />
     </button>
   );
@@ -68,23 +88,23 @@ function Amostra({ classe, hex, quadrado, selecionada, nome, onClick }) {
 export function Cores({ rotulo, opcoes, valor, onChange, campo = 'bg', quadrado = false, lateral = null }) {
   const atual = opcoes.find((o) => o.id === valor) || opcoes[0];
   return (
-    <div className="flex items-center gap-3">
+    <div className={`${opcoes.length > 12 || lateral ? '' : 'ed-cel'} flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0`} title={atual.label}>
       <span className={ROTULO}>{rotulo}</span>
-      <div className={`flex flex-wrap items-center gap-0.5 ${lateral ? 'shrink-0' : 'flex-1 min-w-0'}`}>
+      <div className="flex flex-wrap items-center">
         {opcoes.map((o) => (
           <Amostra key={o.id} nome={o.label} quadrado={quadrado} classe={campo === 'hex' ? o.dot : o[campo]} hex={o.hex && campo === 'hex' ? o.hex : undefined} selecionada={o.id === atual.id} onClick={() => onChange(o.id)} />
         ))}
       </div>
-      {lateral || <span className="text-xs text-slate-300 shrink-0 max-w-[110px] truncate">{atual.label}</span>}
+      {lateral}
     </div>
   );
 }
 
 export function Segmentos({ rotulo, opcoes, valor, onChange }) {
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-2">
       {rotulo && <span className={ROTULO}>{rotulo}</span>}
-      <div className="flex flex-wrap gap-1 rounded-lg bg-slate-950/60 p-1">
+      <div className="flex flex-wrap gap-0.5 rounded-md bg-slate-950/60 p-0.5">
         {opcoes.map((o) => (
           <button
             key={o.id}
@@ -92,7 +112,7 @@ export function Segmentos({ rotulo, opcoes, valor, onChange }) {
             aria-pressed={valor === o.id}
             title={o.dica || o.label}
             onClick={() => onChange(o.id)}
-            className={`px-2.5 py-1 rounded-md text-xs transition ${valor === o.id ? 'bg-slate-100 text-slate-900 font-semibold' : 'text-slate-300 hover:bg-slate-800 hover:text-white'}`}
+            className={`px-2 py-0.5 rounded text-[11px] transition ${valor === o.id ? 'bg-slate-100 text-slate-900 font-semibold' : 'text-slate-300 hover:bg-slate-800 hover:text-white'}`}
           >
             {o.conteudo || o.label}
           </button>
@@ -104,23 +124,20 @@ export function Segmentos({ rotulo, opcoes, valor, onChange }) {
 
 export function Chave({ rotulo, descricao, valor, onChange }) {
   return (
-    <button type="button" role="switch" aria-checked={Boolean(valor)} onClick={() => onChange(!valor)} className="w-full flex items-center justify-between gap-3 text-left">
-      <span>
-        <span className="block text-xs text-slate-200">{rotulo}</span>
-        {descricao && <span className="block text-xs text-slate-400 mt-0.5">{descricao}</span>}
+    <button type="button" role="switch" aria-checked={Boolean(valor)} title={descricao} onClick={() => onChange(!valor)} className="ed-cel flex items-center gap-2 text-left">
+      <span className={`w-7 h-4 rounded-full relative shrink-0 transition ${valor ? 'bg-slate-100' : 'bg-slate-700'}`}>
+        <span className={`absolute top-0.5 w-3 h-3 rounded-full transition-all ${valor ? 'left-[14px] bg-slate-900' : 'left-0.5 bg-slate-400'}`} />
       </span>
-      <span className={`w-9 h-5 rounded-full relative shrink-0 transition ${valor ? 'bg-slate-100' : 'bg-slate-700'}`}>
-        <span className={`absolute top-0.5 w-4 h-4 rounded-full transition-all ${valor ? 'left-[18px] bg-slate-900' : 'left-0.5 bg-slate-400'}`} />
-      </span>
+      <span className="text-[11px] text-slate-200">{rotulo}</span>
     </button>
   );
 }
 
-export function Campo({ rotulo, valor, onChange, placeholder, multilinha, linhas = 3 }) {
-  const classe = 'w-full bg-slate-950/60 border border-slate-700 focus:border-slate-300 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none';
+export function Campo({ rotulo, valor, onChange, placeholder, multilinha, linhas = 2 }) {
+  const classe = 'w-full bg-slate-950/60 border border-slate-700 focus:border-slate-300 rounded-md px-2.5 py-1.5 text-[13px] text-white placeholder-slate-500 focus:outline-none';
   return (
-    <label className="block">
-      {rotulo && <span className="block text-xs text-slate-400 mb-1">{rotulo}</span>}
+    <label className={`block ${multilinha ? '' : 'ed-cel'}`}>
+      {rotulo && <span className="block text-[11px] text-slate-400 mb-0.5">{rotulo}</span>}
       {multilinha
         ? <textarea rows={linhas} value={valor ?? ''} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} className={`${classe} resize-y`} />
         : <input type="text" value={valor ?? ''} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} className={classe} />}
@@ -130,25 +147,57 @@ export function Campo({ rotulo, valor, onChange, placeholder, multilinha, linhas
 
 export function Lista({ rotulo, opcoes, valor, onChange }) {
   return (
-    <label className="flex items-center gap-3">
+    <label className="ed-cel flex items-center gap-2">
       <span className={ROTULO}>{rotulo}</span>
-      <select value={valor} onChange={(e) => onChange(e.target.value)} className="flex-1 min-w-0 bg-slate-950/60 border border-slate-700 focus:border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-white">
+      <select value={valor} onChange={(e) => onChange(e.target.value)} className="flex-1 min-w-0 max-w-[180px] bg-slate-950/60 border border-slate-700 focus:border-slate-300 rounded-md px-2 py-1 text-[11px] text-white">
         {opcoes.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
       </select>
     </label>
   );
 }
 
+// Fonte: cada nome aparece escrito na própria fonte
+export function SeletorFonte({ valor, onChange, rotulo = 'Fonte' }) {
+  const [aberto, setAberto] = useState(false);
+  useEffect(() => { carregarFontes(aberto ? FONTES.map((f) => f.id) : [valor]); }, [aberto, valor]);
+  const atual = fontePorId(valor);
+  const escolher = (id) => { onChange(id); setAberto(false); };
+  return (
+    <div className="ed-cel relative flex items-center gap-2 min-w-0">
+      {rotulo && <span className={ROTULO}>{rotulo}</span>}
+      <button type="button" aria-expanded={aberto} onClick={() => setAberto(!aberto)}
+        className="flex items-center justify-between gap-1 w-[150px] px-2 py-1 rounded-md bg-slate-950/60 border border-slate-700 hover:border-slate-500 text-[12px] text-white">
+        <span className="truncate" style={{ fontFamily: familiaCss(valor) }}>{atual?.nome || 'Padrão'}</span>
+        <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+      </button>
+      {aberto && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setAberto(false)} />
+          <div className="absolute left-0 top-full mt-1 z-50 w-64 max-h-72 overflow-y-auto rounded-lg bg-slate-800 border border-slate-700 shadow-2xl p-1">
+            <button type="button" onClick={() => escolher('padrao')} className={`w-full text-left px-2 py-1 rounded text-[12px] ${!atual ? 'bg-slate-100 text-slate-900' : 'text-slate-300 hover:bg-slate-700'}`}>Padrão</button>
+            {FONTES.map((f) => (
+              <button key={f.id} type="button" onClick={() => escolher(f.id)} style={{ fontFamily: familiaCss(f.id) }}
+                className={`w-full text-left px-2 py-1 rounded text-[15px] leading-snug ${valor === f.id ? 'bg-slate-100 text-slate-900' : 'text-slate-100 hover:bg-slate-700'}`}>
+                {f.nome}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 const ICONE_ALINHAMENTO = { left: AlignLeft, center: AlignCenter, right: AlignRight };
 export function Alinhamento({ valor, onChange }) {
   return (
-    <div className="flex gap-0.5 rounded-lg bg-slate-950/60 p-1">
+    <div className="flex gap-0.5 rounded-md bg-slate-950/60 p-0.5">
       {[['left', 'Alinhar à esquerda'], ['center', 'Centralizar'], ['right', 'Alinhar à direita']].map(([id, nome]) => {
         const Icone = ICONE_ALINHAMENTO[id];
         return (
           <button key={id} type="button" title={nome} aria-label={nome} aria-pressed={valor === id} onClick={() => onChange(id)}
-            className={`w-7 h-6 rounded-md flex items-center justify-center transition ${valor === id ? 'bg-slate-100 text-slate-900' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>
-            <Icone className="w-3.5 h-3.5" />
+            className={`w-6 h-5 rounded flex items-center justify-center transition ${valor === id ? 'bg-slate-100 text-slate-900' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>
+            <Icone className="w-3 h-3" />
           </button>
         );
       })}
@@ -156,18 +205,28 @@ export function Alinhamento({ valor, onChange }) {
   );
 }
 
+// Liga/desliga pequeno (B, AA)
+export function Alternar({ rotulo, nome, valor, onChange }) {
+  return (
+    <button type="button" title={nome} aria-label={nome} aria-pressed={Boolean(valor)} onClick={() => onChange(!valor)}
+      className={`px-1.5 min-w-[26px] h-6 rounded-md text-[11px] font-bold transition ${valor ? 'bg-slate-100 text-slate-900' : 'bg-slate-950/60 text-slate-400 hover:text-white'}`}>
+      {rotulo}
+    </button>
+  );
+}
+
 // Linha que abre e fecha. Fechada mostra o conteúdo atual, então dá para ler a tela inteira de relance.
 export function Dobra({ titulo, resumo, lateral, aberta: inicial = false, children }) {
   const [aberta, setAberta] = useState(inicial);
   return (
-    <div className={`rounded-xl transition-colors ${aberta ? 'bg-slate-800/60' : 'bg-slate-800/40 hover:bg-slate-800/60'}`}>
-      <button type="button" aria-expanded={aberta} onClick={() => setAberta(!aberta)} className="w-full flex items-center gap-3 px-4 py-2.5 text-left">
-        <span className="text-xs text-slate-400 w-24 shrink-0">{titulo}</span>
-        <span className={`flex-1 min-w-0 truncate text-sm ${resumo ? 'text-slate-100' : 'text-slate-500'}`}>{resumo || 'Vazio, não aparece no celular'}</span>
+    <div className={`rounded-lg transition-colors ${aberta ? 'bg-slate-800/60' : 'bg-slate-800/40 hover:bg-slate-800/60'}`}>
+      <button type="button" aria-expanded={aberta} onClick={() => setAberta(!aberta)} className="w-full flex items-center gap-2 px-3 py-1.5 text-left">
+        <span className="text-[11px] text-slate-400 w-[74px] shrink-0">{titulo}</span>
+        <span className={`flex-1 min-w-0 truncate text-[13px] ${resumo ? 'text-slate-100' : 'text-slate-500'}`}>{resumo || 'Vazio, não aparece no celular'}</span>
         {lateral}
-        <ChevronDown className={`w-4 h-4 text-slate-400 shrink-0 transition-transform ${aberta ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform ${aberta ? 'rotate-180' : ''}`} />
       </button>
-      {aberta && <div className="px-4 pb-4 pt-1 space-y-3.5">{children}</div>}
+      {aberta && <div className="px-3 pb-2.5 pt-0.5 space-y-2">{children}</div>}
     </div>
   );
 }

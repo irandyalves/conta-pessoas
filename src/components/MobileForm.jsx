@@ -42,7 +42,8 @@ import { componenteIcone, iconesDaTela } from '../utils/icones';
 import { configSeta } from '../utils/setas';
 import Rosto from './Rosto';
 import { carregarFonteTema, classeTema } from '../utils/temas';
-import { partesTitulo, subtituloRepeteLegenda, corLinhaHex, lerGeral, caixaAlta, telaP1Cantos, estiloBotao, cantosCard, CARD_ESPACO_PADRAO, faixaEstilo, linhasCapa, medidasCard, espacos, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getEfeitoStyle, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems } from '../utils/estilos';
+import { carregarFontes, fontesEmUso } from '../utils/fontes';
+import { fonteEBorda, partesTitulo, subtituloRepeteLegenda, corLinhaHex, lerGeral, caixaAlta, telaP1Cantos, estiloBotao, cantosCard, CARD_ESPACO_PADRAO, faixaEstilo, linhasCapa, medidasCard, espacos, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getEfeitoStyle, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems } from '../utils/estilos';
 
 const DISPOSITIVO_BLOQUEADO_KEY = 'presenca_dispositivo_bloqueado_voto';
 const DISPOSITIVO_VOTO_TIME_KEY = 'presenca_dispositivo_hora_voto';
@@ -990,6 +991,8 @@ export default function MobileForm({ preview = false }) {
   const temaAtual = lerGeral(questionsConfig, currentStep.startsWith('extra_') ? telasExtrasAtivas[parseInt(currentStep.split('_')[1], 10)] : null, '')('tema');
   const temaCls = classeTema(temaAtual);
   useEffect(() => { carregarFonteTema(temaAtual); }, [temaAtual]);
+  const fontesUsadas = fontesEmUso(questionsConfig).join(',');
+  useEffect(() => { carregarFontes(fontesUsadas.split(',').filter(Boolean)); }, [fontesUsadas]);
 
   // ==============================================================
   // ENVIANDO / ERRO NO ENVIO (o celular só trava depois que a resposta foi aceita)
@@ -1040,7 +1043,7 @@ export default function MobileForm({ preview = false }) {
 
           <div className="space-y-3">
             <h1 
-              style={{ fontSize: `${questionsConfig.finalTituloFonteTamanho || questionsConfig.finalFonteTamanho || 26}px` }}
+              style={{ fontSize: `${questionsConfig.finalTituloFonteTamanho || questionsConfig.finalFonteTamanho || 26}px`, ...fonteEBorda(questionsConfig, 'finalTitulo', false) }}
               className="font-black text-white tracking-tight leading-snug"
             >
               {questionsConfig.finalTitulo1 && questionsConfig.finalTitulo2 ? (
@@ -1056,7 +1059,7 @@ export default function MobileForm({ preview = false }) {
             {questionsConfig.finalMensagem && (
               <div className="space-y-1">
                 <span 
-                  style={{ fontSize: `${questionsConfig.finalMensagemFonteTamanho || 16}px` }}
+                  style={{ fontSize: `${questionsConfig.finalMensagemFonteTamanho || 16}px`, ...fonteEBorda(questionsConfig, 'finalMensagem', false) }}
                   className="block font-extrabold text-amber-400 tracking-wide leading-tight"
                 >
                   {questionsConfig.finalMensagem}
@@ -1068,13 +1071,13 @@ export default function MobileForm({ preview = false }) {
           <div className="pt-5 border-t border-slate-800/80 space-y-3">
             <div className="space-y-1.5 text-slate-200">
               <p 
-                style={{ fontSize: `${questionsConfig.finalStatusFonteTamanho || 18}px` }}
+                style={{ fontSize: `${questionsConfig.finalStatusFonteTamanho || 18}px`, ...fonteEBorda(questionsConfig, 'finalStatus', false) }}
                 className="font-black text-emerald-400 uppercase tracking-wide"
               >
                 {questionsConfig.finalStatus ?? 'REGISTRO CONCLUÍDO!'}
               </p>
               <p 
-                style={{ fontSize: `${questionsConfig.finalInstrucaoFonteTamanho || 13}px` }}
+                style={{ fontSize: `${questionsConfig.finalInstrucaoFonteTamanho || 13}px`, ...fonteEBorda(questionsConfig, 'finalInstrucao', false) }}
                 className="font-bold text-slate-300"
               >
                 {questionsConfig.finalInstrucao ?? 'pode guardar seu celular'}
@@ -1109,19 +1112,19 @@ export default function MobileForm({ preview = false }) {
           {/* TEXTO EM EXATAS 3 LINHAS COM FONTES E CORES INDIVIDUAIS */}
           <div className="space-y-1 text-center">
             <h2 
-              style={{ fontSize: `${questionsConfig.esperaLinha1Tamanho || questionsConfig.esperaFonteTamanho || 26}px` }}
+              style={{ fontSize: `${questionsConfig.esperaLinha1Tamanho || questionsConfig.esperaFonteTamanho || 26}px`, ...fonteEBorda(questionsConfig, 'esperaLinha1', false) }}
               className={`font-black tracking-wide uppercase leading-tight drop-shadow-sm ${getCorTextoLinhaClass(questionsConfig.esperaLinha1Cor, 'text-white')}`}
             >
               {questionsConfig.esperaLinha1 ?? 'DENTRO DE INSTANTES'}
             </h2>
             <h2 
-              style={{ fontSize: `${questionsConfig.esperaLinha2Tamanho || questionsConfig.esperaFonteTamanho || 26}px` }}
+              style={{ fontSize: `${questionsConfig.esperaLinha2Tamanho || questionsConfig.esperaFonteTamanho || 26}px`, ...fonteEBorda(questionsConfig, 'esperaLinha2', false) }}
               className={`font-black tracking-wide uppercase leading-tight drop-shadow-sm ${getCorTextoLinhaClass(questionsConfig.esperaLinha2Cor, 'text-amber-300')}`}
             >
               {questionsConfig.esperaLinha2 ?? 'ESTARÁ LIBERADO'}
             </h2>
             <h2 
-              style={{ fontSize: `${questionsConfig.esperaLinha3Tamanho || questionsConfig.esperaFonteTamanho || 26}px` }}
+              style={{ fontSize: `${questionsConfig.esperaLinha3Tamanho || questionsConfig.esperaFonteTamanho || 26}px`, ...fonteEBorda(questionsConfig, 'esperaLinha3', false) }}
               className={`font-black tracking-wide uppercase leading-tight drop-shadow-sm ${getCorTextoLinhaClass(questionsConfig.esperaLinha3Cor, 'text-emerald-400')}`}
             >
               {questionsConfig.esperaLinha3 ?? 'PARA RESPONDER.'}
@@ -1199,7 +1202,7 @@ export default function MobileForm({ preview = false }) {
         {currentStep === 'p1' && (questionsConfig.mostrarBotaoComecar === false || jaClicouComecar) && (
           <div className="mt-2 pt-2 flex flex-col" style={{ gap: espacos(questionsConfig, true).sub, marginBottom: espacos(questionsConfig, true).cards }}>
             {(questionsConfig.pergunta1Titulo || questionsConfig.pergunta1Titulo2 || questionsConfig.pergunta1Titulo3) && (
-              <div style={{ gap: espacos(questionsConfig, true).tit, ...faixaEstilo(estiloLinhas(questionsConfig, 'pergunta1').tituloFundo, questionsConfig.pergunta1TituloFaixa ?? questionsConfig.faixaPadrao) }} className={`t-titulo flex flex-col ${getAlinhamentoClass(estiloLinhas(questionsConfig, 'pergunta1').tituloAl)} ${getFaixaFundoClass(estiloLinhas(questionsConfig, 'pergunta1').tituloFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}>
+              <div style={{ gap: espacos(questionsConfig, true).tit, ...faixaEstilo(estiloLinhas(questionsConfig, 'pergunta1').tituloFundo, questionsConfig.pergunta1TituloFaixa ?? questionsConfig.faixaPadrao), ...fonteEBorda(questionsConfig, 'pergunta1Titulo', estiloLinhas(questionsConfig, 'pergunta1').tituloFundo !== 'transparente') }} className={`t-titulo flex flex-col ${getAlinhamentoClass(estiloLinhas(questionsConfig, 'pergunta1').tituloAl)} ${getFaixaFundoClass(estiloLinhas(questionsConfig, 'pergunta1').tituloFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}>
                 {questionsConfig.pergunta1Titulo && (
                   <h2 
                     style={{ fontSize: `${questionsConfig.pergunta1FonteTamanho || 22}px` }}
@@ -1229,7 +1232,7 @@ export default function MobileForm({ preview = false }) {
             {/* SUBTÍTULO DA TELA 1 (alinhamento, tamanho e fundo próprios — igual ao preview) */}
             {questionsConfig.pergunta1TextoAbaixo && (
               <p
-                style={{ fontSize: `${questionsConfig.pergunta1TextoAbaixoTamanho || 14}px`, ...faixaEstilo(estiloLinhas(questionsConfig, 'pergunta1').subFundo, questionsConfig.pergunta1SubFaixa ?? questionsConfig.faixaPadrao) }}
+                style={{ fontSize: `${questionsConfig.pergunta1TextoAbaixoTamanho || 14}px`, ...faixaEstilo(estiloLinhas(questionsConfig, 'pergunta1').subFundo, questionsConfig.pergunta1SubFaixa ?? questionsConfig.faixaPadrao), ...fonteEBorda(questionsConfig, 'pergunta1Sub', estiloLinhas(questionsConfig, 'pergunta1').subFundo !== 'transparente') }}
                 className={`t-sub leading-relaxed whitespace-pre-line ${getAlinhamentoClass(estiloLinhas(questionsConfig, 'pergunta1').subAl)} ${getFaixaFundoClass(estiloLinhas(questionsConfig, 'pergunta1').subFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')} ${questionsConfig.pergunta1SubBold ? 'font-bold' : ''} ${caixaAlta(questionsConfig.pergunta1SubCaixa)} ${getCorTextoLinhaClass(questionsConfig.pergunta1TextoAbaixoCor, 'text-slate-300')}`}
               >
                 {questionsConfig.pergunta1TextoAbaixo}
@@ -1248,7 +1251,7 @@ export default function MobileForm({ preview = false }) {
           const linha1 = tela.titulo1 || tela.titulo || `Pergunta da Tela ${idx + 2}`;
           return (
             <div className="mt-2 pt-2 border-t border-slate-800/60 flex flex-col" style={{ gap: espacos(tela).sub, marginBottom: espacos(tela).cards }}>
-              <div style={{ gap: espacos(tela).tit, ...faixaEstilo(estiloLinhas(tela).tituloFundo, tela.tituloFaixa ?? questionsConfig?.faixaPadrao) }} className={`t-titulo flex flex-col ${getAlinhamentoClass(estiloLinhas(tela).tituloAl)} ${getFaixaFundoClass(estiloLinhas(tela).tituloFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}>
+              <div style={{ gap: espacos(tela).tit, ...faixaEstilo(estiloLinhas(tela).tituloFundo, tela.tituloFaixa ?? questionsConfig?.faixaPadrao), ...fonteEBorda(tela, 'titulo', estiloLinhas(tela).tituloFundo !== 'transparente') }} className={`t-titulo flex flex-col ${getAlinhamentoClass(estiloLinhas(tela).tituloAl)} ${getFaixaFundoClass(estiloLinhas(tela).tituloFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}>
               <h2 style={{ fontSize: `${tela.titulo1Tamanho || 20}px` }} className={`${pesoFonte(tela.tituloBold)} ${caixaAlta(tela.tituloCaixa)} leading-tight ${getCorTextoLinhaClass(tela.titulo1Cor, 'text-white')}`}>
                 <TituloRico texto={linha1} />
               </h2>
@@ -1264,7 +1267,7 @@ export default function MobileForm({ preview = false }) {
               )}
               </div>
               {tela.subtitulo && !subtituloRepeteLegenda(tela) && (
-                <p style={{ fontSize: `${tela.subtituloTamanho || 13}px`, ...faixaEstilo(estiloLinhas(tela).subFundo, tela.subFaixa ?? questionsConfig?.faixaPadrao) }} className={`t-sub leading-snug ${getAlinhamentoClass(estiloLinhas(tela).subAl)} ${getFaixaFundoClass(estiloLinhas(tela).subFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')} ${tela.subBold ? 'font-bold' : ''} ${caixaAlta(tela.subCaixa)} ${getCorTextoLinhaClass(tela.subtituloCor, 'text-slate-300')}`}>
+                <p style={{ fontSize: `${tela.subtituloTamanho || 13}px`, ...faixaEstilo(estiloLinhas(tela).subFundo, tela.subFaixa ?? questionsConfig?.faixaPadrao), ...fonteEBorda(tela, 'sub', estiloLinhas(tela).subFundo !== 'transparente') }} className={`t-sub leading-snug ${getAlinhamentoClass(estiloLinhas(tela).subAl)} ${getFaixaFundoClass(estiloLinhas(tela).subFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')} ${tela.subBold ? 'font-bold' : ''} ${caixaAlta(tela.subCaixa)} ${getCorTextoLinhaClass(tela.subtituloCor, 'text-slate-300')}`}>
                   {tela.subtitulo}
                 </p>
               )}
@@ -1276,7 +1279,7 @@ export default function MobileForm({ preview = false }) {
         {currentStep === 'acompanhantes' && (
           <div className="mt-2 pt-2 border-t border-slate-800/60">
             <h2 
-              style={{ fontSize: `${questionsConfig.pergunta2FonteTamanho || 22}px` }}
+              style={{ fontSize: `${questionsConfig.pergunta2FonteTamanho || 22}px`, ...fonteEBorda(questionsConfig, 'pergunta2', false) }}
               className="font-black text-white leading-tight whitespace-pre-line"
             >
               {questionsConfig.pergunta2Titulo2 ? (
@@ -1349,6 +1352,7 @@ export default function MobileForm({ preview = false }) {
                       ...(st.boxShadow ? { boxShadow: st.boxShadow } : {}),
                       ...(st.height ? { height: st.height, paddingTop: 0, paddingBottom: 0 } : {}),
                       ...(st.fontSize ? { fontSize: st.fontSize } : {}),
+                      ...(st.fontFamily ? { fontFamily: st.fontFamily } : {}),
                       ...(raio !== undefined ? { borderRadius: Math.max(0, raio - 2) } : {})
                     }}
                     className="t-comecar relative w-full py-4 px-6 rounded-[14px] bg-gradient-to-b from-emerald-500 to-emerald-700 text-white font-black text-base uppercase tracking-widest flex items-center justify-center gap-2.5"
@@ -1405,7 +1409,7 @@ export default function MobileForm({ preview = false }) {
                         <button
                           type="button"
                           onClick={() => comFeedback(`p1_${opcao.id}`, () => handleSelectComoChegou(opcao), opcao.temGaveta)}
-                          style={{ ...medidas.caixa, ...cardEfeitoInline }}
+                          style={{ ...medidas.caixa, ...cardEfeitoInline, ...fonteEBorda(questionsConfig, 'card', true, false) }}
                           className={`t-card w-full text-left px-4 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-between group border border-white/15 ${cardFundoCls} ${
                             isGavetaAberta ? 'border-amber-400/80 ring-1 ring-amber-400/40' : ''
                           } ${efeitoClique(`p1_${opcao.id}`)
@@ -1572,11 +1576,11 @@ export default function MobileForm({ preview = false }) {
               <div key={tela.id} id={`campo_${tela.id}`} className={`scroll-mt-4 ${cabeTudo ? 'flex-1 flex flex-col' : ''}`}>
                 {mostrarTitulo && (
                   <div style={{ gap: espacos(tela).sub, marginBottom: cabeTudo ? Math.min(8, espacos(tela).cards) : espacos(tela).cards }} className={`flex flex-col ${primeira ? '' : `${cabeTudo ? 'pt-2' : 'pt-4'} border-t border-slate-800/60`} ${getAlinhamentoClass(estiloLinhas(tela).tituloAl)}`}>
-                    <h3 style={{ fontSize: `${tela.titulo1Tamanho || 18}px` }} className={`t-pergunta ${pesoFonte(tela.tituloBold)} ${caixaAlta(tela.tituloCaixa)} leading-tight ${getCorTextoLinhaClass(tela.titulo1Cor, 'text-white')}`}>
+                    <h3 style={{ fontSize: `${tela.titulo1Tamanho || 18}px`, ...fonteEBorda(tela, 'titulo', false) }} className={`t-pergunta ${pesoFonte(tela.tituloBold)} ${caixaAlta(tela.tituloCaixa)} leading-tight ${getCorTextoLinhaClass(tela.titulo1Cor, 'text-white')}`}>
                       <TituloRico texto={[tela.titulo1 || tela.titulo, tela.titulo2, tela.titulo3].filter(Boolean).join(' ')} />
                     </h3>
                     {tela.subtitulo && (
-                      <p style={{ fontSize: `${tela.subtituloTamanho || 13}px` }} className={`leading-snug ${getAlinhamentoClass(estiloLinhas(tela).subAl)} ${tela.subBold ? 'font-bold' : ''} ${caixaAlta(tela.subCaixa)} ${getCorTextoLinhaClass(tela.subtituloCor, 'text-slate-300')}`}>
+                      <p style={{ fontSize: `${tela.subtituloTamanho || 13}px`, ...fonteEBorda(tela, 'sub', false) }} className={`leading-snug ${getAlinhamentoClass(estiloLinhas(tela).subAl)} ${tela.subBold ? 'font-bold' : ''} ${caixaAlta(tela.subCaixa)} ${getCorTextoLinhaClass(tela.subtituloCor, 'text-slate-300')}`}>
                         {tela.subtitulo}
                       </p>
                     )}
@@ -1761,7 +1765,7 @@ export default function MobileForm({ preview = false }) {
                     <div className="space-y-2">
                       {tela.legendaEscala && (
                         <p
-                          style={{ fontSize: `${tela.escalaTamanho || 9}px`, ...faixaEstilo(tela.legendaFundo || 'escuro', tela.legendaFaixa) }}
+                          style={{ fontSize: `${tela.escalaTamanho || 9}px`, ...faixaEstilo(tela.legendaFundo || 'escuro', tela.legendaFaixa), ...fonteEBorda(tela, 'legenda', tela.legendaFundo !== 'transparente') }}
                           className={`t-legenda text-center leading-snug ${tela.legendaBold ? 'font-bold' : ''} ${caixaAlta(tela.legendaCaixa)} ${getCorTextoLinhaClass(tela.legendaCor, 'text-slate-300')} ${getFaixaFundoClass(tela.legendaFundo || 'escuro', '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}
                         >
                           {parseScaleLegendItems(tela.legendaEscala).map((item, li) => (
@@ -1797,7 +1801,7 @@ export default function MobileForm({ preview = false }) {
                         return (
                           <div
                             key={opt.id || oi}
-                            style={faixaEstilo(tela.itemFundo || 'escuro', tela.itemFaixa)}
+                            style={{ ...faixaEstilo(tela.itemFundo || 'escuro', tela.itemFaixa), ...fonteEBorda(tela, 'item', tela.itemFundo !== 'transparente') }}
                             className={`t-item space-y-2 text-left border-y ${getFaixaFundoClass(tela.itemFundo || 'escuro', '-mx-4 px-4 sm:-mx-6 sm:px-6')} rounded-none`}
                           >
                             <span
@@ -1948,7 +1952,7 @@ export default function MobileForm({ preview = false }) {
                       <button
                         type="button"
                         onClick={() => comFeedback(`ex_${tela.id}_${opt.id}`, () => handleSelectOpcaoExtra(idx, opt), opt.temGaveta)}
-                        style={{ ...medidas.caixa, ...cardEfeitoInline }}
+                        style={{ ...medidas.caixa, ...cardEfeitoInline, ...fonteEBorda({ cardFamilia: tela.cardFamilia ?? questionsConfig?.cardFamilia, cardBorda: tela.cardBorda ?? questionsConfig?.cardBorda, cardBordaLargura: tela.cardBordaLargura ?? questionsConfig?.cardBordaLargura }, 'card', true, false) }}
                         className={`t-card w-full text-left px-4 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-between group border border-white/15 ${cardFundoCls} ${
                           isGavetaAberta ? 'border-amber-400/80 ring-1 ring-amber-400/40' : ''
                         } ${efeitoClique(`ex_${tela.id}_${opt.id}`)

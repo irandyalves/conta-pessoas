@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import { MoveVertical, Plus } from 'lucide-react';
-import { alturaFaixa, FAIXA_MAX, FAIXA_MIN, FUNDOS_CAPTION, CORES_TEXTO_LINHAS } from '../utils/estilos';
-import { Alinhamento, Campo, Cores, Deslizante, Dobra, Secao } from './Controles';
+import { alturaFaixa, CORES_LINHA, CORES_TEXTO_LINHAS, FAIXA_MAX, FAIXA_MIN, FUNDOS_CAPTION } from '../utils/estilos';
+import { Alinhamento, Alternar, Campo, Cores, Deslizante, Dobra, MiniSlider, Secao, SeletorFonte } from './Controles';
 
 /**
  * Textos de uma tela, um por linha, na mesma ordem em que aparecem no celular.
  * Cada linha mostra só os controles cujo "on..." foi informado:
- * { rotulo, texto?, onTexto?, multilinha?, tamanho, min, max, onTamanho, cor, onCor, bold, onBold,
- *   alinhamento, onAlinhamento, fundo, onFundo, faixa, onFaixa, espaco, onEspaco }
- * onFaixa: slider da altura da faixa (aparece quando a linha tem cor de fundo).
- * onEspaco: mostra o slider de distância ENTRE esta linha e a próxima.
+ * { rotulo, texto?, onTexto?, multilinha?, tamanho, min, max, onTamanho, familia, onFamilia, cor, onCor, bold, onBold,
+ *   caixa, onCaixa, alinhamento, onAlinhamento, fundo, onFundo, faixa, onFaixa, borda, onBorda, bordaLargura, onBordaLargura,
+ *   espaco, onEspaco }
+ * Altura e borda aparecem quando a linha tem cor de fundo. onEspaco: distância ENTRE esta linha e a próxima.
  */
 export default function EstiloLinhasTitulo({ linhas }) {
   // Só aparecem os textos que estão no celular. Os vazios ficam num botão "adicionar";
@@ -20,7 +20,7 @@ export default function EstiloLinhasTitulo({ linhas }) {
   const visiveis = linhas.filter(visivel);
   const vazias = linhas.filter((l) => !visivel(l));
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-1">
       {visiveis.map((l, i) => {
         const cor = CORES_TEXTO_LINHAS.find((c) => c.id === l.cor);
         const fundo = l.onFundo && l.fundo !== 'transparente' && FUNDOS_CAPTION.find((f) => f.id === l.fundo);
@@ -32,91 +32,60 @@ export default function EstiloLinhasTitulo({ linhas }) {
               aberta={i === 0 || Boolean(mantidas[l.rotulo])}
               lateral={
                 <span className="flex items-center gap-1.5 shrink-0" aria-hidden="true">
-                  {cor && <span className={`w-2.5 h-2.5 rounded-full ${cor.bg}`} />}
-                  {fundo && <span className={`w-2.5 h-2.5 rounded-sm ${fundo.dot}`} />}
-                  {l.tamanho && <span className="text-xs tabular-nums text-slate-400 w-9 text-right">{l.tamanho}px</span>}
+                  {cor && <span className={`w-2 h-2 rounded-full ${cor.bg}`} />}
+                  {fundo && <span className={`w-2 h-2 rounded-sm ${fundo.dot}`} />}
+                  {l.tamanho && <span className="text-[11px] tabular-nums text-slate-400 w-8 text-right">{l.tamanho}px</span>}
                 </span>
               }
             >
               {l.onTexto && <Campo valor={l.texto} onChange={(v) => { manter(l.rotulo); l.onTexto(v); }} multilinha={l.multilinha} placeholder={l.placeholder} />}
-              {l.onTamanho && <Deslizante rotulo="Tamanho" valor={l.tamanho} min={l.min ?? 9} max={l.max ?? 32} onChange={l.onTamanho} />}
-              {l.onCor && <Cores rotulo="Cor do texto" opcoes={CORES_TEXTO_LINHAS} valor={l.cor} onChange={l.onCor} />}
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                {l.onFamilia && <SeletorFonte rotulo="" valor={l.familia} onChange={l.onFamilia} />}
+                {l.onTamanho && <MiniSlider rotulo="Tamanho" valor={l.tamanho} min={l.min ?? 9} max={l.max ?? 32} onChange={l.onTamanho} />}
+                {l.onAlinhamento && <Alinhamento valor={l.alinhamento} onChange={l.onAlinhamento} />}
+                {(l.onBold || l.onCaixa) && (
+                  <span className="flex gap-1">
+                    {l.onBold && <Alternar rotulo="B" nome="Negrito" valor={l.bold} onChange={l.onBold} />}
+                    {l.onCaixa && <Alternar rotulo="AA" nome="Caixa alta" valor={l.caixa} onChange={l.onCaixa} />}
+                  </span>
+                )}
+              </div>
+              {l.onCor && <Cores rotulo="Texto" opcoes={CORES_TEXTO_LINHAS} valor={l.cor} onChange={l.onCor} lateral={<span />} />}
               {l.onFundo && (
                 <Cores
-                  rotulo="Cor de fundo"
+                  rotulo="Fundo"
                   opcoes={FUNDOS_CAPTION}
                   campo="dot"
                   valor={l.fundo}
                   onChange={l.onFundo}
-                  lateral={l.onFaixa && fundo ? (
-                    <label className="flex items-center gap-2 flex-1 min-w-[120px]" title="Altura da faixa">
-                      <span className="text-xs text-slate-400 shrink-0">Altura</span>
-                      <input
-                        type="range"
-                        aria-label="Altura da faixa"
-                        min={FAIXA_MIN}
-                        max={FAIXA_MAX}
-                        step={5}
-                        value={alturaFaixa(l.faixa)}
-                        onChange={(e) => l.onFaixa(Number(e.target.value))}
-                        className="ed-range flex-1 min-w-0"
-                        style={{ '--p': `${((alturaFaixa(l.faixa) - FAIXA_MIN) / (FAIXA_MAX - FAIXA_MIN)) * 100}%` }}
-                      />
-                      <span className="text-xs tabular-nums text-slate-200 w-10 text-right shrink-0">{alturaFaixa(l.faixa)}%</span>
-                    </label>
-                  ) : null}
+                  lateral={l.onFaixa && fundo ? <MiniSlider rotulo="Altura" valor={alturaFaixa(l.faixa)} min={FAIXA_MIN} max={FAIXA_MAX} passo={5} unidade="%" onChange={l.onFaixa} /> : <span />}
                 />
               )}
-              {(l.onAlinhamento || l.onBold) && (
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-slate-400 w-28 shrink-0">Estilo</span>
-                  {l.onAlinhamento && <Alinhamento valor={l.alinhamento} onChange={l.onAlinhamento} />}
-                  {l.onBold && (
-                    <div className="rounded-lg bg-slate-950/60 p-1">
-                      <button
-                        type="button"
-                        title="Negrito"
-                        aria-pressed={Boolean(l.bold)}
-                        onClick={() => l.onBold(!l.bold)}
-                        className={`w-7 h-6 rounded-md text-xs font-bold transition ${l.bold ? 'bg-slate-100 text-slate-900' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
-                      >
-                        B
-                      </button>
-                    </div>
-                  )}
-                  {l.onCaixa && (
-                    <div className="rounded-lg bg-slate-950/60 p-1">
-                      <button
-                        type="button"
-                        title="Caixa alta"
-                        aria-label="Caixa alta"
-                        aria-pressed={Boolean(l.caixa)}
-                        onClick={() => l.onCaixa(!l.caixa)}
-                        className={`px-2 h-6 rounded-md text-xs font-bold transition ${l.caixa ? 'bg-slate-100 text-slate-900' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
-                      >
-                        AA
-                      </button>
-                    </div>
-                  )}
-                </div>
+              {l.onBorda && fundo && (
+                <Cores
+                  rotulo="Borda"
+                  opcoes={CORES_LINHA}
+                  campo="hex"
+                  valor={l.borda || 'padrao'}
+                  onChange={l.onBorda}
+                  lateral={<MiniSlider rotulo="Largura" valor={l.bordaLargura ?? 1} min={0} max={10} passo={0.5} onChange={l.onBordaLargura} />}
+                />
               )}
             </Dobra>
             {l.onEspaco && (
-              <div className="flex items-center gap-2 pl-4 pr-4">
-                <MoveVertical className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <Deslizante rotulo="Espaço" valor={l.espaco} min={0} max={80} onChange={l.onEspaco} />
-                </div>
+              <div className="flex items-center gap-1.5 pl-3 h-5">
+                <MoveVertical className="w-3 h-3 text-slate-500 shrink-0" />
+                <MiniSlider rotulo="Espaço" valor={l.espaco} min={0} max={80} onChange={l.onEspaco} />
               </div>
             )}
           </React.Fragment>
         );
       })}
       {vazias.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5 pt-1">
+        <div className="flex flex-wrap items-center gap-1 pt-0.5">
           {vazias.map((l) => (
-            <button key={l.rotulo} type="button" onClick={() => manter(l.rotulo)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs text-slate-400 hover:text-white hover:bg-slate-800 transition">
-              <Plus className="w-3.5 h-3.5" />
+            <button key={l.rotulo} type="button" onClick={() => manter(l.rotulo)} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] text-slate-400 hover:text-white hover:bg-slate-800 transition">
+              <Plus className="w-3 h-3" />
               <span>{l.rotulo}</span>
             </button>
           ))}

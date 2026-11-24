@@ -60,7 +60,7 @@ import IconeEspera, { ICONES_ESPERA } from './IconeEspera';
 import PreviewCelular from './PreviewCelular';
 import EscalaVisual, { ESTILOS_ESCALA } from './EscalaVisual';
 import EstiloLinhasTitulo, { ControleEspacos } from './EstiloLinhasTitulo';
-import { BotaoObrigatorio, Campo, Chave, Cores, Deslizante, Lista, QuestaoArrastavel, Secao, Segmentos, SeletorIcone } from './Controles';
+import { BotaoObrigatorio, Campo, Chave, Cores, Deslizante, Lista, MiniSlider, QuestaoArrastavel, Secao, Segmentos, SeletorFonte, SeletorIcone } from './Controles';
 import { ICONES_CARDS, iconesDaTela } from '../utils/icones';
 import { PRESETS_PESQUISAS } from '../utils/presets';
 
@@ -136,6 +136,13 @@ export const EFEITOS_CARDS = [
   { id: 'glow', label: 'Brilho', desc: 'Iluminação de contorno' },
 ];
 
+// Fonte e borda de uma linha de texto (ler/gravar recebem 'Familia', 'Borda' ou 'BordaLargura')
+const fonteBordaLinha = (ler, gravar) => ({
+  familia: ler('Familia'), onFamilia: (v) => gravar('Familia', v),
+  borda: ler('Borda'), onBorda: (v) => gravar('Borda', v),
+  bordaLargura: ler('BordaLargura'), onBordaLargura: (v) => gravar('BordaLargura', v)
+});
+
 const EFEITOS_CAPA = [{ id: 'nenhum', label: 'Nenhum' }, ...EFEITOS_CARDS.filter((e) => e.id !== 'padrao' && e.id !== 'tema')];
 
 // Sub-abas de uma tela (Textos, Opções, Aparência)
@@ -148,7 +155,7 @@ const SubAbas = ({ opcoes, valor, onChange }) => (
         type="button"
         aria-pressed={valor === o.id}
         onClick={() => onChange(o.id)}
-        className={`flex-1 px-3 py-2 rounded-lg text-xs transition ${valor === o.id ? 'bg-slate-700 text-white font-semibold' : 'text-slate-400 hover:text-white'}`}
+        className={`flex-1 px-3 py-1.5 rounded-lg text-xs transition ${valor === o.id ? 'bg-slate-700 text-white font-semibold' : 'text-slate-400 hover:text-white'}`}
       >
         {o.label}
       </button>
@@ -478,7 +485,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
     const classe = 'px-2.5 py-1.5 rounded-lg text-xs text-slate-300 bg-slate-800/60 hover:bg-slate-700 hover:text-white transition disabled:opacity-40';
     return (
       <div className="flex flex-wrap items-center gap-1.5">
-        <span className="text-xs text-slate-400 w-28 pl-4">Formatação</span>
+        <span className="text-[11px] text-slate-400 w-[74px] pl-3">Formatação</span>
         <button type="button" onClick={() => copiarEstilo(ehP1, extraIndex)} className={classe}>Copiar</button>
         <button type="button" disabled={!estiloCopiado} onClick={() => colarEstilo(ehP1, extraIndex)} className={classe}>Colar aqui</button>
         <button type="button" onClick={() => replicarEmTodas(ehP1, extraIndex)} className={classe}>Usar em todas as telas</button>
@@ -544,17 +551,19 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
   );
 
   // Efeitos de um botão: os mesmos dos cards, mais cores, linha, altura e cantos
-  const EfeitosBotao = ({ titulo, descricao, ler, gravar, alturaPadrao, alturaMax, raioPadrao, espessuraPadrao = 1, fontePadrao, comLargura }) => {
+  const EfeitosBotao = ({ titulo, descricao, ler, gravar, alturaPadrao, alturaMax, raioPadrao, espessuraPadrao = 1, fontePadrao, comLargura, topo = null }) => {
     const efeito = ler('Efeito') || 'nenhum';
     return (
       <Secao titulo={titulo} descricao={descricao}>
+        {topo}
         <Segmentos rotulo="Efeito" opcoes={EFEITOS_CAPA} valor={efeito} onChange={(v) => gravar('Efeito', v)} />
+        <SeletorFonte valor={ler('Familia')} onChange={(v) => gravar('Familia', v)} />
         {efeito !== 'nenhum' && <Deslizante rotulo="Profundidade" valor={ler('Profundidade') || 5} min={1} max={10} unidade="" onChange={(v) => gravar('Profundidade', v)} />}
         <Cores rotulo="Cor do botão" opcoes={CORES_BOTAO} campo="hex" valor={ler('Cor') || 'padrao'} onChange={(v) => gravar('Cor', v)} />
         <Cores rotulo="Cor do texto" opcoes={CORES_TEXTO_BOTAO} campo="hex" valor={ler('CorTexto') || 'padrao'} onChange={(v) => gravar('CorTexto', v)} />
-        <Cores rotulo="Cor da linha" opcoes={CORES_LINHA} campo="hex" valor={ler('Linha') || 'padrao'} onChange={(v) => gravar('Linha', v)} />
-        <Deslizante rotulo="Espessura da linha" valor={ler('LinhaEspessura') ?? espessuraPadrao} min={0} max={6} passo={0.5} onChange={(v) => gravar('LinhaEspessura', v)} />
-        {fontePadrao && <Deslizante rotulo="Tamanho do texto" valor={ler('Fonte') ?? fontePadrao} min={11} max={32} onChange={(v) => gravar('Fonte', v)} />}
+        <Cores rotulo="Borda" opcoes={CORES_LINHA} campo="hex" valor={ler('Linha') || 'padrao'} onChange={(v) => gravar('Linha', v)} />
+        <Deslizante rotulo="Largura borda" valor={ler('LinhaEspessura') ?? espessuraPadrao} min={0} max={6} passo={0.5} onChange={(v) => gravar('LinhaEspessura', v)} />
+        {fontePadrao && <Deslizante rotulo="Tamanho texto" valor={ler('Fonte') ?? fontePadrao} min={11} max={32} onChange={(v) => gravar('Fonte', v)} />}
         {comLargura && <Deslizante rotulo="Largura" valor={ler('Largura') ?? 100} min={40} max={100} passo={5} unidade="%" onChange={(v) => gravar('Largura', v)} />}
         <Deslizante rotulo="Altura" valor={ler('Altura') ?? alturaPadrao} min={28} max={alturaMax} onChange={(v) => gravar('Altura', v)} />
         <Deslizante rotulo="Cantos" valor={ler('Raio') ?? raioPadrao} min={0} max={40} onChange={(v) => gravar('Raio', v)} />
@@ -623,10 +632,11 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
       <Secao titulo="Tamanho">
         <Deslizante rotulo="Altura do card" valor={alturaCard(ler('cardAltura'))} min={CARD_ALTURA_MIN} max={CARD_ALTURA_MAX} onChange={(v) => gravar('cardAltura', v)} />
         <Deslizante rotulo="Espaço entre cards" valor={Number(ler('cardEspaco') ?? CARD_ESPACO_PADRAO)} min={0} max={40} onChange={(v) => gravar('cardEspaco', v)} />
-        <div className="grid grid-cols-2 gap-4" >
+        <div className="flex flex-wrap gap-x-6 gap-y-2">
           <Deslizante rotulo="Cantos esquerda" valor={raios.esq} min={0} max={40} onChange={(v) => gravar('cardRaioEsq', v)} />
           <Deslizante rotulo="Cantos direita" valor={raios.dir} min={0} max={40} onChange={(v) => gravar('cardRaioDir', v)} />
         </div>
+        <SeletorFonte valor={ler('cardFamilia')} onChange={(v) => gravar('cardFamilia', v)} />
         <Deslizante rotulo="Título" valor={ler('cardFonteTitulo') || 16} min={12} max={24} onChange={(v) => gravar('cardFonteTitulo', v)} />
         {temDescricao && <Deslizante rotulo="Descrição" valor={ler('cardFonteSubtitulo') || 12} min={9} max={18} onChange={(v) => gravar('cardFonteSubtitulo', v)} />}
         {opcoes.length > 2 && <Deslizante rotulo="Cards por página" valor={Math.min(15, porPagina)} min={2} max={15} unidade="" onChange={(v) => gravar('cardsPorTela', v)} />}
@@ -638,6 +648,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
       </Secao>
       <Secao titulo="Cores">
         <Cores rotulo="Fundo do card" opcoes={FUNDOS_CARDS} campo="amostra" quadrado valor={ler('cardFundoEstilo') || 'escuro'} onChange={(v) => gravar('cardFundoEstilo', v)} />
+        <Cores rotulo="Borda" opcoes={CORES_LINHA} campo="hex" valor={ler('cardBorda') || 'padrao'} onChange={(v) => gravar('cardBorda', v)} lateral={<MiniSlider rotulo="Largura" valor={ler('cardBordaLargura') ?? 1} min={0} max={10} passo={0.5} onChange={(v) => gravar('cardBordaLargura', v)} />} />
         <Cores rotulo="Título" opcoes={CORES_FONTE_TITULO} campo="dot" valor={ler('cardCorFonteTitulo') || 'branco'} onChange={(v) => gravar('cardCorFonteTitulo', v)} />
         {temDescricao && <Cores rotulo="Descrição" opcoes={CORES_FONTE_SUBTITULO} campo="dot" valor={ler('cardCorFonteSubtitulo') || 'cinza'} onChange={(v) => gravar('cardCorFonteSubtitulo', v)} />}
       </Secao>
@@ -648,7 +659,10 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
   // SALVAMENTO AUTOMÁTICO NO BANCO: 1,5s depois da última alteração
   const [autoSalvo, setAutoSalvo] = useState('');
   useEffect(() => {
-    if (!(isOpen || inline) || !configBaseRef.current || config === configBaseRef.current) return;
+    if (!(isOpen || inline) || !configBaseRef.current || config === configBaseRef.current) {
+      setAutoSalvo((a) => (a === 'pendente' ? '' : a));
+      return undefined;
+    }
     setAutoSalvo('pendente');
     const t = setTimeout(async () => {
       try {
@@ -1364,13 +1378,13 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
             </div>
 
             {/* CONTEÚDO ROLÁVEL DA ESQUERDA */}
-            <div ref={configColRef} className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 space-y-4 text-left custom-scrollbar">
+            <div ref={configColRef} className="flex-1 min-h-0 overflow-y-auto p-3 space-y-3 text-left custom-scrollbar">
               
               {/* ====================================================== */}
               {/* ABA: BOAS-VINDAS (ESPERA / START DO ADMIN)             */}
               {/* ====================================================== */}
               {activeTab === 'inicio' && (
-                <div className="space-y-4">
+                <div className="space-y-2.5">
                   <Secao titulo="Ícone animado" descricao="Aparece no celular enquanto a pesquisa não foi liberada.">
                     <div className="grid grid-cols-5 gap-1.5">
                       {ICONES_ESPERA.map((ic) => {
@@ -1402,7 +1416,9 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       max: 42,
                       onTamanho: (v) => setCampo(`esperaLinha${n}Tamanho`, v),
                       cor: config[`esperaLinha${n}Cor`] || cor,
-                      onCor: (v) => setCampo(`esperaLinha${n}Cor`, v)
+                      onCor: (v) => setCampo(`esperaLinha${n}Cor`, v),
+                      familia: config[`esperaLinha${n}Familia`],
+                      onFamilia: (v) => setCampo(`esperaLinha${n}Familia`, v)
                     }))}
                   />
 
@@ -1431,14 +1447,19 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     <Chave rotulo="Travar cabeçalho" descricao="O título fica preso no alto do celular enquanto a pessoa rola a página." valor={config.travarCabecalho !== false} onChange={(v) => setCampo('travarCabecalho', v)} />
                   </Secao>
 
-                  <Secao titulo="Botão Começar: texto">
-                    <Chave rotulo="Mostrar botão de começar" descricao="Desligado, o participante cai direto na Tela 1." valor={config.mostrarBotaoComecar !== false} onChange={(v) => setCampo('mostrarBotaoComecar', v)} />
-                    {config.mostrarBotaoComecar !== false && (
-                      <Campo rotulo="Texto do botão" valor={config.pergunta1BotaoComecarTexto ?? 'COMEÇAR'} onChange={(v) => setCampo('pergunta1BotaoComecarTexto', v)} placeholder="COMEÇAR" />
-                    )}
-                  </Secao>
+                  {config.mostrarBotaoComecar === false && (
+                    <Secao titulo="Botão Começar">
+                      <Chave rotulo="Mostrar botão de começar" descricao="Desligado, o participante cai direto na Tela 1." valor={false} onChange={(v) => setCampo('mostrarBotaoComecar', v)} />
+                    </Secao>
+                  )}
                   {config.mostrarBotaoComecar !== false && EfeitosBotao({
-                    titulo: 'Botão Começar: aparência',
+                    titulo: 'Botão Começar',
+                    topo: (
+                      <>
+                        <Campo valor={config.pergunta1BotaoComecarTexto ?? 'COMEÇAR'} onChange={(v) => setCampo('pergunta1BotaoComecarTexto', v)} placeholder="Texto do botão" />
+                        <Chave rotulo="Mostrar botão de começar" descricao="Desligado, o participante cai direto na Tela 1." valor onChange={(v) => setCampo('mostrarBotaoComecar', v)} />
+                      </>
+                    ),
                     ler: (k) => config[`comecar${k}`],
                     gravar: (k, v) => setCampo(`comecar${k}`, v),
                     alturaPadrao: 56,
@@ -1449,11 +1470,9 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     comLargura: true
                   })}
 
-                  <Secao titulo="Botão Avançar: texto">
-                    <Campo rotulo="Texto do botão" valor={config.botaoAvancarTexto ?? 'Avançar'} onChange={(v) => setCampo('botaoAvancarTexto', v)} placeholder="Avançar" />
-                  </Secao>
                   {EfeitosBotao({
-                    titulo: 'Botão Avançar: aparência',
+                    titulo: 'Botão Avançar',
+                    topo: <Campo valor={config.botaoAvancarTexto ?? 'Avançar'} onChange={(v) => setCampo('botaoAvancarTexto', v)} placeholder="Texto do botão" />,
                     ler: (k) => config[`avancar${k}`],
                     gravar: (k, v) => setCampo(`avancar${k}`, v),
                     alturaPadrao: 58,
@@ -1469,7 +1488,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               {/* ABA: INÍCIO (CAPA DO EVENTO COM BOTÃO COMEÇAR)         */}
               {/* ====================================================== */}
               {activeTab === 'inicio_comecar' && (
-                <div className="space-y-4">
+                <div className="space-y-2.5">
                   {/* Mesma ordem do celular: o slider entre dois títulos é o espaço entre eles */}
                   <EstiloLinhasTitulo
                     key={activeTab}
@@ -1495,6 +1514,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         onBold: (v) => setCampo(`${l.id}Bold`, v),
                         caixa: config[`${l.id}Caixa`],
                         onCaixa: (v) => setCampo(`${l.id}Caixa`, v),
+                        ...fonteBordaLinha((k) => config[`${l.id}${k}`], (k, v) => setCampo(`${l.id}${k}`, v)),
                         alinhamento: config[`${l.id}Alinhamento`] || config.capaAlinhamento || 'center',
                         onAlinhamento: (v) => setCampo(`${l.id}Alinhamento`, v),
                         fundo: config[`${l.id}Fundo`] || l.fundo,
@@ -1527,7 +1547,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               {/* ABA: TELA 1 (COM TÍTULO 1 & 2 E SLIDERS DE DESIGN)    */}
               {/* ====================================================== */}
               {activeTab === 'tela_1' && (
-                <div className="space-y-4">
+                <div className="space-y-2.5">
                   <SubAbas
                     valor={subAtualP1}
                     onChange={setSubTabTela1}
@@ -1544,16 +1564,16 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                   </div>
 
                   {subAtualP1 === 'pergunta' && (
-                    <div className="space-y-4">
+                    <div className="space-y-2.5">
                       <EstiloLinhasTitulo
                         key={activeTab}
                         linhas={(() => {
                           const e = estiloLinhas(config, 'pergunta1');
                           return [
-                            { rotulo: 'Título 1', texto: config.pergunta1Titulo ?? '', onTexto: (v) => setCampo('pergunta1Titulo', v), tamanho: config.pergunta1FonteTamanho || 18, min: 12, max: 36, onTamanho: (v) => setCampo('pergunta1FonteTamanho', v), cor: config.pergunta1TituloCor || 'branco', onCor: (v) => setCampo('pergunta1TituloCor', v), bold: config.pergunta1TituloBold !== false, onBold: (v) => setCampo('pergunta1TituloBold', v), caixa: config.pergunta1TituloCaixa, onCaixa: (v) => setCampo('pergunta1TituloCaixa', v), alinhamento: e.tituloAl, onAlinhamento: (v) => setCampo('pergunta1TituloAlinhamento', v), fundo: e.tituloFundo, onFundo: (v) => setCampo('pergunta1TituloFundo', v), faixa: config.pergunta1TituloFaixa ?? config.faixaPadrao, onFaixa: (v) => gravarEstilo('p1', 'tituloFaixa', v) },
+                            { rotulo: 'Título 1', texto: config.pergunta1Titulo ?? '', onTexto: (v) => setCampo('pergunta1Titulo', v), tamanho: config.pergunta1FonteTamanho || 18, min: 12, max: 36, onTamanho: (v) => setCampo('pergunta1FonteTamanho', v), cor: config.pergunta1TituloCor || 'branco', onCor: (v) => setCampo('pergunta1TituloCor', v), bold: config.pergunta1TituloBold !== false, onBold: (v) => setCampo('pergunta1TituloBold', v), caixa: config.pergunta1TituloCaixa, onCaixa: (v) => setCampo('pergunta1TituloCaixa', v), ...fonteBordaLinha((k) => config[`pergunta1Titulo${k}`], (k, v) => setCampo(`pergunta1Titulo${k}`, v)), alinhamento: e.tituloAl, onAlinhamento: (v) => setCampo('pergunta1TituloAlinhamento', v), fundo: e.tituloFundo, onFundo: (v) => setCampo('pergunta1TituloFundo', v), faixa: config.pergunta1TituloFaixa ?? config.faixaPadrao, onFaixa: (v) => gravarEstilo('p1', 'tituloFaixa', v) },
                             { rotulo: 'Título 2', texto: config.pergunta1Titulo2 ?? '', onTexto: (v) => setCampo('pergunta1Titulo2', v), tamanho: config.pergunta1Titulo2Tamanho || 16, min: 10, max: 32, onTamanho: (v) => setCampo('pergunta1Titulo2Tamanho', v), cor: config.pergunta1Titulo2Cor || 'dourado', onCor: (v) => setCampo('pergunta1Titulo2Cor', v) },
                             { rotulo: 'Título 3', texto: config.pergunta1Titulo3 ?? '', onTexto: (v) => setCampo('pergunta1Titulo3', v), tamanho: config.pergunta1Titulo3Tamanho || 15, min: 10, max: 30, onTamanho: (v) => setCampo('pergunta1Titulo3Tamanho', v), cor: config.pergunta1Titulo3Cor || 'verde', onCor: (v) => setCampo('pergunta1Titulo3Cor', v) },
-                            { rotulo: 'Texto abaixo', texto: config.pergunta1TextoAbaixo ?? '', onTexto: (v) => setCampo('pergunta1TextoAbaixo', v), multilinha: true, tamanho: config.pergunta1TextoAbaixoTamanho || 14, min: 9, max: 26, onTamanho: (v) => setCampo('pergunta1TextoAbaixoTamanho', v), cor: config.pergunta1TextoAbaixoCor || 'cinza', onCor: (v) => setCampo('pergunta1TextoAbaixoCor', v), bold: Boolean(config.pergunta1SubBold), onBold: (v) => setCampo('pergunta1SubBold', v), caixa: config.pergunta1SubCaixa, onCaixa: (v) => setCampo('pergunta1SubCaixa', v), alinhamento: e.subAl, onAlinhamento: (v) => setCampo('pergunta1SubAlinhamento', v), fundo: e.subFundo, onFundo: (v) => setCampo('pergunta1SubFundo', v), faixa: config.pergunta1SubFaixa ?? config.faixaPadrao, onFaixa: (v) => gravarEstilo('p1', 'subFaixa', v) }
+                            { rotulo: 'Texto abaixo', texto: config.pergunta1TextoAbaixo ?? '', onTexto: (v) => setCampo('pergunta1TextoAbaixo', v), multilinha: true, tamanho: config.pergunta1TextoAbaixoTamanho || 14, min: 9, max: 26, onTamanho: (v) => setCampo('pergunta1TextoAbaixoTamanho', v), cor: config.pergunta1TextoAbaixoCor || 'cinza', onCor: (v) => setCampo('pergunta1TextoAbaixoCor', v), bold: Boolean(config.pergunta1SubBold), onBold: (v) => setCampo('pergunta1SubBold', v), caixa: config.pergunta1SubCaixa, onCaixa: (v) => setCampo('pergunta1SubCaixa', v), ...fonteBordaLinha((k) => config[`pergunta1Sub${k}`], (k, v) => setCampo(`pergunta1Sub${k}`, v)), alinhamento: e.subAl, onAlinhamento: (v) => setCampo('pergunta1SubAlinhamento', v), fundo: e.subFundo, onFundo: (v) => setCampo('pergunta1SubFundo', v), faixa: config.pergunta1SubFaixa ?? config.faixaPadrao, onFaixa: (v) => gravarEstilo('p1', 'subFaixa', v) }
                           ];
                         })()}
                       />
@@ -1568,7 +1588,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                   )}
 
                   {subAtualP1 === 'aparencia' && (
-                    <div className="space-y-4">
+                    <div className="space-y-2.5">
                       {AparenciaCards({ ler: (k) => config[k], gravar: (k, v) => gravarEstilo('p1', k, v), campoIcones: 'mostrarIconesCards', porPagina: cardsPorTelaP1, opcoes: cardsAtivosP1, raios: raiosCard(config, telaP1Cantos(config)) })}
                       {BarraFormatacao({ ehP1: true })}
                     </div>
@@ -1620,7 +1640,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             indice={idx}
                             total={(config.opcoesChegada || []).length}
                             onMover={(de, para) => setConfig((c) => ({ ...c, opcoesChegada: moverItem(c.opcoesChegada, de, para) }))}
-                            className={`-mx-4 sm:-mx-5 px-4 sm:px-5 py-4 flex flex-col gap-3 border-t border-dashed border-slate-600 ${isAtivo ? '' : 'opacity-50'}`}
+                            className={`-mx-3 px-5 py-2.5 flex flex-col gap-2 border-t border-dashed border-slate-600 ${isAtivo ? '' : 'opacity-50'}`}
                           >
                             {/* Barra Superior do Card */}
                             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1980,7 +2000,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 })();
 
                 return (
-                  <div className="space-y-4">
+                  <div className="space-y-2.5">
                     {/* Barra Superior da Tela Extra */}
                     <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-slate-800">
                       <div className="flex items-center gap-2">
@@ -2069,7 +2089,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                 indice={pos}
                                 total={membros.length}
                                 onMover={(de, para) => moverPergunta(membros, de, para)}
-                                className="-mx-4 sm:-mx-5 px-4 sm:px-5 py-4 flex flex-col gap-3 border-t border-dashed border-slate-600"
+                                className="-mx-3 px-5 py-2.5 flex flex-col gap-2 border-t border-dashed border-slate-600"
                               >
                                 <div className="flex flex-wrap items-center gap-2">
                                   <span className="text-xs font-semibold text-slate-200 w-4">{pos + 1}</span>
@@ -2118,7 +2138,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     )}
 
                     {subAtual === 'efeitos' && (
-                      <div className="space-y-4">
+                      <div className="space-y-2.5">
                         {telaAlvo.tipo === 'grade' && (
                           <Secao titulo="Notas">
                             <Segmentos rotulo="Mostrar" opcoes={[{ id: 'numeros', label: 'Números' }, { id: 'rostos', label: 'Carinhas' }]} valor={(telaAlvo.gradeFormato ?? config.gradeFormato) || 'numeros'} onChange={(v) => gravarEstilo(extraIndex, 'gradeFormato', v)} />
@@ -2147,7 +2167,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     )}
 
                     {subAtual === 'pergunta' && (
-                      <div className="space-y-4">
+                      <div className="space-y-2.5">
                         {membros.length > 1 && (
                           <Segmentos
                             rotulo="Formatar pergunta"
@@ -2162,13 +2182,13 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             const e = estiloLinhas(telaAlvo);
                             const set = (k) => (v) => handleUpdateTelaProp(extraIndex, k, v);
                             const linhasTela = [
-                              { rotulo: 'Título 1', texto: telaAlvo.titulo1 ?? telaAlvo.titulo ?? '', onTexto: (v) => { set('titulo1')(v); set('titulo')(`${v} ${telaAlvo.titulo2 || ''}`.trim()); }, tamanho: telaAlvo.titulo1Tamanho || 18, min: 11, max: 36, onTamanho: set('titulo1Tamanho'), cor: telaAlvo.titulo1Cor || 'branco', onCor: set('titulo1Cor'), bold: telaAlvo.tituloBold !== false, onBold: set('tituloBold'), caixa: telaAlvo.tituloCaixa, onCaixa: set('tituloCaixa'), alinhamento: e.tituloAl, onAlinhamento: set('tituloAlinhamento'), fundo: e.tituloFundo, onFundo: set('tituloFundo'), faixa: telaAlvo.tituloFaixa ?? config.faixaPadrao, onFaixa: (v) => gravarEstilo(extraIndex, 'tituloFaixa', v) },
+                              { rotulo: 'Título 1', texto: telaAlvo.titulo1 ?? telaAlvo.titulo ?? '', onTexto: (v) => { set('titulo1')(v); set('titulo')(`${v} ${telaAlvo.titulo2 || ''}`.trim()); }, tamanho: telaAlvo.titulo1Tamanho || 18, min: 11, max: 36, onTamanho: set('titulo1Tamanho'), cor: telaAlvo.titulo1Cor || 'branco', onCor: set('titulo1Cor'), bold: telaAlvo.tituloBold !== false, onBold: set('tituloBold'), caixa: telaAlvo.tituloCaixa, onCaixa: set('tituloCaixa'), ...fonteBordaLinha((k) => telaAlvo[`titulo${k}`], (k, v) => handleUpdateTelaProp(extraIndex, `titulo${k}`, v)), alinhamento: e.tituloAl, onAlinhamento: set('tituloAlinhamento'), fundo: e.tituloFundo, onFundo: set('tituloFundo'), faixa: telaAlvo.tituloFaixa ?? config.faixaPadrao, onFaixa: (v) => gravarEstilo(extraIndex, 'tituloFaixa', v) },
                               { rotulo: 'Título 2', texto: telaAlvo.titulo2 ?? '', onTexto: (v) => { set('titulo2')(v); set('titulo')(`${telaAlvo.titulo1 || telaAlvo.titulo || ''} ${v}`.trim()); }, tamanho: telaAlvo.titulo2Tamanho || 15, min: 11, max: 36, onTamanho: set('titulo2Tamanho'), cor: telaAlvo.titulo2Cor || 'dourado', onCor: set('titulo2Cor') },
                               { rotulo: 'Título 3', texto: telaAlvo.titulo3 ?? '', onTexto: set('titulo3'), tamanho: telaAlvo.titulo3Tamanho || 14, min: 11, max: 36, onTamanho: set('titulo3Tamanho'), cor: telaAlvo.titulo3Cor || 'verde', onCor: set('titulo3Cor') },
-                              { rotulo: 'Texto abaixo', texto: telaAlvo.subtitulo ?? '', onTexto: set('subtitulo'), multilinha: true, tamanho: telaAlvo.subtituloTamanho || 12, min: 9, max: 26, onTamanho: set('subtituloTamanho'), cor: telaAlvo.subtituloCor || 'cinza', onCor: set('subtituloCor'), bold: Boolean(telaAlvo.subBold), onBold: set('subBold'), caixa: telaAlvo.subCaixa, onCaixa: set('subCaixa'), alinhamento: e.subAl, onAlinhamento: set('subAlinhamento'), fundo: e.subFundo, onFundo: set('subFundo'), faixa: telaAlvo.subFaixa ?? config.faixaPadrao, onFaixa: (v) => gravarEstilo(extraIndex, 'subFaixa', v) },
+                              { rotulo: 'Texto abaixo', texto: telaAlvo.subtitulo ?? '', onTexto: set('subtitulo'), multilinha: true, tamanho: telaAlvo.subtituloTamanho || 12, min: 9, max: 26, onTamanho: set('subtituloTamanho'), cor: telaAlvo.subtituloCor || 'cinza', onCor: set('subtituloCor'), bold: Boolean(telaAlvo.subBold), onBold: set('subBold'), caixa: telaAlvo.subCaixa, onCaixa: set('subCaixa'), ...fonteBordaLinha((k) => telaAlvo[`sub${k}`], (k, v) => handleUpdateTelaProp(extraIndex, `sub${k}`, v)), alinhamento: e.subAl, onAlinhamento: set('subAlinhamento'), fundo: e.subFundo, onFundo: set('subFundo'), faixa: telaAlvo.subFaixa ?? config.faixaPadrao, onFaixa: (v) => gravarEstilo(extraIndex, 'subFaixa', v) },
                               ...(telaAlvo.tipo === 'grade' ? [
-                                { rotulo: 'Legenda', texto: telaAlvo.legendaEscala ?? '', onTexto: set('legendaEscala'), placeholder: '1 = Péssimo; 5 = Ótimo; NA = Não se aplica', tamanho: telaAlvo.escalaTamanho || 9, min: 7, max: 18, onTamanho: set('escalaTamanho'), cor: telaAlvo.legendaCor || 'cinza', onCor: set('legendaCor'), bold: Boolean(telaAlvo.legendaBold), onBold: set('legendaBold'), caixa: telaAlvo.legendaCaixa, onCaixa: set('legendaCaixa'), fundo: telaAlvo.legendaFundo || 'escuro', onFundo: set('legendaFundo'), faixa: telaAlvo.legendaFaixa, onFaixa: set('legendaFaixa') },
-                                { rotulo: 'Itens da grade', texto: cardsAtivos.map((o) => o.titulo).join(', '), tamanho: telaAlvo.itemTamanho || 12, min: 8, max: 20, onTamanho: set('itemTamanho'), cor: telaAlvo.itemCor || 'branco', onCor: set('itemCor'), bold: telaAlvo.itemBold !== false, onBold: set('itemBold'), caixa: telaAlvo.itemCaixa, onCaixa: set('itemCaixa'), fundo: telaAlvo.itemFundo || 'escuro', onFundo: set('itemFundo'), faixa: telaAlvo.itemFaixa, onFaixa: set('itemFaixa') }
+                                { rotulo: 'Legenda', texto: telaAlvo.legendaEscala ?? '', onTexto: set('legendaEscala'), placeholder: '1 = Péssimo; 5 = Ótimo; NA = Não se aplica', tamanho: telaAlvo.escalaTamanho || 9, min: 7, max: 18, onTamanho: set('escalaTamanho'), cor: telaAlvo.legendaCor || 'cinza', onCor: set('legendaCor'), bold: Boolean(telaAlvo.legendaBold), onBold: set('legendaBold'), caixa: telaAlvo.legendaCaixa, onCaixa: set('legendaCaixa'), ...fonteBordaLinha((k) => telaAlvo[`legenda${k}`], (k, v) => handleUpdateTelaProp(extraIndex, `legenda${k}`, v)), fundo: telaAlvo.legendaFundo || 'escuro', onFundo: set('legendaFundo'), faixa: telaAlvo.legendaFaixa, onFaixa: set('legendaFaixa') },
+                                { rotulo: 'Itens da grade', texto: cardsAtivos.map((o) => o.titulo).join(', '), tamanho: telaAlvo.itemTamanho || 12, min: 8, max: 20, onTamanho: set('itemTamanho'), cor: telaAlvo.itemCor || 'branco', onCor: set('itemCor'), bold: telaAlvo.itemBold !== false, onBold: set('itemBold'), caixa: telaAlvo.itemCaixa, onCaixa: set('itemCaixa'), ...fonteBordaLinha((k) => telaAlvo[`item${k}`], (k, v) => handleUpdateTelaProp(extraIndex, `item${k}`, v)), fundo: telaAlvo.itemFundo || 'escuro', onFundo: set('itemFundo'), faixa: telaAlvo.itemFaixa, onFaixa: set('itemFaixa') }
                               ] : [])
                             ];
                             if (!emGrupo) return linhasTela;
@@ -2202,7 +2222,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     )}
 
                     {subAtual === 'aparencia' && (
-                      <div className="space-y-4">
+                      <div className="space-y-2.5">
                         {AparenciaCards({
                           ler: (k) => telaAlvo[k] ?? config[k],
                           gravar: (k, v) => gravarEstilo(extraIndex, k, v),
@@ -2399,7 +2419,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                     ...c,
                                     telasExtras: (c.telasExtras || []).map((t, i) => (i === extraIndex ? { ...t, opcoes: moverItem(t.opcoes, de, para) } : t))
                                   }))}
-                                  className={`-mx-4 sm:-mx-5 px-4 sm:px-5 py-4 flex flex-col gap-3 border-t border-dashed border-slate-600 ${isAtivo ? '' : 'opacity-50'}`}
+                                  className={`-mx-3 px-5 py-2.5 flex flex-col gap-2 border-t border-dashed border-slate-600 ${isAtivo ? '' : 'opacity-50'}`}
                                 >
                                   <div className="flex items-center justify-between gap-2">
                                     <div className="flex items-center gap-1.5">
@@ -2674,11 +2694,11 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 <EstiloLinhasTitulo
                   key={activeTab}
                   linhas={[
-                    { rotulo: 'Título 1', texto: config.finalTitulo1 ?? 'MUITO OBRIGADO', onTexto: (v) => setConfig((c) => ({ ...c, finalTitulo1: v, finalTitulo: `${v} ${c.finalTitulo2 || ''}`.trim() })), tamanho: config.finalTituloFonteTamanho || config.finalFonteTamanho || 26, min: 16, max: 40, onTamanho: (v) => setConfig((c) => ({ ...c, finalTituloFonteTamanho: v, finalFonteTamanho: v })) },
-                    { rotulo: 'Título 2', texto: config.finalTitulo2 ?? 'PELA SUA PRESENÇA.', onTexto: (v) => setConfig((c) => ({ ...c, finalTitulo2: v, finalTitulo: `${c.finalTitulo1 || ''} ${v}`.trim() })), tamanho: config.finalTituloFonteTamanho || config.finalFonteTamanho || 26, min: 16, max: 40, onTamanho: (v) => setConfig((c) => ({ ...c, finalTituloFonteTamanho: v, finalFonteTamanho: v })) },
-                    { rotulo: 'Mensagem', texto: config.finalMensagem ?? '', onTexto: (v) => setCampo('finalMensagem', v), tamanho: config.finalMensagemFonteTamanho || 16, min: 12, max: 28, onTamanho: (v) => setCampo('finalMensagemFonteTamanho', v) },
-                    { rotulo: 'Conclusão', texto: config.finalStatus ?? 'REGISTRO CONCLUÍDO!', onTexto: (v) => setCampo('finalStatus', v), tamanho: config.finalStatusFonteTamanho || 18, min: 12, max: 28, onTamanho: (v) => setCampo('finalStatusFonteTamanho', v) },
-                    { rotulo: 'Instrução', texto: config.finalInstrucao ?? 'pode guardar seu celular', onTexto: (v) => setCampo('finalInstrucao', v), tamanho: config.finalInstrucaoFonteTamanho || 13, min: 10, max: 22, onTamanho: (v) => setCampo('finalInstrucaoFonteTamanho', v) }
+                    { rotulo: 'Título 1', familia: config.finalTituloFamilia, onFamilia: (v) => setCampo('finalTituloFamilia', v), texto: config.finalTitulo1 ?? 'MUITO OBRIGADO', onTexto: (v) => setConfig((c) => ({ ...c, finalTitulo1: v, finalTitulo: `${v} ${c.finalTitulo2 || ''}`.trim() })), tamanho: config.finalTituloFonteTamanho || config.finalFonteTamanho || 26, min: 16, max: 40, onTamanho: (v) => setConfig((c) => ({ ...c, finalTituloFonteTamanho: v, finalFonteTamanho: v })) },
+                    { rotulo: 'Título 2', familia: config.finalTituloFamilia, onFamilia: (v) => setCampo('finalTituloFamilia', v), texto: config.finalTitulo2 ?? 'PELA SUA PRESENÇA.', onTexto: (v) => setConfig((c) => ({ ...c, finalTitulo2: v, finalTitulo: `${c.finalTitulo1 || ''} ${v}`.trim() })), tamanho: config.finalTituloFonteTamanho || config.finalFonteTamanho || 26, min: 16, max: 40, onTamanho: (v) => setConfig((c) => ({ ...c, finalTituloFonteTamanho: v, finalFonteTamanho: v })) },
+                    { rotulo: 'Mensagem', familia: config.finalMensagemFamilia, onFamilia: (v) => setCampo('finalMensagemFamilia', v), texto: config.finalMensagem ?? '', onTexto: (v) => setCampo('finalMensagem', v), tamanho: config.finalMensagemFonteTamanho || 16, min: 12, max: 28, onTamanho: (v) => setCampo('finalMensagemFonteTamanho', v) },
+                    { rotulo: 'Conclusão', familia: config.finalStatusFamilia, onFamilia: (v) => setCampo('finalStatusFamilia', v), texto: config.finalStatus ?? 'REGISTRO CONCLUÍDO!', onTexto: (v) => setCampo('finalStatus', v), tamanho: config.finalStatusFonteTamanho || 18, min: 12, max: 28, onTamanho: (v) => setCampo('finalStatusFonteTamanho', v) },
+                    { rotulo: 'Instrução', familia: config.finalInstrucaoFamilia, onFamilia: (v) => setCampo('finalInstrucaoFamilia', v), texto: config.finalInstrucao ?? 'pode guardar seu celular', onTexto: (v) => setCampo('finalInstrucao', v), tamanho: config.finalInstrucaoFonteTamanho || 13, min: 10, max: 22, onTamanho: (v) => setCampo('finalInstrucaoFonteTamanho', v) }
                   ]}
                 />
               )}
@@ -2687,7 +2707,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               {/* ABA: TELA DE ACOMPANHANTES (OPCIONAL)                  */}
               {/* ====================================================== */}
               {activeTab === 'acompanhantes' && (
-                <div className="space-y-4">
+                <div className="space-y-2.5">
                   <SubAbas
                     valor={subTabTela2}
                     onChange={setSubTabTela2}
@@ -2702,6 +2722,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     <Secao titulo="Pergunta">
                       <Campo rotulo="Título, linha 1" valor={config.pergunta2Titulo} onChange={(v) => setCampo('pergunta2Titulo', v)} placeholder="Você está só ou tem mais" />
                       <Campo rotulo="Título, linha 2 (opcional)" valor={config.pergunta2Titulo2} onChange={(v) => setCampo('pergunta2Titulo2', v)} placeholder="pessoas te acompanhando?" />
+                      <SeletorFonte valor={config.pergunta2Familia} onChange={(v) => setCampo('pergunta2Familia', v)} />
                       <Deslizante rotulo="Tamanho" valor={config.pergunta2FonteTamanho || 18} min={14} max={28} onChange={(v) => setCampo('pergunta2FonteTamanho', v)} />
                     </Secao>
                   )}

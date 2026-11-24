@@ -79,11 +79,14 @@
 /* ===== Editor: neutro, uma linha por ajuste ===== */
 .editor { font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif; }
 .editor :focus-visible { outline: 2px solid #e2e8f0; outline-offset: 2px; }
-.ed-range { -webkit-appearance: none; appearance: none; height: 20px; background: transparent; cursor: pointer; }
-.ed-range::-webkit-slider-runnable-track { height: 4px; border-radius: 4px; background: linear-gradient(to right, #cbd5e1 var(--p, 50%), #334155 var(--p, 50%)); }
+.ed-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(236px, 1fr)); gap: 7px 18px; align-items: center; }
+.ed-grade > * { grid-column: 1 / -1; }
+.ed-grade > .ed-cel { grid-column: auto; }
+.ed-range { -webkit-appearance: none; appearance: none; height: 16px; background: transparent; cursor: pointer; }
+.ed-range::-webkit-slider-runnable-track { height: 3px; border-radius: 4px; background: linear-gradient(to right, #cbd5e1 var(--p, 50%), #334155 var(--p, 50%)); }
 .ed-range::-moz-range-track { height: 4px; border-radius: 4px; background: linear-gradient(to right, #cbd5e1 var(--p, 50%), #334155 var(--p, 50%)); }
-.ed-range::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; margin-top: -6px; border-radius: 50%; background: #fff; border: 0; box-shadow: 0 1px 4px rgba(0, 0, 0, .6); }
-.ed-range::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: #fff; border: 0; }
+.ed-range::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; margin-top: -4.5px; border-radius: 50%; background: #fff; border: 0; box-shadow: 0 1px 4px rgba(0, 0, 0, .6); }
+.ed-range::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: #fff; border: 0; }
 
 /* Toque em número da grade, Avançar e voltar: acende e treme (aparece também no iPhone, que não vibra) */
 .efeito-acender { animation: efeitoAcender .5s ease-out; }

@@ -9,7 +9,12 @@ export const TEMAS = [
   { id: 'papel', nome: 'Papel', descricao: 'Claro, o mais fácil de ler', fonte: 'Atkinson+Hyperlegible:wght@400;700', raio: 10, espaco: 10, seta: 'preto' },
   { id: 'vitral', nome: 'Vitral', descricao: 'Cores de vidro e luz', fonte: 'Marcellus', raio: 18, espaco: 8, seta: 'branco' },
   { id: 'aurora', nome: 'Aurora', descricao: 'Vidro sobre luz em movimento', fonte: 'Sora:wght@400;600;700', raio: 22, espaco: 10, seta: 'branco' },
-  { id: 'teclado', nome: 'Teclado', descricao: 'Teclas que afundam no toque', fonte: 'Lexend:wght@400;600;700', raio: 14, espaco: 14, seta: 'branco' }
+  { id: 'teclado', nome: 'Teclado', descricao: 'Teclas que afundam no toque', fonte: 'Lexend:wght@400;600;700', raio: 14, espaco: 14, seta: 'branco' },
+  { id: 'quadro', nome: 'Quadro', descricao: 'Lousa verde e giz', fonte: 'Kalam:wght@400;700', raio: 16, espaco: 9, seta: 'branco' },
+  { id: 'bilhete', nome: 'Bilhete', descricao: 'Ingressos picotados', fonte: 'Barlow:wght@400;600;700&family=Barlow+Condensed:wght@500;700', raio: 8, espaco: 9, seta: 'branco' },
+  { id: 'gibi', nome: 'Gibi', descricao: 'Traço grosso e retícula', fonte: 'Bangers&family=Comic+Neue:wght@400;700', raio: 12, espaco: 13, seta: 'preto' },
+  { id: 'jardim', nome: 'Jardim', descricao: 'Claro, com folhas', fonte: 'Fraunces:wght@500;700&family=Nunito:wght@400;700;900', raio: 24, raioDir: 8, espaco: 10, seta: 'preto' },
+  { id: 'painel', nome: 'Painel', descricao: 'Placa de embarque', fonte: 'B612:wght@400;700&family=B612+Mono:wght@400;700', raio: 6, espaco: 7, seta: 'dourado' }
 ];
 
 export const temaPorId = (id) => TEMAS.find((t) => t.id === id);
@@ -28,15 +33,17 @@ export const carregarFonteTema = (id) => {
   document.head.appendChild(l);
 };
 
-const BOTAO_VAZIO = { Efeito: 'nenhum', Cor: 'padrao', CorTexto: 'padrao', Linha: 'padrao', LinhaEspessura: null, Altura: null, Raio: null };
+const BOTAO_VAZIO = { Familia: 'padrao', Efeito: 'nenhum', Cor: 'padrao', CorTexto: 'padrao', Linha: 'padrao', LinhaEspessura: null, Altura: null, Raio: null };
 const comPrefixo = (p, o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [p + k, v]));
 
-const CARDS = { cardFundoEstilo: 'tema', cardEfeitoEstilo: 'tema', cardCorFonteTitulo: 'tema', cardCorFonteSubtitulo: 'tema' };
+const fb = (p) => ({ [`${p}Familia`]: 'padrao', [`${p}Borda`]: 'padrao', [`${p}BordaLargura`]: null });
+const CARDS = { ...fb('card'), cardFundoEstilo: 'tema', cardEfeitoEstilo: 'tema', cardCorFonteTitulo: 'tema', cardCorFonteSubtitulo: 'tema' };
 
 const camposTela = (t) => ({
   ...CARDS,
   cardEspaco: t.espaco,
   ...comPrefixo('grade', BOTAO_VAZIO),
+  ...fb('titulo'), ...fb('sub'), ...fb('legenda'), ...fb('item'),
   tituloFundo: 'tema', titulo1Cor: 'tema', titulo2Cor: 'tema', titulo3Cor: 'tema',
   subFundo: 'tema', subtituloCor: 'tema',
   legendaFundo: 'tema', legendaCor: 'tema', itemFundo: 'tema', itemCor: 'tema'
@@ -45,18 +52,20 @@ const camposTela = (t) => ({
 const camposP1 = (t) => ({
   ...CARDS,
   cardEspaco: t.espaco,
+  ...fb('pergunta1Titulo'), ...fb('pergunta1Sub'),
   pergunta1TituloFundo: 'tema', pergunta1TituloCor: 'tema', pergunta1Titulo2Cor: 'tema', pergunta1Titulo3Cor: 'tema',
   pergunta1SubFundo: 'tema', pergunta1TextoAbaixoCor: 'tema'
 });
 
 const camposGerais = (t) => ({
   cardRaioEsq: t.raio,
-  cardRaioDir: t.raio,
+  cardRaioDir: t.raioDir ?? t.raio,
   ...comPrefixo('grade', BOTAO_VAZIO),
   ...comPrefixo('avancar', BOTAO_VAZIO),
   ...comPrefixo('comecar', BOTAO_VAZIO),
   setaCor: t.seta,
   capaEfeito: 'nenhum',
+  ...['capaTitulo1', 'capaTitulo2', 'capaTitulo3', 'capaTextoAbaixo'].reduce((o, id) => ({ ...o, ...fb(id) }), {}),
   ...Object.fromEntries(['capaTitulo1', 'capaTitulo2', 'capaTitulo3', 'capaTextoAbaixo'].flatMap((id) => [[`${id}Cor`, 'tema'], [`${id}Fundo`, 'tema']])),
   esperaLinha1Cor: 'tema', esperaLinha2Cor: 'tema', esperaLinha3Cor: 'tema'
 });
