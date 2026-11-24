@@ -44,6 +44,8 @@ import { componenteIcone, iconesDaTela } from '../utils/icones';
 import { configSeta } from '../utils/setas';
 import Rosto from './Rosto';
 import BarraProgresso from './BarraProgresso';
+import TelaFinal from './TelaFinal';
+import { camposDoTexto, exemploDe, linhasFinais } from '../utils/telaFinal';
 import { carregarFonteTema, classeTema } from '../utils/temas';
 import { carregarFontes, fontesEmUso } from '../utils/fontes';
 import { fonteEBorda, partesTitulo, subtituloRepeteLegenda, corLinhaHex, lerGeral, caixaAlta, telaP1Cantos, estiloBotao, cantosCard, CARD_ESPACO_PADRAO, faixaEstilo, linhasCapa, medidasCard, espacos, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getEfeitoStyle, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems } from '../utils/estilos';
@@ -148,6 +150,11 @@ const BTN_DESC_CLASSES = {
 };
 
 // Progresso de quem está respondendo: fica só nesta aba do navegador, por evento
+// Respostas usadas nos textos da tela final ({Nome}, {E-mail}): ficam só neste aparelho, até o admin zerar
+const chaveFinal = (eventoId) => `responder_final_${eventoId}`;
+const lerFinal = (eventoId) => {
+  try { return JSON.parse(localStorage.getItem(chaveFinal(eventoId)) || '{}') || {}; } catch (e) { return {}; }
+};
 const chaveProgresso = (eventoId) => `responder_progresso_${eventoId}`;
 const chaveResetVisto = (eventoId) => `responder_reset_visto_${eventoId}`;
 const lerProgresso = (eventoId) => {
@@ -350,6 +357,8 @@ export default function MobileForm({ preview = false }) {
   // (antes o envio podia sair com respostas antigas por causa de closures).
   const motivoRef = useRef('');
   const extrasRef = useRef({});
+  const [valoresFinais, setValoresFinais] = useState({});
+  useEffect(() => { if (!preview) setValoresFinais(lerFinal(activeEventId)); }, [activeEventId, preview]);
   const gavetasRef = useRef({});
   const textosRef = useRef({});
   const aplicar = (ref, setter) => (upd) => {
@@ -436,6 +445,8 @@ export default function MobileForm({ preview = false }) {
         localStorage.removeItem(DISPOSITIVO_VOTO_TIME_EVENTO_KEY);
         localStorage.removeItem(DISPOSITIVO_BLOQUEADO_KEY);
         localStorage.removeItem(DISPOSITIVO_VOTO_TIME_KEY);
+        localStorage.removeItem(chaveFinal(activeEventId));
+        setValoresFinais({});
         setDispositivoBloqueado(false);
         setCurrentStep('p1');
         setP1SlideIndex(0);
@@ -974,7 +985,26 @@ export default function MobileForm({ preview = false }) {
     return { respostas, respostasExtras, textoRespostas, gavetaRespostas };
   };
 
+  // ---------- campos da tela final ----------
+  const respostaDe = (origem) => {
+    if (origem === 'p1') return motivoRef.current || '';
+    if (String(origem).startsWith('gaveta|')) return textoResposta(gavetasRef.current[origem.slice(7)]);
+    return textoResposta(extrasRef.current[origem] ?? textosRef.current[origem]);
+  };
+  const guardarFinal = () => {
+    const campos = questionsConfig?.finalCampos || [];
+    const usados = linhasFinais(questionsConfig).flatMap((l) => camposDoTexto(l.texto, campos));
+    const valores = Object.fromEntries(usados.map((c) => [c.origem, respostaDe(c.origem)]));
+    setValoresFinais(valores);
+    try {
+      if (usados.length) localStorage.setItem(chaveFinal(activeEventId), JSON.stringify(valores));
+      else localStorage.removeItem(chaveFinal(activeEventId));
+    } catch (e) {}
+  };
+  const valorNoFinal = (campo) => (preview ? respostaDe(campo.origem) || exemploDe(campo) : valoresFinais[campo.origem] || respostaDe(campo.origem));
+
   const travarDispositivo = () => {
+    guardarFinal();
     const agoraIso = new Date().toISOString();
     localStorage.setItem(DISPOSITIVO_BLOQUEADO_EVENTO_KEY, 'true');
     localStorage.setItem(DISPOSITIVO_VOTO_TIME_EVENTO_KEY, agoraIso);
@@ -1083,54 +1113,13 @@ export default function MobileForm({ preview = false }) {
           <div className="absolute -top-20 -right-20 w-44 h-44 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute -bottom-20 -left-20 w-44 h-44 bg-sky-500/15 rounded-full blur-3xl pointer-events-none" />
 
-          <div className="space-y-3">
-            <h1 
-              style={{ fontSize: `${questionsConfig.finalTituloFonteTamanho || questionsConfig.finalFonteTamanho || 26}px`, ...fonteEBorda(questionsConfig, 'finalTitulo', false) }}
-              className="font-black text-white tracking-tight leading-snug"
-            >
-              {questionsConfig.finalTitulo1 && questionsConfig.finalTitulo2 ? (
-                <>
-                  <span className="block">{questionsConfig.finalTitulo1}</span>
-                  <span className="block">{questionsConfig.finalTitulo2}</span>
-                </>
-              ) : (
-                questionsConfig.finalTitulo || 'MUITO OBRIGADO PELA SUA PRESENÇA.'
-              )}
-            </h1>
-
-            {questionsConfig.finalMensagem && (
-              <div className="space-y-1">
-                <span 
-                  style={{ fontSize: `${questionsConfig.finalMensagemFonteTamanho || 16}px`, ...fonteEBorda(questionsConfig, 'finalMensagem', false) }}
-                  className="block font-extrabold text-amber-400 tracking-wide leading-tight"
-                >
-                  {questionsConfig.finalMensagem}
-                </span>
-              </div>
+          <TelaFinal config={questionsConfig} valorDe={valorNoFinal}>
+            {envioPendente && (
+              <p className="text-[11px] text-amber-300/90 pt-3">
+                Internet lenta: sua resposta foi guardada e será enviada automaticamente. Mantenha esta página aberta por alguns instantes.
+              </p>
             )}
-          </div>
-
-          <div className="pt-5 border-t border-slate-800/80 space-y-3">
-            <div className="space-y-1.5 text-slate-200">
-              <p 
-                style={{ fontSize: `${questionsConfig.finalStatusFonteTamanho || 18}px`, ...fonteEBorda(questionsConfig, 'finalStatus', false) }}
-                className="font-black text-emerald-400 uppercase tracking-wide"
-              >
-                {questionsConfig.finalStatus ?? 'REGISTRO CONCLUÍDO!'}
-              </p>
-              <p 
-                style={{ fontSize: `${questionsConfig.finalInstrucaoFonteTamanho || 13}px`, ...fonteEBorda(questionsConfig, 'finalInstrucao', false) }}
-                className="font-bold text-slate-300"
-              >
-                {questionsConfig.finalInstrucao ?? 'pode guardar seu celular'}
-              </p>
-              {envioPendente && (
-                <p className="text-[11px] text-amber-300/90 pt-1">
-                  Internet lenta: sua resposta foi guardada e será enviada automaticamente. Mantenha esta página aberta por alguns instantes.
-                </p>
-              )}
-            </div>
-          </div>
+          </TelaFinal>
         </div>
       </div>
     );

@@ -58,6 +58,8 @@ import { alturaFaixa, FAIXA_MAX, FAIXA_MIN, gravarFaixaPadrao, lerGeral, gravarH
 import ImportadorIA from './ImportadorIA';
 import IconeEspera, { ICONES_ESPERA } from './IconeEspera';
 import PreviewCelular from './PreviewCelular';
+import CamposFinais from './CamposFinais';
+import { chaveTamanho, estiloLinhaFinal, LINHAS_FINAL } from '../utils/telaFinal';
 import BarraProgresso, { CORES_PROGRESSO, CORES_PROGRESSO_LAYOUT, ESTILOS_PROGRESSO, usaDuasCores } from './BarraProgresso';
 import { Columns2, Rows3, Smile as IconeRosto, WrapText } from 'lucide-react';
 import EscalaVisual, { ESTILOS_ESCALA } from './EscalaVisual';
@@ -2749,13 +2751,26 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               {activeTab === 'fim' && (
                 <EstiloLinhasTitulo
                   key={activeTab}
-                  linhas={[
-                    { rotulo: 'Título 1', familia: config.finalTituloFamilia, onFamilia: (v) => setCampo('finalTituloFamilia', v), texto: config.finalTitulo1 ?? 'MUITO OBRIGADO', onTexto: (v) => setConfig((c) => ({ ...c, finalTitulo1: v, finalTitulo: `${v} ${c.finalTitulo2 || ''}`.trim() })), tamanho: config.finalTituloFonteTamanho || config.finalFonteTamanho || 26, min: 16, max: 40, onTamanho: (v) => setConfig((c) => ({ ...c, finalTituloFonteTamanho: v, finalFonteTamanho: v })) },
-                    { rotulo: 'Título 2', familia: config.finalTituloFamilia, onFamilia: (v) => setCampo('finalTituloFamilia', v), texto: config.finalTitulo2 ?? 'PELA SUA PRESENÇA.', onTexto: (v) => setConfig((c) => ({ ...c, finalTitulo2: v, finalTitulo: `${c.finalTitulo1 || ''} ${v}`.trim() })), tamanho: config.finalTituloFonteTamanho || config.finalFonteTamanho || 26, min: 16, max: 40, onTamanho: (v) => setConfig((c) => ({ ...c, finalTituloFonteTamanho: v, finalFonteTamanho: v })) },
-                    { rotulo: 'Mensagem', familia: config.finalMensagemFamilia, onFamilia: (v) => setCampo('finalMensagemFamilia', v), texto: config.finalMensagem ?? '', onTexto: (v) => setCampo('finalMensagem', v), tamanho: config.finalMensagemFonteTamanho || 16, min: 12, max: 28, onTamanho: (v) => setCampo('finalMensagemFonteTamanho', v) },
-                    { rotulo: 'Conclusão', familia: config.finalStatusFamilia, onFamilia: (v) => setCampo('finalStatusFamilia', v), texto: config.finalStatus ?? 'REGISTRO CONCLUÍDO!', onTexto: (v) => setCampo('finalStatus', v), tamanho: config.finalStatusFonteTamanho || 18, min: 12, max: 28, onTamanho: (v) => setCampo('finalStatusFonteTamanho', v) },
-                    { rotulo: 'Instrução', familia: config.finalInstrucaoFamilia, onFamilia: (v) => setCampo('finalInstrucaoFamilia', v), texto: config.finalInstrucao ?? 'pode guardar seu celular', onTexto: (v) => setCampo('finalInstrucao', v), tamanho: config.finalInstrucaoFonteTamanho || 13, min: 10, max: 22, onTamanho: (v) => setCampo('finalInstrucaoFonteTamanho', v) }
-                  ]}
+                  linhas={LINHAS_FINAL.map((l, i) => {
+                    const e = estiloLinhaFinal(config, l);
+                    const onTexto = (v) => setConfig((c) => {
+                      const novo = { ...c, [l.id]: v };
+                      if (l.h1) novo.finalTitulo = `${novo.finalTitulo1 ?? ''} ${novo.finalTitulo2 ?? ''}`.trim();
+                      return novo;
+                    });
+                    return {
+                      rotulo: l.rotulo, texto: e.texto, onTexto, multilinha: l.multilinha,
+                      tamanho: e.tamanho, min: l.min, max: l.max, onTamanho: (v) => setCampo(chaveTamanho(l), v),
+                      familia: e.familia, onFamilia: (v) => setCampo(`${l.id}Familia`, v),
+                      cor: e.cor, onCor: (v) => setCampo(`${l.id}Cor`, v),
+                      bold: e.bold, onBold: (v) => setCampo(`${l.id}Bold`, v),
+                      caixa: e.caixa, onCaixa: (v) => setCampo(`${l.id}Caixa`, v),
+                      alinhamento: e.alinhamento, onAlinhamento: (v) => setCampo(`${l.id}Alinhamento`, v),
+                      espaco: e.espaco,
+                      onEspaco: i < LINHAS_FINAL.length - 1 && LINHAS_FINAL.slice(i + 1).some((x) => String(estiloLinhaFinal(config, x).texto || '').trim()) ? (v) => setCampo(`${l.id}Espaco`, v) : undefined,
+                      abaixo: <CamposFinais config={config} linha={l.id} texto={e.texto} tamanhoLinha={e.tamanho} min={l.min} max={l.max} onTexto={onTexto} setConfig={setConfig} />
+                    };
+                  })}
                 />
               )}
 

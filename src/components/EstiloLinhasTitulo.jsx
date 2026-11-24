@@ -8,7 +8,7 @@ import { Alinhamento, Alternar, Campo, Cores, Deslizante, Dobra, MiniSlider, Sec
  * Cada linha mostra só os controles cujo "on..." foi informado:
  * { rotulo, texto?, onTexto?, multilinha?, tamanho, min, max, onTamanho, familia, onFamilia, cor, onCor, bold, onBold,
  *   caixa, onCaixa, alinhamento, onAlinhamento, fundo, onFundo, faixa, onFaixa, borda, onBorda, bordaLargura, onBordaLargura,
- *   espaco, onEspaco, extra (controles próprios da linha) }
+ *   espaco, onEspaco, extra e abaixo (controles próprios da linha) }
  * Altura e borda aparecem quando a linha tem cor de fundo. onEspaco: distância ENTRE esta linha e a próxima.
  */
 export default function EstiloLinhasTitulo({ linhas }) {
@@ -72,6 +72,7 @@ export default function EstiloLinhasTitulo({ linhas }) {
                   lateral={<MiniSlider rotulo="Largura" valor={l.bordaLargura ?? 1} min={0} max={10} passo={0.5} onChange={l.onBordaLargura} />}
                 />
               )}
+              {l.abaixo}
             </Dobra>
             {l.onEspaco && (
               <div className="flex items-center gap-1.5 pl-3 h-5">

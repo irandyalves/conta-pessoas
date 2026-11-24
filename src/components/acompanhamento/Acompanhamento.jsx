@@ -200,8 +200,10 @@ export default function Acompanhamento({ presencas, config, titulo, periodo, ses
   const maximo = Math.max(1, ...perguntas.map((x) => x.respondentes));
   const ultimas = useMemo(() => [...dados.itens].reverse().slice(0, 14), [dados.itens]);
   const resumoDe = (item) => {
-    const lista = (item.respostas || []).filter((r) => r && limpar(r.resposta) && !String(r.resposta).includes(' | '));
-    return limpar(lista[0]?.resposta || item.comoChegou) || 'Resposta enviada';
+    // só respostas de escolher: nome e e-mail digitados não aparecem na tela
+    const fechadas = new Set(perguntas.filter((x) => ['escolha', 'multipla', 'nota'].includes(x.tipo)).map((x) => x.id));
+    const lista = (item.respostas || []).filter((r) => r && fechadas.has(r.telaId) && limpar(r.resposta) && !String(r.pergunta).includes(' › '));
+    return limpar(lista[0]?.resposta) || 'Resposta enviada';
   };
   const telaCheia = () => (document.fullscreenElement ? document.exitFullscreen() : raiz.current?.requestFullscreen?.())?.catch?.(() => {});
 

@@ -69,7 +69,8 @@ const camposGerais = (t) => ({
   ...['capaTitulo1', 'capaTitulo2', 'capaTitulo3', 'capaTextoAbaixo'].reduce((o, id) => ({ ...o, ...fb(id) }), {}),
   ...Object.fromEntries(['capaTitulo1', 'capaTitulo2', 'capaTitulo3', 'capaTextoAbaixo'].flatMap((id) => [[`${id}Cor`, 'tema'], [`${id}Fundo`, 'tema']])),
   esperaLinha1Cor: 'tema', esperaLinha2Cor: 'tema', esperaLinha3Cor: 'tema',
-  ...Object.fromEntries(['esperaLinha1', 'esperaLinha2', 'esperaLinha3', 'pergunta2', 'finalTitulo', 'finalMensagem', 'finalStatus', 'finalInstrucao'].map((id) => [`${id}Familia`, 'padrao'])),
+  ...Object.fromEntries(['esperaLinha1', 'esperaLinha2', 'esperaLinha3', 'pergunta2', 'finalTitulo', 'finalTitulo1', 'finalTitulo2', 'finalMensagem', 'finalStatus', 'finalInstrucao'].map((id) => [`${id}Familia`, 'padrao'])),
+  ...Object.fromEntries(['finalTitulo1', 'finalTitulo2', 'finalMensagem', 'finalStatus', 'finalInstrucao'].map((id) => [`${id}Cor`, 'tema'])),
   btnQtdCor: 'tema', btnQtdCorNumero: 'tema', btnQtdCorDescricao: 'tema', btnQtdEfeito: 'tema'
 });
 
@@ -81,7 +82,9 @@ const valor = (v) => (v === undefined ? null : v);
 const guardar = (obj, campos) => Object.fromEntries(Object.keys(campos).map((k) => [k, valor(obj[k])]));
 const herda = (tela) => tela?.herdarEstilo !== false;
 
-const visualGeral = (cfg, t) => doLayout({ ...camposGerais(t), ...(cfg.herdarEstiloP1 === false ? {} : camposP1(t)) });
+// campos inseridos na tela final (finalCampo_<linha>_<id>_Cor/Familia)
+const camposInseridos = (cfg) => Object.fromEntries(Object.keys(cfg).filter((k) => /^finalCampo_.+_(Cor|Familia)$/.test(k)).map((k) => [k, k.endsWith('_Cor') ? 'tema' : 'padrao']));
+const visualGeral = (cfg, t) => doLayout({ ...camposGerais(t), ...camposInseridos(cfg), ...(cfg.herdarEstiloP1 === false ? {} : camposP1(t)) });
 const visualTela = (t) => doLayout(camposTela(t));
 
 // Os ajustes ficam em texto (JSON): o Firestore troca o valor inteiro em vez de misturar com o antigo
@@ -144,7 +147,8 @@ export const aplicarTema = (cfgAtual, id) => {
   const salvo = lerSalvo(cfg, para) || {};
   const layoutsSalvos = { ...cfg.layoutsSalvos, [de]: tirarFoto(cfg, de) };
   const camposDaTela = visualTela(t || TEMAS[0]);
-  const geral = t ? visualGeral(cfg, t) : {};
+  // "Meu layout": o que a foto não tem (opção criada depois dela) volta ao padrão, sem herdar do layout anterior
+  const geral = t ? visualGeral(cfg, t) : salvo.cfg ? Object.fromEntries(Object.keys(visualGeral(cfg, TEMAS[0])).map((k) => [k, null])) : {};
 
   // "Meu layout" em página criada depois: segue o visual de outra página guardada
   const modelo = Object.values(salvo.telas || {})[0] || {};

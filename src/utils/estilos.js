@@ -14,8 +14,13 @@ export const CORES_TEXTO_LINHAS = [
   { id: 'cinza', label: 'Cinza Claro', bg: 'bg-slate-300', textClass: 'text-slate-300' },
   { id: 'laranja', label: 'Laranja', bg: 'bg-orange-400', textClass: 'text-orange-300' },
   { id: 'roxo', label: 'Roxo', bg: 'bg-purple-400', textClass: 'text-purple-300' },
-  { id: 'rosa', label: 'Rosa', bg: 'bg-rose-400', textClass: 'text-rose-300' }
+  { id: 'rosa', label: 'Rosa', bg: 'bg-rose-400', textClass: 'text-rose-300' },
+  { id: 'vermelho', label: 'Vermelho', bg: 'bg-red-500', textClass: 'text-red-500' },
+  { id: 'preto', label: 'Preto', bg: 'bg-slate-950 border border-slate-500', textClass: 'text-slate-950' }
 ];
+const HEX_TEXTO = { branco: '#ffffff', dourado: '#fcd34d', verde: '#34d399', azul: '#7dd3fc', cinza: '#cbd5e1', laranja: '#fdba74', roxo: '#d8b4fe', rosa: '#fda4af', vermelho: '#ef4444', preto: '#020617' };
+// Cor escolhida pelo usuário (vence a cor do layout); "Do layout" = undefined
+export const corTextoHex = (id) => HEX_TEXTO[id];
 
 export const getCorTextoLinhaClass = (corId, defaultClass = 'text-white') => {
   return CORES_TEXTO_LINHAS.find(c => c.id === corId)?.textClass || defaultClass;
