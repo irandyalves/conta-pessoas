@@ -9,8 +9,6 @@ import {
   Compass,
   ChevronRight,
   ChevronLeft,
-  ArrowLeft,
-  ArrowRight,
   ChevronDown,
   Sparkles,
   TreePine,
@@ -41,7 +39,8 @@ import {
   DEFAULT_EVENT_ID
 } from '../firebase';
 import { componenteIcone, iconesDaTela } from '../utils/icones';
-import { caixaAlta, telaP1Cantos, estiloBotao, cantosCard, CARD_ESPACO_PADRAO, faixaEstilo, linhasCapa, medidasCard, espacos, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getEfeitoStyle, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems } from '../utils/estilos';
+import { configSeta } from '../utils/setas';
+import { corLinhaHex, lerGeral, caixaAlta, telaP1Cantos, estiloBotao, cantosCard, CARD_ESPACO_PADRAO, faixaEstilo, linhasCapa, medidasCard, espacos, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getEfeitoStyle, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems } from '../utils/estilos';
 
 const DISPOSITIVO_BLOQUEADO_KEY = 'presenca_dispositivo_bloqueado_voto';
 const DISPOSITIVO_VOTO_TIME_KEY = 'presenca_dispositivo_hora_voto';
@@ -150,28 +149,34 @@ const lerProgresso = (eventoId) => {
 
 // Rodapé das telas sem botão Avançar: ← ANTERIOR • PRÓXIMA →
 // PRÓXIMA só aparece quando a página não é obrigatória (ou já foi respondida).
-function RodapeSetas({ onAnterior, onProxima, aceso }) {
+function RodapeSetas({ onAnterior, onProxima, aceso, seta }) {
   if (!onAnterior && !onProxima) return null;
-  const seta = (chave, Icone, texto, nome, onClick) => (
-    <button
-      type="button"
-      aria-label={nome}
-      onClick={onClick}
-      className={`pointer-events-auto w-24 h-14 rounded-2xl flex flex-col items-center justify-center gap-0.5 text-white ${aceso === chave ? 'efeito-acender' : ''}`}
-    >
-      <Icone className="w-6 h-6" strokeWidth={2.75} />
-      <span className="text-[10px] font-light tracking-wide leading-none">{texto}</span>
-    </button>
-  );
   return (
     <>
       <div className="h-20" />
       <div className="fixed bottom-0 inset-x-0 z-30 flex items-center justify-center gap-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent pointer-events-none">
-        {onAnterior && seta('anterior', ArrowLeft, 'ANTERIOR', 'Voltar à pergunta anterior', onAnterior)}
-        {onAnterior && onProxima && <span className="w-1.5 h-1.5 rounded-full bg-white" aria-hidden="true" />}
-        {onProxima && seta('proxima', ArrowRight, 'PRÓXIMA', 'Ir para a próxima pergunta', onProxima)}
+        {onAnterior && <BotaoSeta seta={seta} lado="anterior" aceso={aceso === 'anterior'} onClick={onAnterior} className="w-24" />}
+        {onAnterior && onProxima && <span className="w-1.5 h-1.5 rounded-full" style={{ background: seta.cor }} aria-hidden="true" />}
+        {onProxima && <BotaoSeta seta={seta} lado="proxima" aceso={aceso === 'proxima'} onClick={onProxima} className="w-24" />}
       </div>
     </>
+  );
+}
+
+function BotaoSeta({ seta, lado, aceso, onClick, className = '' }) {
+  const anterior = lado === 'anterior';
+  const Icone = anterior ? seta.Esq : seta.Dir;
+  return (
+    <button
+      type="button"
+      aria-label={anterior ? 'Voltar à pergunta anterior' : 'Ir para a próxima pergunta'}
+      onClick={onClick}
+      style={{ color: seta.cor }}
+      className={`pointer-events-auto h-14 rounded-2xl flex flex-col items-center justify-center gap-0.5 ${className} ${aceso ? 'efeito-acender' : ''}`}
+    >
+      <Icone size={seta.tamanho} strokeWidth={seta.espessura} />
+      <span className="text-[10px] font-light tracking-wide leading-none">{anterior ? seta.anterior : seta.proxima}</span>
+    </button>
   );
 }
 
@@ -1159,7 +1164,7 @@ export default function MobileForm({ preview = false }) {
         {currentStep === 'p1' && (questionsConfig.mostrarBotaoComecar === false || jaClicouComecar) && (
           <div className="mt-2 pt-2 flex flex-col" style={{ gap: espacos(questionsConfig, true).sub, marginBottom: espacos(questionsConfig, true).cards }}>
             {(questionsConfig.pergunta1Titulo || questionsConfig.pergunta1Titulo2 || questionsConfig.pergunta1Titulo3) && (
-              <div style={{ gap: espacos(questionsConfig, true).tit, ...faixaEstilo(estiloLinhas(questionsConfig, 'pergunta1').tituloFundo, questionsConfig.pergunta1TituloFaixa) }} className={`flex flex-col ${getAlinhamentoClass(estiloLinhas(questionsConfig, 'pergunta1').tituloAl)} ${getFaixaFundoClass(estiloLinhas(questionsConfig, 'pergunta1').tituloFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}>
+              <div style={{ gap: espacos(questionsConfig, true).tit, ...faixaEstilo(estiloLinhas(questionsConfig, 'pergunta1').tituloFundo, questionsConfig.pergunta1TituloFaixa ?? questionsConfig.faixaPadrao) }} className={`flex flex-col ${getAlinhamentoClass(estiloLinhas(questionsConfig, 'pergunta1').tituloAl)} ${getFaixaFundoClass(estiloLinhas(questionsConfig, 'pergunta1').tituloFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}>
                 {questionsConfig.pergunta1Titulo && (
                   <h2 
                     style={{ fontSize: `${questionsConfig.pergunta1FonteTamanho || 22}px` }}
@@ -1189,7 +1194,7 @@ export default function MobileForm({ preview = false }) {
             {/* SUBTÍTULO DA TELA 1 (alinhamento, tamanho e fundo próprios — igual ao preview) */}
             {questionsConfig.pergunta1TextoAbaixo && (
               <p
-                style={{ fontSize: `${questionsConfig.pergunta1TextoAbaixoTamanho || 14}px`, ...faixaEstilo(estiloLinhas(questionsConfig, 'pergunta1').subFundo, questionsConfig.pergunta1SubFaixa) }}
+                style={{ fontSize: `${questionsConfig.pergunta1TextoAbaixoTamanho || 14}px`, ...faixaEstilo(estiloLinhas(questionsConfig, 'pergunta1').subFundo, questionsConfig.pergunta1SubFaixa ?? questionsConfig.faixaPadrao) }}
                 className={`leading-relaxed whitespace-pre-line ${getAlinhamentoClass(estiloLinhas(questionsConfig, 'pergunta1').subAl)} ${getFaixaFundoClass(estiloLinhas(questionsConfig, 'pergunta1').subFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')} ${questionsConfig.pergunta1SubBold ? 'font-bold' : ''} ${caixaAlta(questionsConfig.pergunta1SubCaixa)} ${getCorTextoLinhaClass(questionsConfig.pergunta1TextoAbaixoCor, 'text-slate-300')}`}
               >
                 {questionsConfig.pergunta1TextoAbaixo}
@@ -1208,7 +1213,7 @@ export default function MobileForm({ preview = false }) {
           const linha1 = tela.titulo1 || tela.titulo || `Pergunta da Tela ${idx + 2}`;
           return (
             <div className="mt-2 pt-2 border-t border-slate-800/60 flex flex-col" style={{ gap: espacos(tela).sub, marginBottom: espacos(tela).cards }}>
-              <div style={{ gap: espacos(tela).tit, ...faixaEstilo(estiloLinhas(tela).tituloFundo, tela.tituloFaixa) }} className={`flex flex-col ${getAlinhamentoClass(estiloLinhas(tela).tituloAl)} ${getFaixaFundoClass(estiloLinhas(tela).tituloFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}>
+              <div style={{ gap: espacos(tela).tit, ...faixaEstilo(estiloLinhas(tela).tituloFundo, tela.tituloFaixa ?? questionsConfig?.faixaPadrao) }} className={`flex flex-col ${getAlinhamentoClass(estiloLinhas(tela).tituloAl)} ${getFaixaFundoClass(estiloLinhas(tela).tituloFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}>
               <h2 style={{ fontSize: `${tela.titulo1Tamanho || 20}px` }} className={`${pesoFonte(tela.tituloBold)} ${caixaAlta(tela.tituloCaixa)} leading-tight ${getCorTextoLinhaClass(tela.titulo1Cor, 'text-white')}`}>
                 {linha1}
               </h2>
@@ -1224,7 +1229,7 @@ export default function MobileForm({ preview = false }) {
               )}
               </div>
               {tela.subtitulo && (
-                <p style={{ fontSize: `${tela.subtituloTamanho || 13}px`, ...faixaEstilo(estiloLinhas(tela).subFundo, tela.subFaixa) }} className={`leading-snug ${getAlinhamentoClass(estiloLinhas(tela).subAl)} ${getFaixaFundoClass(estiloLinhas(tela).subFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')} ${tela.subBold ? 'font-bold' : ''} ${caixaAlta(tela.subCaixa)} ${getCorTextoLinhaClass(tela.subtituloCor, 'text-slate-300')}`}>
+                <p style={{ fontSize: `${tela.subtituloTamanho || 13}px`, ...faixaEstilo(estiloLinhas(tela).subFundo, tela.subFaixa ?? questionsConfig?.faixaPadrao) }} className={`leading-snug ${getAlinhamentoClass(estiloLinhas(tela).subAl)} ${getFaixaFundoClass(estiloLinhas(tela).subFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')} ${tela.subBold ? 'font-bold' : ''} ${caixaAlta(tela.subCaixa)} ${getCorTextoLinhaClass(tela.subtituloCor, 'text-slate-300')}`}>
                   {tela.subtitulo}
                 </p>
               )}
@@ -1273,25 +1278,53 @@ export default function MobileForm({ preview = false }) {
               <>
               <div className="h-24" />
               <div className="fixed bottom-0 inset-x-0 z-30 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent">
+                {(() => {
+                  const ler = (k) => questionsConfig?.[`comecar${k}`];
+                  const st = estiloBotao(ler);
+                  const linha = corLinhaHex(ler('Linha'));
+                  const raio = ler('Raio');
+                  return (
                 <button
                   type="button"
                   onClick={handleClicarComecar}
-                  className="relative max-w-md mx-auto block w-full p-[2.5px] rounded-2xl overflow-hidden shadow-[0_0_28px_rgba(16,185,129,0.5)] active:scale-[0.98] transition-all group"
+                  style={{
+                    width: `${ler('Largura') ?? 100}%`,
+                    ...(raio !== undefined ? { borderRadius: raio } : {}),
+                    ...(ler('LinhaEspessura') !== undefined ? { padding: ler('LinhaEspessura') } : {}),
+                    ...(st.boxShadow ? { boxShadow: st.boxShadow } : {})
+                  }}
+                  className="relative max-w-md mx-auto block p-[2.5px] rounded-2xl overflow-hidden shadow-[0_0_28px_rgba(16,185,129,0.5)] active:scale-[0.98] transition-all group"
                 >
                   {/* Brilho suave girando no contorno (sentido horário) */}
+                  {linha !== 'transparent' && (
+                    <div
+                      className="absolute inset-[-200%] animate-spin"
+                      style={{
+                        animationDuration: '3.5s',
+                        background: linha
+                          ? `conic-gradient(from 0deg, transparent 0%, ${linha}55 60%, ${linha} 85%, transparent 100%)`
+                          : 'conic-gradient(from 0deg, transparent 0%, transparent 60%, #6ee7b7 80%, #10b981 90%, transparent 100%)'
+                      }}
+                    />
+                  )}
                   <div
-                    className="absolute inset-[-200%] animate-spin"
                     style={{
-                      animationDuration: '3.5s',
-                      background: 'conic-gradient(from 0deg, transparent 0%, transparent 60%, #6ee7b7 80%, #10b981 90%, transparent 100%)'
+                      ...(st.background ? { background: st.background } : {}),
+                      ...(st.color ? { color: st.color } : {}),
+                      ...(st.boxShadow ? { boxShadow: st.boxShadow } : {}),
+                      ...(st.height ? { height: st.height, paddingTop: 0, paddingBottom: 0 } : {}),
+                      ...(st.fontSize ? { fontSize: st.fontSize } : {}),
+                      ...(raio !== undefined ? { borderRadius: Math.max(0, raio - 2) } : {})
                     }}
-                  />
-                  <div className="relative w-full py-4 px-6 rounded-[14px] bg-gradient-to-b from-emerald-500 to-emerald-700 text-white font-black text-base uppercase tracking-widest flex items-center justify-center gap-2.5">
-                    <Sparkles className="w-5 h-5 text-emerald-100 animate-pulse" />
+                    className="relative w-full py-4 px-6 rounded-[14px] bg-gradient-to-b from-emerald-500 to-emerald-700 text-white font-black text-base uppercase tracking-widest flex items-center justify-center gap-2.5"
+                  >
+                    <Sparkles className="w-5 h-5 opacity-90 animate-pulse" />
                     <span>{questionsConfig.pergunta1BotaoComecarTexto || 'COMEÇAR'}</span>
-                    <ChevronRight className="w-5 h-5 text-emerald-100 group-hover:translate-x-1 transition-transform" />
+                    <ChevronRight className="w-5 h-5 opacity-90 group-hover:translate-x-1 transition-transform" />
                   </div>
                 </button>
+                  );
+                })()}
               </div>
               </>
             ) : (
@@ -1423,6 +1456,7 @@ export default function MobileForm({ preview = false }) {
 
                 {cardsAtivosP1.length > 0 && (
                   <RodapeSetas
+                    seta={configSeta(lerGeral(questionsConfig, null, 'seta'))}
                     aceso={clicado === 'voltar_p1' ? 'anterior' : clicado === 'proxima_p1' ? 'proxima' : ''}
                     onAnterior={questionsConfig.mostrarBotaoComecar !== false ? () => comFeedback('voltar_p1', () => setJaClicouComecar(false)) : null}
                     onProxima={!questionsConfig.pergunta1Obrigatoria || temValor(comoChegou) ? () => comFeedback('proxima_p1', () => {
@@ -1794,15 +1828,13 @@ export default function MobileForm({ preview = false }) {
                 <div className="fixed bottom-0 inset-x-0 z-30 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent">
                 <div className="max-w-md mx-auto">
                 <div className="flex items-center justify-between gap-2">
-                <button
-                  type="button"
-                  aria-label="Voltar à pergunta anterior"
+                <BotaoSeta
+                  seta={configSeta(lerGeral(questionsConfig, tela, 'seta'))}
+                  lado="anterior"
+                  aceso={clicado === `voltar_${tela.id}`}
                   onClick={() => comFeedback(`voltar_${tela.id}`, voltarParaAnterior)}
-                  className={`flex-1 h-14 rounded-2xl flex flex-col items-center justify-center gap-0.5 text-white ${clicado === `voltar_${tela.id}` ? 'efeito-acender' : ''}`}
-                >
-                  <ArrowLeft className="w-6 h-6" strokeWidth={2.75} />
-                  <span className="text-[10px] font-light tracking-wide leading-none">ANTERIOR</span>
-                </button>
+                  className="flex-1"
+                />
                 <button
                   type="button"
                   onClick={() => comFeedback(`avancar_${tela.id}`, () => {
@@ -1820,7 +1852,7 @@ export default function MobileForm({ preview = false }) {
                     });
                     avancarParaProxima(null);
                   })}
-                  style={estiloBotao((k) => questionsConfig?.[`avancar${k}`], faltaObrigatoria)}
+                  style={estiloBotao(lerGeral(questionsConfig, tela, 'avancar'), faltaObrigatoria)}
                   className={`w-3/4 py-4 px-4 rounded-2xl font-black text-base border flex items-center justify-center gap-2 transition-colors ${faltaObrigatoria ? 'bg-red-900 border-red-800 text-white' : 'bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 shadow-xl shadow-amber-950/60 border-amber-300'} ${clicado === `avancar_${tela.id}` ? 'efeito-acender' : ''}`}
                 >
                   <span>{questionsConfig?.botaoAvancarTexto || 'Avançar'}</span>
@@ -1933,6 +1965,7 @@ export default function MobileForm({ preview = false }) {
               )}
 
               <RodapeSetas
+                seta={configSeta(lerGeral(questionsConfig, tela, 'seta'))}
                 aceso={clicado === `voltar_${tela.id}` ? 'anterior' : clicado === `proxima_${tela.id}` ? 'proxima' : ''}
                 onAnterior={() => comFeedback(`voltar_${tela.id}`, voltarParaAnterior)}
                 onProxima={!tela.obrigatorio || temValor(respostasExtras[tela.id]) ? () => comFeedback(`proxima_${tela.id}`, () => {
@@ -2051,6 +2084,7 @@ export default function MobileForm({ preview = false }) {
 
             {/* Botão Voltar */}
             <RodapeSetas
+              seta={configSeta(lerGeral(questionsConfig, null, 'seta'))}
               aceso={clicado === 'voltar_acomp' ? 'anterior' : ''}
               onAnterior={() => comFeedback('voltar_acomp', () => {
                 let alvo = telasExtrasAtivas.length - 1;

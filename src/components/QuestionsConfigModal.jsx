@@ -51,7 +51,8 @@ import {
   saveEventTitle,
   DEFAULT_QUESTIONS_CONFIG 
 } from '../firebase';
-import { gravarHerdado, herdaEstilo, ligarHeranca, semCamposHerdados, telaP1Cantos, CORES_BOTAO, CORES_LINHA, CORES_TEXTO_BOTAO, CARD_ESPACO_PADRAO, raiosCard, linhasCapa, alturaCard, CAPA_ESPACO_PADRAO, CARD_ALTURA_MAX, CARD_ALTURA_MIN, espacos, continuaNaMesmaPagina, extrairEstilo, aplicarEstilo, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems, getEfeitoStyle, CORES_TEXTO_LINHAS, ALINHAMENTOS_TEXTO, FUNDOS_CAPTION } from '../utils/estilos';
+import { configSeta, CORES_SETA, DESENHOS_SETA } from '../utils/setas';
+import { alturaFaixa, FAIXA_MAX, FAIXA_MIN, gravarFaixaPadrao, lerGeral, gravarHerdado, herdaEstilo, ligarHeranca, semCamposHerdados, telaP1Cantos, CORES_BOTAO, CORES_LINHA, CORES_TEXTO_BOTAO, CARD_ESPACO_PADRAO, raiosCard, linhasCapa, alturaCard, CAPA_ESPACO_PADRAO, CARD_ALTURA_MAX, CARD_ALTURA_MIN, espacos, continuaNaMesmaPagina, extrairEstilo, aplicarEstilo, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems, getEfeitoStyle, CORES_TEXTO_LINHAS, ALINHAMENTOS_TEXTO, FUNDOS_CAPTION } from '../utils/estilos';
 import ImportadorIA from './ImportadorIA';
 import IconeEspera, { ICONES_ESPERA } from './IconeEspera';
 import PreviewCelular from './PreviewCelular';
@@ -537,7 +538,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
   );
 
   // Efeitos de um botão: os mesmos dos cards, mais cores, linha, altura e cantos
-  const EfeitosBotao = ({ titulo, descricao, ler, gravar, alturaPadrao, alturaMax, raioPadrao }) => {
+  const EfeitosBotao = ({ titulo, descricao, ler, gravar, alturaPadrao, alturaMax, raioPadrao, espessuraPadrao = 1, fontePadrao, comLargura }) => {
     const efeito = ler('Efeito') || 'nenhum';
     return (
       <Secao titulo={titulo} descricao={descricao}>
@@ -546,35 +547,64 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
         <Cores rotulo="Cor do botão" opcoes={CORES_BOTAO} campo="hex" valor={ler('Cor') || 'padrao'} onChange={(v) => gravar('Cor', v)} />
         <Cores rotulo="Cor do texto" opcoes={CORES_TEXTO_BOTAO} campo="hex" valor={ler('CorTexto') || 'padrao'} onChange={(v) => gravar('CorTexto', v)} />
         <Cores rotulo="Cor da linha" opcoes={CORES_LINHA} campo="hex" valor={ler('Linha') || 'padrao'} onChange={(v) => gravar('Linha', v)} />
-        <Deslizante rotulo="Espessura da linha" valor={ler('LinhaEspessura') ?? 1} min={0} max={6} onChange={(v) => gravar('LinhaEspessura', v)} />
+        <Deslizante rotulo="Espessura da linha" valor={ler('LinhaEspessura') ?? espessuraPadrao} min={0} max={6} passo={0.5} onChange={(v) => gravar('LinhaEspessura', v)} />
+        {fontePadrao && <Deslizante rotulo="Tamanho do texto" valor={ler('Fonte') ?? fontePadrao} min={11} max={32} onChange={(v) => gravar('Fonte', v)} />}
+        {comLargura && <Deslizante rotulo="Largura" valor={ler('Largura') ?? 100} min={40} max={100} passo={5} unidade="%" onChange={(v) => gravar('Largura', v)} />}
         <Deslizante rotulo="Altura" valor={ler('Altura') ?? alturaPadrao} min={28} max={alturaMax} onChange={(v) => gravar('Altura', v)} />
         <Deslizante rotulo="Cantos" valor={ler('Raio') ?? raioPadrao} min={0} max={40} onChange={(v) => gravar('Raio', v)} />
       </Secao>
     );
   };
 
+  // Setas ANTERIOR e PRÓXIMA
+  const ConfigSetas = (ler, gravar) => {
+    const seta = configSeta(ler);
+    return (
+      <Secao titulo="Setas Anterior e Próxima">
+        <Segmentos
+          rotulo="Desenho"
+          opcoes={DESENHOS_SETA.map(({ id, label, esq: Esq, dir: Dir }) => ({ id, label, dica: label, conteudo: <span className="flex items-center gap-0.5"><Esq className="w-4 h-4" /><Dir className="w-4 h-4" /></span> }))}
+          valor={ler('Desenho') || 'seta'}
+          onChange={(v) => gravar('Desenho', v)}
+        />
+        <Cores rotulo="Cor" opcoes={CORES_SETA} campo="hex" valor={ler('Cor') || 'branco'} onChange={(v) => gravar('Cor', v)} />
+        <Deslizante rotulo="Tamanho" valor={seta.tamanho} min={16} max={36} onChange={(v) => gravar('Tamanho', v)} />
+        <Deslizante rotulo="Espessura" valor={seta.espessura} min={1} max={4} passo={0.25} unidade="" onChange={(v) => gravar('Espessura', v)} />
+        <div className="grid grid-cols-2 gap-3">
+          <Campo rotulo="Texto da esquerda" valor={seta.anterior} onChange={(v) => gravar('TextoAnterior', v)} placeholder="ANTERIOR" />
+          <Campo rotulo="Texto da direita" valor={seta.proxima} onChange={(v) => gravar('TextoProxima', v)} placeholder="PRÓXIMA" />
+        </div>
+      </Secao>
+    );
+  };
+
   // Cards e botões: mexeu numa página, muda em todas que herdam
   const gravarEstilo = (origem, campo, valor) => setConfig((c) => gravarHerdado(c, origem, campo, valor));
-  const Heranca = (origem) => {
-    const herda = herdaEstilo(config, origem);
+  // origens: 'p1' ou a lista de índices da página
+  const Heranca = (origens) => {
+    const lista = Array.isArray(origens) ? origens : [origens];
+    const herda = herdaEstilo(config, lista[0]);
     return (
-      <Secao>
-        <Chave
-          rotulo="Herdar configurações"
-          descricao={herda
-            ? 'Ligado: o que você mudar nos cards e botões vale para todas as páginas.'
-            : 'Desligado: esta página tem cards e botões próprios.'}
-          valor={herda}
-          onChange={(ligar) => mostrarConfirm(
-            ligar ? 'Voltar a herdar' : 'Parar de herdar',
-            ligar
-              ? 'Os cards e botões desta página voltam a ser iguais aos das outras. Os ajustes próprios dela serão perdidos.'
-              : 'Esta página passa a ter cards e botões próprios: mudanças nas outras não chegam aqui, e as daqui não vão para as outras.',
-            () => setConfig((c) => ligarHeranca(c, origem, ligar)),
-            ligar ? 'Herdar' : 'Não herdar'
-          )}
-        />
-      </Secao>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={herda}
+        title={herda ? 'Ligado: cards, botões, setas e altura das faixas são os mesmos de todas as páginas' : 'Desligado: esta página tem configurações próprias'}
+        onClick={() => mostrarConfirm(
+          herda ? 'Parar de herdar' : 'Voltar a herdar',
+          herda
+            ? 'Esta página passa a ter cards, botões, setas e altura das faixas próprios: mudanças nas outras não chegam aqui, e as daqui não vão para as outras.'
+            : 'Cards, botões, setas e altura das faixas desta página voltam a ser iguais aos das outras. Os ajustes próprios dela serão perdidos.',
+          () => setConfig((c) => lista.reduce((acc, o) => ligarHeranca(acc, o, !herda), c)),
+          herda ? 'Não herdar' : 'Herdar'
+        )}
+        className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs bg-slate-800 text-slate-200 hover:bg-slate-700 transition"
+      >
+        <span>Herdar configurações</span>
+        <span className={`w-7 h-4 rounded-full relative transition ${herda ? 'bg-slate-100' : 'bg-slate-600'}`}>
+          <span className={`absolute top-0.5 w-3 h-3 rounded-full transition-all ${herda ? 'left-[14px] bg-slate-900' : 'left-0.5 bg-slate-300'}`} />
+        </span>
+      </button>
     );
   };
 
@@ -1145,18 +1175,6 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 ))}
               </select>
             </div>
-
-            {/* Texto do botão Avançar: um só para todas as páginas */}
-            <label className="flex items-center gap-2 pl-3 border-l border-slate-800" title="Vale para todas as páginas">
-              <span className="text-xs text-slate-400">Botão</span>
-              <input
-                type="text"
-                value={config.botaoAvancarTexto ?? 'Avançar'}
-                onChange={(e) => setCampo('botaoAvancarTexto', e.target.value)}
-                placeholder="Avançar"
-                className="w-32 bg-slate-950 border border-slate-700 focus:border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none"
-              />
-            </label>
           </div>
 
           <div className="flex items-center gap-2">
@@ -1381,6 +1399,48 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       onCor: (v) => setCampo(`esperaLinha${n}Cor`, v)
                     }))}
                   />
+
+                  <div className="pt-4 border-t border-dashed border-slate-600">
+                    <h2 className="text-sm font-semibold text-white">Todas as páginas</h2>
+                    <p className="text-xs text-slate-400 mt-0.5">O que você muda aqui vale para todas, menos nas páginas com "Herdar" desligado.</p>
+                  </div>
+
+                  <Secao titulo="Cabeçalho">
+                    <Deslizante rotulo="Altura dos fundos" valor={alturaFaixa(config.faixaPadrao)} min={FAIXA_MIN} max={FAIXA_MAX} passo={5} unidade="%" onChange={(v) => setConfig((c) => gravarFaixaPadrao(c, v))} />
+                    <Chave rotulo="Travar cabeçalho" descricao="O título fica preso no alto do celular enquanto a pessoa rola a página." valor={config.travarCabecalho !== false} onChange={(v) => setCampo('travarCabecalho', v)} />
+                  </Secao>
+
+                  <Secao titulo="Botão Começar: texto">
+                    <Chave rotulo="Mostrar botão de começar" descricao="Desligado, o participante cai direto na Tela 1." valor={config.mostrarBotaoComecar !== false} onChange={(v) => setCampo('mostrarBotaoComecar', v)} />
+                    {config.mostrarBotaoComecar !== false && (
+                      <Campo rotulo="Texto do botão" valor={config.pergunta1BotaoComecarTexto ?? 'COMEÇAR'} onChange={(v) => setCampo('pergunta1BotaoComecarTexto', v)} placeholder="COMEÇAR" />
+                    )}
+                  </Secao>
+                  {config.mostrarBotaoComecar !== false && EfeitosBotao({
+                    titulo: 'Botão Começar: aparência',
+                    ler: (k) => config[`comecar${k}`],
+                    gravar: (k, v) => setCampo(`comecar${k}`, v),
+                    alturaPadrao: 56,
+                    alturaMax: 100,
+                    raioPadrao: 16,
+                    espessuraPadrao: 2.5,
+                    fontePadrao: 16,
+                    comLargura: true
+                  })}
+
+                  <Secao titulo="Botão Avançar: texto">
+                    <Campo rotulo="Texto do botão" valor={config.botaoAvancarTexto ?? 'Avançar'} onChange={(v) => setCampo('botaoAvancarTexto', v)} placeholder="Avançar" />
+                  </Secao>
+                  {EfeitosBotao({
+                    titulo: 'Botão Avançar: aparência',
+                    ler: (k) => config[`avancar${k}`],
+                    gravar: (k, v) => setCampo(`avancar${k}`, v),
+                    alturaPadrao: 58,
+                    alturaMax: 80,
+                    raioPadrao: 16,
+                    fontePadrao: 16
+                  })}
+                  {ConfigSetas((k) => config[`seta${k}`], (k, v) => setCampo(`seta${k}`, v))}
                 </div>
               )}
 
@@ -1418,7 +1478,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         onAlinhamento: (v) => setCampo(`${l.id}Alinhamento`, v),
                         fundo: config[`${l.id}Fundo`] || l.fundo,
                         onFundo: (v) => setCampo(`${l.id}Fundo`, v),
-                        faixa: config[`${l.id}Altura`] ?? config.capaAltura,
+                        faixa: config[`${l.id}Altura`] ?? config.capaAltura ?? config.faixaPadrao,
                         onFaixa: (v) => setCampo(`${l.id}Altura`, v),
                         espaco: Number(config[`${l.id}Espaco`] ?? CAPA_ESPACO_PADRAO),
                         onEspaco: !l.multilinha && texto ? (v) => setCampo(`${l.id}Espaco`, v) : undefined
@@ -1439,27 +1499,6 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     )}
                   </Secao>
                   )}
-
-                  <Secao>
-                    <Chave rotulo="Mostrar botão de começar" descricao="Desligado, o participante cai direto na Tela 1." valor={config.mostrarBotaoComecar !== false} onChange={(v) => setCampo('mostrarBotaoComecar', v)} />
-                    {config.mostrarBotaoComecar !== false && (
-                      <Campo rotulo="Texto do botão" valor={config.pergunta1BotaoComecarTexto ?? 'COMEÇAR'} onChange={(v) => setCampo('pergunta1BotaoComecarTexto', v)} placeholder="COMEÇAR" />
-                    )}
-                  </Secao>
-
-                  <Secao titulo="Todas as páginas">
-                    <Chave rotulo="Travar cabeçalho" descricao="O título fica preso no alto do celular enquanto a pessoa rola a página." valor={config.travarCabecalho !== false} onChange={(v) => setCampo('travarCabecalho', v)} />
-                  </Secao>
-
-                  {EfeitosBotao({
-                    titulo: 'Botão Avançar',
-                    descricao: 'Vale para todas as páginas.',
-                    ler: (k) => config[`avancar${k}`],
-                    gravar: (k, v) => setCampo(`avancar${k}`, v),
-                    alturaPadrao: 58,
-                    alturaMax: 80,
-                    raioPadrao: 16
-                  })}
                 </div>
               )}
 
@@ -1478,7 +1517,10 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     ]}
                   />
 
-                  {cardsAtivosP1.length > 0 && <BotaoObrigatorio valor={config.pergunta1Obrigatoria} onChange={(v) => setCampo('pergunta1Obrigatoria', v)} />}
+                  <div className="flex flex-wrap items-center gap-2">
+                    {cardsAtivosP1.length > 0 && <BotaoObrigatorio valor={config.pergunta1Obrigatoria} onChange={(v) => setCampo('pergunta1Obrigatoria', v)} />}
+                    {Heranca('p1')}
+                  </div>
 
                   {subAtualP1 === 'pergunta' && (
                     <div className="space-y-4">
@@ -1487,10 +1529,10 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         linhas={(() => {
                           const e = estiloLinhas(config, 'pergunta1');
                           return [
-                            { rotulo: 'Título 1', texto: config.pergunta1Titulo ?? '', onTexto: (v) => setCampo('pergunta1Titulo', v), tamanho: config.pergunta1FonteTamanho || 18, min: 12, max: 36, onTamanho: (v) => setCampo('pergunta1FonteTamanho', v), cor: config.pergunta1TituloCor || 'branco', onCor: (v) => setCampo('pergunta1TituloCor', v), bold: config.pergunta1TituloBold !== false, onBold: (v) => setCampo('pergunta1TituloBold', v), caixa: config.pergunta1TituloCaixa, onCaixa: (v) => setCampo('pergunta1TituloCaixa', v), alinhamento: e.tituloAl, onAlinhamento: (v) => setCampo('pergunta1TituloAlinhamento', v), fundo: e.tituloFundo, onFundo: (v) => setCampo('pergunta1TituloFundo', v), faixa: config.pergunta1TituloFaixa, onFaixa: (v) => setCampo('pergunta1TituloFaixa', v) },
+                            { rotulo: 'Título 1', texto: config.pergunta1Titulo ?? '', onTexto: (v) => setCampo('pergunta1Titulo', v), tamanho: config.pergunta1FonteTamanho || 18, min: 12, max: 36, onTamanho: (v) => setCampo('pergunta1FonteTamanho', v), cor: config.pergunta1TituloCor || 'branco', onCor: (v) => setCampo('pergunta1TituloCor', v), bold: config.pergunta1TituloBold !== false, onBold: (v) => setCampo('pergunta1TituloBold', v), caixa: config.pergunta1TituloCaixa, onCaixa: (v) => setCampo('pergunta1TituloCaixa', v), alinhamento: e.tituloAl, onAlinhamento: (v) => setCampo('pergunta1TituloAlinhamento', v), fundo: e.tituloFundo, onFundo: (v) => setCampo('pergunta1TituloFundo', v), faixa: config.pergunta1TituloFaixa ?? config.faixaPadrao, onFaixa: (v) => gravarEstilo('p1', 'tituloFaixa', v) },
                             { rotulo: 'Título 2', texto: config.pergunta1Titulo2 ?? '', onTexto: (v) => setCampo('pergunta1Titulo2', v), tamanho: config.pergunta1Titulo2Tamanho || 16, min: 10, max: 32, onTamanho: (v) => setCampo('pergunta1Titulo2Tamanho', v), cor: config.pergunta1Titulo2Cor || 'dourado', onCor: (v) => setCampo('pergunta1Titulo2Cor', v) },
                             { rotulo: 'Título 3', texto: config.pergunta1Titulo3 ?? '', onTexto: (v) => setCampo('pergunta1Titulo3', v), tamanho: config.pergunta1Titulo3Tamanho || 15, min: 10, max: 30, onTamanho: (v) => setCampo('pergunta1Titulo3Tamanho', v), cor: config.pergunta1Titulo3Cor || 'verde', onCor: (v) => setCampo('pergunta1Titulo3Cor', v) },
-                            { rotulo: 'Texto abaixo', texto: config.pergunta1TextoAbaixo ?? '', onTexto: (v) => setCampo('pergunta1TextoAbaixo', v), multilinha: true, tamanho: config.pergunta1TextoAbaixoTamanho || 14, min: 9, max: 26, onTamanho: (v) => setCampo('pergunta1TextoAbaixoTamanho', v), cor: config.pergunta1TextoAbaixoCor || 'cinza', onCor: (v) => setCampo('pergunta1TextoAbaixoCor', v), bold: Boolean(config.pergunta1SubBold), onBold: (v) => setCampo('pergunta1SubBold', v), caixa: config.pergunta1SubCaixa, onCaixa: (v) => setCampo('pergunta1SubCaixa', v), alinhamento: e.subAl, onAlinhamento: (v) => setCampo('pergunta1SubAlinhamento', v), fundo: e.subFundo, onFundo: (v) => setCampo('pergunta1SubFundo', v), faixa: config.pergunta1SubFaixa, onFaixa: (v) => setCampo('pergunta1SubFaixa', v) }
+                            { rotulo: 'Texto abaixo', texto: config.pergunta1TextoAbaixo ?? '', onTexto: (v) => setCampo('pergunta1TextoAbaixo', v), multilinha: true, tamanho: config.pergunta1TextoAbaixoTamanho || 14, min: 9, max: 26, onTamanho: (v) => setCampo('pergunta1TextoAbaixoTamanho', v), cor: config.pergunta1TextoAbaixoCor || 'cinza', onCor: (v) => setCampo('pergunta1TextoAbaixoCor', v), bold: Boolean(config.pergunta1SubBold), onBold: (v) => setCampo('pergunta1SubBold', v), caixa: config.pergunta1SubCaixa, onCaixa: (v) => setCampo('pergunta1SubCaixa', v), alinhamento: e.subAl, onAlinhamento: (v) => setCampo('pergunta1SubAlinhamento', v), fundo: e.subFundo, onFundo: (v) => setCampo('pergunta1SubFundo', v), faixa: config.pergunta1SubFaixa ?? config.faixaPadrao, onFaixa: (v) => gravarEstilo('p1', 'subFaixa', v) }
                           ];
                         })()}
                       />
@@ -1506,7 +1548,6 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
                   {subAtualP1 === 'aparencia' && (
                     <div className="space-y-4">
-                      {Heranca('p1')}
                       {AparenciaCards({ ler: (k) => config[k], gravar: (k, v) => gravarEstilo('p1', k, v), campoIcones: 'mostrarIconesCards', porPagina: cardsPorTelaP1, opcoes: cardsAtivosP1, raios: raiosCard(config, telaP1Cantos(config)) })}
                       {BarraFormatacao({ ehP1: true })}
                     </div>
@@ -1904,7 +1945,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 const membros = posLigada < 0 ? [extraIndex] : telasLigadas.slice(iniGrupo, fimGrupo + 1).map((t) => (config.telasExtras || []).indexOf(t));
                 const ehTexto = ['texto', 'texto_curto'].includes(telaAlvo.tipo);
                 const temLista = emGrupo || ehTexto;
-                const temEfeitos = telaAlvo.tipo === 'grade';
+                const propria = telaAlvo.herdarEstilo === false;
+                const temEfeitos = telaAlvo.tipo === 'grade' || propria;
                 const temAparencia = ehCards && cardsAtivos.length > 0;
                 // Data, hora e estrelas não têm nada para ajustar no campo
                 const semCampo = ehTexto || ['data', 'hora', 'rating'].includes(telaAlvo.tipo);
@@ -1977,7 +2019,10 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       ]}
                     />
 
-                    {subAtual !== 'lista' && <BotaoObrigatorio valor={telaAlvo.obrigatorio} onChange={(v) => handleUpdateTelaProp(extraIndex, 'obrigatorio', v)} />}
+                    <div className="flex flex-wrap items-center gap-2">
+                      {subAtual !== 'lista' && <BotaoObrigatorio valor={telaAlvo.obrigatorio} onChange={(v) => handleUpdateTelaProp(extraIndex, 'obrigatorio', v)} />}
+                      {Heranca(membros)}
+                    </div>
 
                     {subAtual === 'lista' && (
                       <div className="space-y-3">
@@ -2053,7 +2098,6 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
                     {subAtual === 'efeitos' && (
                       <div className="space-y-4">
-                        {Heranca(extraIndex)}
                         {telaAlvo.tipo === 'grade' && EfeitosBotao({
                           titulo: 'Botões de resposta',
                           ler: (k) => telaAlvo[`grade${k}`] ?? config[`grade${k}`],
@@ -2062,6 +2106,16 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                           alturaMax: 72,
                           raioPadrao: 12
                         })}
+                        {propria && !ehCards && EfeitosBotao({
+                          titulo: 'Botão Avançar desta página',
+                          ler: (k) => lerGeral(config, telaAlvo, 'avancar')(k),
+                          gravar: (k, v) => membros.forEach((m) => handleUpdateTelaProp(m, `avancar${k}`, v)),
+                          alturaPadrao: 58,
+                          alturaMax: 80,
+                          raioPadrao: 16,
+                          fontePadrao: 16
+                        })}
+                        {propria && ConfigSetas(lerGeral(config, telaAlvo, 'seta'), (k, v) => membros.forEach((m) => handleUpdateTelaProp(m, `seta${k}`, v)))}
                         {BarraFormatacao({ ehP1: false, extraIndex })}
                       </div>
                     )}
@@ -2082,10 +2136,10 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             const e = estiloLinhas(telaAlvo);
                             const set = (k) => (v) => handleUpdateTelaProp(extraIndex, k, v);
                             const linhasTela = [
-                              { rotulo: 'Título 1', texto: telaAlvo.titulo1 ?? telaAlvo.titulo ?? '', onTexto: (v) => { set('titulo1')(v); set('titulo')(`${v} ${telaAlvo.titulo2 || ''}`.trim()); }, tamanho: telaAlvo.titulo1Tamanho || 18, min: 11, max: 36, onTamanho: set('titulo1Tamanho'), cor: telaAlvo.titulo1Cor || 'branco', onCor: set('titulo1Cor'), bold: telaAlvo.tituloBold !== false, onBold: set('tituloBold'), caixa: telaAlvo.tituloCaixa, onCaixa: set('tituloCaixa'), alinhamento: e.tituloAl, onAlinhamento: set('tituloAlinhamento'), fundo: e.tituloFundo, onFundo: set('tituloFundo'), faixa: telaAlvo.tituloFaixa, onFaixa: set('tituloFaixa') },
+                              { rotulo: 'Título 1', texto: telaAlvo.titulo1 ?? telaAlvo.titulo ?? '', onTexto: (v) => { set('titulo1')(v); set('titulo')(`${v} ${telaAlvo.titulo2 || ''}`.trim()); }, tamanho: telaAlvo.titulo1Tamanho || 18, min: 11, max: 36, onTamanho: set('titulo1Tamanho'), cor: telaAlvo.titulo1Cor || 'branco', onCor: set('titulo1Cor'), bold: telaAlvo.tituloBold !== false, onBold: set('tituloBold'), caixa: telaAlvo.tituloCaixa, onCaixa: set('tituloCaixa'), alinhamento: e.tituloAl, onAlinhamento: set('tituloAlinhamento'), fundo: e.tituloFundo, onFundo: set('tituloFundo'), faixa: telaAlvo.tituloFaixa ?? config.faixaPadrao, onFaixa: (v) => gravarEstilo(extraIndex, 'tituloFaixa', v) },
                               { rotulo: 'Título 2', texto: telaAlvo.titulo2 ?? '', onTexto: (v) => { set('titulo2')(v); set('titulo')(`${telaAlvo.titulo1 || telaAlvo.titulo || ''} ${v}`.trim()); }, tamanho: telaAlvo.titulo2Tamanho || 15, min: 11, max: 36, onTamanho: set('titulo2Tamanho'), cor: telaAlvo.titulo2Cor || 'dourado', onCor: set('titulo2Cor') },
                               { rotulo: 'Título 3', texto: telaAlvo.titulo3 ?? '', onTexto: set('titulo3'), tamanho: telaAlvo.titulo3Tamanho || 14, min: 11, max: 36, onTamanho: set('titulo3Tamanho'), cor: telaAlvo.titulo3Cor || 'verde', onCor: set('titulo3Cor') },
-                              { rotulo: 'Texto abaixo', texto: telaAlvo.subtitulo ?? '', onTexto: set('subtitulo'), multilinha: true, tamanho: telaAlvo.subtituloTamanho || 12, min: 9, max: 26, onTamanho: set('subtituloTamanho'), cor: telaAlvo.subtituloCor || 'cinza', onCor: set('subtituloCor'), bold: Boolean(telaAlvo.subBold), onBold: set('subBold'), caixa: telaAlvo.subCaixa, onCaixa: set('subCaixa'), alinhamento: e.subAl, onAlinhamento: set('subAlinhamento'), fundo: e.subFundo, onFundo: set('subFundo'), faixa: telaAlvo.subFaixa, onFaixa: set('subFaixa') },
+                              { rotulo: 'Texto abaixo', texto: telaAlvo.subtitulo ?? '', onTexto: set('subtitulo'), multilinha: true, tamanho: telaAlvo.subtituloTamanho || 12, min: 9, max: 26, onTamanho: set('subtituloTamanho'), cor: telaAlvo.subtituloCor || 'cinza', onCor: set('subtituloCor'), bold: Boolean(telaAlvo.subBold), onBold: set('subBold'), caixa: telaAlvo.subCaixa, onCaixa: set('subCaixa'), alinhamento: e.subAl, onAlinhamento: set('subAlinhamento'), fundo: e.subFundo, onFundo: set('subFundo'), faixa: telaAlvo.subFaixa ?? config.faixaPadrao, onFaixa: (v) => gravarEstilo(extraIndex, 'subFaixa', v) },
                               ...(telaAlvo.tipo === 'grade' ? [
                                 { rotulo: 'Legenda', texto: telaAlvo.legendaEscala ?? '', onTexto: set('legendaEscala'), placeholder: '1 = Péssimo; 5 = Ótimo; NA = Não se aplica', tamanho: telaAlvo.escalaTamanho || 9, min: 7, max: 18, onTamanho: set('escalaTamanho'), cor: telaAlvo.legendaCor || 'cinza', onCor: set('legendaCor'), bold: Boolean(telaAlvo.legendaBold), onBold: set('legendaBold'), caixa: telaAlvo.legendaCaixa, onCaixa: set('legendaCaixa'), fundo: telaAlvo.legendaFundo || 'escuro', onFundo: set('legendaFundo'), faixa: telaAlvo.legendaFaixa, onFaixa: set('legendaFaixa') },
                                 { rotulo: 'Itens da grade', texto: cardsAtivos.map((o) => o.titulo).join(', '), tamanho: telaAlvo.itemTamanho || 12, min: 8, max: 20, onTamanho: set('itemTamanho'), cor: telaAlvo.itemCor || 'branco', onCor: set('itemCor'), bold: telaAlvo.itemBold !== false, onBold: set('itemBold'), caixa: telaAlvo.itemCaixa, onCaixa: set('itemCaixa'), fundo: telaAlvo.itemFundo || 'escuro', onFundo: set('itemFundo'), faixa: telaAlvo.itemFaixa, onFaixa: set('itemFaixa') }
@@ -2123,7 +2177,6 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
                     {subAtual === 'aparencia' && (
                       <div className="space-y-4">
-                        {Heranca(extraIndex)}
                         {AparenciaCards({
                           ler: (k) => telaAlvo[k] ?? config[k],
                           gravar: (k, v) => gravarEstilo(extraIndex, k, v),
