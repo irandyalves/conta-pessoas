@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AlignLeft, AlignCenter, AlignRight, ChevronDown } from 'lucide-react';
+import { AlignLeft, AlignCenter, AlignRight, ChevronDown, GripVertical } from 'lucide-react';
 
 // =====================================================================
 // CONTROLES DO EDITOR
@@ -202,6 +202,65 @@ export function SeletorIcone({ opcoes, atual, manual, onChange }) {
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+// Questão arrastável: segure em qualquer ponto (menos nos campos e botões) e solte acima ou abaixo de outra.
+// Pelo teclado: foque a alça e use as setas.
+let arrastando = null; // { lista, indice }
+export function QuestaoArrastavel({ lista, indice, total, onMover, className = '', children }) {
+  const [alvo, setAlvo] = useState('');
+  const [movendo, setMovendo] = useState(false);
+  const metade = (e) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    return e.clientY < r.top + r.height / 2 ? 'antes' : 'depois';
+  };
+  return (
+    <div
+      className={`questao ${indice % 2 ? 'questao-par' : ''} ${movendo ? 'questao-arrastando' : ''} ${alvo ? `questao-alvo-${alvo}` : ''} ${className}`}
+      onMouseDown={(e) => { e.currentTarget.draggable = !e.target.closest('input,textarea,select,button:not([data-alca])'); }}
+      onDragStart={(e) => {
+        arrastando = { lista, indice };
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', '');
+        setMovendo(true);
+      }}
+      onDragEnd={(e) => { arrastando = null; e.currentTarget.draggable = false; setMovendo(false); setAlvo(''); }}
+      onDragOver={(e) => {
+        if (!arrastando || arrastando.lista !== lista) return;
+        e.preventDefault();
+        setAlvo(arrastando.indice === indice ? '' : metade(e));
+      }}
+      onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setAlvo(''); }}
+      onDrop={(e) => {
+        setAlvo('');
+        if (!arrastando || arrastando.lista !== lista) return;
+        e.preventDefault();
+        const de = arrastando.indice;
+        let para = indice + (metade(e) === 'depois' ? 1 : 0);
+        if (para > de) para -= 1;
+        arrastando = null;
+        if (para !== de) onMover(de, para);
+      }}
+    >
+      <button
+        type="button"
+        data-alca="1"
+        title="Arraste para mudar a ordem (ou use as setas do teclado)"
+        aria-label={`Mover questão ${indice + 1}`}
+        onKeyDown={(e) => {
+          const para = e.key === 'ArrowUp' ? indice - 1 : e.key === 'ArrowDown' ? indice + 1 : -1;
+          if (para < 0 || para >= total) return;
+          e.preventDefault();
+          onMover(indice, para);
+        }}
+        className="absolute left-0 top-4 w-4 sm:w-5 h-7 flex items-center justify-center text-slate-500 hover:text-white"
+        style={{ cursor: 'grab' }}
+      >
+        <GripVertical className="w-4 h-4" />
+      </button>
+      {children}
     </div>
   );
 }

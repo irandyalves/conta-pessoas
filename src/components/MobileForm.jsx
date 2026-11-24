@@ -40,7 +40,7 @@ import {
   DEFAULT_EVENT_ID
 } from '../firebase';
 import { componenteIcone, iconesDaTela } from '../utils/icones';
-import { faixaEstilo, linhasCapa, medidasCard, espacos, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getEfeitoStyle, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems } from '../utils/estilos';
+import { CARD_ESPACO_PADRAO, faixaEstilo, linhasCapa, medidasCard, espacos, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getEfeitoStyle, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems } from '../utils/estilos';
 
 const DISPOSITIVO_BLOQUEADO_KEY = 'presenca_dispositivo_bloqueado_voto';
 const DISPOSITIVO_VOTO_TIME_KEY = 'presenca_dispositivo_hora_voto';
@@ -1232,7 +1232,7 @@ export default function MobileForm({ preview = false }) {
                 )}
 
                 {/* Cards do Slide Atual */}
-                <div className="space-y-3">
+                <div className="flex flex-col" style={{ gap: Number(questionsConfig?.cardEspaco ?? CARD_ESPACO_PADRAO) }}>
                   {cardsDoSlideAtual.map((opcao) => {
                     const IconComponent = componenteIcone(iconesP1[opcao.id]);
                     const corCls = COR_CLASSES[opcao.cor] || COR_CLASSES.amber;
@@ -1240,7 +1240,7 @@ export default function MobileForm({ preview = false }) {
                     const cardFonteTituloCls = CARD_FONTE_TITULO_CLASSES[questionsConfig?.cardCorFonteTitulo] || 'text-white';
                     const cardFonteSubtituloCls = CARD_FONTE_SUBTITULO_CLASSES[questionsConfig?.cardCorFonteSubtitulo] || 'text-slate-400';
                     const cardEfeitoInline = getEfeitoStyle(questionsConfig?.cardEfeitoEstilo, questionsConfig?.cardProfundidade);
-                    const medidas = medidasCard(questionsConfig?.cardAltura);
+                    const medidas = medidasCard(questionsConfig?.cardAltura, questionsConfig?.cardRaio);
 
                     const isGavetaAberta = isGavetaAbertaDe('p1', opcao);
 
@@ -1688,14 +1688,15 @@ export default function MobileForm({ preview = false }) {
                 <div className="h-28" />
                 <div className="fixed bottom-0 inset-x-0 z-30 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent">
                 <div className="max-w-md mx-auto">
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center justify-between gap-2">
                 <button
                   type="button"
                   aria-label="Voltar à pergunta anterior"
                   onClick={() => comFeedback(`voltar_${tela.id}`, voltarParaAnterior)}
-                  className={`w-14 h-14 shrink-0 rounded-2xl flex items-center justify-center text-white ${clicado === `voltar_${tela.id}` ? 'efeito-acender' : ''}`}
+                  className={`flex-1 h-14 rounded-2xl flex flex-col items-center justify-center gap-0.5 text-white ${clicado === `voltar_${tela.id}` ? 'efeito-acender' : ''}`}
                 >
-                  <ArrowLeft className="w-6 h-6" />
+                  <ArrowLeft className="w-6 h-6" strokeWidth={2.75} />
+                  <span className="text-[10px] font-light tracking-wide leading-none">ANTERIOR</span>
                 </button>
                 <button
                   type="button"
@@ -1752,7 +1753,7 @@ export default function MobileForm({ preview = false }) {
                   </div>
                 </div>
               )}
-              <div className="space-y-3">
+              <div className="flex flex-col" style={{ gap: Number(tela.cardEspaco ?? questionsConfig?.cardEspaco ?? CARD_ESPACO_PADRAO) }}>
                 {opcoesPagina.map((opt) => {
                   const IconComp = componenteIcone(iconesTela[opt.id]);
                   const corCls = COR_CLASSES[opt.cor] || COR_CLASSES.emerald;
@@ -1760,7 +1761,7 @@ export default function MobileForm({ preview = false }) {
                   const cardFonteTituloCls = CARD_FONTE_TITULO_CLASSES[tela.cardCorFonteTitulo || questionsConfig?.cardCorFonteTitulo] || 'text-white';
                   const cardFonteSubtituloCls = CARD_FONTE_SUBTITULO_CLASSES[tela.cardCorFonteSubtitulo || questionsConfig?.cardCorFonteSubtitulo] || 'text-slate-400';
                   const cardEfeitoInline = getEfeitoStyle(estiloEfeito, estiloProf);
-                  const medidas = medidasCard(tela.cardAltura || questionsConfig?.cardAltura);
+                  const medidas = medidasCard(tela.cardAltura || questionsConfig?.cardAltura, tela.cardRaio ?? questionsConfig?.cardRaio);
 
                   const isGavetaAberta = isGavetaAbertaDe(tela.id, opt);
 

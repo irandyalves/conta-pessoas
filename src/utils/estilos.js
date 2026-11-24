@@ -105,13 +105,15 @@ export function getEfeitoStyle(efeito = 'padrao', profundidade = 5, rgb = '251, 
 export const CARD_ALTURA_MIN = 49;
 export const CARD_ALTURA_MAX = 130;
 export const alturaCard = (valor) => Math.max(CARD_ALTURA_MIN, Math.min(CARD_ALTURA_MAX, Number(valor) || 82));
-export const medidasCard = (valor) => {
+export const CARD_ESPACO_PADRAO = 12;
+export const CARD_RAIO_PADRAO = 16;
+export const medidasCard = (valor, raio) => {
   const h = alturaCard(valor);
   const f = Math.max(0, Math.min(1, (h - CARD_ALTURA_MIN) / (82 - CARD_ALTURA_MIN)));
   const icone = Math.round(28 + 20 * f);
   const py = Math.round(4 + 12 * f);
   return {
-    caixa: { minHeight: `${h}px`, paddingTop: `${py}px`, paddingBottom: `${py}px` },
+    caixa: { borderRadius: `${Number(raio ?? CARD_RAIO_PADRAO)}px`, minHeight: `${h}px`, paddingTop: `${py}px`, paddingBottom: `${py}px` },
     icone: { width: `${icone}px`, height: `${icone}px` }
   };
 };
@@ -237,7 +239,7 @@ const MAPA_EXTRA = {
   espacoTitulos: 'espacoTitulos', espacoSub: 'espacoSub', espacoCards: 'espacoCards'
 };
 // Campos com o mesmo nome nos dois lugares
-const COMUNS = ['cardAltura', 'cardsPorTela', 'cardFundoEstilo', 'cardEfeitoEstilo', 'cardProfundidade', 'cardCorFonteTitulo',
+const COMUNS = ['cardAltura', 'cardEspaco', 'cardRaio', 'cardsPorTela', 'cardFundoEstilo', 'cardEfeitoEstilo', 'cardProfundidade', 'cardCorFonteTitulo',
   'cardCorFonteSubtitulo', 'cardFonteTitulo', 'cardFonteSubtitulo', 'escalaTamanho', 'legendaCor', 'legendaBold', 'legendaFundo',
   'itemTamanho', 'itemCor', 'itemBold', 'itemFundo', 'legendaFaixa', 'itemFaixa'];
 

@@ -51,13 +51,13 @@ import {
   saveEventTitle,
   DEFAULT_QUESTIONS_CONFIG 
 } from '../firebase';
-import { linhasCapa, alturaCard, CAPA_ESPACO_PADRAO, CARD_ALTURA_MAX, CARD_ALTURA_MIN, espacos, continuaNaMesmaPagina, extrairEstilo, aplicarEstilo, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems, getEfeitoStyle, CORES_TEXTO_LINHAS, ALINHAMENTOS_TEXTO, FUNDOS_CAPTION } from '../utils/estilos';
+import { CARD_ESPACO_PADRAO, CARD_RAIO_PADRAO, linhasCapa, alturaCard, CAPA_ESPACO_PADRAO, CARD_ALTURA_MAX, CARD_ALTURA_MIN, espacos, continuaNaMesmaPagina, extrairEstilo, aplicarEstilo, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems, getEfeitoStyle, CORES_TEXTO_LINHAS, ALINHAMENTOS_TEXTO, FUNDOS_CAPTION } from '../utils/estilos';
 import ImportadorIA from './ImportadorIA';
 import IconeEspera, { ICONES_ESPERA } from './IconeEspera';
 import PreviewCelular from './PreviewCelular';
 import EscalaVisual, { ESTILOS_ESCALA } from './EscalaVisual';
 import EstiloLinhasTitulo, { ControleEspacos } from './EstiloLinhasTitulo';
-import { Campo, Chave, Cores, Deslizante, Lista, Secao, Segmentos, SeletorIcone } from './Controles';
+import { Campo, Chave, Cores, Deslizante, Lista, QuestaoArrastavel, Secao, Segmentos, SeletorIcone } from './Controles';
 import { ICONES_CARDS, iconesDaTela } from '../utils/icones';
 import { PRESETS_PESQUISAS } from '../utils/presets';
 
@@ -278,6 +278,12 @@ const MODELOS_CELULARES = [
   }
 ];
 
+const moverItem = (lista, de, para) => {
+  const nova = [...(lista || [])];
+  nova.splice(para, 0, nova.splice(de, 1)[0]);
+  return nova;
+};
+
 export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = null, eventTitle = '', inline = false }) {
   // Abas: 'inicio' | 'tela_1' | 'extra_0', 'extra_1'... | 'acompanhantes' | 'fim'
   const [activeTab, setActiveTabEstado] = useState('inicio');
@@ -478,6 +484,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
     <>
       <Secao titulo="Tamanho">
         <Deslizante rotulo="Altura do card" valor={alturaCard(ler('cardAltura'))} min={CARD_ALTURA_MIN} max={CARD_ALTURA_MAX} onChange={(v) => gravar('cardAltura', v)} />
+        <Deslizante rotulo="Espaço entre cards" valor={Number(ler('cardEspaco') ?? CARD_ESPACO_PADRAO)} min={0} max={40} onChange={(v) => gravar('cardEspaco', v)} />
+        <Deslizante rotulo="Cantos" valor={Number(ler('cardRaio') ?? CARD_RAIO_PADRAO)} min={0} max={40} onChange={(v) => gravar('cardRaio', v)} />
         <Deslizante rotulo="Título" valor={ler('cardFonteTitulo') || 16} min={12} max={24} onChange={(v) => gravar('cardFonteTitulo', v)} />
         {temDescricao && <Deslizante rotulo="Descrição" valor={ler('cardFonteSubtitulo') || 12} min={9} max={18} onChange={(v) => gravar('cardFonteSubtitulo', v)} />}
         {opcoes.length > 2 && <Deslizante rotulo="Cards por página" valor={Math.min(15, porPagina)} min={2} max={15} unidade="" onChange={(v) => gravar('cardsPorTela', v)} />}
@@ -1362,8 +1370,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         onClick={handleAdicionarCardP1}
                         className="px-3 py-1.5 bg-slate-100 hover:bg-white active:scale-95 text-slate-900 font-bold text-xs rounded-xl shadow-md transition flex items-center gap-1.5"
                       >
-                        <Plus className="w-3.5 h-3.5" />
-                        <span>Adicionar opção</span>
+                        <Plus className="w-4 h-4 text-emerald-600" strokeWidth={4} />
+                        <span>Add Questões</span>
                       </button>
                     </div>
 
@@ -1374,7 +1382,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             Tela 1 em branco (sem opções cadastradas ainda)
                           </p>
                           <p className="text-[11px] text-slate-400">
-                            Clique em <strong>"Adicionar Opção"</strong> acima, use <strong>"+ Inserir Tela"</strong> para montar Tela 2, Tela 3... ou clique em <strong>"Importar IA"</strong>.
+                            Clique em <strong>"Add Questões"</strong> acima, use <strong>"+ Inserir Tela"</strong> para montar Tela 2, Tela 3... ou clique em <strong>"Importar IA"</strong>.
                           </p>
                         </div>
                       )}
@@ -1384,8 +1392,12 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         const paginaDoCard = isAtivo ? Math.max(1, Math.ceil(ativosAteAqui / cardsPorTelaP1)) : null;
 
                         return (
-                          <div
+                          <QuestaoArrastavel
                             key={opcao.id || idx}
+                            lista="p1"
+                            indice={idx}
+                            total={(config.opcoesChegada || []).length}
+                            onMover={(de, para) => setConfig((c) => ({ ...c, opcoesChegada: moverItem(c.opcoesChegada, de, para) }))}
                             className={`-mx-4 sm:-mx-5 px-4 sm:px-5 py-4 space-y-3 border-t border-dashed border-slate-600 ${isAtivo ? '' : 'opacity-50'}`}
                           >
                             {/* Barra Superior do Card */}
@@ -1697,7 +1709,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                 </div>
                               )}
                             </div>
-                          </div>
+                          </QuestaoArrastavel>
                         );
                       })}
                     </div>
@@ -2025,8 +2037,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                               onClick={() => handleAddCardExtra(extraIndex)}
                               className="px-3 py-1 bg-slate-100 hover:bg-white text-slate-900 font-bold text-xs rounded-lg shadow active:scale-95 transition flex items-center gap-1.5"
                             >
-                              <Plus className="w-3.5 h-3.5" />
-                              <span>{telaAlvo.tipo === 'grade' ? 'Adicionar Item' : 'Adicionar Opção'}</span>
+                              <Plus className="w-4 h-4 text-emerald-600" strokeWidth={4} />
+                              <span>Add Questões</span>
                             </button>
                           </div>
 
@@ -2035,8 +2047,15 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                               const isAtivo = opcao.ativo !== false;
 
                               return (
-                                <div
+                                <QuestaoArrastavel
                                   key={opcao.id || optIdx}
+                                  lista={`extra_${extraIndex}`}
+                                  indice={optIdx}
+                                  total={(telaAlvo.opcoes || []).length}
+                                  onMover={(de, para) => setConfig((c) => ({
+                                    ...c,
+                                    telasExtras: (c.telasExtras || []).map((t, i) => (i === extraIndex ? { ...t, opcoes: moverItem(t.opcoes, de, para) } : t))
+                                  }))}
                                   className={`-mx-4 sm:-mx-5 px-4 sm:px-5 py-4 space-y-3 border-t border-dashed border-slate-600 ${isAtivo ? '' : 'opacity-50'}`}
                                 >
                                   <div className="flex items-center justify-between gap-2">
@@ -2104,7 +2123,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                     </div>
                                   </div>
 
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                  <div className={`grid grid-cols-1 gap-2 ${telaAlvo.tipo === 'grade' ? '' : 'sm:grid-cols-2'}`}>
                                     <div>
                                       <label className="text-[11px] font-bold text-slate-400 block mb-0.5">Título</label>
                                       <input
@@ -2115,7 +2134,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                         className="w-full bg-slate-900 border border-slate-700 focus:border-slate-300 rounded-lg px-2.5 py-1 text-xs font-bold text-white shadow-inner"
                                       />
                                     </div>
-                                    <div>
+                                    <div className={telaAlvo.tipo === 'grade' ? 'hidden' : ''}>
                                       <label className="text-[11px] font-bold text-slate-400 block mb-0.5">Descrição (opcional)</label>
                                       <input
                                         type="text"
@@ -2292,7 +2311,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                       </div>
                                     )}
                                   </div>
-                                </div>
+                                </QuestaoArrastavel>
                               );
                             })}
                           </div>
