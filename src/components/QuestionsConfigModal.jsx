@@ -51,7 +51,7 @@ import {
   saveEventTitle,
   DEFAULT_QUESTIONS_CONFIG 
 } from '../firebase';
-import { CORES_BOTAO, CORES_LINHA, CORES_TEXTO_BOTAO, CARD_ESPACO_PADRAO, raiosCard, linhasCapa, alturaCard, CAPA_ESPACO_PADRAO, CARD_ALTURA_MAX, CARD_ALTURA_MIN, espacos, continuaNaMesmaPagina, extrairEstilo, aplicarEstilo, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems, getEfeitoStyle, CORES_TEXTO_LINHAS, ALINHAMENTOS_TEXTO, FUNDOS_CAPTION } from '../utils/estilos';
+import { gravarHerdado, herdaEstilo, ligarHeranca, semCamposHerdados, telaP1Cantos, CORES_BOTAO, CORES_LINHA, CORES_TEXTO_BOTAO, CARD_ESPACO_PADRAO, raiosCard, linhasCapa, alturaCard, CAPA_ESPACO_PADRAO, CARD_ALTURA_MAX, CARD_ALTURA_MIN, espacos, continuaNaMesmaPagina, extrairEstilo, aplicarEstilo, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems, getEfeitoStyle, CORES_TEXTO_LINHAS, ALINHAMENTOS_TEXTO, FUNDOS_CAPTION } from '../utils/estilos';
 import ImportadorIA from './ImportadorIA';
 import IconeEspera, { ICONES_ESPERA } from './IconeEspera';
 import PreviewCelular from './PreviewCelular';
@@ -445,19 +445,21 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
   };
   const colarEstilo = (ehP1, extraIndex) => {
     if (!estiloCopiado) return;
+    // Página que herda: cards e botões já são os de todas, então cola só a formatação dos títulos
+    const colar = herdaEstilo(config, ehP1 ? 'p1' : extraIndex) ? semCamposHerdados(estiloCopiado) : estiloCopiado;
     setConfig((prev) => ehP1
-      ? aplicarEstilo(prev, estiloCopiado, true)
-      : { ...prev, telasExtras: (prev.telasExtras || []).map((t, i) => (i === extraIndex ? aplicarEstilo(t, estiloCopiado, false) : t)) });
+      ? aplicarEstilo(prev, colar, true)
+      : { ...prev, telasExtras: (prev.telasExtras || []).map((t, i) => (i === extraIndex ? aplicarEstilo(t, colar, false) : t)) });
   };
   const replicarEmTodas = (ehP1, extraIndex) => {
     const origem = ehP1 ? config : (config.telasExtras || [])[extraIndex];
     const e = extrairEstilo(origem, ehP1);
     mostrarConfirm(
       'Replicar formatação',
-      'Aplicar o tamanho, cor, negrito, alinhamento e fundo do título/subtítulo, além do estilo dos cards, legenda e itens desta tela em TODAS as telas?',
+      'Aplicar o tamanho, cor, negrito, alinhamento e fundo do título/subtítulo, além do estilo dos cards, legenda e itens desta tela em TODAS as telas? Páginas que não herdam configurações mantêm os próprios cards e botões.',
       () => setConfig((prev) => ({
-        ...aplicarEstilo(prev, e, true),
-        telasExtras: (prev.telasExtras || []).map((t) => aplicarEstilo(t, e, false))
+        ...aplicarEstilo(prev, herdaEstilo(prev, 'p1') || ehP1 ? e : semCamposHerdados(e), true),
+        telasExtras: (prev.telasExtras || []).map((t) => aplicarEstilo(t, t.herdarEstilo === false ? semCamposHerdados(e) : e, false))
       })),
       'Replicar em todas'
     );
@@ -551,8 +553,33 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
     );
   };
 
+  // Cards e botões: mexeu numa página, muda em todas que herdam
+  const gravarEstilo = (origem, campo, valor) => setConfig((c) => gravarHerdado(c, origem, campo, valor));
+  const Heranca = (origem) => {
+    const herda = herdaEstilo(config, origem);
+    return (
+      <Secao>
+        <Chave
+          rotulo="Herdar configurações"
+          descricao={herda
+            ? 'Ligado: o que você mudar nos cards e botões vale para todas as páginas.'
+            : 'Desligado: esta página tem cards e botões próprios.'}
+          valor={herda}
+          onChange={(ligar) => mostrarConfirm(
+            ligar ? 'Voltar a herdar' : 'Parar de herdar',
+            ligar
+              ? 'Os cards e botões desta página voltam a ser iguais aos das outras. Os ajustes próprios dela serão perdidos.'
+              : 'Esta página passa a ter cards e botões próprios: mudanças nas outras não chegam aqui, e as daqui não vão para as outras.',
+            () => setConfig((c) => ligarHeranca(c, origem, ligar)),
+            ligar ? 'Herdar' : 'Não herdar'
+          )}
+        />
+      </Secao>
+    );
+  };
+
   // Aparência dos cards de opção: a mesma para a Tela 1 e para as telas extras
-  const AparenciaCards = ({ ler, gravar, campoIcones, porPagina, opcoes }) => {
+  const AparenciaCards = ({ ler, gravar, campoIcones, porPagina, opcoes, raios }) => {
     // Só mostra ajuste do que aparece no celular (ex.: sem descrição nos cards, nada de descrição aqui)
     const temDescricao = opcoes.some((o) => String(o.subtitulo || '').trim());
     return (
@@ -560,14 +587,14 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
       <Secao titulo="Tamanho">
         <Deslizante rotulo="Altura do card" valor={alturaCard(ler('cardAltura'))} min={CARD_ALTURA_MIN} max={CARD_ALTURA_MAX} onChange={(v) => gravar('cardAltura', v)} />
         <Deslizante rotulo="Espaço entre cards" valor={Number(ler('cardEspaco') ?? CARD_ESPACO_PADRAO)} min={0} max={40} onChange={(v) => gravar('cardEspaco', v)} />
-        <div className="grid grid-cols-2 gap-4" title="Vale para todas as perguntas do evento">
-          <Deslizante rotulo="Cantos esquerda" valor={raiosCard(config, { cardRaio: ler('cardRaio') }).esq} min={0} max={40} onChange={(v) => setCampo('cardRaioEsq', v)} />
-          <Deslizante rotulo="Cantos direita" valor={raiosCard(config, { cardRaio: ler('cardRaio') }).dir} min={0} max={40} onChange={(v) => setCampo('cardRaioDir', v)} />
+        <div className="grid grid-cols-2 gap-4" >
+          <Deslizante rotulo="Cantos esquerda" valor={raios.esq} min={0} max={40} onChange={(v) => gravar('cardRaioEsq', v)} />
+          <Deslizante rotulo="Cantos direita" valor={raios.dir} min={0} max={40} onChange={(v) => gravar('cardRaioDir', v)} />
         </div>
         <Deslizante rotulo="Título" valor={ler('cardFonteTitulo') || 16} min={12} max={24} onChange={(v) => gravar('cardFonteTitulo', v)} />
         {temDescricao && <Deslizante rotulo="Descrição" valor={ler('cardFonteSubtitulo') || 12} min={9} max={18} onChange={(v) => gravar('cardFonteSubtitulo', v)} />}
         {opcoes.length > 2 && <Deslizante rotulo="Cards por página" valor={Math.min(15, porPagina)} min={2} max={15} unidade="" onChange={(v) => gravar('cardsPorTela', v)} />}
-        <Chave rotulo="Mostrar ícones nos cards" valor={ler(campoIcones) !== false} onChange={(v) => gravar(campoIcones, v)} />
+        <Chave rotulo="Mostrar ícones nos cards" valor={ler(campoIcones) !== false} onChange={(v) => gravar('mostrarIcones', v)} />
       </Secao>
       <Secao titulo="Efeito">
         <Segmentos rotulo="Acabamento" opcoes={EFEITOS_CARDS} valor={ler('cardEfeitoEstilo') || 'padrao'} onChange={(v) => gravar('cardEfeitoEstilo', v)} />
@@ -1385,6 +1412,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         onCor: (v) => setCampo(`${l.id}Cor`, v),
                         bold: config[`${l.id}Bold`] ?? l.bold,
                         onBold: (v) => setCampo(`${l.id}Bold`, v),
+                        caixa: config[`${l.id}Caixa`],
+                        onCaixa: (v) => setCampo(`${l.id}Caixa`, v),
                         alinhamento: config[`${l.id}Alinhamento`] || config.capaAlinhamento || 'center',
                         onAlinhamento: (v) => setCampo(`${l.id}Alinhamento`, v),
                         fundo: config[`${l.id}Fundo`] || l.fundo,
@@ -1458,10 +1487,10 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         linhas={(() => {
                           const e = estiloLinhas(config, 'pergunta1');
                           return [
-                            { rotulo: 'Título 1', texto: config.pergunta1Titulo ?? '', onTexto: (v) => setCampo('pergunta1Titulo', v), tamanho: config.pergunta1FonteTamanho || 18, min: 12, max: 36, onTamanho: (v) => setCampo('pergunta1FonteTamanho', v), cor: config.pergunta1TituloCor || 'branco', onCor: (v) => setCampo('pergunta1TituloCor', v), bold: config.pergunta1TituloBold !== false, onBold: (v) => setCampo('pergunta1TituloBold', v), alinhamento: e.tituloAl, onAlinhamento: (v) => setCampo('pergunta1TituloAlinhamento', v), fundo: e.tituloFundo, onFundo: (v) => setCampo('pergunta1TituloFundo', v), faixa: config.pergunta1TituloFaixa, onFaixa: (v) => setCampo('pergunta1TituloFaixa', v) },
+                            { rotulo: 'Título 1', texto: config.pergunta1Titulo ?? '', onTexto: (v) => setCampo('pergunta1Titulo', v), tamanho: config.pergunta1FonteTamanho || 18, min: 12, max: 36, onTamanho: (v) => setCampo('pergunta1FonteTamanho', v), cor: config.pergunta1TituloCor || 'branco', onCor: (v) => setCampo('pergunta1TituloCor', v), bold: config.pergunta1TituloBold !== false, onBold: (v) => setCampo('pergunta1TituloBold', v), caixa: config.pergunta1TituloCaixa, onCaixa: (v) => setCampo('pergunta1TituloCaixa', v), alinhamento: e.tituloAl, onAlinhamento: (v) => setCampo('pergunta1TituloAlinhamento', v), fundo: e.tituloFundo, onFundo: (v) => setCampo('pergunta1TituloFundo', v), faixa: config.pergunta1TituloFaixa, onFaixa: (v) => setCampo('pergunta1TituloFaixa', v) },
                             { rotulo: 'Título 2', texto: config.pergunta1Titulo2 ?? '', onTexto: (v) => setCampo('pergunta1Titulo2', v), tamanho: config.pergunta1Titulo2Tamanho || 16, min: 10, max: 32, onTamanho: (v) => setCampo('pergunta1Titulo2Tamanho', v), cor: config.pergunta1Titulo2Cor || 'dourado', onCor: (v) => setCampo('pergunta1Titulo2Cor', v) },
                             { rotulo: 'Título 3', texto: config.pergunta1Titulo3 ?? '', onTexto: (v) => setCampo('pergunta1Titulo3', v), tamanho: config.pergunta1Titulo3Tamanho || 15, min: 10, max: 30, onTamanho: (v) => setCampo('pergunta1Titulo3Tamanho', v), cor: config.pergunta1Titulo3Cor || 'verde', onCor: (v) => setCampo('pergunta1Titulo3Cor', v) },
-                            { rotulo: 'Texto abaixo', texto: config.pergunta1TextoAbaixo ?? '', onTexto: (v) => setCampo('pergunta1TextoAbaixo', v), multilinha: true, tamanho: config.pergunta1TextoAbaixoTamanho || 14, min: 9, max: 26, onTamanho: (v) => setCampo('pergunta1TextoAbaixoTamanho', v), cor: config.pergunta1TextoAbaixoCor || 'cinza', onCor: (v) => setCampo('pergunta1TextoAbaixoCor', v), bold: Boolean(config.pergunta1SubBold), onBold: (v) => setCampo('pergunta1SubBold', v), alinhamento: e.subAl, onAlinhamento: (v) => setCampo('pergunta1SubAlinhamento', v), fundo: e.subFundo, onFundo: (v) => setCampo('pergunta1SubFundo', v), faixa: config.pergunta1SubFaixa, onFaixa: (v) => setCampo('pergunta1SubFaixa', v) }
+                            { rotulo: 'Texto abaixo', texto: config.pergunta1TextoAbaixo ?? '', onTexto: (v) => setCampo('pergunta1TextoAbaixo', v), multilinha: true, tamanho: config.pergunta1TextoAbaixoTamanho || 14, min: 9, max: 26, onTamanho: (v) => setCampo('pergunta1TextoAbaixoTamanho', v), cor: config.pergunta1TextoAbaixoCor || 'cinza', onCor: (v) => setCampo('pergunta1TextoAbaixoCor', v), bold: Boolean(config.pergunta1SubBold), onBold: (v) => setCampo('pergunta1SubBold', v), caixa: config.pergunta1SubCaixa, onCaixa: (v) => setCampo('pergunta1SubCaixa', v), alinhamento: e.subAl, onAlinhamento: (v) => setCampo('pergunta1SubAlinhamento', v), fundo: e.subFundo, onFundo: (v) => setCampo('pergunta1SubFundo', v), faixa: config.pergunta1SubFaixa, onFaixa: (v) => setCampo('pergunta1SubFaixa', v) }
                           ];
                         })()}
                       />
@@ -1477,7 +1506,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
                   {subAtualP1 === 'aparencia' && (
                     <div className="space-y-4">
-                      {AparenciaCards({ ler: (k) => config[k], gravar: setCampo, campoIcones: 'mostrarIconesCards', porPagina: cardsPorTelaP1, opcoes: cardsAtivosP1 })}
+                      {Heranca('p1')}
+                      {AparenciaCards({ ler: (k) => config[k], gravar: (k, v) => gravarEstilo('p1', k, v), campoIcones: 'mostrarIconesCards', porPagina: cardsPorTelaP1, opcoes: cardsAtivosP1, raios: raiosCard(config, telaP1Cantos(config)) })}
                       {BarraFormatacao({ ehP1: true })}
                     </div>
                   )}
@@ -2023,10 +2053,11 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
                     {subAtual === 'efeitos' && (
                       <div className="space-y-4">
+                        {Heranca(extraIndex)}
                         {telaAlvo.tipo === 'grade' && EfeitosBotao({
                           titulo: 'Botões de resposta',
                           ler: (k) => telaAlvo[`grade${k}`] ?? config[`grade${k}`],
-                          gravar: (k, v) => handleUpdateTelaProp(extraIndex, `grade${k}`, v),
+                          gravar: (k, v) => gravarEstilo(extraIndex, `grade${k}`, v),
                           alturaPadrao: 38,
                           alturaMax: 72,
                           raioPadrao: 12
@@ -2051,13 +2082,13 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             const e = estiloLinhas(telaAlvo);
                             const set = (k) => (v) => handleUpdateTelaProp(extraIndex, k, v);
                             const linhasTela = [
-                              { rotulo: 'Título 1', texto: telaAlvo.titulo1 ?? telaAlvo.titulo ?? '', onTexto: (v) => { set('titulo1')(v); set('titulo')(`${v} ${telaAlvo.titulo2 || ''}`.trim()); }, tamanho: telaAlvo.titulo1Tamanho || 18, min: 11, max: 36, onTamanho: set('titulo1Tamanho'), cor: telaAlvo.titulo1Cor || 'branco', onCor: set('titulo1Cor'), bold: telaAlvo.tituloBold !== false, onBold: set('tituloBold'), alinhamento: e.tituloAl, onAlinhamento: set('tituloAlinhamento'), fundo: e.tituloFundo, onFundo: set('tituloFundo'), faixa: telaAlvo.tituloFaixa, onFaixa: set('tituloFaixa') },
+                              { rotulo: 'Título 1', texto: telaAlvo.titulo1 ?? telaAlvo.titulo ?? '', onTexto: (v) => { set('titulo1')(v); set('titulo')(`${v} ${telaAlvo.titulo2 || ''}`.trim()); }, tamanho: telaAlvo.titulo1Tamanho || 18, min: 11, max: 36, onTamanho: set('titulo1Tamanho'), cor: telaAlvo.titulo1Cor || 'branco', onCor: set('titulo1Cor'), bold: telaAlvo.tituloBold !== false, onBold: set('tituloBold'), caixa: telaAlvo.tituloCaixa, onCaixa: set('tituloCaixa'), alinhamento: e.tituloAl, onAlinhamento: set('tituloAlinhamento'), fundo: e.tituloFundo, onFundo: set('tituloFundo'), faixa: telaAlvo.tituloFaixa, onFaixa: set('tituloFaixa') },
                               { rotulo: 'Título 2', texto: telaAlvo.titulo2 ?? '', onTexto: (v) => { set('titulo2')(v); set('titulo')(`${telaAlvo.titulo1 || telaAlvo.titulo || ''} ${v}`.trim()); }, tamanho: telaAlvo.titulo2Tamanho || 15, min: 11, max: 36, onTamanho: set('titulo2Tamanho'), cor: telaAlvo.titulo2Cor || 'dourado', onCor: set('titulo2Cor') },
                               { rotulo: 'Título 3', texto: telaAlvo.titulo3 ?? '', onTexto: set('titulo3'), tamanho: telaAlvo.titulo3Tamanho || 14, min: 11, max: 36, onTamanho: set('titulo3Tamanho'), cor: telaAlvo.titulo3Cor || 'verde', onCor: set('titulo3Cor') },
-                              { rotulo: 'Texto abaixo', texto: telaAlvo.subtitulo ?? '', onTexto: set('subtitulo'), multilinha: true, tamanho: telaAlvo.subtituloTamanho || 12, min: 9, max: 26, onTamanho: set('subtituloTamanho'), cor: telaAlvo.subtituloCor || 'cinza', onCor: set('subtituloCor'), bold: Boolean(telaAlvo.subBold), onBold: set('subBold'), alinhamento: e.subAl, onAlinhamento: set('subAlinhamento'), fundo: e.subFundo, onFundo: set('subFundo'), faixa: telaAlvo.subFaixa, onFaixa: set('subFaixa') },
+                              { rotulo: 'Texto abaixo', texto: telaAlvo.subtitulo ?? '', onTexto: set('subtitulo'), multilinha: true, tamanho: telaAlvo.subtituloTamanho || 12, min: 9, max: 26, onTamanho: set('subtituloTamanho'), cor: telaAlvo.subtituloCor || 'cinza', onCor: set('subtituloCor'), bold: Boolean(telaAlvo.subBold), onBold: set('subBold'), caixa: telaAlvo.subCaixa, onCaixa: set('subCaixa'), alinhamento: e.subAl, onAlinhamento: set('subAlinhamento'), fundo: e.subFundo, onFundo: set('subFundo'), faixa: telaAlvo.subFaixa, onFaixa: set('subFaixa') },
                               ...(telaAlvo.tipo === 'grade' ? [
-                                { rotulo: 'Legenda', texto: telaAlvo.legendaEscala ?? '', onTexto: set('legendaEscala'), placeholder: '1 = Péssimo; 5 = Ótimo; NA = Não se aplica', tamanho: telaAlvo.escalaTamanho || 9, min: 7, max: 18, onTamanho: set('escalaTamanho'), cor: telaAlvo.legendaCor || 'cinza', onCor: set('legendaCor'), bold: Boolean(telaAlvo.legendaBold), onBold: set('legendaBold'), fundo: telaAlvo.legendaFundo || 'escuro', onFundo: set('legendaFundo'), faixa: telaAlvo.legendaFaixa, onFaixa: set('legendaFaixa') },
-                                { rotulo: 'Itens da grade', texto: cardsAtivos.map((o) => o.titulo).join(', '), tamanho: telaAlvo.itemTamanho || 12, min: 8, max: 20, onTamanho: set('itemTamanho'), cor: telaAlvo.itemCor || 'branco', onCor: set('itemCor'), bold: telaAlvo.itemBold !== false, onBold: set('itemBold'), fundo: telaAlvo.itemFundo || 'escuro', onFundo: set('itemFundo'), faixa: telaAlvo.itemFaixa, onFaixa: set('itemFaixa') }
+                                { rotulo: 'Legenda', texto: telaAlvo.legendaEscala ?? '', onTexto: set('legendaEscala'), placeholder: '1 = Péssimo; 5 = Ótimo; NA = Não se aplica', tamanho: telaAlvo.escalaTamanho || 9, min: 7, max: 18, onTamanho: set('escalaTamanho'), cor: telaAlvo.legendaCor || 'cinza', onCor: set('legendaCor'), bold: Boolean(telaAlvo.legendaBold), onBold: set('legendaBold'), caixa: telaAlvo.legendaCaixa, onCaixa: set('legendaCaixa'), fundo: telaAlvo.legendaFundo || 'escuro', onFundo: set('legendaFundo'), faixa: telaAlvo.legendaFaixa, onFaixa: set('legendaFaixa') },
+                                { rotulo: 'Itens da grade', texto: cardsAtivos.map((o) => o.titulo).join(', '), tamanho: telaAlvo.itemTamanho || 12, min: 8, max: 20, onTamanho: set('itemTamanho'), cor: telaAlvo.itemCor || 'branco', onCor: set('itemCor'), bold: telaAlvo.itemBold !== false, onBold: set('itemBold'), caixa: telaAlvo.itemCaixa, onCaixa: set('itemCaixa'), fundo: telaAlvo.itemFundo || 'escuro', onFundo: set('itemFundo'), faixa: telaAlvo.itemFaixa, onFaixa: set('itemFaixa') }
                               ] : [])
                             ];
                             if (!emGrupo) return linhasTela;
@@ -2092,9 +2123,11 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
                     {subAtual === 'aparencia' && (
                       <div className="space-y-4">
+                        {Heranca(extraIndex)}
                         {AparenciaCards({
                           ler: (k) => telaAlvo[k] ?? config[k],
-                          gravar: (k, v) => handleUpdateTelaProp(extraIndex, k, v),
+                          gravar: (k, v) => gravarEstilo(extraIndex, k, v),
+                          raios: raiosCard(config, telaAlvo),
                           campoIcones: 'mostrarIcones',
                           porPagina: limitCards,
                           opcoes: cardsAtivos

@@ -84,6 +84,20 @@ export default function EstiloLinhasTitulo({ linhas }) {
                       </button>
                     </div>
                   )}
+                  {l.onCaixa && (
+                    <div className="rounded-lg bg-slate-950/60 p-1">
+                      <button
+                        type="button"
+                        title="Caixa alta"
+                        aria-label="Caixa alta"
+                        aria-pressed={Boolean(l.caixa)}
+                        onClick={() => l.onCaixa(!l.caixa)}
+                        className={`px-2 h-6 rounded-md text-xs font-bold transition ${l.caixa ? 'bg-slate-100 text-slate-900' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                      >
+                        AA
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </Dobra>

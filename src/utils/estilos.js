@@ -166,10 +166,17 @@ export const alturaCard = (valor) => Math.max(CARD_ALTURA_MIN, Math.min(CARD_ALT
 export const CARD_ESPACO_PADRAO = 12;
 export const CARD_RAIO_PADRAO = 16;
 // Cantos da esquerda e da direita: valem para todas as perguntas do evento
+// (página que não herda usa os próprios cantos)
 export const raiosCard = (cfg = {}, tela = {}) => {
   const antigo = tela?.cardRaio ?? cfg?.cardRaio ?? CARD_RAIO_PADRAO;
-  return { esq: Number(cfg?.cardRaioEsq ?? antigo), dir: Number(cfg?.cardRaioDir ?? antigo) };
+  const proprio = tela?.herdarEstilo === false ? tela : {};
+  return {
+    esq: Number(proprio.cardRaioEsq ?? cfg?.cardRaioEsq ?? antigo),
+    dir: Number(proprio.cardRaioDir ?? cfg?.cardRaioDir ?? antigo)
+  };
 };
+// A Tela 1 guarda seus cantos próprios com outro nome (os nomes comuns são os de todas as páginas)
+export const telaP1Cantos = (cfg = {}) => ({ herdarEstilo: cfg?.herdarEstiloP1, cardRaioEsq: cfg?.p1RaioEsq, cardRaioDir: cfg?.p1RaioDir });
 export const cantosCard = (cfg, tela) => {
   const { esq, dir } = raiosCard(cfg, tela);
   return `${esq}px ${dir}px ${dir}px ${esq}px`;
@@ -217,6 +224,7 @@ export const linhasCapa = (cfg = {}) => {
       tamanho: Number(cfg[`${l.id}Tamanho`]) || l.tamanho,
       cor: cfg[`${l.id}Cor`] || l.cor,
       bold: cfg[`${l.id}Bold`],
+      caixa: cfg[`${l.id}Caixa`],
       alinhamento: cfg[`${l.id}Alinhamento`] || cfg.capaAlinhamento || 'center',
       espaco: Number(cfg[`${l.id}Espaco`] ?? CAPA_ESPACO_PADRAO),
       entrelinha: l.texto ? Math.max(1.12, 1.6 * aperto) : Math.max(1.05, 1.25 * aperto),
@@ -263,6 +271,8 @@ export const estiloLinhas = (cfg = {}, prefixo = '') => {
   };
 };
 
+// CAIXA ALTA ligada/desligada
+export const caixaAlta = (ligada) => (ligada ? 'uppercase' : '');
 // Peso da fonte: negrito ligado/desligado (undefined = padrão informado)
 export const pesoFonte = (bold, padraoNegrito = true) => ((bold ?? padraoNegrito) ? 'font-black' : 'font-medium');
 
@@ -289,7 +299,7 @@ export const corGradeSelecionada = (col, cols = []) => {
 // ==========================================
 const MAPA_P1 = {
   tituloTamanho: 'pergunta1FonteTamanho', tituloCor: 'pergunta1TituloCor', tituloBold: 'pergunta1TituloBold',
-  tituloFaixa: 'pergunta1TituloFaixa', subFaixa: 'pergunta1SubFaixa',
+  tituloFaixa: 'pergunta1TituloFaixa', subFaixa: 'pergunta1SubFaixa', tituloCaixa: 'pergunta1TituloCaixa', subCaixa: 'pergunta1SubCaixa',
   tituloAlinhamento: 'pergunta1TituloAlinhamento', tituloFundo: 'pergunta1TituloFundo',
   subTamanho: 'pergunta1TextoAbaixoTamanho', subCor: 'pergunta1TextoAbaixoCor', subBold: 'pergunta1SubBold',
   subAlinhamento: 'pergunta1SubAlinhamento', subFundo: 'pergunta1SubFundo',
@@ -298,7 +308,7 @@ const MAPA_P1 = {
 };
 const MAPA_EXTRA = {
   tituloTamanho: 'titulo1Tamanho', tituloCor: 'titulo1Cor', tituloBold: 'tituloBold',
-  tituloFaixa: 'tituloFaixa', subFaixa: 'subFaixa',
+  tituloFaixa: 'tituloFaixa', subFaixa: 'subFaixa', tituloCaixa: 'tituloCaixa', subCaixa: 'subCaixa',
   tituloAlinhamento: 'tituloAlinhamento', tituloFundo: 'tituloFundo',
   subTamanho: 'subtituloTamanho', subCor: 'subtituloCor', subBold: 'subBold',
   subAlinhamento: 'subAlinhamento', subFundo: 'subFundo',
@@ -308,7 +318,7 @@ const MAPA_EXTRA = {
 // Campos com o mesmo nome nos dois lugares
 const COMUNS = ['gradeEfeito', 'gradeProfundidade', 'gradeCor', 'gradeCorTexto', 'gradeLinha', 'gradeLinhaEspessura', 'gradeAltura', 'gradeRaio', 'cardAltura', 'cardEspaco', 'cardRaio', 'cardsPorTela', 'cardFundoEstilo', 'cardEfeitoEstilo', 'cardProfundidade', 'cardCorFonteTitulo',
   'cardCorFonteSubtitulo', 'cardFonteTitulo', 'cardFonteSubtitulo', 'escalaTamanho', 'legendaCor', 'legendaBold', 'legendaFundo',
-  'itemTamanho', 'itemCor', 'itemBold', 'itemFundo', 'legendaFaixa', 'itemFaixa'];
+  'itemTamanho', 'itemCor', 'itemBold', 'itemFundo', 'legendaFaixa', 'itemFaixa', 'legendaCaixa', 'itemCaixa'];
 
 export function extrairEstilo(origem, ehP1) {
   const mapa = ehP1 ? MAPA_P1 : MAPA_EXTRA;
@@ -343,4 +353,76 @@ export const continuaNaMesmaPagina = (anterior, atual) => {
 export const espacos = (cfg = {}, ehP1 = false, escala = 1) => {
   const g = (n, padrao) => Math.round((Number(cfg[ehP1 ? 'pergunta1' + n : 'e' + n.slice(1)]) || (cfg[ehP1 ? 'pergunta1' + n : 'e' + n.slice(1)] === 0 ? 0 : padrao)) * escala);
   return { tit: g('EspacoTitulos', 4), sub: g('EspacoSub', 6), cards: g('EspacoCards', 12) };
+};
+
+// ==========================================
+// HERANÇA: mexeu nos cards ou botões de uma página, muda em todas
+// (menos nas páginas em que "Herdar configurações" foi desligado)
+// origem = 'p1' (Tela 1) ou o índice em telasExtras
+// ==========================================
+const PADROES_HERDADOS = {
+  cardAltura: 82, cardEspaco: CARD_ESPACO_PADRAO, cardsPorTela: 4, cardFundoEstilo: 'escuro', cardEfeitoEstilo: 'padrao',
+  cardProfundidade: 5, cardCorFonteTitulo: 'branco', cardCorFonteSubtitulo: 'cinza', cardFonteTitulo: 16, cardFonteSubtitulo: 12,
+  mostrarIcones: true,
+  gradeEfeito: 'nenhum', gradeProfundidade: 5, gradeCor: 'padrao', gradeCorTexto: 'padrao', gradeLinha: 'padrao',
+  gradeLinhaEspessura: 1, gradeAltura: 38, gradeRaio: 12
+};
+const CANTOS = { cardRaioEsq: 'p1RaioEsq', cardRaioDir: 'p1RaioDir' };
+const noP1 = (campo) => (campo === 'mostrarIcones' ? 'mostrarIconesCards' : campo);
+const lerHerdado = (cfg, origem, campo) =>
+  (origem === 'p1' ? cfg[noP1(campo)] : cfg.telasExtras?.[origem]?.[campo] ?? cfg[noP1(campo)]) ?? PADROES_HERDADOS[campo];
+export const herdaEstilo = (cfg, origem) => (origem === 'p1' ? cfg.herdarEstiloP1 : cfg.telasExtras?.[origem]?.herdarEstilo) !== false;
+export const semCamposHerdados = (estilo = {}) =>
+  Object.fromEntries(Object.entries(estilo).filter(([k]) => !(k in PADROES_HERDADOS) && k !== 'cardRaio'));
+
+const trocarTela = (cfg, i, mudancas) => ({ ...cfg, telasExtras: (cfg.telasExtras || []).map((t, k) => (k === i ? { ...t, ...mudancas } : t)) });
+
+export const gravarHerdado = (cfg, origem, campo, valor) => {
+  const herda = herdaEstilo(cfg, origem);
+  if (CANTOS[campo]) {
+    if (herda) return { ...cfg, [campo]: valor };
+    return origem === 'p1' ? { ...cfg, [CANTOS[campo]]: valor } : trocarTela(cfg, origem, { [campo]: valor });
+  }
+  if (!herda) return origem === 'p1' ? { ...cfg, [noP1(campo)]: valor } : trocarTela(cfg, origem, { [campo]: valor });
+  const out = { ...cfg, telasExtras: (cfg.telasExtras || []).map((t) => (t?.herdarEstilo === false ? t : { ...t, [campo]: valor })) };
+  if (herdaEstilo(cfg, 'p1') || campo.startsWith('grade')) out[noP1(campo)] = valor;
+  return out;
+};
+
+export const ligarHeranca = (cfg, origem, ligar) => {
+  const campos = Object.keys(PADROES_HERDADOS);
+  if (!ligar) {
+    // Congela a aparência atual: a página passa a ter configurações próprias
+    if (origem === 'p1') {
+      const { esq, dir } = raiosCard(cfg);
+      return {
+        ...cfg,
+        herdarEstiloP1: false,
+        p1RaioEsq: esq,
+        p1RaioDir: dir,
+        telasExtras: (cfg.telasExtras || []).map((t, i) => ({
+          ...t,
+          ...Object.fromEntries(campos.filter((k) => t[k] === undefined).map((k) => [k, lerHerdado(cfg, i, k)]))
+        }))
+      };
+    }
+    const { esq, dir } = raiosCard(cfg, cfg.telasExtras[origem]);
+    return trocarTela(cfg, origem, {
+      ...Object.fromEntries(campos.map((k) => [k, lerHerdado(cfg, origem, k)])),
+      cardRaioEsq: esq,
+      cardRaioDir: dir,
+      herdarEstilo: false
+    });
+  }
+  // Volta a seguir as outras: copia de uma página que herda
+  const herdeiras = (cfg.telasExtras || []).map((t, i) => ({ t, i })).filter(({ t, i }) => i !== origem && t?.herdarEstilo !== false);
+  const fonteTela = (herdeiras.find(({ t }) => (t.tipo || 'cards') === 'cards') || herdeiras[0])?.i;
+  const fonte = origem !== 'p1' && herdaEstilo(cfg, 'p1') ? 'p1' : fonteTela;
+  const copia = fonte === undefined ? {} : Object.fromEntries(campos.map((k) => [k, lerHerdado(cfg, fonte, k)]));
+  // os botões da grade não são da Tela 1: vêm de outra página
+  if (fonte === 'p1' && fonteTela !== undefined) campos.filter((k) => k.startsWith('grade')).forEach((k) => { copia[k] = lerHerdado(cfg, fonteTela, k); });
+  if (origem === 'p1') {
+    return { ...cfg, ...Object.fromEntries(Object.entries(copia).filter(([k]) => !k.startsWith('grade')).map(([k, v]) => [noP1(k), v])), herdarEstiloP1: true };
+  }
+  return trocarTela(cfg, origem, { ...copia, herdarEstilo: true });
 };

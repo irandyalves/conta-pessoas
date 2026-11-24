@@ -41,7 +41,7 @@ import {
   DEFAULT_EVENT_ID
 } from '../firebase';
 import { componenteIcone, iconesDaTela } from '../utils/icones';
-import { estiloBotao, cantosCard, CARD_ESPACO_PADRAO, faixaEstilo, linhasCapa, medidasCard, espacos, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getEfeitoStyle, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems } from '../utils/estilos';
+import { caixaAlta, telaP1Cantos, estiloBotao, cantosCard, CARD_ESPACO_PADRAO, faixaEstilo, linhasCapa, medidasCard, espacos, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getEfeitoStyle, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems } from '../utils/estilos';
 
 const DISPOSITIVO_BLOQUEADO_KEY = 'presenca_dispositivo_bloqueado_voto';
 const DISPOSITIVO_VOTO_TIME_KEY = 'presenca_dispositivo_hora_voto';
@@ -545,8 +545,21 @@ export default function MobileForm({ preview = false }) {
   // ---------- toque nas opções: vibra, destaca e só avança depois de 500ms ----------
   const [clicado, setClicado] = useState(null);
   const cliqueRef = useRef(false);
+  // Tela cheia no Android: no toque em Começar (ou no 1º toque, se não houver capa).
+  // Uma vez por abertura: quem sair da tela cheia de propósito não é forçado de novo.
+  const telaCheiaRef = useRef(false);
+  const entrarTelaCheia = () => {
+    if (preview || telaCheiaRef.current || !/Android/i.test(navigator.userAgent)) return;
+    telaCheiaRef.current = true;
+    try {
+      const el = document.documentElement;
+      if (document.fullscreenElement) return;
+      (el.requestFullscreen || el.webkitRequestFullscreen)?.call(el, { navigationUI: 'hide' })?.catch?.(() => {});
+    } catch (e) {}
+  };
   const comFeedback = (chave, acao, imediato = false) => {
     if (cliqueRef.current) return;
+    entrarTelaCheia();
     try { navigator.vibrate?.(45); } catch (e) {}
     setClicado(chave);
     if (imediato) { acao(); setTimeout(() => setClicado(null), 500); return; }
@@ -740,6 +753,7 @@ export default function MobileForm({ preview = false }) {
 
   // Ao clicar no botão COMEÇAR na Tela 1 (quando habilitado pelo admin)
   const handleClicarComecar = () => {
+    entrarTelaCheia();
     setJaClicouComecar(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
     // Se a Tela 1 tem opções cadastradas, agora libera as opções da Tela 1 para responder
@@ -1131,7 +1145,7 @@ export default function MobileForm({ preview = false }) {
                 >
                   <Linha
                     style={{ fontSize: `${l.tamanho}px`, lineHeight: l.entrelinha }}
-                    className={`${pesoFonte(l.bold, !l.texto)} whitespace-pre-line ${getCorTextoLinhaClass(l.cor)}`}
+                    className={`${pesoFonte(l.bold, !l.texto)} ${caixaAlta(l.caixa)} whitespace-pre-line ${getCorTextoLinhaClass(l.cor)}`}
                   >
                     {l.conteudo}
                   </Linha>
@@ -1149,7 +1163,7 @@ export default function MobileForm({ preview = false }) {
                 {questionsConfig.pergunta1Titulo && (
                   <h2 
                     style={{ fontSize: `${questionsConfig.pergunta1FonteTamanho || 22}px` }}
-                    className={`${pesoFonte(questionsConfig.pergunta1TituloBold)} leading-tight ${getCorTextoLinhaClass(questionsConfig.pergunta1TituloCor, 'text-white')}`}
+                    className={`${pesoFonte(questionsConfig.pergunta1TituloBold)} ${caixaAlta(questionsConfig.pergunta1TituloCaixa)} leading-tight ${getCorTextoLinhaClass(questionsConfig.pergunta1TituloCor, 'text-white')}`}
                   >
                     {questionsConfig.pergunta1Titulo}
                   </h2>
@@ -1157,7 +1171,7 @@ export default function MobileForm({ preview = false }) {
                 {questionsConfig.pergunta1Titulo2 && (
                   <h2 
                     style={{ fontSize: `${questionsConfig.pergunta1Titulo2Tamanho || 18}px` }}
-                    className={`${pesoFonte(questionsConfig.pergunta1TituloBold)} leading-tight ${getCorTextoLinhaClass(questionsConfig.pergunta1Titulo2Cor, 'text-amber-300')}`}
+                    className={`${pesoFonte(questionsConfig.pergunta1TituloBold)} ${caixaAlta(questionsConfig.pergunta1TituloCaixa)} leading-tight ${getCorTextoLinhaClass(questionsConfig.pergunta1Titulo2Cor, 'text-amber-300')}`}
                   >
                     {questionsConfig.pergunta1Titulo2}
                   </h2>
@@ -1165,7 +1179,7 @@ export default function MobileForm({ preview = false }) {
                 {questionsConfig.pergunta1Titulo3 && (
                   <h2 
                     style={{ fontSize: `${questionsConfig.pergunta1Titulo3Tamanho || 16}px` }}
-                    className={`${pesoFonte(questionsConfig.pergunta1TituloBold)} leading-tight ${getCorTextoLinhaClass(questionsConfig.pergunta1Titulo3Cor, 'text-emerald-400')}`}
+                    className={`${pesoFonte(questionsConfig.pergunta1TituloBold)} ${caixaAlta(questionsConfig.pergunta1TituloCaixa)} leading-tight ${getCorTextoLinhaClass(questionsConfig.pergunta1Titulo3Cor, 'text-emerald-400')}`}
                   >
                     {questionsConfig.pergunta1Titulo3}
                   </h2>
@@ -1176,7 +1190,7 @@ export default function MobileForm({ preview = false }) {
             {questionsConfig.pergunta1TextoAbaixo && (
               <p
                 style={{ fontSize: `${questionsConfig.pergunta1TextoAbaixoTamanho || 14}px`, ...faixaEstilo(estiloLinhas(questionsConfig, 'pergunta1').subFundo, questionsConfig.pergunta1SubFaixa) }}
-                className={`leading-relaxed whitespace-pre-line ${getAlinhamentoClass(estiloLinhas(questionsConfig, 'pergunta1').subAl)} ${getFaixaFundoClass(estiloLinhas(questionsConfig, 'pergunta1').subFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')} ${questionsConfig.pergunta1SubBold ? 'font-bold' : ''} ${getCorTextoLinhaClass(questionsConfig.pergunta1TextoAbaixoCor, 'text-slate-300')}`}
+                className={`leading-relaxed whitespace-pre-line ${getAlinhamentoClass(estiloLinhas(questionsConfig, 'pergunta1').subAl)} ${getFaixaFundoClass(estiloLinhas(questionsConfig, 'pergunta1').subFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')} ${questionsConfig.pergunta1SubBold ? 'font-bold' : ''} ${caixaAlta(questionsConfig.pergunta1SubCaixa)} ${getCorTextoLinhaClass(questionsConfig.pergunta1TextoAbaixoCor, 'text-slate-300')}`}
               >
                 {questionsConfig.pergunta1TextoAbaixo}
               </p>
@@ -1195,22 +1209,22 @@ export default function MobileForm({ preview = false }) {
           return (
             <div className="mt-2 pt-2 border-t border-slate-800/60 flex flex-col" style={{ gap: espacos(tela).sub, marginBottom: espacos(tela).cards }}>
               <div style={{ gap: espacos(tela).tit, ...faixaEstilo(estiloLinhas(tela).tituloFundo, tela.tituloFaixa) }} className={`flex flex-col ${getAlinhamentoClass(estiloLinhas(tela).tituloAl)} ${getFaixaFundoClass(estiloLinhas(tela).tituloFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}>
-              <h2 style={{ fontSize: `${tela.titulo1Tamanho || 20}px` }} className={`${pesoFonte(tela.tituloBold)} leading-tight ${getCorTextoLinhaClass(tela.titulo1Cor, 'text-white')}`}>
+              <h2 style={{ fontSize: `${tela.titulo1Tamanho || 20}px` }} className={`${pesoFonte(tela.tituloBold)} ${caixaAlta(tela.tituloCaixa)} leading-tight ${getCorTextoLinhaClass(tela.titulo1Cor, 'text-white')}`}>
                 {linha1}
               </h2>
               {tela.titulo2 && (
-                <h2 style={{ fontSize: `${tela.titulo2Tamanho || 15}px` }} className={`${pesoFonte(tela.tituloBold)} leading-tight ${getCorTextoLinhaClass(tela.titulo2Cor, 'text-amber-300')}`}>
+                <h2 style={{ fontSize: `${tela.titulo2Tamanho || 15}px` }} className={`${pesoFonte(tela.tituloBold)} ${caixaAlta(tela.tituloCaixa)} leading-tight ${getCorTextoLinhaClass(tela.titulo2Cor, 'text-amber-300')}`}>
                   {tela.titulo2}
                 </h2>
               )}
               {tela.titulo3 && (
-                <h2 style={{ fontSize: `${tela.titulo3Tamanho || 14}px` }} className={`${pesoFonte(tela.tituloBold)} leading-tight ${getCorTextoLinhaClass(tela.titulo3Cor, 'text-emerald-400')}`}>
+                <h2 style={{ fontSize: `${tela.titulo3Tamanho || 14}px` }} className={`${pesoFonte(tela.tituloBold)} ${caixaAlta(tela.tituloCaixa)} leading-tight ${getCorTextoLinhaClass(tela.titulo3Cor, 'text-emerald-400')}`}>
                   {tela.titulo3}
                 </h2>
               )}
               </div>
               {tela.subtitulo && (
-                <p style={{ fontSize: `${tela.subtituloTamanho || 13}px`, ...faixaEstilo(estiloLinhas(tela).subFundo, tela.subFaixa) }} className={`leading-snug ${getAlinhamentoClass(estiloLinhas(tela).subAl)} ${getFaixaFundoClass(estiloLinhas(tela).subFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')} ${tela.subBold ? 'font-bold' : ''} ${getCorTextoLinhaClass(tela.subtituloCor, 'text-slate-300')}`}>
+                <p style={{ fontSize: `${tela.subtituloTamanho || 13}px`, ...faixaEstilo(estiloLinhas(tela).subFundo, tela.subFaixa) }} className={`leading-snug ${getAlinhamentoClass(estiloLinhas(tela).subAl)} ${getFaixaFundoClass(estiloLinhas(tela).subFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')} ${tela.subBold ? 'font-bold' : ''} ${caixaAlta(tela.subCaixa)} ${getCorTextoLinhaClass(tela.subtituloCor, 'text-slate-300')}`}>
                   {tela.subtitulo}
                 </p>
               )}
@@ -1314,7 +1328,7 @@ export default function MobileForm({ preview = false }) {
                     const cardFonteTituloCls = CARD_FONTE_TITULO_CLASSES[questionsConfig?.cardCorFonteTitulo] || 'text-white';
                     const cardFonteSubtituloCls = CARD_FONTE_SUBTITULO_CLASSES[questionsConfig?.cardCorFonteSubtitulo] || 'text-slate-400';
                     const cardEfeitoInline = getEfeitoStyle(questionsConfig?.cardEfeitoEstilo, questionsConfig?.cardProfundidade);
-                    const medidas = medidasCard(questionsConfig?.cardAltura, cantosCard(questionsConfig));
+                    const medidas = medidasCard(questionsConfig?.cardAltura, cantosCard(questionsConfig, telaP1Cantos(questionsConfig)));
 
                     const isGavetaAberta = isGavetaAbertaDe('p1', opcao);
 
@@ -1489,11 +1503,11 @@ export default function MobileForm({ preview = false }) {
               <div key={tela.id} id={`campo_${tela.id}`} className={`scroll-mt-4 ${cabeTudo ? 'flex-1 flex flex-col' : ''}`}>
                 {mostrarTitulo && (
                   <div style={{ gap: espacos(tela).sub, marginBottom: cabeTudo ? Math.min(8, espacos(tela).cards) : espacos(tela).cards }} className={`flex flex-col ${primeira ? '' : `${cabeTudo ? 'pt-2' : 'pt-4'} border-t border-slate-800/60`} ${getAlinhamentoClass(estiloLinhas(tela).tituloAl)}`}>
-                    <h3 style={{ fontSize: `${tela.titulo1Tamanho || 18}px` }} className={`${pesoFonte(tela.tituloBold)} leading-tight ${getCorTextoLinhaClass(tela.titulo1Cor, 'text-white')}`}>
+                    <h3 style={{ fontSize: `${tela.titulo1Tamanho || 18}px` }} className={`${pesoFonte(tela.tituloBold)} ${caixaAlta(tela.tituloCaixa)} leading-tight ${getCorTextoLinhaClass(tela.titulo1Cor, 'text-white')}`}>
                       {[tela.titulo1 || tela.titulo, tela.titulo2, tela.titulo3].filter(Boolean).join(' ')}
                     </h3>
                     {tela.subtitulo && (
-                      <p style={{ fontSize: `${tela.subtituloTamanho || 13}px` }} className={`leading-snug ${getAlinhamentoClass(estiloLinhas(tela).subAl)} ${tela.subBold ? 'font-bold' : ''} ${getCorTextoLinhaClass(tela.subtituloCor, 'text-slate-300')}`}>
+                      <p style={{ fontSize: `${tela.subtituloTamanho || 13}px` }} className={`leading-snug ${getAlinhamentoClass(estiloLinhas(tela).subAl)} ${tela.subBold ? 'font-bold' : ''} ${caixaAlta(tela.subCaixa)} ${getCorTextoLinhaClass(tela.subtituloCor, 'text-slate-300')}`}>
                         {tela.subtitulo}
                       </p>
                     )}
@@ -1679,7 +1693,7 @@ export default function MobileForm({ preview = false }) {
                       {tela.legendaEscala && (
                         <p
                           style={{ fontSize: `${tela.escalaTamanho || 9}px`, ...faixaEstilo(tela.legendaFundo || 'escuro', tela.legendaFaixa) }}
-                          className={`text-center leading-snug ${tela.legendaBold ? 'font-bold' : ''} ${getCorTextoLinhaClass(tela.legendaCor, 'text-slate-300')} ${getFaixaFundoClass(tela.legendaFundo || 'escuro', '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}
+                          className={`text-center leading-snug ${tela.legendaBold ? 'font-bold' : ''} ${caixaAlta(tela.legendaCaixa)} ${getCorTextoLinhaClass(tela.legendaCor, 'text-slate-300')} ${getFaixaFundoClass(tela.legendaFundo || 'escuro', '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}
                         >
                           {parseScaleLegendItems(tela.legendaEscala).map((item, li) => (
                             <span key={li}>
@@ -1719,7 +1733,7 @@ export default function MobileForm({ preview = false }) {
                           >
                             <span
                               style={{ fontSize: `${tela.itemTamanho || 13}px` }}
-                              className={`${pesoFonte(tela.itemBold, true)} block leading-snug ${getCorTextoLinhaClass(tela.itemCor, 'text-white')}`}
+                              className={`${pesoFonte(tela.itemBold, true)} ${caixaAlta(tela.itemCaixa)} block leading-snug ${getCorTextoLinhaClass(tela.itemCor, 'text-white')}`}
                             >
                               {opt.titulo}
                             </span>
