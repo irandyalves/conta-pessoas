@@ -1,136 +1,81 @@
 import React from 'react';
-import { ALINHAMENTOS_TEXTO, FUNDOS_CAPTION, CORES_TEXTO_LINHAS } from '../utils/estilos';
+import { MoveVertical } from 'lucide-react';
+import { FUNDOS_CAPTION, CORES_TEXTO_LINHAS } from '../utils/estilos';
+import { Alinhamento, Campo, Cores, Deslizante, Dobra, Secao } from './Controles';
 
 /**
- * Controles independentes por linha de texto (título, subtítulo, legenda, itens...).
+ * Textos de uma tela, um por linha, na mesma ordem em que aparecem no celular.
  * Cada linha mostra só os controles cujo "on..." foi informado:
  * { rotulo, texto?, onTexto?, multilinha?, tamanho, min, max, onTamanho, cor, onCor, bold, onBold,
- *   alinhamento, onAlinhamento, fundo, onFundo }
+ *   alinhamento, onAlinhamento, fundo, onFundo, espaco, onEspaco }
+ * onEspaco: mostra o slider de distância ENTRE esta linha e a próxima.
  */
 export default function EstiloLinhasTitulo({ linhas }) {
   return (
-    <div className="space-y-2 pt-2 border-t border-slate-800/70">
-      {linhas.map((l) => (
-        <div key={l.rotulo} className="p-2.5 rounded-xl bg-slate-900/70 border border-slate-800 space-y-2">
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-black text-amber-300 shrink-0 min-w-[64px]">{l.rotulo}</span>
-            {l.onTamanho && (
-              <>
-                <input
-                  type="range"
-                  min={l.min ?? 9}
-                  max={l.max ?? 32}
-                  value={l.tamanho}
-                  onChange={(e) => l.onTamanho(Number(e.target.value))}
-                  className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                />
-                <span className="font-mono text-[10px] font-bold text-amber-400 w-9 text-right">{l.tamanho}px</span>
-              </>
-            )}
-            {l.onBold && (
-              <button
-                type="button"
-                onClick={() => l.onBold(!l.bold)}
-                title="Negrito"
-                className={`w-7 h-6 rounded-md text-xs font-black border transition ${l.bold ? 'bg-amber-400 text-slate-950 border-amber-300' : 'bg-slate-950 text-slate-400 border-slate-700'}`}
-              >
-                B
-              </button>
-            )}
-          </div>
-
-          {l.onTexto && (
-            l.multilinha ? (
-              <textarea
-                rows={3}
-                value={l.texto || ''}
-                onChange={(e) => l.onTexto(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs text-white resize-y focus:outline-none"
-              />
-            ) : (
-              <input
-                type="text"
-                value={l.texto || ''}
-                onChange={(e) => l.onTexto(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-white focus:outline-none"
-              />
-            )
-          )}
-
-          <div className="flex flex-wrap items-center gap-2">
-            {l.onCor && (
-              <div className="flex items-center gap-1.5 bg-slate-950 px-2 py-1 rounded-lg border border-slate-800">
-                <span className="text-[10px] text-slate-500 mr-0.5">Cor</span>
-                {CORES_TEXTO_LINHAS.map((c) => (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => l.onCor(c.id)}
-                    title={c.label}
-                    className={`w-4 h-4 rounded-full transition-all ${c.bg} ${l.cor === c.id ? 'ring-2 ring-amber-400 ring-offset-1 ring-offset-slate-950 scale-110' : 'opacity-60 hover:opacity-100'}`}
-                  />
-                ))}
+    <div className="space-y-1.5">
+      {linhas.map((l, i) => {
+        const cor = CORES_TEXTO_LINHAS.find((c) => c.id === l.cor);
+        const fundo = l.onFundo && l.fundo !== 'transparente' && FUNDOS_CAPTION.find((f) => f.id === l.fundo);
+        return (
+          <React.Fragment key={l.rotulo}>
+            <Dobra
+              titulo={l.rotulo}
+              resumo={l.texto}
+              aberta={i === 0}
+              lateral={
+                <span className="flex items-center gap-1.5 shrink-0" aria-hidden="true">
+                  {cor && <span className={`w-2.5 h-2.5 rounded-full ${cor.bg}`} />}
+                  {fundo && <span className={`w-2.5 h-2.5 rounded-sm ${fundo.dot}`} />}
+                  <span className="text-xs tabular-nums text-slate-400 w-9 text-right">{l.tamanho}px</span>
+                </span>
+              }
+            >
+              {l.onTexto && <Campo valor={l.texto} onChange={l.onTexto} multilinha={l.multilinha} placeholder={l.placeholder} />}
+              {l.onTamanho && <Deslizante rotulo="Tamanho" valor={l.tamanho} min={l.min ?? 9} max={l.max ?? 32} onChange={l.onTamanho} />}
+              {l.onCor && <Cores rotulo="Cor do texto" opcoes={CORES_TEXTO_LINHAS} valor={l.cor} onChange={l.onCor} />}
+              {l.onFundo && <Cores rotulo="Cor de fundo" opcoes={FUNDOS_CAPTION} campo="dot" valor={l.fundo} onChange={l.onFundo} />}
+              {(l.onAlinhamento || l.onBold) && (
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-slate-400 w-28 shrink-0">Estilo</span>
+                  {l.onAlinhamento && <Alinhamento valor={l.alinhamento} onChange={l.onAlinhamento} />}
+                  {l.onBold && (
+                    <div className="rounded-lg bg-slate-950/60 p-1">
+                      <button
+                        type="button"
+                        title="Negrito"
+                        aria-pressed={Boolean(l.bold)}
+                        onClick={() => l.onBold(!l.bold)}
+                        className={`w-7 h-6 rounded-md text-xs font-bold transition ${l.bold ? 'bg-slate-100 text-slate-900' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                      >
+                        B
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </Dobra>
+            {l.onEspaco && (
+              <div className="flex items-center gap-2 pl-4 pr-4">
+                <MoveVertical className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <Deslizante rotulo="Espaço" valor={l.espaco} min={0} max={80} onChange={l.onEspaco} />
+                </div>
               </div>
             )}
-            {l.onAlinhamento && (
-              <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800">
-                {ALINHAMENTOS_TEXTO.map((al) => (
-                  <button
-                    key={al.id}
-                    type="button"
-                    onClick={() => l.onAlinhamento(al.id)}
-                    className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition ${l.alinhamento === al.id ? 'bg-amber-400 text-slate-950' : 'text-slate-400 hover:text-white'}`}
-                  >
-                    {al.label}
-                  </button>
-                ))}
-              </div>
-            )}
-            {l.onFundo && (
-              <div className="flex items-center gap-1.5 bg-slate-950 px-2 py-1 rounded-lg border border-slate-800" title="Faixa de fundo (de ponta a ponta)">
-                <span className="text-[10px] text-slate-500 mr-0.5">Fundo</span>
-                {FUNDOS_CAPTION.map((fc) => (
-                  <button
-                    key={fc.id}
-                    type="button"
-                    onClick={() => l.onFundo(fc.id)}
-                    title={fc.label}
-                    className={`w-4 h-4 rounded-full transition-all ${fc.dot} ${l.fundo === fc.id ? 'ring-2 ring-amber-400 ring-offset-1 ring-offset-slate-950 scale-110' : 'opacity-60 hover:opacity-100'}`}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      ))}
+          </React.Fragment>
+        );
+      })}
     </div>
   );
 }
 
 // Espaços entre títulos, subtítulo e cards (valores em px)
 export function ControleEspacos({ valores, onChange }) {
-  const itens = [
-    { k: 'tit', rotulo: 'Entre títulos', max: 30 },
-    { k: 'sub', rotulo: 'Antes do subtítulo', max: 40 },
-    { k: 'cards', rotulo: 'Antes dos cards', max: 60 }
-  ];
   return (
-    <div className="p-2.5 rounded-xl bg-slate-900/70 border border-slate-800 space-y-1.5 mt-2">
-      <span className="text-[11px] font-black text-amber-300">Espaçamento</span>
-      {itens.map((i) => (
-        <div key={i.k} className="flex items-center gap-2">
-          <span className="text-[10px] text-slate-400 w-28 shrink-0">{i.rotulo}</span>
-          <input
-            type="range"
-            min={0}
-            max={i.max}
-            value={valores[i.k]}
-            onChange={(e) => onChange(i.k, Number(e.target.value))}
-            className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-          />
-          <span className="font-mono text-[10px] font-bold text-amber-400 w-9 text-right">{valores[i.k]}px</span>
-        </div>
-      ))}
-    </div>
+    <Secao titulo="Espaçamento">
+      <Deslizante rotulo="Entre títulos" valor={valores.tit} min={0} max={40} onChange={(v) => onChange('tit', v)} />
+      <Deslizante rotulo="Antes do texto" valor={valores.sub} min={0} max={60} onChange={(v) => onChange('sub', v)} />
+      <Deslizante rotulo="Antes das opções" valor={valores.cards} min={0} max={80} onChange={(v) => onChange('cards', v)} />
+    </Secao>
   );
 }

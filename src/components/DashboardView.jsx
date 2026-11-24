@@ -102,7 +102,13 @@ export default function DashboardView({ onChangeView }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   // Abas disponíveis: 'dashboard' | 'eventos' | 'novo_evento' | 'perguntas' | 'qrcode' | 'links' | 'zerar' | 'firebase'
-  const [activeSection, setActiveSection] = useState('dashboard');
+  // Atualizar a página continua na mesma seção do painel
+  const [activeSection, setActiveSection] = useState(() => {
+    try { return sessionStorage.getItem('responder_painel_secao') || 'dashboard'; } catch (e) { return 'dashboard'; }
+  });
+  useEffect(() => {
+    try { sessionStorage.setItem('responder_painel_secao', activeSection); } catch (e) {}
+  }, [activeSection]);
 
   // GESTÃO DE MÚLTIPLOS EVENTOS & QR CODES FIXOS
   const [activeEventId, setActiveEventIdState] = useState(() => getActiveEventId());

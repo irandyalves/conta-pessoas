@@ -51,12 +51,13 @@ import {
   saveEventTitle,
   DEFAULT_QUESTIONS_CONFIG 
 } from '../firebase';
-import { espacos, continuaNaMesmaPagina, extrairEstilo, aplicarEstilo, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems, getEfeitoStyle, CORES_TEXTO_LINHAS, ALINHAMENTOS_TEXTO, FUNDOS_CAPTION } from '../utils/estilos';
+import { alturaCard, CAPA_ALTURA_MIN, CAPA_ESPACO_PADRAO, CARD_ALTURA_MAX, CARD_ALTURA_MIN, espacos, continuaNaMesmaPagina, extrairEstilo, aplicarEstilo, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems, getEfeitoStyle, CORES_TEXTO_LINHAS, ALINHAMENTOS_TEXTO, FUNDOS_CAPTION } from '../utils/estilos';
 import ImportadorIA from './ImportadorIA';
 import IconeEspera, { ICONES_ESPERA } from './IconeEspera';
 import PreviewCelular from './PreviewCelular';
 import EscalaVisual, { ESTILOS_ESCALA } from './EscalaVisual';
 import EstiloLinhasTitulo, { ControleEspacos } from './EstiloLinhasTitulo';
+import { Campo, Chave, Cores, Deslizante, Lista, Secao, Segmentos } from './Controles';
 import { PRESETS_PESQUISAS } from '../utils/presets';
 
 export const TIPOS_PERGUNTA = [
@@ -110,8 +111,8 @@ const CORES = [
 // OPÇÕES DE FUNDO DOS CARDS (16 CORES / DEGRADÊS)
 export const FUNDOS_CARDS = [
   // 6 Originais
-  { id: 'escuro', label: 'Slate Escuro', classe: 'bg-slate-900 border-slate-750' },
-  { id: 'gradiente', label: 'Gradiente Noturno', classe: 'bg-gradient-to-r from-slate-950 via-slate-900 to-slate-850 border-slate-750' },
+  { id: 'escuro', label: 'Slate Escuro', classe: 'bg-slate-900 border-slate-700' },
+  { id: 'gradiente', label: 'Gradiente Noturno', classe: 'bg-gradient-to-r from-slate-950 via-slate-900 to-slate-800 border-slate-700' },
   { id: 'vidro', label: 'Efeito Vidro', classe: 'bg-slate-900/50 backdrop-blur-md border-white/20' },
   { id: 'azul_profundo', label: 'Azul Meia-Noite', classe: 'bg-gradient-to-r from-slate-950 via-slate-900 to-sky-950 border-sky-900/60' },
   { id: 'esmeralda_suave', label: 'Toque Esmeralda', classe: 'bg-gradient-to-r from-slate-950 via-slate-900 to-emerald-950 border-emerald-900/60' },
@@ -129,15 +130,37 @@ export const FUNDOS_CARDS = [
   { id: 'sunset_laranja', label: 'Sunset Laranja', classe: 'bg-gradient-to-r from-slate-950 via-orange-950 to-amber-950 border-orange-800/60' },
 ];
 
+// Amostra do editor = só o fundo, sem a borda do card
+FUNDOS_CARDS.forEach((f) => { f.amostra = f.classe.replace(/\bborder-\S+/g, ''); });
+
 // OPÇÕES DE EFEITOS E ACABAMENTOS DOS CARDS (3D, VIDRO, ENTALHE, ALTO-RELEVO, ETC.)
 export const EFEITOS_CARDS = [
-  { id: 'padrao', label: 'Normal / Flat', desc: 'Borda sutil e limpa' },
-  { id: 'efeito_3d', label: 'Efeito 3D', desc: 'Base tátil saliente com profundidade' },
-  { id: 'vidro', label: 'Efeito Vidro', desc: 'Translúcido com blur e reflexo' },
-  { id: 'entalhe', label: 'Entalhe (Baixo-Relevo)', desc: 'Profundidade esculpida para dentro' },
-  { id: 'alto_relevo', label: 'Alto-Relevo', desc: 'Relevo saltado para fora (emboss)' },
-  { id: 'glow', label: 'Glow Neon', desc: 'Iluminação de contorno' },
+  { id: 'padrao', label: 'Liso', desc: 'Borda sutil e limpa' },
+  { id: 'efeito_3d', label: '3D', desc: 'Base tátil saliente com profundidade' },
+  { id: 'vidro', label: 'Vidro', desc: 'Translúcido com blur e reflexo' },
+  { id: 'entalhe', label: 'Entalhe', desc: 'Profundidade esculpida para dentro' },
+  { id: 'alto_relevo', label: 'Alto-relevo', desc: 'Relevo saltado para fora (emboss)' },
+  { id: 'glow', label: 'Brilho', desc: 'Iluminação de contorno' },
 ];
+
+const EFEITOS_CAPA = [{ id: 'nenhum', label: 'Nenhum' }, ...EFEITOS_CARDS.filter((e) => e.id !== 'padrao')];
+
+// Sub-abas de uma tela (Textos, Opções, Aparência)
+const SubAbas = ({ opcoes, valor, onChange }) => (
+  <div className="flex gap-1 rounded-xl bg-slate-950/60 p-1">
+    {opcoes.map((o) => (
+      <button
+        key={o.id}
+        type="button"
+        aria-pressed={valor === o.id}
+        onClick={() => onChange(o.id)}
+        className={`flex-1 px-3 py-2 rounded-lg text-xs transition ${valor === o.id ? 'bg-slate-700 text-white font-semibold' : 'text-slate-400 hover:text-white'}`}
+      >
+        {o.label}
+      </button>
+    ))}
+  </div>
+);
 
 // OPÇÕES DE CORES DA FONTE DO TÍTULO DOS CARDS (EM BOLINHAS)
 export const CORES_FONTE_TITULO = [
@@ -167,7 +190,7 @@ export const CORES_FONTE_SUBTITULO = [
 
 // 10 OPÇÕES DE CORES EM BOLINHAS PARA OS BOTÕES NUMÉRICOS (TELA 2)
 export const CORES_BOTAO_QTD = [
-  { id: 'slate', label: 'Grafite', hex: '#475569', dot: 'bg-slate-600', classe: 'bg-gradient-to-b from-slate-800 via-slate-850 to-slate-900 border-slate-700/80 border-b-slate-950 text-slate-100', simClass: 'bg-slate-800 border-slate-700 border-b-slate-950' },
+  { id: 'slate', label: 'Grafite', hex: '#475569', dot: 'bg-slate-600', classe: 'bg-gradient-to-b from-slate-800 via-slate-800 to-slate-900 border-slate-700/80 border-b-slate-950 text-slate-100', simClass: 'bg-slate-800 border-slate-700 border-b-slate-950' },
   { id: 'esmeralda', label: 'Esmeralda', hex: '#10b981', dot: 'bg-emerald-500', classe: 'bg-gradient-to-b from-emerald-600 via-emerald-700 to-emerald-800 border-emerald-500/60 border-b-emerald-950 text-white', simClass: 'bg-emerald-700 border-emerald-600 border-b-emerald-950' },
   { id: 'azul', label: 'Azul Real', hex: '#3b82f6', dot: 'bg-blue-600', classe: 'bg-gradient-to-b from-blue-600 via-blue-700 to-blue-800 border-blue-500/60 border-b-blue-950 text-white', simClass: 'bg-blue-700 border-blue-600 border-b-blue-950' },
   { id: 'dourado', label: 'Dourado', hex: '#f59e0b', dot: 'bg-amber-500', classe: 'bg-gradient-to-b from-amber-600 via-amber-700 to-amber-800 border-amber-500/60 border-b-amber-950 text-white', simClass: 'bg-amber-700 border-amber-600 border-b-amber-950' },
@@ -250,7 +273,7 @@ const MODELOS_CELULARES = [
     viewport: { w: 390, h: 664 }, // área visível do navegador em pixels CSS
     nome: 'iPhone Notch',
     marca: 'Apple',
-    moldura: 'rounded-[34px] border-[5px] border-slate-800 shadow-2xl ring-1 ring-slate-750',
+    moldura: 'rounded-[34px] border-[5px] border-slate-800 shadow-2xl ring-1 ring-slate-700',
     largura: 'w-full max-w-[240px] sm:max-w-[255px]',
     alturaTela: 'h-[374px]',
     tipoTopo: 'notch'
@@ -269,16 +292,21 @@ const MODELOS_CELULARES = [
 
 export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = null, eventTitle = '', inline = false }) {
   // Abas: 'inicio' | 'tela_1' | 'extra_0', 'extra_1'... | 'acompanhantes' | 'fim'
-  const [activeTab, setActiveTab] = useState('inicio');
+  const [activeTab, setActiveTabEstado] = useState('inicio');
+  const chaveAba = `responder_editor_aba_${activeEventId || 'padrao'}`;
+  const setActiveTab = (aba) => {
+    setActiveTabEstado(aba);
+    try { sessionStorage.setItem(chaveAba, aba); } catch (e) {}
+  };
   const [config, setConfig] = useState(DEFAULT_QUESTIONS_CONFIG);
   const [eventoTitulo, setEventoTitulo] = useState('');
   const [salvando, setSalvando] = useState(false);
   const [salvo, setSalvo] = useState(false);
 
   // Sub-navegações internas minimalistas para evitar poluição visual
-  const [subTabTela1, setSubTabTela1] = useState('opcoes'); // 'opcoes' | 'aparencia' | 'pergunta'
-  const [subTabExtra, setSubTabExtra] = useState('opcoes'); // 'opcoes' | 'aparencia' | 'pergunta'
-  const [subTabTela2, setSubTabTela2] = useState('botoes'); // 'botoes' | 'pergunta' | 'individual'
+  const [subTabTela1, setSubTabTela1] = useState('pergunta'); // 'pergunta' (textos) | 'opcoes' | 'aparencia'
+  const [subTabExtra, setSubTabExtra] = useState('pergunta'); // 'pergunta' (textos) | 'opcoes' | 'aparencia'
+  const [subTabTela2, setSubTabTela2] = useState('pergunta'); // 'botoes' | 'pergunta' | 'individual'
 
   // Preset de Celular Ativo
   const [modeloCelularId, setModeloCelularId] = useState('iphone16pro');
@@ -390,7 +418,10 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
     setConfig(local);
     setEventoTitulo(eventTitle || getSavedEventTitle(activeEventId) || '');
     setSalvo(false);
-    setActiveTab('inicio');
+    // Atualizar a página volta para a mesma aba do editor
+    let aba = 'inicio';
+    try { aba = sessionStorage.getItem(chaveAba) || 'inicio'; } catch (e) {}
+    setActiveTabEstado(aba);
     setPreviewScreen('inicio');
     setPreviewPage(0);
 
@@ -436,13 +467,40 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
       'Replicar em todas'
     );
   };
-  const BarraFormatacao = ({ ehP1, extraIndex }) => (
-    <div className="flex flex-wrap items-center gap-1.5 pt-2">
-      <span className="text-[10px] font-bold text-slate-500 mr-1">Formatação:</span>
-      <button type="button" onClick={() => copiarEstilo(ehP1, extraIndex)} className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">📋 Copiar</button>
-      <button type="button" disabled={!estiloCopiado} onClick={() => colarEstilo(ehP1, extraIndex)} className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 disabled:opacity-40">📥 Colar aqui</button>
-      <button type="button" onClick={() => replicarEmTodas(ehP1, extraIndex)} className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40">🌐 Replicar em todas as telas</button>
-    </div>
+  const setCampo = (campo, valor) => setConfig((c) => ({ ...c, [campo]: valor }));
+
+  const BarraFormatacao = ({ ehP1, extraIndex }) => {
+    const classe = 'px-2.5 py-1.5 rounded-lg text-xs text-slate-300 bg-slate-800/60 hover:bg-slate-700 hover:text-white transition disabled:opacity-40';
+    return (
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="text-xs text-slate-400 w-28 pl-4">Formatação</span>
+        <button type="button" onClick={() => copiarEstilo(ehP1, extraIndex)} className={classe}>Copiar</button>
+        <button type="button" disabled={!estiloCopiado} onClick={() => colarEstilo(ehP1, extraIndex)} className={classe}>Colar aqui</button>
+        <button type="button" onClick={() => replicarEmTodas(ehP1, extraIndex)} className={classe}>Usar em todas as telas</button>
+      </div>
+    );
+  };
+
+  // Aparência dos cards de opção: a mesma para a Tela 1 e para as telas extras
+  const AparenciaCards = ({ ler, gravar, campoIcones, porPagina }) => (
+    <>
+      <Secao titulo="Tamanho">
+        <Deslizante rotulo="Altura do card" valor={alturaCard(ler('cardAltura'))} min={CARD_ALTURA_MIN} max={CARD_ALTURA_MAX} onChange={(v) => gravar('cardAltura', v)} />
+        <Deslizante rotulo="Título" valor={ler('cardFonteTitulo') || 16} min={12} max={24} onChange={(v) => gravar('cardFonteTitulo', v)} />
+        <Deslizante rotulo="Descrição" valor={ler('cardFonteSubtitulo') || 12} min={9} max={18} onChange={(v) => gravar('cardFonteSubtitulo', v)} />
+        <Segmentos rotulo="Cards por página" opcoes={[2, 3, 4, 5, 6, 8, 10, 12, 15].map((n) => ({ id: n, label: String(n) }))} valor={porPagina} onChange={(v) => gravar('cardsPorTela', v)} />
+        <Chave rotulo="Mostrar ícones nos cards" valor={ler(campoIcones) !== false} onChange={(v) => gravar(campoIcones, v)} />
+      </Secao>
+      <Secao titulo="Efeito">
+        <Segmentos rotulo="Acabamento" opcoes={EFEITOS_CARDS} valor={ler('cardEfeitoEstilo') || 'padrao'} onChange={(v) => gravar('cardEfeitoEstilo', v)} />
+        <Deslizante rotulo="Intensidade" valor={ler('cardProfundidade') || 5} min={1} max={10} unidade="" onChange={(v) => gravar('cardProfundidade', v)} />
+      </Secao>
+      <Secao titulo="Cores">
+        <Cores rotulo="Fundo do card" opcoes={FUNDOS_CARDS} campo="amostra" quadrado valor={ler('cardFundoEstilo') || 'escuro'} onChange={(v) => gravar('cardFundoEstilo', v)} />
+        <Cores rotulo="Título" opcoes={CORES_FONTE_TITULO} campo="dot" valor={ler('cardCorFonteTitulo') || 'branco'} onChange={(v) => gravar('cardCorFonteTitulo', v)} />
+        <Cores rotulo="Descrição" opcoes={CORES_FONTE_SUBTITULO} campo="dot" valor={ler('cardCorFonteSubtitulo') || 'cinza'} onChange={(v) => gravar('cardCorFonteSubtitulo', v)} />
+      </Secao>
+    </>
   );
 
   // SALVAMENTO AUTOMÁTICO NO BANCO: 1,5s depois da última alteração
@@ -895,7 +953,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
   const getCorBadge = (corId) => {
     const item = CORES.find(c => c.id === corId);
-    return item ? item.badge : 'text-amber-400 bg-amber-500/15 border-amber-500/30';
+    return item ? item.badge : 'text-slate-200 bg-slate-700/40 border-slate-700';
   };
 
   const getCardFundoClass = (fundoId) => {
@@ -934,7 +992,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
   };
 
   return (
-    <div className={inline ? "w-full animate-fade-in" : "fixed inset-0 z-50 flex items-start justify-center pt-2 sm:pt-4 p-2 sm:p-4 bg-black/85 backdrop-blur-md overflow-y-auto animate-fade-in"}>
+    <div className={inline ? "editor w-full" : "editor fixed inset-0 z-50 flex items-start justify-center pt-2 sm:pt-4 p-2 sm:p-4 bg-black/85 backdrop-blur-md overflow-y-auto animate-fade-in"}>
       <div className={inline ? "relative w-full h-[calc(100vh-1.5rem)] bg-slate-900 border border-slate-800 rounded-r-2xl rounded-l-none border-l-0 shadow-xl flex flex-col overflow-hidden" : "relative w-[96vw] max-w-7xl bg-slate-900 border border-slate-700 rounded-3xl shadow-2xl flex flex-col max-h-[94vh] overflow-hidden shrink-0"}>
         
         {/* ============================================================ */}
@@ -942,18 +1000,18 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
         {/* ============================================================ */}
         <div className="px-5 py-3 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 bg-slate-950/80 shrink-0">
           <div className="flex items-center gap-3 flex-wrap">
-            <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-slate-700/40 text-slate-200 border border-slate-700 flex items-center justify-center">
               <Sliders className="w-4 h-4" />
             </div>
-            <h2 className="text-base sm:text-lg font-black text-white">Configurar Perguntas & Telas</h2>
+            <h2 className="text-base sm:text-lg font-semibold text-white">Perguntas e telas</h2>
 
             {/* Listbox do Modelo de Celular movido para o Topo à Esquerda */}
             <div className="flex items-center gap-2 ml-1 sm:ml-2 pl-3 border-l border-slate-800">
-              <Smartphone className="w-4 h-4 text-amber-400 shrink-0" />
+              <Smartphone className="w-4 h-4 text-slate-200 shrink-0" />
               <select
                 value={modeloCelularId}
                 onChange={(e) => setModeloCelularId(e.target.value)}
-                className="bg-slate-950 border border-slate-700 hover:border-amber-400 text-white text-xs font-bold rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer shadow-inner transition"
+                className="bg-slate-950 border border-slate-700 hover:border-slate-400 text-white text-xs font-bold rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-slate-200 cursor-pointer shadow-inner transition"
               >
                 {MODELOS_CELULARES.map((mod) => (
                   <option key={mod.id} value={mod.id} className="bg-slate-900 text-white py-1">
@@ -969,7 +1027,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
             <button
               type="button"
               onClick={() => setShowPresetsModal(true)}
-              className="px-3 py-1.5 text-xs font-bold rounded-xl bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/40 text-sky-300 flex items-center gap-1.5 transition active:scale-95 shadow-sm"
+              className="px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-700/40 hover:bg-slate-700 border border-slate-700 text-slate-200 flex items-center gap-1.5 transition active:scale-95 shadow-sm"
               title="Carregar modelos mundiais prontos (NPS, Checkbox, Gavetas, Inscrição)"
             >
               <Sparkles className="w-3.5 h-3.5" />
@@ -981,7 +1039,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
             <button
               type="button"
               onClick={() => setShowImportModal(true)}
-              className="px-3 py-1.5 text-xs font-bold rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 flex items-center gap-1.5 transition active:scale-95 shadow-sm"
+              className="px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-700/40 hover:bg-slate-700 border border-slate-700 text-slate-200 flex items-center gap-1.5 transition active:scale-95 shadow-sm"
               title="Importar com IA arquivos .pdf, .pptx, .ppt, .docx, .doc, .xlsx, .csv, .txt ou Google Forms"
             >
               <FileText className="w-3.5 h-3.5" />
@@ -1022,11 +1080,10 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 onClick={() => setActiveTab('inicio')}
                 className={`pb-2.5 px-3 text-xs sm:text-sm font-bold border-b-2 transition flex items-center gap-1.5 whitespace-nowrap ${
                   activeTab === 'inicio'
-                    ? 'border-amber-400 text-amber-300'
+                    ? 'border-slate-200 text-slate-200'
                     : 'border-transparent text-slate-400 hover:text-slate-200'
                 }`}
               >
-                <Hourglass className="w-4 h-4" />
                 <span>Boas-vindas</span>
               </button>
 
@@ -1035,15 +1092,13 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 type="button"
                 onClick={() => {
                   setActiveTab('inicio_comecar');
-                  setSubTabTela1('pergunta');
                 }}
                 className={`pb-2.5 px-3 text-xs sm:text-sm font-bold border-b-2 transition flex items-center gap-1.5 whitespace-nowrap ${
                   activeTab === 'inicio_comecar'
-                    ? 'border-amber-400 text-amber-300'
+                    ? 'border-slate-200 text-slate-200'
                     : 'border-transparent text-slate-400 hover:text-slate-200'
                 }`}
               >
-                <Sparkles className="w-4 h-4" />
                 <span>Início</span>
               </button>
 
@@ -1052,17 +1107,15 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 type="button"
                 onClick={() => {
                   setActiveTab('tela_1');
-                  if (subTabTela1 === 'pergunta') setSubTabTela1('opcoes');
                 }}
                 className={`pb-2.5 px-3 text-xs sm:text-sm font-bold border-b-2 transition flex items-center gap-1.5 whitespace-nowrap ${
                   activeTab === 'tela_1'
-                    ? 'border-amber-400 text-amber-300'
+                    ? 'border-slate-200 text-slate-200'
                     : 'border-transparent text-slate-400 hover:text-slate-200'
                 }`}
               >
-                <ListOrdered className="w-4 h-4" />
                 <span>Tela 1</span>
-                <span className="text-[10px] bg-slate-800 text-slate-300 px-1.5 py-0.2 rounded-full font-mono">
+                <span className="text-[11px] bg-slate-800 text-slate-300 px-1.5 py-0.2 rounded-full tabular-nums">
                   {cardsAtivosP1.length}
                 </span>
               </button>
@@ -1079,14 +1132,13 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     onClick={() => setActiveTab(tabKey)}
                     className={`pb-2.5 px-3 text-xs sm:text-sm font-bold border-b-2 transition flex items-center gap-1.5 whitespace-nowrap ${
                       activeTab === tabKey
-                        ? 'border-amber-400 text-amber-300'
+                        ? 'border-slate-200 text-slate-200'
                         : 'border-transparent text-slate-400 hover:text-slate-200'
                     }`}
                   >
-                    <Layers className="w-4 h-4" />
                     <span>Tela {numTela}</span>
                     {['cards', 'radio', 'checkbox', 'dropdown', 'grade'].includes(tela.tipo || 'cards') && (
-                      <span className="text-[10px] bg-slate-800 text-slate-300 px-1.5 py-0.2 rounded-full font-mono">
+                      <span className="text-[11px] bg-slate-800 text-slate-300 px-1.5 py-0.2 rounded-full tabular-nums">
                         {cardsAtivos}
                       </span>
                     )}
@@ -1101,7 +1153,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                   onClick={() => setActiveTab('acompanhantes')}
                   className={`pb-2.5 px-3 text-xs sm:text-sm font-bold border-b-2 transition flex items-center gap-1.5 whitespace-nowrap ${
                     activeTab === 'acompanhantes'
-                      ? 'border-amber-400 text-amber-300'
+                      ? 'border-slate-200 text-slate-200'
                       : 'border-transparent text-slate-400 hover:text-slate-200'
                   }`}
                 >
@@ -1116,7 +1168,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     setActiveTab('acompanhantes');
                   }}
                   title="Ativar tela de contagem de acompanhantes/grupo"
-                  className="pb-2.5 px-2.5 text-[11px] font-bold border-b-2 border-transparent text-slate-500 hover:text-emerald-300 transition flex items-center gap-1 whitespace-nowrap"
+                  className="pb-2.5 px-2.5 text-[11px] font-bold border-b-2 border-transparent text-slate-500 hover:text-white transition flex items-center gap-1 whitespace-nowrap"
                 >
                   <Users className="w-3.5 h-3.5" />
                   <span>+ Acompanhantes</span>
@@ -1129,11 +1181,10 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 onClick={() => setActiveTab('fim')}
                 className={`pb-2.5 px-3 text-xs sm:text-sm font-bold border-b-2 transition flex items-center gap-1.5 whitespace-nowrap ${
                   activeTab === 'fim'
-                    ? 'border-amber-400 text-amber-300'
+                    ? 'border-slate-200 text-slate-200'
                     : 'border-transparent text-slate-400 hover:text-slate-200'
                 }`}
               >
-                <CheckCircle2 className="w-4 h-4" />
                 <span>Fim</span>
               </button>
 
@@ -1141,11 +1192,11 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               <button
                 type="button"
                 onClick={() => setShowTipoNovaTelaModal(true)}
-                className="mb-2 px-3 py-1.5 text-xs font-black text-emerald-400 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap shrink-0 active:scale-95 ml-auto sm:ml-2 shadow-sm"
+                className="mb-2 px-3 py-1.5 text-xs font-semibold text-slate-200 bg-slate-700/40 hover:bg-slate-700 border border-slate-700 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap shrink-0 active:scale-95 ml-auto sm:ml-2 shadow-sm"
                 title="Adicionar mais uma tela / aba no fluxo de perguntas"
               >
                 <Plus className="w-4 h-4" />
-                <span>Add Tab</span>
+                <span>Nova tela</span>
               </button>
 
             </div>
@@ -1158,18 +1209,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               {/* ====================================================== */}
               {activeTab === 'inicio' && (
                 <div className="space-y-4">
-                  <div>
-                    <span className="text-xs font-black text-amber-400 uppercase tracking-wide block">
-                      Textos das 3 Linhas de Espera (Boas-vindas)
-                    </span>
-                    <p className="text-[11px] text-slate-400 mt-0.5">
-                      Exibido no celular enquanto a pesquisa não for iniciada ou estiver pausada pelo admin.
-                    </p>
-                  </div>
-
-                  {/* Ícone animado da tela de espera */}
-                  <div className="p-2.5 rounded-xl bg-slate-900/70 border border-slate-800">
-                    <span className="text-[11px] font-black text-amber-300 block mb-2">Ícone animado</span>
+                  <Secao titulo="Ícone animado" descricao="Aparece no celular enquanto a pesquisa não foi liberada.">
                     <div className="grid grid-cols-5 gap-1.5">
                       {ICONES_ESPERA.map((ic) => {
                         const sel = (config.esperaIcone || 'lapis') === ic.id;
@@ -1178,160 +1218,30 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             key={ic.id}
                             type="button"
                             title={ic.label}
-                            onClick={() => setConfig((c) => ({ ...c, esperaIcone: ic.id }))}
-                            className={`flex flex-col items-center gap-0.5 p-1.5 rounded-lg border transition ${sel ? 'bg-amber-500/15 border-amber-400' : 'bg-slate-950 border-slate-800 hover:border-slate-600'}`}
+                            aria-pressed={sel}
+                            onClick={() => setCampo('esperaIcone', ic.id)}
+                            className={`flex flex-col items-center gap-1 p-2 rounded-lg border transition ${sel ? 'bg-slate-100/10 border-slate-200' : 'border-transparent hover:bg-slate-100/5'}`}
                           >
-                            <IconeEspera tipo={ic.id} tamanho={38} />
-                            <span className={`text-[9px] leading-tight text-center ${sel ? 'text-amber-200' : 'text-slate-500'}`}>{ic.label}</span>
+                            <IconeEspera tipo={ic.id} tamanho={34} />
+                            <span className={`text-[11px] leading-tight text-center ${sel ? 'text-white' : 'text-slate-400'}`}>{ic.label}</span>
                           </button>
                         );
                       })}
                     </div>
-                  </div>
-
-                  {/* Título 1 / 1ª Linha + Slide + Bolinhas de Cores */}
-                  <div className="space-y-1.5 pb-3 border-b border-slate-800/70">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[11px] font-bold text-slate-300">Título 1 (1ª Linha)</label>
-                      <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[10px]">
-                        {config.esperaLinha1Tamanho || config.esperaFonteTamanho || 26}px
-                      </span>
-                    </div>
-                    <input
-                      type="text"
-                      value={config.esperaLinha1 ?? 'DENTRO DE INSTANTES'}
-                      onChange={(e) => setConfig({ ...config, esperaLinha1: e.target.value })}
-                      placeholder="DENTRO DE INSTANTES"
-                      className={`w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-3 py-1.5 text-xs font-bold ${getCorTextoLinhaClass(config.esperaLinha1Cor, 'text-white')}`}
-                    />
-                    <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-                      <div className="flex-1 flex items-center gap-2 min-w-[140px]">
-                        <span className="text-[9px] text-slate-500 font-mono">14px</span>
-                        <input
-                          type="range"
-                          min="14"
-                          max="42"
-                          step="1"
-                          value={config.esperaLinha1Tamanho || config.esperaFonteTamanho || 26}
-                          onChange={(e) => setConfig({ ...config, esperaLinha1Tamanho: Number(e.target.value) })}
-                          className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                        />
-                        <span className="text-[9px] text-slate-500 font-mono">42px</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        {CORES_TEXTO_LINHAS.map((c) => {
-                          const isSel = (config.esperaLinha1Cor || 'branco') === c.id;
-                          return (
-                            <button
-                              key={c.id}
-                              type="button"
-                              onClick={() => setConfig({ ...config, esperaLinha1Cor: c.id })}
-                              title={`Cor: ${c.label}`}
-                              className={`w-4 h-4 rounded-full transition-all ${c.bg} ${
-                                isSel ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110' : 'opacity-55 hover:opacity-100'
-                              }`}
-                            />
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Título 2 / 2ª Linha + Slide + Bolinhas de Cores */}
-                  <div className="space-y-1.5 pb-3 border-b border-slate-800/70">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[11px] font-bold text-slate-300">Título 2 (2ª Linha)</label>
-                      <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[10px]">
-                        {config.esperaLinha2Tamanho || config.esperaFonteTamanho || 26}px
-                      </span>
-                    </div>
-                    <input
-                      type="text"
-                      value={config.esperaLinha2 ?? 'ESTARÁ LIBERADO'}
-                      onChange={(e) => setConfig({ ...config, esperaLinha2: e.target.value })}
-                      placeholder="ESTARÁ LIBERADO"
-                      className={`w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-3 py-1.5 text-xs font-bold ${getCorTextoLinhaClass(config.esperaLinha2Cor, 'text-amber-300')}`}
-                    />
-                    <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-                      <div className="flex-1 flex items-center gap-2 min-w-[140px]">
-                        <span className="text-[9px] text-slate-500 font-mono">14px</span>
-                        <input
-                          type="range"
-                          min="14"
-                          max="42"
-                          step="1"
-                          value={config.esperaLinha2Tamanho || config.esperaFonteTamanho || 26}
-                          onChange={(e) => setConfig({ ...config, esperaLinha2Tamanho: Number(e.target.value) })}
-                          className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                        />
-                        <span className="text-[9px] text-slate-500 font-mono">42px</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        {CORES_TEXTO_LINHAS.map((c) => {
-                          const isSel = (config.esperaLinha2Cor || 'dourado') === c.id;
-                          return (
-                            <button
-                              key={c.id}
-                              type="button"
-                              onClick={() => setConfig({ ...config, esperaLinha2Cor: c.id })}
-                              title={`Cor: ${c.label}`}
-                              className={`w-4 h-4 rounded-full transition-all ${c.bg} ${
-                                isSel ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110' : 'opacity-55 hover:opacity-100'
-                              }`}
-                            />
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Título 3 / 3ª Linha + Slide + Bolinhas de Cores */}
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[11px] font-bold text-slate-300">Título 3 (3ª Linha)</label>
-                      <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[10px]">
-                        {config.esperaLinha3Tamanho || config.esperaFonteTamanho || 26}px
-                      </span>
-                    </div>
-                    <input
-                      type="text"
-                      value={config.esperaLinha3 ?? 'PARA RESPONDER.'}
-                      onChange={(e) => setConfig({ ...config, esperaLinha3: e.target.value })}
-                      placeholder="PARA RESPONDER."
-                      className={`w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-3 py-1.5 text-xs font-bold ${getCorTextoLinhaClass(config.esperaLinha3Cor, 'text-emerald-400')}`}
-                    />
-                    <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-                      <div className="flex-1 flex items-center gap-2 min-w-[140px]">
-                        <span className="text-[9px] text-slate-500 font-mono">14px</span>
-                        <input
-                          type="range"
-                          min="14"
-                          max="42"
-                          step="1"
-                          value={config.esperaLinha3Tamanho || config.esperaFonteTamanho || 26}
-                          onChange={(e) => setConfig({ ...config, esperaLinha3Tamanho: Number(e.target.value) })}
-                          className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                        />
-                        <span className="text-[9px] text-slate-500 font-mono">42px</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        {CORES_TEXTO_LINHAS.map((c) => {
-                          const isSel = (config.esperaLinha3Cor || 'verde') === c.id;
-                          return (
-                            <button
-                              key={c.id}
-                              type="button"
-                              onClick={() => setConfig({ ...config, esperaLinha3Cor: c.id })}
-                              title={`Cor: ${c.label}`}
-                              className={`w-4 h-4 rounded-full transition-all ${c.bg} ${
-                                isSel ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110' : 'opacity-55 hover:opacity-100'
-                              }`}
-                            />
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
+                  </Secao>
+                  <EstiloLinhasTitulo
+                    linhas={[['1', 'DENTRO DE INSTANTES', 'branco'], ['2', 'ESTARÁ LIBERADO', 'dourado'], ['3', 'PARA RESPONDER.', 'verde']].map(([n, texto, cor]) => ({
+                      rotulo: `Linha ${n}`,
+                      texto: config[`esperaLinha${n}`] ?? texto,
+                      onTexto: (v) => setCampo(`esperaLinha${n}`, v),
+                      tamanho: config[`esperaLinha${n}Tamanho`] || config.esperaFonteTamanho || 26,
+                      min: 14,
+                      max: 42,
+                      onTamanho: (v) => setCampo(`esperaLinha${n}Tamanho`, v),
+                      cor: config[`esperaLinha${n}Cor`] || cor,
+                      onCor: (v) => setCampo(`esperaLinha${n}Cor`, v)
+                    }))}
+                  />
                 </div>
               )}
 
@@ -1339,60 +1249,58 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               {/* ABA: INÍCIO (CAPA DO EVENTO COM BOTÃO COMEÇAR)         */}
               {/* ====================================================== */}
               {activeTab === 'inicio_comecar' && (
-                <div className="space-y-3.5 animate-fade-in">
-                  <div className="flex items-center justify-between pb-1 border-b border-slate-800">
-                    <div>
-                      <span className="text-xs font-black text-amber-400 uppercase tracking-wide block">
-                        Configuração da Tela de Início (Títulos 1, 2, 3, Texto Abaixo & Botão COMEÇAR)
-                      </span>
-                      <p className="text-[11px] text-slate-400 mt-0.5">
-                        Abaixo de cada campo há um slide de tamanho e bolinhas de cores.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Cada linha da capa numa seção própria: texto, tamanho, cor, negrito, alinhamento e faixa de fundo */}
+                <div className="space-y-4">
+                  {/* Mesma ordem do celular: o slider entre dois títulos é o espaço entre eles */}
                   <EstiloLinhasTitulo
                     linhas={[
-                      { rotulo: 'Título 1', texto: config.capaTitulo1 ?? '', onTexto: (v) => setConfig((c) => ({ ...c, capaTitulo1: v })), multilinha: false, tamanho: config.capaTitulo1Tamanho || (config.capaFonteTamanho || 18), min: 12, max: 36, onTamanho: (v) => setConfig((c) => ({ ...c, capaTitulo1Tamanho: v })), cor: config.capaTitulo1Cor || 'branco', onCor: (v) => setConfig((c) => ({ ...c, capaTitulo1Cor: v })), bold: config.capaTitulo1Bold ?? true, onBold: (v) => setConfig((c) => ({ ...c, capaTitulo1Bold: v })), alinhamento: config.capaTitulo1Alinhamento || config.capaAlinhamento || 'center', onAlinhamento: (v) => setConfig((c) => ({ ...c, capaTitulo1Alinhamento: v })), fundo: config.capaTitulo1Fundo || (config.capaCaptionFundo || 'transparente'), onFundo: (v) => setConfig((c) => ({ ...c, capaTitulo1Fundo: v })) },
-                      { rotulo: 'Título 2', texto: config.capaTitulo2 ?? '', onTexto: (v) => setConfig((c) => ({ ...c, capaTitulo2: v })), multilinha: false, tamanho: config.capaTitulo2Tamanho || 16, min: 10, max: 32, onTamanho: (v) => setConfig((c) => ({ ...c, capaTitulo2Tamanho: v })), cor: config.capaTitulo2Cor || 'dourado', onCor: (v) => setConfig((c) => ({ ...c, capaTitulo2Cor: v })), bold: config.capaTitulo2Bold ?? true, onBold: (v) => setConfig((c) => ({ ...c, capaTitulo2Bold: v })), alinhamento: config.capaTitulo2Alinhamento || config.capaAlinhamento || 'center', onAlinhamento: (v) => setConfig((c) => ({ ...c, capaTitulo2Alinhamento: v })), fundo: config.capaTitulo2Fundo || 'transparente', onFundo: (v) => setConfig((c) => ({ ...c, capaTitulo2Fundo: v })) },
-                      { rotulo: 'Título 3', texto: config.capaTitulo3 ?? '', onTexto: (v) => setConfig((c) => ({ ...c, capaTitulo3: v })), multilinha: false, tamanho: config.capaTitulo3Tamanho || 15, min: 10, max: 30, onTamanho: (v) => setConfig((c) => ({ ...c, capaTitulo3Tamanho: v })), cor: config.capaTitulo3Cor || 'verde', onCor: (v) => setConfig((c) => ({ ...c, capaTitulo3Cor: v })), bold: config.capaTitulo3Bold ?? true, onBold: (v) => setConfig((c) => ({ ...c, capaTitulo3Bold: v })), alinhamento: config.capaTitulo3Alinhamento || config.capaAlinhamento || 'center', onAlinhamento: (v) => setConfig((c) => ({ ...c, capaTitulo3Alinhamento: v })), fundo: config.capaTitulo3Fundo || 'transparente', onFundo: (v) => setConfig((c) => ({ ...c, capaTitulo3Fundo: v })) },
-                      { rotulo: 'Texto abaixo', texto: (config.capaTextoAbaixo !== undefined && config.capaTextoAbaixo !== '') ? config.capaTextoAbaixo : (config.pergunta1TextoAbaixo ?? ''), onTexto: (v) => setConfig((c) => ({ ...c, capaTextoAbaixo: v })), multilinha: true, tamanho: config.capaTextoAbaixoTamanho || 14, min: 9, max: 26, onTamanho: (v) => setConfig((c) => ({ ...c, capaTextoAbaixoTamanho: v })), cor: config.capaTextoAbaixoCor || 'cinza', onCor: (v) => setConfig((c) => ({ ...c, capaTextoAbaixoCor: v })), bold: config.capaTextoAbaixoBold ?? false, onBold: (v) => setConfig((c) => ({ ...c, capaTextoAbaixoBold: v })), alinhamento: config.capaTextoAbaixoAlinhamento || config.capaAlinhamento || 'center', onAlinhamento: (v) => setConfig((c) => ({ ...c, capaTextoAbaixoAlinhamento: v })), fundo: config.capaTextoAbaixoFundo || 'escuro', onFundo: (v) => setConfig((c) => ({ ...c, capaTextoAbaixoFundo: v })) }
-                    ]}
+                      { id: 'capaTitulo1', rotulo: 'Título 1', tam: config.capaFonteTamanho || 18, min: 12, max: 36, cor: 'branco', fundo: config.capaCaptionFundo || 'transparente', bold: true },
+                      { id: 'capaTitulo2', rotulo: 'Título 2', tam: 16, min: 10, max: 32, cor: 'dourado', fundo: 'transparente', bold: true },
+                      { id: 'capaTitulo3', rotulo: 'Título 3', tam: 15, min: 10, max: 30, cor: 'verde', fundo: 'transparente', bold: true },
+                      { id: 'capaTextoAbaixo', rotulo: 'Texto abaixo', tam: 14, min: 9, max: 26, cor: 'cinza', fundo: 'escuro', bold: false, multilinha: true }
+                    ].map((l) => {
+                      const texto = l.multilinha ? (config.capaTextoAbaixo || config.pergunta1TextoAbaixo || '') : (config[l.id] ?? '');
+                      return {
+                        rotulo: l.rotulo,
+                        texto,
+                        onTexto: (v) => setCampo(l.id, v),
+                        multilinha: Boolean(l.multilinha),
+                        tamanho: config[`${l.id}Tamanho`] || l.tam,
+                        min: l.min,
+                        max: l.max,
+                        onTamanho: (v) => setCampo(`${l.id}Tamanho`, v),
+                        cor: config[`${l.id}Cor`] || l.cor,
+                        onCor: (v) => setCampo(`${l.id}Cor`, v),
+                        bold: config[`${l.id}Bold`] ?? l.bold,
+                        onBold: (v) => setCampo(`${l.id}Bold`, v),
+                        alinhamento: config[`${l.id}Alinhamento`] || config.capaAlinhamento || 'center',
+                        onAlinhamento: (v) => setCampo(`${l.id}Alinhamento`, v),
+                        fundo: config[`${l.id}Fundo`] || l.fundo,
+                        onFundo: (v) => setCampo(`${l.id}Fundo`, v),
+                        espaco: Number(config[`${l.id}Espaco`] ?? CAPA_ESPACO_PADRAO),
+                        onEspaco: !l.multilinha && texto ? (v) => setCampo(`${l.id}Espaco`, v) : undefined
+                      };
+                    })}
                   />
 
-                  {/* Botão COMEÇAR */}
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-2 cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={config.mostrarBotaoComecar !== false}
-                        onChange={(e) => {
-                          setConfig({ ...config, mostrarBotaoComecar: e.target.checked });
-                          setPreviewInteractiveVal(p => ({ ...p, previewStarted: false }));
-                        }}
-                        className="w-4 h-4 rounded accent-amber-400"
-                      />
-                      <span className="text-xs font-black text-amber-300">
-                        ✨ Habilitar Botão "{config.pergunta1BotaoComecarTexto || 'COMEÇAR'}"
-                      </span>
-                    </label>
-
-                    {config.mostrarBotaoComecar !== false && (
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-400 block mb-0.5">
-                          Texto do Botão
-                        </label>
-                        <input
-                          type="text"
-                          value={config.pergunta1BotaoComecarTexto ?? 'COMEÇAR'}
-                          onChange={(e) => setConfig({ ...config, pergunta1BotaoComecarTexto: e.target.value })}
-                          placeholder="COMEÇAR"
-                          className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-white shadow-inner"
-                        />
-                      </div>
+                  <Secao titulo="Cards dos títulos" descricao="Vale para os títulos que têm cor de fundo.">
+                    <Deslizante rotulo="Altura" valor={Math.max(CAPA_ALTURA_MIN, Number(config.capaAltura) || 100)} min={CAPA_ALTURA_MIN} max={150} passo={5} unidade="%" onChange={(v) => setCampo('capaAltura', v)} />
+                    <Segmentos rotulo="Formato" opcoes={[{ id: 'card', label: 'Card' }, { id: 'faixa', label: 'Faixa de ponta a ponta' }]} valor={config.capaFormato || 'card'} onChange={(v) => setCampo('capaFormato', v)} />
+                    {(config.capaFormato || 'card') === 'card' && (
+                      <>
+                        <Segmentos rotulo="Efeito" opcoes={EFEITOS_CAPA} valor={config.capaEfeito || 'alto_relevo'} onChange={(v) => setCampo('capaEfeito', v)} />
+                        {config.capaEfeito !== 'nenhum' && (
+                          <Deslizante rotulo="Intensidade" valor={config.capaProfundidade || 5} min={1} max={10} unidade="" onChange={(v) => setCampo('capaProfundidade', v)} />
+                        )}
+                      </>
                     )}
-                  </div>
+                  </Secao>
+
+                  <Secao>
+                    <Chave rotulo="Mostrar botão de começar" descricao="Desligado, o participante cai direto na Tela 1." valor={config.mostrarBotaoComecar !== false} onChange={(v) => setCampo('mostrarBotaoComecar', v)} />
+                    {config.mostrarBotaoComecar !== false && (
+                      <Campo rotulo="Texto do botão" valor={config.pergunta1BotaoComecarTexto ?? 'COMEÇAR'} onChange={(v) => setCampo('pergunta1BotaoComecarTexto', v)} placeholder="COMEÇAR" />
+                    )}
+                  </Secao>
                 </div>
               )}
 
@@ -1401,644 +1309,42 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               {/* ====================================================== */}
               {activeTab === 'tela_1' && (
                 <div className="space-y-4">
-                  {/* Navegação Secundária Minimalista da Tela 1 */}
-                  <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-900/90 rounded-2xl border border-slate-800 self-start">
-                    <button
-                      type="button"
-                      onClick={() => setSubTabTela1('opcoes')}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                        subTabTela1 === 'opcoes'
-                          ? 'bg-amber-400 text-slate-950 shadow-md font-black'
-                          : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-                      }`}
-                    >
-                      <ListOrdered className="w-3.5 h-3.5" />
-                      <span>Opções de Resposta ({cardsAtivosP1.length})</span>
-                    </button>
+                  <SubAbas
+                    valor={subTabTela1}
+                    onChange={setSubTabTela1}
+                    opcoes={[
+                      { id: 'pergunta', label: 'Textos' },
+                      { id: 'opcoes', label: `Opções (${cardsAtivosP1.length})` },
+                      { id: 'aparencia', label: 'Aparência dos cards' }
+                    ]}
+                  />
 
-                    <button
-                      type="button"
-                      onClick={() => setSubTabTela1('aparencia')}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                        subTabTela1 === 'aparencia'
-                          ? 'bg-amber-400 text-slate-950 shadow-md font-black'
-                          : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-                      }`}
-                    >
-                      <Palette className="w-3.5 h-3.5" />
-                      <span>Aparência & Efeitos</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setSubTabTela1('pergunta')}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                        subTabTela1 === 'pergunta'
-                          ? 'bg-amber-400 text-slate-950 shadow-md font-black'
-                          : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-                      }`}
-                    >
-                      <Type className="w-3.5 h-3.5" />
-                      <span>Título, Texto & Botão COMEÇAR</span>
-                    </button>
-                  </div>
-
-                  {/* 1. TÍTULO 1, TÍTULO 2, TÍTULO 3, TEXTO ABAIXO DO TÍTULO E BOTÃO COMEÇAR */}
                   {subTabTela1 === 'pergunta' && (
-                    <div className="space-y-3.5 animate-fade-in">
-                      <div className="flex items-center justify-between pb-1 border-b border-slate-800">
-                        <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wide">
-                          Títulos 1, 2, 3 & Texto Abaixo (Tela 1)
-                        </span>
-                        <span className="text-[10px] text-slate-400">
-                          Abaixo de cada campo há um slide e bolinhas de cores
-                        </span>
-                      </div>
-
-                      {/* TÍTULO 1 (TELA 1) */}
-                      <div className="space-y-1.5 pb-2.5 border-b border-slate-800/70">
-                        <div className="flex items-center justify-between">
-                          <label className="text-[11px] font-bold text-slate-200">Título 1 (1ª Linha)</label>
-                          <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[10px]">
-                            {config.pergunta1FonteTamanho || 18}px
-                          </span>
-                        </div>
-                        <input
-                          type="text"
-                          value={config.pergunta1Titulo ?? ''}
-                          onChange={(e) => setConfig({ ...config, pergunta1Titulo: e.target.value })}
-                          placeholder="Digite o Título 1 da Tela 1..."
-                          className={`w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold shadow-inner ${getCorTextoLinhaClass(config.pergunta1TituloCor, 'text-white')}`}
-                        />
-                        <div className="flex flex-wrap items-center justify-between gap-3 pt-0.5">
-                          <div className="flex-1 flex items-center gap-2 min-w-[140px]">
-                            <span className="text-[9px] text-slate-500 font-mono">12px</span>
-                            <input
-                              type="range"
-                              min="12"
-                              max="36"
-                              step="1"
-                              value={config.pergunta1FonteTamanho || 18}
-                              onChange={(e) => setConfig({ ...config, pergunta1FonteTamanho: Number(e.target.value) })}
-                              className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                            />
-                            <span className="text-[9px] text-slate-500 font-mono">36px</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            {CORES_TEXTO_LINHAS.map((c) => {
-                              const isSel = (config.pergunta1TituloCor || 'branco') === c.id;
-                              return (
-                                <button
-                                  key={c.id}
-                                  type="button"
-                                  onClick={() => setConfig({ ...config, pergunta1TituloCor: c.id })}
-                                  title={`Cor: ${c.label}`}
-                                  className={`w-4 h-4 rounded-full transition-all ${c.bg} ${
-                                    isSel ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110' : 'opacity-55 hover:opacity-100'
-                                  }`}
-                                />
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* TÍTULO 2 (TELA 1) */}
-                      <div className="space-y-1.5 pb-2.5 border-b border-slate-800/70">
-                        <div className="flex items-center justify-between">
-                          <label className="text-[11px] font-bold text-slate-200">Título 2 (2ª Linha)</label>
-                          <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[10px]">
-                            {config.pergunta1Titulo2Tamanho || 16}px
-                          </span>
-                        </div>
-                        <input
-                          type="text"
-                          value={config.pergunta1Titulo2 ?? ''}
-                          onChange={(e) => setConfig({ ...config, pergunta1Titulo2: e.target.value })}
-                          placeholder="Digite o Título 2 (opcional)..."
-                          className={`w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold shadow-inner ${getCorTextoLinhaClass(config.pergunta1Titulo2Cor, 'text-amber-300')}`}
-                        />
-                        <div className="flex flex-wrap items-center justify-between gap-3 pt-0.5">
-                          <div className="flex-1 flex items-center gap-2 min-w-[140px]">
-                            <span className="text-[9px] text-slate-500 font-mono">12px</span>
-                            <input
-                              type="range"
-                              min="12"
-                              max="36"
-                              step="1"
-                              value={config.pergunta1Titulo2Tamanho || 16}
-                              onChange={(e) => setConfig({ ...config, pergunta1Titulo2Tamanho: Number(e.target.value) })}
-                              className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                            />
-                            <span className="text-[9px] text-slate-500 font-mono">36px</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            {CORES_TEXTO_LINHAS.map((c) => {
-                              const isSel = (config.pergunta1Titulo2Cor || 'dourado') === c.id;
-                              return (
-                                <button
-                                  key={c.id}
-                                  type="button"
-                                  onClick={() => setConfig({ ...config, pergunta1Titulo2Cor: c.id })}
-                                  title={`Cor: ${c.label}`}
-                                  className={`w-4 h-4 rounded-full transition-all ${c.bg} ${
-                                    isSel ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110' : 'opacity-55 hover:opacity-100'
-                                  }`}
-                                />
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* TÍTULO 3 (TELA 1) */}
-                      <div className="space-y-1.5 pb-2.5 border-b border-slate-800/70">
-                        <div className="flex items-center justify-between">
-                          <label className="text-[11px] font-bold text-slate-200">Título 3 (3ª Linha)</label>
-                          <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[10px]">
-                            {config.pergunta1Titulo3Tamanho || 15}px
-                          </span>
-                        </div>
-                        <input
-                          type="text"
-                          value={config.pergunta1Titulo3 ?? ''}
-                          onChange={(e) => setConfig({ ...config, pergunta1Titulo3: e.target.value })}
-                          placeholder="Digite o Título 3 (opcional)..."
-                          className={`w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold shadow-inner ${getCorTextoLinhaClass(config.pergunta1Titulo3Cor, 'text-emerald-400')}`}
-                        />
-                        <div className="flex flex-wrap items-center justify-between gap-3 pt-0.5">
-                          <div className="flex-1 flex items-center gap-2 min-w-[140px]">
-                            <span className="text-[9px] text-slate-500 font-mono">12px</span>
-                            <input
-                              type="range"
-                              min="12"
-                              max="36"
-                              step="1"
-                              value={config.pergunta1Titulo3Tamanho || 15}
-                              onChange={(e) => setConfig({ ...config, pergunta1Titulo3Tamanho: Number(e.target.value) })}
-                              className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                            />
-                            <span className="text-[9px] text-slate-500 font-mono">36px</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            {CORES_TEXTO_LINHAS.map((c) => {
-                              const isSel = (config.pergunta1Titulo3Cor || 'verde') === c.id;
-                              return (
-                                <button
-                                  key={c.id}
-                                  type="button"
-                                  onClick={() => setConfig({ ...config, pergunta1Titulo3Cor: c.id })}
-                                  title={`Cor: ${c.label}`}
-                                  className={`w-4 h-4 rounded-full transition-all ${c.bg} ${
-                                    isSel ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110' : 'opacity-55 hover:opacity-100'
-                                  }`}
-                                />
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* TEXTO ABAIXO (TELA 1) */}
-                      <div className="space-y-1.5 pb-2.5 border-b border-slate-800/70">
-                        <div className="flex items-center justify-between">
-                          <label className="text-[11px] font-bold text-emerald-300">
-                            Texto Abaixo (Instrução ou Explicação na Tela 1)
-                          </label>
-                          <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[10px]">
-                            {config.pergunta1TextoAbaixoTamanho || 14}px
-                          </span>
-                        </div>
-                        <textarea
-                          rows={2}
-                          value={config.pergunta1TextoAbaixo ?? ''}
-                          onChange={(e) => setConfig({ ...config, pergunta1TextoAbaixo: e.target.value })}
-                          placeholder="Digite aqui um texto para aparecer logo abaixo do título na Tela 1..."
-                          className={`w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-lg px-3 py-2 text-xs placeholder-slate-500 shadow-inner resize-none ${getCorTextoLinhaClass(config.pergunta1TextoAbaixoCor, 'text-slate-200')}`}
-                        />
-                        <div className="flex flex-wrap items-center justify-between gap-3 pt-0.5">
-                          <div className="flex-1 flex items-center gap-2 min-w-[140px]">
-                            <span className="text-[9px] text-slate-500 font-mono">10px</span>
-                            <input
-                              type="range"
-                              min="10"
-                              max="28"
-                              step="1"
-                              value={config.pergunta1TextoAbaixoTamanho || 14}
-                              onChange={(e) => setConfig({ ...config, pergunta1TextoAbaixoTamanho: Number(e.target.value) })}
-                              className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                            />
-                            <span className="text-[9px] text-slate-500 font-mono">28px</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            {CORES_TEXTO_LINHAS.map((c) => {
-                              const isSel = (config.pergunta1TextoAbaixoCor || 'cinza') === c.id;
-                              return (
-                                <button
-                                  key={c.id}
-                                  type="button"
-                                  onClick={() => setConfig({ ...config, pergunta1TextoAbaixoCor: c.id })}
-                                  title={`Cor: ${c.label}`}
-                                  className={`w-4 h-4 rounded-full transition-all ${c.bg} ${
-                                    isSel ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110' : 'opacity-55 hover:opacity-100'
-                                  }`}
-                                />
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* ALINHAMENTO & FUNDO DEBAIXO DOS CAPTIONS (TELA 1) */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-2.5 border-b border-slate-800/70">
-                        <div>
-                          <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">
-                            Alinhamento dos Títulos & Subtítulo
-                          </span>
-                          <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
-                            {ALINHAMENTOS_TEXTO.map((al) => (
-                              <button
-                                key={al.id}
-                                type="button"
-                                onClick={() => setConfig({ ...config, pergunta1Alinhamento: al.id })}
-                                className={`flex-1 py-1 rounded-lg text-[11px] font-bold transition ${
-                                  (config.pergunta1Alinhamento || 'center') === al.id
-                                    ? 'bg-amber-400 text-slate-950 font-black shadow'
-                                    : 'text-slate-400 hover:text-white'
-                                }`}
-                              >
-                                {al.label}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div>
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase">
-                              Fundo debaixo dos Captions
-                            </span>
-                            <span className="text-[10px] font-bold text-amber-300">
-                              {FUNDOS_CAPTION.find(f => f.id === (config.pergunta1CaptionFundo || 'transparente'))?.label}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1.5 bg-slate-900 p-1.5 rounded-xl border border-slate-800">
-                            {FUNDOS_CAPTION.map((fc) => {
-                              const isSel = (config.pergunta1CaptionFundo || 'transparente') === fc.id;
-                              return (
-                                <button
-                                  key={fc.id}
-                                  type="button"
-                                  onClick={() => setConfig({ ...config, pergunta1CaptionFundo: fc.id })}
-                                  title={`Fundo: ${fc.label}`}
-                                  className={`w-5 h-5 rounded-full transition-all ${fc.dot} ${
-                                    isSel ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110' : 'opacity-65 hover:opacity-100'
-                                  }`}
-                                />
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* BOTÃO COMEÇAR */}
-                      <div className="space-y-2">
-                        <label className="flex items-center gap-2 cursor-pointer select-none">
-                          <input
-                            type="checkbox"
-                            checked={config.mostrarBotaoComecar !== false}
-                            onChange={(e) => {
-                              setConfig({ ...config, mostrarBotaoComecar: e.target.checked });
-                              setPreviewInteractiveVal(p => ({ ...p, previewStarted: false }));
-                            }}
-                            className="w-4 h-4 rounded accent-amber-400"
-                          />
-                          <span className="text-xs font-black text-amber-300">
-                            ✨ Habilitar Botão "{config.pergunta1BotaoComecarTexto || 'COMEÇAR'}"
-                          </span>
-                        </label>
-
-                        {config.mostrarBotaoComecar !== false && (
-                          <div>
-                            <label className="text-[10px] font-bold text-slate-400 block mb-0.5">
-                              Caption / Texto Configurável do Botão
-                            </label>
-                            <input
-                              type="text"
-                              value={config.pergunta1BotaoComecarTexto ?? 'COMEÇAR'}
-                              onChange={(e) => setConfig({ ...config, pergunta1BotaoComecarTexto: e.target.value })}
-                              placeholder="COMEÇAR"
-                              className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-black text-amber-300 uppercase tracking-wider"
-                            />
-                          </div>
-                        )}
-                      </div>
+                    <div className="space-y-4">
+                      <EstiloLinhasTitulo
+                        linhas={(() => {
+                          const e = estiloLinhas(config, 'pergunta1');
+                          return [
+                            { rotulo: 'Título 1', texto: config.pergunta1Titulo ?? '', onTexto: (v) => setCampo('pergunta1Titulo', v), tamanho: config.pergunta1FonteTamanho || 18, min: 12, max: 36, onTamanho: (v) => setCampo('pergunta1FonteTamanho', v), cor: config.pergunta1TituloCor || 'branco', onCor: (v) => setCampo('pergunta1TituloCor', v), bold: config.pergunta1TituloBold !== false, onBold: (v) => setCampo('pergunta1TituloBold', v), alinhamento: e.tituloAl, onAlinhamento: (v) => setCampo('pergunta1TituloAlinhamento', v), fundo: e.tituloFundo, onFundo: (v) => setCampo('pergunta1TituloFundo', v) },
+                            { rotulo: 'Título 2', texto: config.pergunta1Titulo2 ?? '', onTexto: (v) => setCampo('pergunta1Titulo2', v), tamanho: config.pergunta1Titulo2Tamanho || 16, min: 10, max: 32, onTamanho: (v) => setCampo('pergunta1Titulo2Tamanho', v), cor: config.pergunta1Titulo2Cor || 'dourado', onCor: (v) => setCampo('pergunta1Titulo2Cor', v) },
+                            { rotulo: 'Título 3', texto: config.pergunta1Titulo3 ?? '', onTexto: (v) => setCampo('pergunta1Titulo3', v), tamanho: config.pergunta1Titulo3Tamanho || 15, min: 10, max: 30, onTamanho: (v) => setCampo('pergunta1Titulo3Tamanho', v), cor: config.pergunta1Titulo3Cor || 'verde', onCor: (v) => setCampo('pergunta1Titulo3Cor', v) },
+                            { rotulo: 'Texto abaixo', texto: config.pergunta1TextoAbaixo ?? '', onTexto: (v) => setCampo('pergunta1TextoAbaixo', v), multilinha: true, tamanho: config.pergunta1TextoAbaixoTamanho || 14, min: 9, max: 26, onTamanho: (v) => setCampo('pergunta1TextoAbaixoTamanho', v), cor: config.pergunta1TextoAbaixoCor || 'cinza', onCor: (v) => setCampo('pergunta1TextoAbaixoCor', v), bold: Boolean(config.pergunta1SubBold), onBold: (v) => setCampo('pergunta1SubBold', v), alinhamento: e.subAl, onAlinhamento: (v) => setCampo('pergunta1SubAlinhamento', v), fundo: e.subFundo, onFundo: (v) => setCampo('pergunta1SubFundo', v) }
+                          ];
+                        })()}
+                      />
+                      <ControleEspacos
+                        valores={espacos(config, true)}
+                        onChange={(k, v) => setCampo('pergunta1' + { tit: 'EspacoTitulos', sub: 'EspacoSub', cards: 'EspacoCards' }[k], v)}
+                      />
+                      {BarraFormatacao({ ehP1: true })}
                     </div>
                   )}
 
-                  {/* 2. CONFIGURAÇÕES VISUAIS: FUNDO, CORES DAS FONTES E DIMENSÕES DOS CARDS */}
                   {subTabTela1 === 'aparencia' && (
-                    <div className="bg-slate-950 border border-amber-500/30 rounded-2xl p-4 space-y-4 shadow-lg animate-fade-in">
-                    
-                    {/* CABEÇALHO DO BLOCO VISUAL */}
-                    <div className="flex items-center gap-2 pb-2 border-b border-slate-800">
-                      <Palette className="w-4 h-4 text-amber-400" />
-                      <span className="text-xs font-black text-white uppercase tracking-wider">
-                        Personalização Visual dos Cards
-                      </span>
+                    <div className="space-y-4">
+                      {AparenciaCards({ ler: (k) => config[k], gravar: setCampo, campoIcones: 'mostrarIconesCards', porPagina: cardsPorTelaP1 })}
+                      {BarraFormatacao({ ehP1: true })}
                     </div>
-
-                    {/* OPÇÃO PARA FUNDO DE CARDS (16 QUADRADOS VISUAIS) */}
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <label className="text-[11px] font-bold text-amber-300 block">
-                          Fundo dos Cards no Celular (16 Opções)
-                        </label>
-                        <span className="text-[10px] text-amber-200/90 font-bold bg-slate-900 px-2 py-0.5 rounded-full border border-slate-800">
-                          {FUNDOS_CARDS.find(f => f.id === (config.cardFundoEstilo || 'escuro'))?.label}
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2 p-2.5 bg-slate-900/90 rounded-2xl border border-slate-800/80">
-                        {FUNDOS_CARDS.map((fundo) => {
-                          const isSel = (config.cardFundoEstilo || 'escuro') === fundo.id;
-                          return (
-                            <button
-                              key={fundo.id}
-                              type="button"
-                              onClick={() => setConfig({ ...config, cardFundoEstilo: fundo.id })}
-                              className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl transition-all relative flex items-center justify-center border shadow-md ${
-                                fundo.classe
-                              } ${
-                                isSel 
-                                  ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110 shadow-lg z-10' 
-                                  : 'opacity-75 hover:opacity-100 hover:scale-105'
-                              }`}
-                              title={fundo.label}
-                            >
-                              {isSel && (
-                                <Check className="w-4 h-4 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] stroke-[3]" />
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* OPÇÕES DE EFEITOS E ACABAMENTOS (3D, VIDRO, ENTALHE, ALTO-RELEVO, ETC.) */}
-                    <div className="space-y-2 pt-2 border-t border-slate-850">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-bold text-amber-300 block">
-                          Efeito & Acabamento do Card (3D, Vidro, Entalhe, Alto-Relevo)
-                        </span>
-                        <span className="text-[10px] text-slate-400">
-                          {EFEITOS_CARDS.find(e => e.id === (config.cardEfeitoEstilo || 'padrao'))?.desc}
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        {EFEITOS_CARDS.map((ef) => {
-                          const isSel = (config.cardEfeitoEstilo || 'padrao') === ef.id;
-                          return (
-                            <button
-                              key={ef.id}
-                              type="button"
-                              onClick={() => setConfig({ ...config, cardEfeitoEstilo: ef.id })}
-                              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border active:scale-95 ${
-                                isSel
-                                  ? 'bg-amber-500/20 text-amber-300 border-amber-400 shadow-md ring-1 ring-amber-400'
-                                  : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-850'
-                              }`}
-                              title={ef.desc}
-                            >
-                              <span>{ef.label}</span>
-                              {isSel && <Check className="w-3.5 h-3.5 text-amber-400" />}
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      {/* SLIDE: PROFUNDIDADE DO EFEITO DOS CARDS (TELA 1) */}
-                      <div className="pt-1.5">
-                        <div className="flex items-center justify-between text-xs mb-1">
-                          <span className="font-bold text-slate-300">Profundidade / Intensidade do Efeito</span>
-                          <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md text-[11px]">
-                            Nível {config.cardProfundidade || 5}
-                          </span>
-                        </div>
-                        <input
-                          type="range"
-                          min="1"
-                          max="10"
-                          step="1"
-                          value={config.cardProfundidade || 5}
-                          onChange={(e) => setConfig({ ...config, cardProfundidade: Number(e.target.value) })}
-                          className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                        />
-                        <div className="flex justify-between text-[9px] text-slate-500 font-mono">
-                          <span>1 (Sutil)</span>
-                          <span>5 (Padrão)</span>
-                          <span>10 (Profundidade Máxima)</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* COR DAS FONTES (TÍTULO E SUBTÍTULO) - SOMENTE BOLINHAS COMPACTAS */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-850">
-                      {/* Cor do Título */}
-                      <div className="bg-slate-900/90 border border-slate-800/80 rounded-xl p-2.5 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-bold text-slate-200 block">
-                            Cor da Fonte do Título
-                          </span>
-                          <span className="text-[10px] text-amber-300 font-bold">
-                            {CORES_FONTE_TITULO.find(c => c.id === (config.cardCorFonteTitulo || 'branco'))?.label}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {CORES_FONTE_TITULO.map((cf) => {
-                            const isSel = (config.cardCorFonteTitulo || 'branco') === cf.id;
-                            return (
-                              <button
-                                key={cf.id}
-                                type="button"
-                                onClick={() => setConfig({ ...config, cardCorFonteTitulo: cf.id })}
-                                className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full ${cf.dot} shadow-md transition-all flex items-center justify-center relative ${
-                                  isSel
-                                    ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110 shadow-lg z-10'
-                                    : 'opacity-70 hover:opacity-100 hover:scale-105'
-                                }`}
-                                title={cf.label}
-                              >
-                                {isSel && (
-                                  <Check className={`w-3.5 h-3.5 stroke-[3] drop-shadow ${cf.id === 'branco' ? 'text-slate-950' : 'text-white'}`} />
-                                )}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      {/* Cor da Descrição */}
-                      <div className="bg-slate-900/90 border border-slate-800/80 rounded-xl p-2.5 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-bold text-slate-200 block">
-                            Cor da Fonte da Descrição
-                          </span>
-                          <span className="text-[10px] text-amber-300 font-bold">
-                            {CORES_FONTE_SUBTITULO.find(c => c.id === (config.cardCorFonteSubtitulo || 'cinza'))?.label}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {CORES_FONTE_SUBTITULO.map((cf) => {
-                            const isSel = (config.cardCorFonteSubtitulo || 'cinza') === cf.id;
-                            return (
-                              <button
-                                key={cf.id}
-                                type="button"
-                                onClick={() => setConfig({ ...config, cardCorFonteSubtitulo: cf.id })}
-                                className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full ${cf.dot} shadow-md transition-all flex items-center justify-center relative ${
-                                  isSel
-                                    ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110 shadow-lg z-10'
-                                    : 'opacity-70 hover:opacity-100 hover:scale-105'
-                                }`}
-                                title={cf.label}
-                              >
-                                {isSel && (
-                                  <Check className={`w-3.5 h-3.5 stroke-[3] drop-shadow ${cf.id === 'branco_suave' ? 'text-slate-950' : 'text-white'}`} />
-                                )}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* SLIDERS DE DIMENSÕES: FONTE DO TÍTULO, SUBTÍTULO E ALTURA DOS CARDS */}
-                    <div className="pt-2 border-t border-slate-855 space-y-2">
-                      <span className="text-[11px] font-bold text-slate-300 block">
-                        Dimensões dos Cards
-                      </span>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        {/* Slider Tamanho Fonte Título */}
-                        <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-2.5 space-y-1.5">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="font-bold text-slate-300">Fonte Título</span>
-                            <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
-                              {config.cardFonteTitulo || 16}px
-                            </span>
-                          </div>
-                          <input
-                            type="range"
-                            min="13"
-                            max="24"
-                            step="1"
-                            value={config.cardFonteTitulo || 16}
-                            onChange={(e) => setConfig({ ...config, cardFonteTitulo: Number(e.target.value) })}
-                            className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                          />
-                          <div className="flex justify-between text-[9px] text-slate-500 font-mono">
-                            <span>13px</span>
-                            <span>24px</span>
-                          </div>
-                        </div>
-
-                        {/* Slider Tamanho Fonte Subtítulo */}
-                        <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-2.5 space-y-1.5">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="font-bold text-slate-300">Fonte Subtítulo</span>
-                            <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
-                              {config.cardFonteSubtitulo || 12}px
-                            </span>
-                          </div>
-                          <input
-                            type="range"
-                            min="10"
-                            max="18"
-                            step="1"
-                            value={config.cardFonteSubtitulo || 12}
-                            onChange={(e) => setConfig({ ...config, cardFonteSubtitulo: Number(e.target.value) })}
-                            className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                          />
-                          <div className="flex justify-between text-[9px] text-slate-500 font-mono">
-                            <span>10px</span>
-                            <span>18px</span>
-                          </div>
-                        </div>
-
-                        {/* Slider Altura do Card (Permite esmagar até 16px = 70% menor) */}
-                        <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-2.5 space-y-1.5">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="font-bold text-slate-300">Altura do Card</span>
-                            <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
-                              {config.cardAltura || 48}px {(config.cardAltura || 48) < 46 ? '(Auto-Fonte)' : ''}
-                            </span>
-                          </div>
-                          <input
-                            type="range"
-                            min="16"
-                            max="120"
-                            step="1"
-                            value={config.cardAltura || 48}
-                            onChange={(e) => setConfig({ ...config, cardAltura: Number(e.target.value) })}
-                            className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                          />
-                          <div className="flex justify-between text-[9px] text-slate-500 font-mono">
-                            <span>16px (Ultra-Compacto)</span>
-                            <span>120px</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Opção para Retirar ou Exibir Ícones */}
-                      <div className="flex items-center justify-between bg-slate-900/80 border border-slate-800 rounded-xl p-2.5">
-                        <span className="text-xs font-bold text-slate-300">Exibir Ícones nos Cards:</span>
-                        <button
-                          type="button"
-                          onClick={() => setConfig({ ...config, mostrarIconesCards: config.mostrarIconesCards === false ? true : false })}
-                          className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 border ${
-                            config.mostrarIconesCards !== false
-                              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                              : 'bg-slate-800 text-slate-400 border-slate-700'
-                          }`}
-                        >
-                          {config.mostrarIconesCards !== false ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                          <span>{config.mostrarIconesCards !== false ? 'Com Ícones' : 'Sem Ícones (Retirados)'}</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Quantidade de Cards por Tela (Botões Rápidos) */}
-                    <div className="pt-2 border-t border-slate-855 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                      <div>
-                        <span className="text-xs font-bold text-slate-200 block">
-                          Limite de Cards por Tela no Celular:
-                        </span>
-                        <span className="text-[11px] text-slate-400">
-                          Gera páginas automáticas caso ultrapasse
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-1.5 bg-slate-900 p-1 rounded-xl border border-slate-800 self-start sm:self-auto">
-                        {[2, 3, 4, 5, 6].map((num) => (
-                          <button
-                            key={num}
-                            type="button"
-                            onClick={() => {
-                              setConfig((prev) => ({ ...prev, cardsPorTela: num }));
-                              setPreviewPage(0);
-                            }}
-                            className={`w-7 h-7 rounded-lg font-black text-xs transition-all flex items-center justify-center ${
-                              cardsPorTelaP1 === num
-                                ? 'bg-amber-400 text-slate-950 shadow-md scale-105'
-                                : 'text-slate-300 hover:text-white hover:bg-slate-800'
-                            }`}
-                          >
-                            {num}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
                   )}
 
                   {/* 3. LISTA REFEITA DE OPÇÕES / CARDS DA TELA 1 */}
@@ -2046,7 +1352,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                   <div className="space-y-3 pt-1 animate-fade-in">
                     <div className="flex items-center justify-between">
                       <div>
-                        <span className="text-xs font-black text-slate-200 uppercase tracking-wider block">
+                        <span className="text-xs font-semibold text-slate-200 block">
                           Opções de Resposta Cadastradas
                         </span>
                         <span className="text-[11px] text-slate-400">
@@ -2057,114 +1363,11 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       <button
                         type="button"
                         onClick={handleAdicionarCardP1}
-                        className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-1.5"
+                        className="px-3 py-1.5 bg-slate-100 hover:bg-white active:scale-95 text-slate-900 font-bold text-xs rounded-xl shadow-md transition flex items-center gap-1.5"
                       >
                         <Plus className="w-3.5 h-3.5" />
                         <span>Adicionar Opção</span>
                       </button>
-                    </div>
-
-                    {/* Campo Rápido de Título & Altura dos Cards diretamente na aba principal da Tela 1 */}
-                    <div className="pt-3 border-t border-slate-800 space-y-2.5">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <div>
-                          <label className="text-[10px] font-bold text-amber-300 block mb-0.5">
-                            Título da Tela 1
-                          </label>
-                          <input
-                            type="text"
-                            value={config.pergunta1Titulo ?? ''}
-                            onChange={(e) => setConfig({ ...config, pergunta1Titulo: e.target.value })}
-                            placeholder="Digite o título ou pergunta da Tela 1..."
-                            className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-white"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[10px] font-bold text-emerald-300 block mb-0.5">
-                            Subtítulo / Instrução (Tela 1)
-                          </label>
-                          <input
-                            type="text"
-                            value={config.pergunta1TextoAbaixo ?? ''}
-                            onChange={(e) => setConfig({ ...config, pergunta1TextoAbaixo: e.target.value })}
-                            placeholder="Texto complementar abaixo do título (opcional)..."
-                            className="w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-lg px-2.5 py-1.5 text-xs text-slate-200"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Slider de Altura dos Cards, Ícones, Alinhamento e Fundo debaixo dos Captions na Aba Tela 1 */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-3 pt-2 border-t border-slate-800/70 items-center">
-                        <div>
-                          <div className="flex items-center justify-between text-xs mb-1">
-                            <span className="font-bold text-slate-300">Altura dos Cards</span>
-                            <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[10px]">
-                              {config.cardAltura || 48}px {(config.cardAltura || 48) < 46 ? '• Auto-Fonte' : ''}
-                            </span>
-                          </div>
-                          <input
-                            type="range"
-                            min="16"
-                            max="120"
-                            step="1"
-                            value={config.cardAltura || 48}
-                            onChange={(e) => setConfig({ ...config, cardAltura: Number(e.target.value) })}
-                            className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                          />
-                        </div>
-
-                        <div className="flex items-center justify-between text-xs bg-slate-900/90 px-2.5 py-1.5 rounded-xl border border-slate-800">
-                          <span className="text-slate-300 font-bold">Ícones:</span>
-                          <button
-                            type="button"
-                            onClick={() => setConfig({ ...config, mostrarIconesCards: config.mostrarIconesCards === false ? true : false })}
-                            className={`px-2.5 py-0.5 rounded-lg text-[11px] font-bold transition flex items-center gap-1 border ${
-                              config.mostrarIconesCards !== false
-                                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                                : 'bg-rose-500/20 text-rose-300 border-rose-500/40'
-                            }`}
-                          >
-                            {config.mostrarIconesCards !== false ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
-                            <span>{config.mostrarIconesCards !== false ? 'Com Ícones' : 'Sem Ícones'}</span>
-                          </button>
-                        </div>
-
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-slate-300 font-bold">Por pág:</span>
-                          <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
-                            {[4, 5, 6, 8, 10, 12, 15].map((num) => (
-                              <button
-                                key={num}
-                                type="button"
-                                onClick={() => setConfig({ ...config, cardsPorTela: num })}
-                                className={`px-1.5 h-6 rounded-lg font-black text-[10px] transition ${
-                                  (config.cardsPorTela || 4) === num
-                                    ? 'bg-amber-400 text-slate-950 shadow'
-                                    : 'text-slate-400 hover:text-white'
-                                }`}
-                              >
-                                {num}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Título e Subtítulo: tamanho, alinhamento e fundo independentes */}
-                      <EstiloLinhasTitulo
-                        linhas={(() => {
-                          const e = estiloLinhas(config, 'pergunta1');
-                          return [
-                            { rotulo: 'Título', tamanho: config.pergunta1FonteTamanho || 18, min: 12, max: 34, onTamanho: (v) => setConfig((c) => ({ ...c, pergunta1FonteTamanho: v })), cor: config.pergunta1TituloCor || 'branco', onCor: (v) => setConfig((c) => ({ ...c, pergunta1TituloCor: v })), bold: config.pergunta1TituloBold !== false, onBold: (v) => setConfig((c) => ({ ...c, pergunta1TituloBold: v })), alinhamento: e.tituloAl, onAlinhamento: (v) => setConfig((c) => ({ ...c, pergunta1TituloAlinhamento: v })), fundo: e.tituloFundo, onFundo: (v) => setConfig((c) => ({ ...c, pergunta1TituloFundo: v })) },
-                            { rotulo: 'Subtítulo', tamanho: config.pergunta1TextoAbaixoTamanho || 14, min: 9, max: 26, onTamanho: (v) => setConfig((c) => ({ ...c, pergunta1TextoAbaixoTamanho: v })), cor: config.pergunta1TextoAbaixoCor || 'cinza', onCor: (v) => setConfig((c) => ({ ...c, pergunta1TextoAbaixoCor: v })), bold: Boolean(config.pergunta1SubBold), onBold: (v) => setConfig((c) => ({ ...c, pergunta1SubBold: v })), alinhamento: e.subAl, onAlinhamento: (v) => setConfig((c) => ({ ...c, pergunta1SubAlinhamento: v })), fundo: e.subFundo, onFundo: (v) => setConfig((c) => ({ ...c, pergunta1SubFundo: v })) }
-                          ];
-                        })()}
-                      />
-                      <ControleEspacos
-                        valores={espacos(config, true)}
-                        onChange={(k, v) => setConfig((c) => ({ ...c, ['pergunta1' + { tit: 'EspacoTitulos', sub: 'EspacoSub', cards: 'EspacoCards' }[k]]: v }))}
-                      />
-                      <BarraFormatacao ehP1 />
                     </div>
 
                     <div className="space-y-2.5">
@@ -2193,23 +1396,23 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             }`}
                           >
                             {/* Barra Superior do Card */}
-                            <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-850">
+                            <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-800">
                               <div className="flex items-center gap-2">
                                 <button
                                   type="button"
                                   onClick={() => handleToggleAtivoP1(idx)}
                                   className={`px-2.5 py-1 rounded-xl text-xs font-bold flex items-center gap-1.5 transition active:scale-95 border ${
                                     isAtivo
-                                      ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/25'
-                                      : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-750'
+                                      ? 'bg-slate-700/40 text-slate-200 border-slate-700 hover:bg-slate-700'
+                                      : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'
                                   }`}
                                 >
-                                  {isAtivo ? <Eye className="w-3.5 h-3.5 text-emerald-400" /> : <EyeOff className="w-3.5 h-3.5 text-slate-500" />}
+                                  {isAtivo ? <Eye className="w-3.5 h-3.5 text-slate-200" /> : <EyeOff className="w-3.5 h-3.5 text-slate-500" />}
                                   <span>{isAtivo ? 'Visível no Celular' : 'Oculto'}</span>
                                 </button>
 
                                 {isAtivo && (
-                                  <span className="text-[10px] bg-amber-500/15 border border-amber-500/30 text-amber-300 px-2 py-0.5 rounded-full font-bold">
+                                  <span className="text-[11px] bg-slate-700/40 border border-slate-700 text-slate-200 px-2 py-0.5 rounded-full font-bold">
                                     Página {paginaDoCard}
                                   </span>
                                 )}
@@ -2219,7 +1422,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                     type="button"
                                     onClick={() => handleDividirParaNovaTelaP1(idx)}
                                     title="Mover esta opção e as próximas para uma nova Tela (Tela 2, Tela 3...)"
-                                    className="px-2 py-0.5 rounded-lg bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 text-[10px] font-bold flex items-center gap-1 transition"
+                                    className="px-2 py-0.5 rounded-lg bg-slate-700/40 hover:bg-slate-700 border border-slate-700 text-slate-200 text-[11px] font-bold flex items-center gap-1 transition"
                                   >
                                     <ArrowRight className="w-3 h-3" />
                                     <span>Daqui p/ frente → Nova Tela</span>
@@ -2232,7 +1435,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                 <select
                                   value={opcao.icone || 'Tag'}
                                   onChange={(e) => handleUpdateOpcaoP1(idx, 'icone', e.target.value)}
-                                  className="bg-slate-900 border border-slate-800 rounded-xl px-2.5 py-1 text-xs font-bold text-slate-200 focus:border-amber-400 cursor-pointer"
+                                  className="bg-slate-900 border border-slate-800 rounded-xl px-2.5 py-1 text-xs font-bold text-slate-200 focus:border-slate-300 cursor-pointer"
                                 >
                                   {ICONES.map(ic => (
                                     <option key={ic.id} value={ic.id} className="bg-slate-900 text-slate-200">{ic.label}</option>
@@ -2268,7 +1471,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             {/* Inputs de Título e Subtítulo */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                               <div>
-                                <label className="text-[10px] font-bold text-slate-400 block mb-1">
+                                <label className="text-[11px] font-bold text-slate-400 block mb-1">
                                   Título da Opção (Texto Principal)
                                 </label>
                                 <input
@@ -2276,12 +1479,12 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                   value={opcao.titulo || ''}
                                   onChange={(e) => handleUpdateOpcaoP1(idx, 'titulo', e.target.value)}
                                   placeholder="Ex: Vi a faixa na igreja"
-                                  className="w-full bg-slate-900 border border-slate-700/80 focus:border-amber-400 rounded-xl px-3 py-1.5 text-xs font-bold text-white shadow-inner"
+                                  className="w-full bg-slate-900 border border-slate-700/80 focus:border-slate-300 rounded-xl px-3 py-1.5 text-xs font-bold text-white shadow-inner"
                                 />
                               </div>
 
                               <div>
-                                <label className="text-[10px] font-bold text-slate-400 block mb-1">
+                                <label className="text-[11px] font-bold text-slate-400 block mb-1">
                                   Descrição / Detalhe (Opcional)
                                 </label>
                                 <input
@@ -2289,13 +1492,13 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                   value={opcao.subtitulo || ''}
                                   onChange={(e) => handleUpdateOpcaoP1(idx, 'subtitulo', e.target.value)}
                                   placeholder="Ex: Passei em frente e vi o anúncio"
-                                  className="w-full bg-slate-900 border border-slate-700/80 focus:border-amber-400 rounded-xl px-3 py-1.5 text-xs text-slate-300 shadow-inner"
+                                  className="w-full bg-slate-900 border border-slate-700/80 focus:border-slate-300 rounded-xl px-3 py-1.5 text-xs text-slate-300 shadow-inner"
                                 />
                               </div>
                             </div>
 
                             {/* CONFIGURAÇÃO DE GAVETA CONDICIONAL NA TELA 1 (MULTI-COMPONENTE) */}
-                            <div className="pt-2 border-t border-slate-850">
+                            <div className="pt-2 border-t border-slate-800">
                               <label className="flex items-center gap-2 cursor-pointer select-none">
                                 <input
                                   type="checkbox"
@@ -2323,18 +1526,18 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                       setPreviewOpenGavetaId(null);
                                     }
                                   }}
-                                  className="w-4 h-4 rounded border-slate-700 bg-slate-900 text-amber-500 focus:ring-amber-400"
+                                  className="w-4 h-4 rounded border-slate-700 bg-slate-900 text-slate-200 focus:ring-slate-200"
                                 />
-                                <span className={`text-xs font-bold ${opcao.temGaveta ? 'text-amber-300' : 'text-slate-400'}`}>
+                                <span className={`text-xs font-bold ${opcao.temGaveta ? 'text-slate-200' : 'text-slate-400'}`}>
                                   🗄️ Abrir Gaveta ao Selecionar (Subpergunta: Texto, Radio Button, Checkbox, Slide, Data/Hora)
                                 </span>
                               </label>
 
                               {opcao.temGaveta && (
-                                <div className="mt-2.5 p-3 rounded-xl bg-slate-900/90 border border-amber-500/30 space-y-2.5 animate-fade-in">
+                                <div className="mt-2.5 p-3 rounded-xl bg-slate-900/90 border border-slate-700 space-y-2.5 animate-fade-in">
                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     <div>
-                                      <label className="text-[10px] font-bold text-amber-300 block mb-1">
+                                      <label className="text-[11px] font-bold text-slate-200 block mb-1">
                                         Tipo de Componente dentro da Gaveta
                                       </label>
                                       <select
@@ -2349,7 +1552,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                               : ['Opção 1', 'Opção 2', 'Opção 3']
                                           });
                                         }}
-                                        className="w-full bg-slate-950 border border-amber-500/40 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-amber-200"
+                                        className="w-full bg-slate-950 border border-slate-700 focus:border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-200"
                                       >
                                         {TIPOS_GAVETA.map(tg => (
                                           <option key={tg.id} value={tg.id}>{tg.label}</option>
@@ -2358,7 +1561,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                     </div>
 
                                     <div>
-                                      <label className="text-[10px] font-bold text-amber-300 block mb-1">
+                                      <label className="text-[11px] font-bold text-slate-200 block mb-1">
                                         Pergunta ou Instrução da Gaveta
                                       </label>
                                       <input
@@ -2372,7 +1575,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                           });
                                         }}
                                         placeholder="Ex: Qual tipo de ajuda você precisa?"
-                                        className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1 text-xs text-white"
+                                        className="w-full bg-slate-950 border border-slate-700 focus:border-slate-300 rounded-lg px-2.5 py-1 text-xs text-white"
                                       />
                                     </div>
                                   </div>
@@ -2381,7 +1584,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                   {(opcao.gaveta?.tipo === 'radio' || opcao.gaveta?.tipo === 'checkbox') && (
                                     <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 space-y-2">
                                       <div className="flex items-center justify-between">
-                                        <span className="text-[10px] font-bold text-sky-300 uppercase">
+                                        <span className="text-[11px] font-bold text-slate-200">
                                           Opções da Gaveta ({opcao.gaveta?.tipo === 'radio' ? 'Radio Button' : 'Checkbox'})
                                         </span>
                                         <button
@@ -2394,7 +1597,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                               opcoes: [...atuais, `Opção ${atuais.length + 1}`]
                                             });
                                           }}
-                                          className="px-2 py-0.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold flex items-center gap-1"
+                                          className="px-2 py-0.5 rounded bg-slate-100 hover:bg-white text-slate-900 text-[11px] font-bold flex items-center gap-1"
                                         >
                                           <Plus className="w-3 h-3" /> Adicionar
                                         </button>
@@ -2433,7 +1636,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                   {opcao.gaveta?.tipo === 'slider' && (
                                     <div className="grid grid-cols-3 gap-2 p-2 rounded-lg bg-slate-950 border border-slate-800">
                                       <div>
-                                        <label className="text-[10px] text-slate-400 block">Mínimo</label>
+                                        <label className="text-[11px] text-slate-400 block">Mínimo</label>
                                         <input
                                           type="number"
                                           value={opcao.gaveta?.sliderMin ?? 0}
@@ -2442,7 +1645,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                         />
                                       </div>
                                       <div>
-                                        <label className="text-[10px] text-slate-400 block">Máximo</label>
+                                        <label className="text-[11px] text-slate-400 block">Máximo</label>
                                         <input
                                           type="number"
                                           value={opcao.gaveta?.sliderMax ?? 10}
@@ -2451,7 +1654,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                         />
                                       </div>
                                       <div>
-                                        <label className="text-[10px] text-slate-400 block">Unidade</label>
+                                        <label className="text-[11px] text-slate-400 block">Unidade</label>
                                         <input
                                           type="text"
                                           value={opcao.gaveta?.sliderUnidade || ''}
@@ -2466,7 +1669,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     {(opcao.gaveta?.tipo === 'texto_longo' || opcao.gaveta?.tipo === 'texto_curto' || !opcao.gaveta?.tipo || opcao.gaveta?.tipo === 'texto') && (
                                       <div>
-                                        <label className="text-[10px] font-bold text-slate-400 block mb-1">
+                                        <label className="text-[11px] font-bold text-slate-400 block mb-1">
                                           Placeholder da Caixa de Texto
                                         </label>
                                         <input
@@ -2477,13 +1680,13 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                             placeholder: e.target.value
                                           })}
                                           placeholder="Ex: Digite seu pedido..."
-                                          className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1 text-xs text-slate-200"
+                                          className="w-full bg-slate-950 border border-slate-700 focus:border-slate-300 rounded-lg px-2.5 py-1 text-xs text-slate-200"
                                         />
                                       </div>
                                     )}
 
                                     <div>
-                                      <label className="text-[10px] font-bold text-slate-400 block mb-1">
+                                      <label className="text-[11px] font-bold text-slate-400 block mb-1">
                                         Texto do Botão da Gaveta
                                       </label>
                                       <input
@@ -2494,7 +1697,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                           botaoConfirmar: e.target.value
                                         })}
                                         placeholder="Confirmar & Avançar"
-                                        className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1 text-xs text-amber-300 font-bold"
+                                        className="w-full bg-slate-950 border border-slate-700 focus:border-slate-300 rounded-lg px-2.5 py-1 text-xs text-slate-200 font-bold"
                                       />
                                     </div>
                                   </div>
@@ -2522,16 +1725,18 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 const numTela = extraIndex + 2;
                 const cardsAtivos = (telaAlvo.opcoes || []).filter(o => o.ativo !== false);
                 const limitCards = Number(telaAlvo.cardsPorTela) || 4;
+                const ehCards = (telaAlvo.tipo || 'cards') === 'cards';
+                const subAtual = subTabExtra === 'aparencia' && !ehCards ? 'pergunta' : subTabExtra;
 
                 return (
                   <div className="space-y-4">
                     {/* Barra Superior da Tela Extra */}
                     <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-slate-800">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-black text-amber-400">
+                        <span className="text-sm font-semibold text-slate-200">
                           Configurando Tela {numTela}
                         </span>
-                        <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold border bg-emerald-500/15 border-emerald-500/30 text-emerald-300">
+                        <span className="px-2 py-0.5 rounded-lg text-[11px] font-bold border bg-slate-700/40 border-slate-700 text-slate-200">
                           ✓ Ativa no Celular
                         </span>
                       </div>
@@ -2551,7 +1756,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                               ]);
                             }
                           }}
-                          className="bg-slate-900 border border-amber-500/40 focus:border-amber-400 rounded-xl px-3 py-1.5 text-xs font-black text-amber-300"
+                          className="bg-slate-900 border border-slate-700 focus:border-slate-300 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-200"
                         >
                           {TIPOS_PERGUNTA.map(tp => (
                             <option key={tp.id} value={tp.id}>{tp.label}</option>
@@ -2562,7 +1767,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       <button
                         type="button"
                         onClick={() => handleExcluirTela(extraIndex)}
-                        className="px-2.5 py-1 text-xs font-bold text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 rounded-lg transition flex items-center gap-1"
+                        className="px-2.5 py-1 text-xs font-bold text-slate-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition flex items-center gap-1"
                         title="Excluir esta tela inteira do fluxo"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -2570,666 +1775,84 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       </button>
                     </div>
 
-                    {/* SUB-NAVEGAÇÃO PADRONIZADA DA TELA EXTRA (MESMO PADRÃO DA TELA 1 PARA TODOS OS TIPOS) */}
-                    <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-900/90 rounded-2xl border border-slate-800 self-start">
-                      <button
-                        type="button"
-                        onClick={() => setSubTabExtra('opcoes')}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                          subTabExtra === 'opcoes'
-                            ? 'bg-amber-400 text-slate-950 shadow-md font-black'
-                            : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-                        }`}
-                      >
-                        <ListOrdered className="w-3.5 h-3.5" />
-                        <span>
-                          {['texto', 'texto_curto', 'data', 'hora', 'slider', 'rating'].includes(telaAlvo.tipo)
-                            ? 'Campo & Resposta'
-                            : telaAlvo.tipo === 'grade'
-                            ? `Itens da Grade (${cardsAtivos.length})`
-                            : `Opções de Resposta (${cardsAtivos.length})`}
-                        </span>
-                      </button>
+                    <SubAbas
+                      valor={subAtual}
+                      onChange={setSubTabExtra}
+                      opcoes={[
+                        { id: 'pergunta', label: 'Textos' },
+                        {
+                          id: 'opcoes',
+                          label: ['texto', 'texto_curto', 'data', 'hora', 'slider', 'rating'].includes(telaAlvo.tipo)
+                            ? 'Campo de resposta'
+                            : telaAlvo.tipo === 'grade' ? `Itens da grade (${cardsAtivos.length})` : `Opções (${cardsAtivos.length})`
+                        },
+                        ...(ehCards ? [{ id: 'aparencia', label: 'Aparência dos cards' }] : [])
+                      ]}
+                    />
 
-                      <button
-                        type="button"
-                        onClick={() => setSubTabExtra('aparencia')}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                          subTabExtra === 'aparencia'
-                            ? 'bg-amber-400 text-slate-950 shadow-md font-black'
-                            : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-                        }`}
-                      >
-                        <Palette className="w-3.5 h-3.5" />
-                        <span>Aparência & Efeitos</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setSubTabExtra('pergunta')}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                          subTabExtra === 'pergunta'
-                            ? 'bg-amber-400 text-slate-950 shadow-md font-black'
-                            : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-                        }`}
-                      >
-                        <Type className="w-3.5 h-3.5" />
-                        <span>Títulos 1, 2, 3, Orientações & Escala</span>
-                      </button>
-                    </div>
-
-                    {/* ABA 3: TÍTULOS 1, 2, 3, TEXTO ABAIXO / ORIENTAÇÃO, LEGENDA DA ESCALA, ALINHAMENTO E FUNDO DOS CAPTIONS */}
-                    {subTabExtra === 'pergunta' && (
-                      <div className="space-y-3.5 animate-fade-in">
-                        <div className="flex items-center justify-between pb-1 border-b border-slate-800">
-                          <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wide">
-                            Títulos 1, 2, 3, Orientações & Alinhamento (Tela {numTela})
-                          </span>
-                          <span className="text-[10px] text-slate-400">
-                            Abaixo de cada campo há um slide e bolinhas de cores
-                          </span>
-                        </div>
-
-                        {/* TÍTULO 1 */}
-                        <div className="space-y-1.5 pb-2.5 border-b border-slate-800/70">
-                          <div className="flex items-center justify-between">
-                            <label className="text-[11px] font-bold text-slate-200">Título 1 (1ª Linha)</label>
-                            <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[10px]">
-                              {telaAlvo.titulo1Tamanho || 18}px
-                            </span>
-                          </div>
-                          <input
-                            type="text"
-                            value={telaAlvo.titulo1 ?? telaAlvo.titulo ?? ''}
-                            onChange={(e) => {
-                              handleUpdateTelaProp(extraIndex, 'titulo1', e.target.value);
-                              handleUpdateTelaProp(extraIndex, 'titulo', `${e.target.value} ${telaAlvo.titulo2 || ''}`.trim());
-                            }}
-                            placeholder={`Digite o Título 1 da Tela ${numTela}...`}
-                            className={`w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold shadow-inner ${getCorTextoLinhaClass(telaAlvo.titulo1Cor, 'text-white')}`}
-                          />
-                          <div className="flex flex-wrap items-center justify-between gap-3 pt-0.5">
-                            <div className="flex-1 flex items-center gap-2 min-w-[140px]">
-                              <span className="text-[9px] text-slate-500 font-mono">11px</span>
-                              <input
-                                type="range"
-                                min="11"
-                                max="36"
-                                step="1"
-                                value={telaAlvo.titulo1Tamanho || 18}
-                                onChange={(e) => handleUpdateTelaProp(extraIndex, 'titulo1Tamanho', Number(e.target.value))}
-                                className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                              />
-                              <span className="text-[9px] text-slate-500 font-mono">36px</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              {CORES_TEXTO_LINHAS.map((c) => {
-                                const isSel = (telaAlvo.titulo1Cor || 'branco') === c.id;
-                                return (
-                                  <button
-                                    key={c.id}
-                                    type="button"
-                                    onClick={() => handleUpdateTelaProp(extraIndex, 'titulo1Cor', c.id)}
-                                    title={`Cor: ${c.label}`}
-                                    className={`w-4 h-4 rounded-full transition-all ${c.bg} ${
-                                      isSel ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110' : 'opacity-55 hover:opacity-100'
-                                    }`}
-                                  />
-                                );
-                              })}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* TÍTULO 2 */}
-                        <div className="space-y-1.5 pb-2.5 border-b border-slate-800/70">
-                          <div className="flex items-center justify-between">
-                            <label className="text-[11px] font-bold text-slate-200">Título 2 (2ª Linha - Opcional)</label>
-                            <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[10px]">
-                              {telaAlvo.titulo2Tamanho || 15}px
-                            </span>
-                          </div>
-                          <input
-                            type="text"
-                            value={telaAlvo.titulo2 ?? ''}
-                            onChange={(e) => {
-                              handleUpdateTelaProp(extraIndex, 'titulo2', e.target.value);
-                              handleUpdateTelaProp(extraIndex, 'titulo', `${telaAlvo.titulo1 || telaAlvo.titulo || ''} ${e.target.value}`.trim());
-                            }}
-                            placeholder="Digite o Título 2 (opcional)..."
-                            className={`w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold shadow-inner ${getCorTextoLinhaClass(telaAlvo.titulo2Cor, 'text-amber-300')}`}
-                          />
-                          <div className="flex flex-wrap items-center justify-between gap-3 pt-0.5">
-                            <div className="flex-1 flex items-center gap-2 min-w-[140px]">
-                              <span className="text-[9px] text-slate-500 font-mono">11px</span>
-                              <input
-                                type="range"
-                                min="11"
-                                max="36"
-                                step="1"
-                                value={telaAlvo.titulo2Tamanho || 15}
-                                onChange={(e) => handleUpdateTelaProp(extraIndex, 'titulo2Tamanho', Number(e.target.value))}
-                                className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                              />
-                              <span className="text-[9px] text-slate-500 font-mono">36px</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              {CORES_TEXTO_LINHAS.map((c) => {
-                                const isSel = (telaAlvo.titulo2Cor || 'dourado') === c.id;
-                                return (
-                                  <button
-                                    key={c.id}
-                                    type="button"
-                                    onClick={() => handleUpdateTelaProp(extraIndex, 'titulo2Cor', c.id)}
-                                    title={`Cor: ${c.label}`}
-                                    className={`w-4 h-4 rounded-full transition-all ${c.bg} ${
-                                      isSel ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110' : 'opacity-55 hover:opacity-100'
-                                    }`}
-                                  />
-                                );
-                              })}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* TÍTULO 3 */}
-                        <div className="space-y-1.5 pb-2.5 border-b border-slate-800/70">
-                          <div className="flex items-center justify-between">
-                            <label className="text-[11px] font-bold text-slate-200">Título 3 (3ª Linha - Opcional)</label>
-                            <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[10px]">
-                              {telaAlvo.titulo3Tamanho || 14}px
-                            </span>
-                          </div>
-                          <input
-                            type="text"
-                            value={telaAlvo.titulo3 ?? ''}
-                            onChange={(e) => handleUpdateTelaProp(extraIndex, 'titulo3', e.target.value)}
-                            placeholder="Digite o Título 3 (opcional)..."
-                            className={`w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold shadow-inner ${getCorTextoLinhaClass(telaAlvo.titulo3Cor, 'text-emerald-400')}`}
-                          />
-                          <div className="flex flex-wrap items-center justify-between gap-3 pt-0.5">
-                            <div className="flex-1 flex items-center gap-2 min-w-[140px]">
-                              <span className="text-[9px] text-slate-500 font-mono">11px</span>
-                              <input
-                                type="range"
-                                min="11"
-                                max="36"
-                                step="1"
-                                value={telaAlvo.titulo3Tamanho || 14}
-                                onChange={(e) => handleUpdateTelaProp(extraIndex, 'titulo3Tamanho', Number(e.target.value))}
-                                className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                              />
-                              <span className="text-[9px] text-slate-500 font-mono">36px</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              {CORES_TEXTO_LINHAS.map((c) => {
-                                const isSel = (telaAlvo.titulo3Cor || 'verde') === c.id;
-                                return (
-                                  <button
-                                    key={c.id}
-                                    type="button"
-                                    onClick={() => handleUpdateTelaProp(extraIndex, 'titulo3Cor', c.id)}
-                                    title={`Cor: ${c.label}`}
-                                    className={`w-4 h-4 rounded-full transition-all ${c.bg} ${
-                                      isSel ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110' : 'opacity-55 hover:opacity-100'
-                                    }`}
-                                  />
-                                );
-                              })}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* TEXTO ABAIXO / SUBTÍTULO / ORIENTAÇÃO */}
-                        <div className="space-y-1.5 pb-2.5 border-b border-slate-800/70">
-                          <div className="flex items-center justify-between">
-                            <label className="text-[11px] font-bold text-emerald-300">
-                              Texto Abaixo / Orientação da Pergunta
-                            </label>
-                            <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[10px]">
-                              {telaAlvo.subtituloTamanho || 12}px
-                            </span>
-                          </div>
-                          <textarea
-                            rows={2}
-                            value={telaAlvo.subtitulo || ''}
-                            onChange={(e) => handleUpdateTelaProp(extraIndex, 'subtitulo', e.target.value)}
-                            placeholder="Ex: Avalie a relevância de cada eixo temático para sua atuação profissional."
-                            className={`w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-lg px-3 py-1.5 text-xs placeholder-slate-500 shadow-inner resize-none ${getCorTextoLinhaClass(telaAlvo.subtituloCor, 'text-slate-300')}`}
-                          />
-                          <div className="flex flex-wrap items-center justify-between gap-3 pt-0.5">
-                            <div className="flex-1 flex items-center gap-2 min-w-[140px]">
-                              <span className="text-[9px] text-slate-500 font-mono">9px</span>
-                              <input
-                                type="range"
-                                min="9"
-                                max="26"
-                                step="1"
-                                value={telaAlvo.subtituloTamanho || 12}
-                                onChange={(e) => handleUpdateTelaProp(extraIndex, 'subtituloTamanho', Number(e.target.value))}
-                                className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                              />
-                              <span className="text-[9px] text-slate-500 font-mono">26px</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              {CORES_TEXTO_LINHAS.map((c) => {
-                                const isSel = (telaAlvo.subtituloCor || 'cinza') === c.id;
-                                return (
-                                  <button
-                                    key={c.id}
-                                    type="button"
-                                    onClick={() => handleUpdateTelaProp(extraIndex, 'subtituloCor', c.id)}
-                                    title={`Cor: ${c.label}`}
-                                    className={`w-4 h-4 rounded-full transition-all ${c.bg} ${
-                                      isSel ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110' : 'opacity-55 hover:opacity-100'
-                                    }`}
-                                  />
-                                );
-                              })}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* LEGENDA DA ESCALA (PARA GRADE / SLIDER OU QUALQUER TELA QUE TENHA ESCALA) */}
-                        {(telaAlvo.tipo === 'grade' || telaAlvo.tipo === 'slider' || telaAlvo.legendaEscala) && (
-                          <div className="space-y-1.5 pb-2.5 border-b border-slate-800/70">
-                            <div className="flex items-center justify-between">
-                              <label className="text-[11px] font-bold text-amber-300">
-                                Legenda de Escala (Pílulas Compactas: separe por ; ou |)
-                              </label>
-                              <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[10px]">
-                                {telaAlvo.escalaTamanho || 11}px
-                              </span>
-                            </div>
-                            <input
-                              type="text"
-                              value={telaAlvo.legendaEscala || ''}
-                              onChange={(e) => handleUpdateTelaProp(extraIndex, 'legendaEscala', e.target.value)}
-                              placeholder="Ex: 1 = Nada relevante; 2 = Pouco; 3 = Moderado; 4 = Relevante; 5 = Muito relevante; NA = Não se aplica"
-                              className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs text-amber-200"
-                            />
-                            <div className="flex items-center gap-2 pt-0.5">
-                              <span className="text-[10px] text-slate-400 font-bold">Tamanho da Legenda da Escala:</span>
-                              <span className="text-[9px] text-slate-500 font-mono">8px</span>
-                              <input
-                                type="range"
-                                min="8"
-                                max="18"
-                                step="1"
-                                value={telaAlvo.escalaTamanho || 11}
-                                onChange={(e) => handleUpdateTelaProp(extraIndex, 'escalaTamanho', Number(e.target.value))}
-                                className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                              />
-                              <span className="text-[9px] text-slate-500 font-mono">18px</span>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* ALINHAMENTO DOS TÍTULOS & FUNDO DEBAIXO DOS CAPTIONS */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <div>
-                            <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">
-                              Alinhamento dos Títulos & Subtítulos
-                            </span>
-                            <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
-                              {ALINHAMENTOS_TEXTO.map((al) => (
-                                <button
-                                  key={al.id}
-                                  type="button"
-                                  onClick={() => handleUpdateTelaProp(extraIndex, 'alinhamento', al.id)}
-                                  className={`flex-1 py-1 rounded-lg text-[11px] font-bold transition ${
-                                    (telaAlvo.alinhamento || 'center') === al.id
-                                      ? 'bg-amber-400 text-slate-950 font-black shadow'
-                                      : 'text-slate-400 hover:text-white'
-                                  }`}
-                                >
-                                  {al.label}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-
-                          <div>
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-[10px] font-bold text-slate-400 uppercase">
-                                Fundo debaixo dos Captions
-                              </span>
-                              <span className="text-[10px] font-bold text-amber-300">
-                                {FUNDOS_CAPTION.find(f => f.id === (telaAlvo.captionFundo || 'transparente'))?.label}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1.5 bg-slate-900 p-1.5 rounded-xl border border-slate-800">
-                              {FUNDOS_CAPTION.map((fc) => {
-                                const isSel = (telaAlvo.captionFundo || 'transparente') === fc.id;
-                                return (
-                                  <button
-                                    key={fc.id}
-                                    type="button"
-                                    onClick={() => handleUpdateTelaProp(extraIndex, 'captionFundo', fc.id)}
-                                    title={`Fundo: ${fc.label}`}
-                                    className={`w-5 h-5 rounded-full transition-all ${fc.dot} ${
-                                      isSel ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110' : 'opacity-65 hover:opacity-100'
-                                    }`}
-                                  />
-                                );
-                              })}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* ABA 2: APARÊNCIA & EFEITOS (PADRONIZADO EM TODAS AS ABAS IGUAL À TELA 1) */}
-                    {subTabExtra === 'aparencia' && (
-                      <div className="bg-slate-950 border border-amber-500/30 rounded-2xl p-4 space-y-4 shadow-lg animate-fade-in">
-                        <div className="flex items-center gap-2 pb-2 border-b border-slate-800">
-                          <Palette className="w-4 h-4 text-amber-400" />
-                          <span className="text-xs font-black text-white uppercase tracking-wider">
-                            Personalização Visual dos Cards / Itens (Tela {numTela})
-                          </span>
-                        </div>
-
-                        {/* FUNDO DOS CARDS / ITENS (16 OPÇÕES) */}
-                        <div className="space-y-1.5">
-                          <div className="flex items-center justify-between">
-                            <label className="text-[11px] font-bold text-amber-300 block">
-                              Fundo dos Cards / Itens (16 Opções)
-                            </label>
-                            <span className="text-[10px] text-amber-200/90 font-bold bg-slate-900 px-2 py-0.5 rounded-full border border-slate-800">
-                              {FUNDOS_CARDS.find(f => f.id === (telaAlvo.cardFundoEstilo || config.cardFundoEstilo || 'escuro'))?.label}
-                            </span>
-                          </div>
-                          <div className="flex flex-wrap items-center gap-2 p-2.5 bg-slate-900/90 rounded-2xl border border-slate-800/80">
-                            {FUNDOS_CARDS.map((fundo) => {
-                              const isSel = (telaAlvo.cardFundoEstilo || config.cardFundoEstilo || 'escuro') === fundo.id;
-                              return (
-                                <button
-                                  key={fundo.id}
-                                  type="button"
-                                  onClick={() => handleUpdateTelaProp(extraIndex, 'cardFundoEstilo', fundo.id)}
-                                  className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl transition-all relative flex items-center justify-center border shadow-md ${fundo.classe} ${
-                                    isSel
-                                      ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110 shadow-lg z-10'
-                                      : 'opacity-75 hover:opacity-100 hover:scale-105'
-                                  }`}
-                                  title={fundo.label}
-                                >
-                                  {isSel && <Check className="w-4 h-4 text-white drop-shadow stroke-[3]" />}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-
-                        {/* EFEITOS 3D / VIDRO / RELEVO */}
-                        <div className="space-y-2 pt-2 border-t border-slate-850">
-                          <span className="text-[11px] font-bold text-amber-300 block">
-                            Efeito & Acabamento (3D, Vidro, Entalhe, Alto-Relevo)
-                          </span>
-                          <div className="flex flex-wrap items-center gap-2">
-                            {EFEITOS_CARDS.map((ef) => {
-                              const isSel = (telaAlvo.cardEfeitoEstilo || config.cardEfeitoEstilo || 'padrao') === ef.id;
-                              return (
-                                <button
-                                  key={ef.id}
-                                  type="button"
-                                  onClick={() => handleUpdateTelaProp(extraIndex, 'cardEfeitoEstilo', ef.id)}
-                                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border ${
-                                    isSel
-                                      ? 'bg-amber-500/20 text-amber-300 border-amber-400 shadow-md ring-1 ring-amber-400'
-                                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
-                                  }`}
-                                >
-                                  <span>{ef.label}</span>
-                                  {isSel && <Check className="w-3.5 h-3.5 text-amber-400" />}
-                                </button>
-                              );
-                            })}
-                          </div>
-
-                          <div className="pt-1.5">
-                            <div className="flex items-center justify-between text-xs mb-1">
-                              <span className="font-bold text-slate-300">Profundidade do Efeito</span>
-                              <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md text-[11px]">
-                                Nível {telaAlvo.cardProfundidade || config.cardProfundidade || 5}
-                              </span>
-                            </div>
-                            <input
-                              type="range"
-                              min="1"
-                              max="10"
-                              step="1"
-                              value={telaAlvo.cardProfundidade || config.cardProfundidade || 5}
-                              onChange={(e) => handleUpdateTelaProp(extraIndex, 'cardProfundidade', Number(e.target.value))}
-                              className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                            />
-                          </div>
-                        </div>
-
-                        {/* CORES DAS FONTES DO ITEM / CARD */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-850">
-                          <div className="bg-slate-900/90 border border-slate-800/80 rounded-xl p-2.5 space-y-2">
-                            <span className="text-[11px] font-bold text-slate-200 block">
-                              Cor da Fonte do Item / Card
-                            </span>
-                            <div className="flex items-center gap-2 flex-wrap">
-                              {CORES_FONTE_TITULO.map((cf) => {
-                                const isSel = (telaAlvo.cardCorFonteTitulo || config.cardCorFonteTitulo || 'branco') === cf.id;
-                                return (
-                                  <button
-                                    key={cf.id}
-                                    type="button"
-                                    onClick={() => handleUpdateTelaProp(extraIndex, 'cardCorFonteTitulo', cf.id)}
-                                    className={`w-7 h-7 rounded-full ${cf.dot} shadow-md transition-all flex items-center justify-center ${
-                                      isSel ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110' : 'opacity-70 hover:opacity-100'
-                                    }`}
-                                    title={cf.label}
-                                  >
-                                    {isSel && <Check className={`w-3.5 h-3.5 stroke-[3] ${cf.id === 'branco' ? 'text-slate-950' : 'text-white'}`} />}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
-
-                          <div className="bg-slate-900/90 border border-slate-800/80 rounded-xl p-2.5 space-y-2">
-                            <span className="text-[11px] font-bold text-slate-200 block">
-                              Cor da Descrição / Subtexto
-                            </span>
-                            <div className="flex items-center gap-2 flex-wrap">
-                              {CORES_FONTE_SUBTITULO.map((cf) => {
-                                const isSel = (telaAlvo.cardCorFonteSubtitulo || config.cardCorFonteSubtitulo || 'cinza') === cf.id;
-                                return (
-                                  <button
-                                    key={cf.id}
-                                    type="button"
-                                    onClick={() => handleUpdateTelaProp(extraIndex, 'cardCorFonteSubtitulo', cf.id)}
-                                    className={`w-7 h-7 rounded-full ${cf.dot} shadow-md transition-all flex items-center justify-center ${
-                                      isSel ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950 scale-110' : 'opacity-70 hover:opacity-100'
-                                    }`}
-                                    title={cf.label}
-                                  >
-                                    {isSel && <Check className={`w-3.5 h-3.5 stroke-[3] ${cf.id === 'branco_suave' ? 'text-slate-950' : 'text-white'}`} />}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* DIMENSÕES: FONTE DO ITEM, SUBTÍTULO, ALTURA ULTRA-COMPACTA (16px a 120px) E ÍCONES */}
-                        <div className="pt-2 border-t border-slate-855 space-y-2">
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-2.5 space-y-1.5">
-                              <div className="flex items-center justify-between text-xs">
-                                <span className="font-bold text-slate-300">Fonte Item</span>
-                                <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
-                                  {telaAlvo.cardFonteTitulo || config.cardFonteTitulo || 15}px
-                                </span>
-                              </div>
-                              <input
-                                type="range"
-                                min="9"
-                                max="24"
-                                step="1"
-                                value={telaAlvo.cardFonteTitulo || config.cardFonteTitulo || 15}
-                                onChange={(e) => handleUpdateTelaProp(extraIndex, 'cardFonteTitulo', Number(e.target.value))}
-                                className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                              />
-                            </div>
-
-                            <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-2.5 space-y-1.5">
-                              <div className="flex items-center justify-between text-xs">
-                                <span className="font-bold text-slate-300">Fonte Subtítulo</span>
-                                <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
-                                  {telaAlvo.cardFonteSubtitulo || config.cardFonteSubtitulo || 11}px
-                                </span>
-                              </div>
-                              <input
-                                type="range"
-                                min="8"
-                                max="18"
-                                step="1"
-                                value={telaAlvo.cardFonteSubtitulo || config.cardFonteSubtitulo || 11}
-                                onChange={(e) => handleUpdateTelaProp(extraIndex, 'cardFonteSubtitulo', Number(e.target.value))}
-                                className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                              />
-                            </div>
-
-                            <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-2.5 space-y-1.5">
-                              <div className="flex items-center justify-between text-xs">
-                                <span className="font-bold text-slate-300">Altura Card/Item</span>
-                                <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
-                                  {telaAlvo.cardAltura || config.cardAltura || 36}px
-                                </span>
-                              </div>
-                              <input
-                                type="range"
-                                min="16"
-                                max="120"
-                                step="1"
-                                value={telaAlvo.cardAltura || config.cardAltura || 36}
-                                onChange={(e) => handleUpdateTelaProp(extraIndex, 'cardAltura', Number(e.target.value))}
-                                className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="flex items-center justify-between bg-slate-900/80 border border-slate-800 rounded-xl p-2.5">
-                            <span className="text-xs font-bold text-slate-300">Exibir Ícones nos Cards:</span>
-                            <button
-                              type="button"
-                              onClick={() => handleUpdateTelaProp(extraIndex, 'mostrarIcones', telaAlvo.mostrarIcones === false ? true : false)}
-                              className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 border ${
-                                telaAlvo.mostrarIcones !== false
-                                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                                  : 'bg-rose-500/20 text-rose-300 border-rose-500/40'
-                              }`}
-                            >
-                              {telaAlvo.mostrarIcones !== false ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                              <span>{telaAlvo.mostrarIcones !== false ? 'Com Ícones' : 'Sem Ícones'}</span>
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* ABA 1: OPÇÕES / ITENS / CAMPO COM BARRA RÁPIDA DE ALTURA, ÍCONES, ALINHAMENTO E FUNDO */}
-                    {subTabExtra === 'opcoes' && (
-                      <div className="space-y-3 animate-fade-in">
-                        {/* Barra rápida de Títulos, Alinhamento e Fundo visível direto na aba de Opções */}
-                        <div className="space-y-2 pb-2 border-b border-slate-800/80">
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            <div>
-                              <label className="text-[10px] font-bold text-amber-400 uppercase tracking-wide block mb-0.5">
-                                Título 1 (Linha 1)
-                              </label>
-                              <input
-                                type="text"
-                                value={telaAlvo.titulo1 ?? telaAlvo.titulo ?? ''}
-                                onChange={(e) => {
-                                  handleUpdateTelaProp(extraIndex, 'titulo1', e.target.value);
-                                  handleUpdateTelaProp(extraIndex, 'titulo', `${e.target.value} ${telaAlvo.titulo2 || ''}`.trim());
-                                }}
-                                placeholder={`Ex: Pergunta da Tela ${numTela}`}
-                                className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-white"
-                              />
-                            </div>
-
-                            <div>
-                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide block mb-0.5">
-                                Título 2 / Subtítulo
-                              </label>
-                              <input
-                                type="text"
-                                value={telaAlvo.titulo2 || telaAlvo.subtitulo || ''}
-                                onChange={(e) => {
-                                  if (telaAlvo.titulo2 || !telaAlvo.subtitulo) {
-                                    handleUpdateTelaProp(extraIndex, 'titulo2', e.target.value);
-                                    handleUpdateTelaProp(extraIndex, 'titulo', `${telaAlvo.titulo1 || telaAlvo.titulo || ''} ${e.target.value}`.trim());
-                                  } else {
-                                    handleUpdateTelaProp(extraIndex, 'subtitulo', e.target.value);
-                                  }
-                                }}
-                                placeholder="Subtítulo ou 2ª linha..."
-                                className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-amber-300"
-                              />
-                            </div>
-                          </div>
-
-                          <EstiloLinhasTitulo
-                            linhas={(() => {
-                              const e = estiloLinhas(telaAlvo);
-                              return [
-                                { rotulo: 'Título', tamanho: telaAlvo.titulo1Tamanho || 18, min: 12, max: 34, onTamanho: (v) => handleUpdateTelaProp(extraIndex, 'titulo1Tamanho', v), cor: telaAlvo.titulo1Cor || 'branco', onCor: (v) => handleUpdateTelaProp(extraIndex, 'titulo1Cor', v), bold: telaAlvo.tituloBold !== false, onBold: (v) => handleUpdateTelaProp(extraIndex, 'tituloBold', v), alinhamento: e.tituloAl, onAlinhamento: (v) => handleUpdateTelaProp(extraIndex, 'tituloAlinhamento', v), fundo: e.tituloFundo, onFundo: (v) => handleUpdateTelaProp(extraIndex, 'tituloFundo', v) },
-                                { rotulo: 'Subtítulo', tamanho: telaAlvo.subtituloTamanho || 12, min: 9, max: 26, onTamanho: (v) => handleUpdateTelaProp(extraIndex, 'subtituloTamanho', v), cor: telaAlvo.subtituloCor || 'cinza', onCor: (v) => handleUpdateTelaProp(extraIndex, 'subtituloCor', v), bold: Boolean(telaAlvo.subBold), onBold: (v) => handleUpdateTelaProp(extraIndex, 'subBold', v), alinhamento: e.subAl, onAlinhamento: (v) => handleUpdateTelaProp(extraIndex, 'subAlinhamento', v), fundo: e.subFundo, onFundo: (v) => handleUpdateTelaProp(extraIndex, 'subFundo', v) }
-                              ];
-                            })()}
-                          />
-                          <ControleEspacos
-                            valores={espacos(telaAlvo, false)}
-                            onChange={(k, v) => handleUpdateTelaProp(extraIndex, { tit: 'espacoTitulos', sub: 'espacoSub', cards: 'espacoCards' }[k], v)}
-                          />
-                          <BarraFormatacao ehP1={false} extraIndex={extraIndex} />
-                          {extraIndex > 0 && TIPOS_CAMPO_PAGINA.includes(telaAlvo.tipo) && TIPOS_CAMPO_PAGINA.includes((config.telasExtras || [])[extraIndex - 1]?.tipo) && (() => {
-                            const anterior = (config.telasExtras || [])[extraIndex - 1];
-                            const ativo = telaAlvo.mesmaPagina ?? (telaAlvo.tipo === 'texto' && anterior?.tipo === 'texto');
-                            return (
-                              <button
-                                type="button"
-                                onClick={() => handleUpdateTelaProp(extraIndex, 'mesmaPagina', !ativo)}
-                                className={`mt-2 w-full p-2.5 rounded-xl border text-left text-[11px] font-bold flex items-center gap-2 transition ${ativo ? 'bg-emerald-500/15 border-emerald-500/50 text-emerald-200' : 'bg-slate-950 border-slate-800 text-slate-400'}`}
-                              >
-                                <span className={`w-8 h-4 rounded-full relative transition ${ativo ? 'bg-emerald-500' : 'bg-slate-700'}`}>
-                                  <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${ativo ? 'left-4' : 'left-0.5'}`} />
-                                </span>
-                                Continuar na mesma página da tela anterior (o participante rola a tela e responde em sequência)
-                              </button>
-                            );
+                    {subAtual === 'pergunta' && (
+                      <div className="space-y-4">
+                        <EstiloLinhasTitulo
+                          linhas={(() => {
+                            const e = estiloLinhas(telaAlvo);
+                            const set = (k) => (v) => handleUpdateTelaProp(extraIndex, k, v);
+                            return [
+                              { rotulo: 'Título 1', texto: telaAlvo.titulo1 ?? telaAlvo.titulo ?? '', onTexto: (v) => { set('titulo1')(v); set('titulo')(`${v} ${telaAlvo.titulo2 || ''}`.trim()); }, tamanho: telaAlvo.titulo1Tamanho || 18, min: 11, max: 36, onTamanho: set('titulo1Tamanho'), cor: telaAlvo.titulo1Cor || 'branco', onCor: set('titulo1Cor'), bold: telaAlvo.tituloBold !== false, onBold: set('tituloBold'), alinhamento: e.tituloAl, onAlinhamento: set('tituloAlinhamento'), fundo: e.tituloFundo, onFundo: set('tituloFundo') },
+                              { rotulo: 'Título 2', texto: telaAlvo.titulo2 ?? '', onTexto: (v) => { set('titulo2')(v); set('titulo')(`${telaAlvo.titulo1 || telaAlvo.titulo || ''} ${v}`.trim()); }, tamanho: telaAlvo.titulo2Tamanho || 15, min: 11, max: 36, onTamanho: set('titulo2Tamanho'), cor: telaAlvo.titulo2Cor || 'dourado', onCor: set('titulo2Cor') },
+                              { rotulo: 'Título 3', texto: telaAlvo.titulo3 ?? '', onTexto: set('titulo3'), tamanho: telaAlvo.titulo3Tamanho || 14, min: 11, max: 36, onTamanho: set('titulo3Tamanho'), cor: telaAlvo.titulo3Cor || 'verde', onCor: set('titulo3Cor') },
+                              { rotulo: 'Texto abaixo', texto: telaAlvo.subtitulo ?? '', onTexto: set('subtitulo'), multilinha: true, tamanho: telaAlvo.subtituloTamanho || 12, min: 9, max: 26, onTamanho: set('subtituloTamanho'), cor: telaAlvo.subtituloCor || 'cinza', onCor: set('subtituloCor'), bold: Boolean(telaAlvo.subBold), onBold: set('subBold'), alinhamento: e.subAl, onAlinhamento: set('subAlinhamento'), fundo: e.subFundo, onFundo: set('subFundo') },
+                              ...(telaAlvo.tipo === 'grade' ? [
+                                { rotulo: 'Legenda', texto: telaAlvo.legendaEscala ?? '', onTexto: set('legendaEscala'), placeholder: '1 = Péssimo; 5 = Ótimo; NA = Não se aplica', tamanho: telaAlvo.escalaTamanho || 9, min: 7, max: 18, onTamanho: set('escalaTamanho'), cor: telaAlvo.legendaCor || 'cinza', onCor: set('legendaCor'), bold: Boolean(telaAlvo.legendaBold), onBold: set('legendaBold'), fundo: telaAlvo.legendaFundo || 'escuro', onFundo: set('legendaFundo') },
+                                { rotulo: 'Itens da grade', texto: cardsAtivos.map((o) => o.titulo).join(', '), tamanho: telaAlvo.itemTamanho || 12, min: 8, max: 20, onTamanho: set('itemTamanho'), cor: telaAlvo.itemCor || 'branco', onCor: set('itemCor'), bold: telaAlvo.itemBold !== false, onBold: set('itemBold'), fundo: telaAlvo.itemFundo || 'escuro', onFundo: set('itemFundo') }
+                              ] : [])
+                            ];
                           })()}
-                          {telaAlvo.tipo === 'grade' && (
-                            <EstiloLinhasTitulo
-                              linhas={[
-                                { rotulo: 'Legenda', tamanho: telaAlvo.escalaTamanho || 9, min: 7, max: 16, onTamanho: (v) => handleUpdateTelaProp(extraIndex, 'escalaTamanho', v), cor: telaAlvo.legendaCor || 'cinza', onCor: (v) => handleUpdateTelaProp(extraIndex, 'legendaCor', v), bold: Boolean(telaAlvo.legendaBold), onBold: (v) => handleUpdateTelaProp(extraIndex, 'legendaBold', v), fundo: telaAlvo.legendaFundo || 'escuro', onFundo: (v) => handleUpdateTelaProp(extraIndex, 'legendaFundo', v) },
-                                { rotulo: 'Itens', tamanho: telaAlvo.itemTamanho || 12, min: 8, max: 20, onTamanho: (v) => handleUpdateTelaProp(extraIndex, 'itemTamanho', v), cor: telaAlvo.itemCor || 'branco', onCor: (v) => handleUpdateTelaProp(extraIndex, 'itemCor', v), bold: telaAlvo.itemBold !== false, onBold: (v) => handleUpdateTelaProp(extraIndex, 'itemBold', v), fundo: telaAlvo.itemFundo || 'escuro', onFundo: (v) => handleUpdateTelaProp(extraIndex, 'itemFundo', v) }
-                              ]}
+                        />
+                        <ControleEspacos
+                          valores={espacos(telaAlvo, false)}
+                          onChange={(k, v) => handleUpdateTelaProp(extraIndex, { tit: 'espacoTitulos', sub: 'espacoSub', cards: 'espacoCards' }[k], v)}
+                        />
+                        {extraIndex > 0 && TIPOS_CAMPO_PAGINA.includes(telaAlvo.tipo) && TIPOS_CAMPO_PAGINA.includes((config.telasExtras || [])[extraIndex - 1]?.tipo) && (
+                          <Secao>
+                            <Chave
+                              rotulo="Continuar na mesma página da tela anterior"
+                              descricao="O participante rola a tela e responde em sequência."
+                              valor={telaAlvo.mesmaPagina ?? (telaAlvo.tipo === 'texto' && (config.telasExtras || [])[extraIndex - 1]?.tipo === 'texto')}
+                              onChange={(v) => handleUpdateTelaProp(extraIndex, 'mesmaPagina', v)}
                             />
-                          )}
-                        </div>
+                          </Secao>
+                        )}
+                        {BarraFormatacao({ ehP1: false, extraIndex })}
+                      </div>
+                    )}
 
+                    {subAtual === 'aparencia' && (
+                      <div className="space-y-4">
+                        {AparenciaCards({
+                          ler: (k) => telaAlvo[k] ?? config[k],
+                          gravar: (k, v) => handleUpdateTelaProp(extraIndex, k, v),
+                          campoIcones: 'mostrarIcones',
+                          porPagina: limitCards
+                        })}
+                        {BarraFormatacao({ ehP1: false, extraIndex })}
+                      </div>
+                    )}
+
+                    {subAtual === 'opcoes' && (
+                      <div className="space-y-3">
                     {/* CONFIGURAÇÃO ESPECÍFICA CONFORME O TIPO DA TELA EXTRA */}
                     {['texto', 'texto_curto', 'data', 'hora', 'slider', 'rating'].includes(telaAlvo.tipo) ? (
-                      <div className="bg-slate-950 border border-amber-500/40 rounded-2xl p-4 space-y-3.5 shadow-lg animate-fade-in">
+                      <div className="bg-slate-950 border border-slate-700 rounded-2xl p-4 space-y-3.5 shadow-lg animate-fade-in">
                         <div className="flex items-center gap-2 pb-2 border-b border-slate-800">
-                          <AlignLeft className="w-4 h-4 text-amber-400" />
-                          <span className="text-xs font-black text-amber-300 uppercase tracking-wider">
+                          <AlignLeft className="w-4 h-4 text-slate-200" />
+                          <span className="text-xs font-semibold text-slate-200">
                             {TIPOS_PERGUNTA.find(t => t.id === telaAlvo.tipo)?.label || 'Configurações do Campo'}
                           </span>
                         </div>
 
                         {telaAlvo.tipo === 'slider' && (
                           <div className="space-y-2">
-                            <span className="text-[11px] font-black text-amber-300 block">Estilo da escala</span>
+                            <span className="text-[11px] font-semibold text-slate-200 block">Estilo da escala</span>
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                               {ESTILOS_ESCALA.map((es) => {
                                 const sel = (telaAlvo.estiloEscala || 'slider') === es.id;
@@ -3238,12 +1861,12 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                     key={es.id}
                                     type="button"
                                     onClick={() => handleUpdateTelaProp(extraIndex, 'estiloEscala', es.id)}
-                                    className={`p-2 rounded-xl border text-left transition ${sel ? 'bg-amber-500/10 border-amber-400' : 'bg-slate-950 border-slate-800 hover:border-slate-600'}`}
+                                    className={`p-2 rounded-xl border text-left transition ${sel ? 'bg-slate-700/40 border-slate-200' : 'bg-slate-950 border-slate-800 hover:border-slate-600'}`}
                                   >
                                     <div className="pointer-events-none h-[74px] overflow-hidden flex items-center">
                                       <div className="w-full"><EscalaVisual tela={{ ...telaAlvo, estiloEscala: es.id }} escala={0.45} valor={String(Math.round(((telaAlvo.sliderMin ?? 0) + (telaAlvo.sliderMax ?? 10)) * 0.7))} onChange={() => {}} /></div>
                                     </div>
-                                    <span className={`block text-[10px] font-bold mt-1 ${sel ? 'text-amber-200' : 'text-slate-400'}`}>{es.label}</span>
+                                    <span className={`block text-[11px] font-bold mt-1 ${sel ? 'text-slate-200' : 'text-slate-400'}`}>{es.label}</span>
                                   </button>
                                 );
                               })}
@@ -3253,7 +1876,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         {telaAlvo.tipo === 'slider' && (
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                             <div>
-                              <label className="text-[10px] font-bold text-slate-400 block mb-1">Valor Mínimo</label>
+                              <label className="text-[11px] font-bold text-slate-400 block mb-1">Valor Mínimo</label>
                               <input
                                 type="number"
                                 value={telaAlvo.sliderMin ?? 0}
@@ -3262,7 +1885,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                               />
                             </div>
                             <div>
-                              <label className="text-[10px] font-bold text-slate-400 block mb-1">Valor Máximo</label>
+                              <label className="text-[11px] font-bold text-slate-400 block mb-1">Valor Máximo</label>
                               <input
                                 type="number"
                                 value={telaAlvo.sliderMax ?? 10}
@@ -3271,7 +1894,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                               />
                             </div>
                             <div>
-                              <label className="text-[10px] font-bold text-slate-400 block mb-1">Passo (Step)</label>
+                              <label className="text-[11px] font-bold text-slate-400 block mb-1">Passo (Step)</label>
                               <input
                                 type="number"
                                 value={telaAlvo.sliderStep ?? 1}
@@ -3280,13 +1903,13 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                               />
                             </div>
                             <div>
-                              <label className="text-[10px] font-bold text-slate-400 block mb-1">Sufixo/Unidade</label>
+                              <label className="text-[11px] font-bold text-slate-400 block mb-1">Sufixo/Unidade</label>
                               <input
                                 type="text"
                                 value={telaAlvo.sliderUnidade || ''}
                                 onChange={(e) => handleUpdateTelaProp(extraIndex, 'sliderUnidade', e.target.value)}
                                 placeholder="Ex: pts, %"
-                                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs font-bold text-amber-300"
+                                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-200"
                               />
                             </div>
                           </div>
@@ -3295,7 +1918,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                           {(telaAlvo.tipo === 'texto' || telaAlvo.tipo === 'texto_curto') && (
                             <div>
-                              <label className="text-[10px] font-bold text-slate-400 block mb-1">
+                              <label className="text-[11px] font-bold text-slate-400 block mb-1">
                                 Placeholder da Caixa (Texto de Dica)
                               </label>
                               <input
@@ -3303,13 +1926,13 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                 value={telaAlvo.placeholder || ''}
                                 onChange={(e) => handleUpdateTelaProp(extraIndex, 'placeholder', e.target.value)}
                                 placeholder={telaAlvo.tipo === 'texto_curto' ? 'Ex: Digite seu nome ou WhatsApp...' : 'Ex: Digite sua sugestão ou comentário...'}
-                                className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-1.5 text-xs font-bold text-white shadow-inner"
+                                className="w-full bg-slate-900 border border-slate-700 focus:border-slate-300 rounded-xl px-3 py-1.5 text-xs font-bold text-white shadow-inner"
                               />
                             </div>
                           )}
 
                           <div>
-                            <label className="text-[10px] font-bold text-slate-400 block mb-1">
+                            <label className="text-[11px] font-bold text-slate-400 block mb-1">
                               Texto do Botão de Avançar
                             </label>
                             <input
@@ -3317,12 +1940,12 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                               value={telaAlvo.botaoTexto || ''}
                               onChange={(e) => handleUpdateTelaProp(extraIndex, 'botaoTexto', e.target.value)}
                               placeholder="Avançar"
-                              className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-1.5 text-xs font-bold text-amber-300 shadow-inner"
+                              className="w-full bg-slate-900 border border-slate-700 focus:border-slate-300 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-200 shadow-inner"
                             />
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2 border-t border-slate-850">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2 border-t border-slate-800">
                           {telaAlvo.tipo === 'texto' && (
                             <div className="flex items-center justify-between text-xs bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
                               <span className="text-slate-300 font-bold">Altura (Linhas):</span>
@@ -3333,7 +1956,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                     type="button"
                                     onClick={() => handleUpdateTelaProp(extraIndex, 'linhas', l)}
                                     className={`w-6 h-6 rounded-lg font-bold text-xs ${
-                                      (telaAlvo.linhas || 4) === l ? 'bg-amber-400 text-slate-950 font-black' : 'bg-slate-800 text-slate-400 hover:text-white'
+                                      (telaAlvo.linhas || 4) === l ? 'bg-slate-100 text-slate-950 font-semibold' : 'bg-slate-800 text-slate-400 hover:text-white'
                                     }`}
                                   >
                                     {l}
@@ -3350,8 +1973,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                               onClick={() => handleUpdateTelaProp(extraIndex, 'obrigatorio', !telaAlvo.obrigatorio)}
                               className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
                                 telaAlvo.obrigatorio
-                                  ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
-                                  : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                                  ? 'bg-slate-100 text-slate-900 border border-slate-100'
+                                  : 'bg-slate-700/40 text-slate-200 border border-slate-700'
                               }`}
                             >
                               {telaAlvo.obrigatorio ? 'Obrigatório' : 'Opcional'}
@@ -3362,71 +1985,10 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     ) : (
                       /* CONFIGURAÇÃO ESPECÍFICA: CARDS, GRADE/MATRIZ, RADIO BUTTON, CHECKBOX OU LISTA SUSPENSA */
                       <div className="space-y-3">
-                        {/* CONTROLE DE ALTURA DOS CARDS / ITENS (16px a 120px) + ÍCONES EM CADA ABA */}
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 py-2 border-b border-slate-800/80 items-center">
-                          <div>
-                            <div className="flex items-center justify-between text-xs mb-1">
-                              <span className="font-bold text-slate-300">Altura Cards/Itens</span>
-                              <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[10px]">
-                                {telaAlvo.cardAltura || config.cardAltura || 36}px {(telaAlvo.cardAltura || config.cardAltura || 36) < 46 ? '• Auto-Fonte' : ''}
-                              </span>
-                            </div>
-                            <input
-                              type="range"
-                              min="16"
-                              max="120"
-                              step="1"
-                              value={telaAlvo.cardAltura || config.cardAltura || 36}
-                              onChange={(e) => handleUpdateTelaProp(extraIndex, 'cardAltura', Number(e.target.value))}
-                              className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                            />
-                          </div>
-
-                          {telaAlvo.tipo === 'cards' && (
-                            <div className="flex items-center justify-between text-xs bg-slate-900/90 px-2.5 py-1.5 rounded-xl border border-slate-800">
-                              <span className="text-slate-300 font-bold">Ícones:</span>
-                              <button
-                                type="button"
-                                onClick={() => handleUpdateTelaProp(extraIndex, 'mostrarIcones', telaAlvo.mostrarIcones === false ? true : false)}
-                                className={`px-2.5 py-0.5 rounded-lg text-[11px] font-bold transition flex items-center gap-1 border ${
-                                  telaAlvo.mostrarIcones !== false
-                                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                                    : 'bg-rose-500/20 text-rose-300 border-rose-500/40'
-                                }`}
-                              >
-                                {telaAlvo.mostrarIcones !== false ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
-                                <span>{telaAlvo.mostrarIcones !== false ? 'Com Ícones' : 'Sem Ícones'}</span>
-                              </button>
-                            </div>
-                          )}
-
-                          {telaAlvo.tipo === 'cards' && (
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-slate-300 font-bold">Por pág:</span>
-                              <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
-                                {[3, 4, 5, 6, 8, 10, 12].map((num) => (
-                                  <button
-                                    key={num}
-                                    type="button"
-                                    onClick={() => handleUpdateTelaProp(extraIndex, 'cardsPorTela', num)}
-                                    className={`px-1.5 h-6 rounded-lg font-black text-[10px] transition ${
-                                      limitCards === num
-                                        ? 'bg-amber-400 text-slate-950 shadow'
-                                        : 'text-slate-400 hover:text-white'
-                                    }`}
-                                  >
-                                    {num}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-
                         {telaAlvo.tipo === 'grade' && (
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 py-2 border-b border-slate-800/80">
                             <div>
-                              <label className="text-[10px] font-bold text-amber-400 uppercase tracking-wide block mb-1">
+                              <label className="text-[11px] font-bold text-slate-200 block mb-1">
                                 Colunas da Escala (separadas por vírgula)
                               </label>
                               <input
@@ -3437,11 +1999,11 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                   handleUpdateTelaProp(extraIndex, 'colunasGrade', cols.length > 0 ? cols : ['1', '2', '3', '4', '5', 'NA']);
                                 }}
                                 placeholder="Ex: 1, 2, 3, 4, 5, NA"
-                                className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-amber-300"
+                                className="w-full bg-slate-900 border border-slate-700 focus:border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-200"
                               />
                             </div>
                             <div>
-                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide block mb-1">
+                              <label className="text-[11px] font-bold text-slate-400 block mb-1">
                                 Legenda da Escala (Exibida no topo da grade)
                               </label>
                               <input
@@ -3449,7 +2011,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                 value={telaAlvo.legendaEscala || ''}
                                 onChange={(e) => handleUpdateTelaProp(extraIndex, 'legendaEscala', e.target.value)}
                                 placeholder="Ex: 1 = Péssimo a 5 = Ótimo | NA = Não se aplica"
-                                className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs text-slate-200"
+                                className="w-full bg-slate-900 border border-slate-700 focus:border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-200"
                               />
                             </div>
                           </div>
@@ -3458,14 +2020,14 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         {/* Opções / Itens desta Tela Extra */}
                         <div className="space-y-2.5">
                           <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold text-slate-300 uppercase tracking-wide">
+                            <span className="text-xs font-bold text-slate-300">
                               {telaAlvo.tipo === 'grade' ? 'Itens da Grade / Tabela' : 'Opções Cadastradas'} ({telaAlvo.opcoes?.length || 0}) — {TIPOS_PERGUNTA.find(t => t.id === telaAlvo.tipo)?.short || 'Opções'}
                             </span>
 
                             <button
                               type="button"
                               onClick={() => handleAddCardExtra(extraIndex)}
-                              className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg shadow active:scale-95 transition flex items-center gap-1.5"
+                              className="px-3 py-1 bg-slate-100 hover:bg-white text-slate-900 font-bold text-xs rounded-lg shadow active:scale-95 transition flex items-center gap-1.5"
                             >
                               <Plus className="w-3.5 h-3.5" />
                               <span>{telaAlvo.tipo === 'grade' ? 'Adicionar Item' : 'Adicionar Opção'}</span>
@@ -3492,7 +2054,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                         onClick={() => handleToggleCardExtra(extraIndex, optIdx)}
                                         className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition border ${
                                           isAtivo
-                                            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/30'
+                                            ? 'bg-slate-700/40 text-slate-200 border-slate-700 hover:bg-slate-700'
                                             : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'
                                         }`}
                                       >
@@ -3505,7 +2067,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                           type="button"
                                           onClick={() => handleDividirParaNovaTelaExtra(extraIndex, optIdx)}
                                           title="Mover esta opção e as próximas para uma nova Tela"
-                                          className="px-2 py-0.5 rounded-lg bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 text-[10px] font-bold flex items-center gap-1 transition"
+                                          className="px-2 py-0.5 rounded-lg bg-slate-700/40 hover:bg-slate-700 border border-slate-700 text-slate-200 text-[11px] font-bold flex items-center gap-1 transition"
                                         >
                                           <ArrowRight className="w-3 h-3" />
                                           <span>Daqui p/ frente → Tela {numTela + 1}</span>
@@ -3550,29 +2112,29 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     <div>
-                                      <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Título da Opção</label>
+                                      <label className="text-[11px] font-bold text-slate-400 block mb-0.5">Título da Opção</label>
                                       <input
                                         type="text"
                                         value={opcao.titulo || ''}
                                         onChange={(e) => handleUpdateCardExtra(extraIndex, optIdx, 'titulo', e.target.value)}
                                         placeholder="Ex: Sim, é minha primeira vez!"
-                                        className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1 text-xs font-bold text-white shadow-inner"
+                                        className="w-full bg-slate-900 border border-slate-700 focus:border-slate-300 rounded-lg px-2.5 py-1 text-xs font-bold text-white shadow-inner"
                                       />
                                     </div>
                                     <div>
-                                      <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Descrição (Opcional)</label>
+                                      <label className="text-[11px] font-bold text-slate-400 block mb-0.5">Descrição (Opcional)</label>
                                       <input
                                         type="text"
                                         value={opcao.subtitulo || ''}
                                         onChange={(e) => handleUpdateCardExtra(extraIndex, optIdx, 'subtitulo', e.target.value)}
                                         placeholder="Ex: Detalhe complementar"
-                                        className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1 text-xs text-slate-300 shadow-inner"
+                                        className="w-full bg-slate-900 border border-slate-700 focus:border-slate-300 rounded-lg px-2.5 py-1 text-xs text-slate-300 shadow-inner"
                                       />
                                     </div>
                                   </div>
 
                                   {/* CONFIGURAÇÃO DE GAVETA CONDICIONAL MULTI-COMPONENTE NA OPÇÃO EXTRA */}
-                                  <div className="pt-1.5 border-t border-slate-850">
+                                  <div className="pt-1.5 border-t border-slate-800">
                                     <label className="flex items-center gap-2 cursor-pointer select-none">
                                       <input
                                         type="checkbox"
@@ -3600,18 +2162,18 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                             setPreviewOpenGavetaId(null);
                                           }
                                         }}
-                                        className="w-3.5 h-3.5 rounded border-slate-700 bg-slate-900 text-amber-500 focus:ring-amber-400"
+                                        className="w-3.5 h-3.5 rounded border-slate-700 bg-slate-900 text-slate-200 focus:ring-slate-200"
                                       />
-                                      <span className={`text-[11px] font-bold ${opcao.temGaveta ? 'text-amber-300' : 'text-slate-400'}`}>
+                                      <span className={`text-[11px] font-bold ${opcao.temGaveta ? 'text-slate-200' : 'text-slate-400'}`}>
                                         🗄️ Abrir Gaveta ao Selecionar (Texto, Radio, Checkbox, Slide, Data/Hora)
                                       </span>
                                     </label>
 
                                     {opcao.temGaveta && (
-                                      <div className="mt-2 p-2.5 rounded-lg bg-slate-900/95 border border-amber-500/30 space-y-2 animate-fade-in">
+                                      <div className="mt-2 p-2.5 rounded-lg bg-slate-900/95 border border-slate-700 space-y-2 animate-fade-in">
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                           <div>
-                                            <label className="text-[10px] font-bold text-amber-300 block mb-0.5">
+                                            <label className="text-[11px] font-bold text-slate-200 block mb-0.5">
                                               Tipo da Gaveta
                                             </label>
                                             <select
@@ -3626,7 +2188,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                                     : ['Opção 1', 'Opção 2', 'Opção 3']
                                                 });
                                               }}
-                                              className="w-full bg-slate-950 border border-amber-500/40 rounded-lg px-2 py-1 text-xs font-bold text-amber-200"
+                                              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs font-bold text-slate-200"
                                             >
                                               {TIPOS_GAVETA.map(tg => (
                                                 <option key={tg.id} value={tg.id}>{tg.label}</option>
@@ -3634,7 +2196,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                             </select>
                                           </div>
                                           <div>
-                                            <label className="text-[10px] font-bold text-amber-300 block mb-0.5">
+                                            <label className="text-[11px] font-bold text-slate-200 block mb-0.5">
                                               Pergunta da Gaveta
                                             </label>
                                             <input
@@ -3648,7 +2210,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                                 });
                                               }}
                                               placeholder="Ex: Qual o tipo de ajuda ou sugestão?"
-                                              className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-lg px-2 py-1 text-xs text-white"
+                                              className="w-full bg-slate-950 border border-slate-700 focus:border-slate-300 rounded-lg px-2 py-1 text-xs text-white"
                                             />
                                           </div>
                                         </div>
@@ -3656,7 +2218,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                         {(opcao.gaveta?.tipo === 'radio' || opcao.gaveta?.tipo === 'checkbox') && (
                                           <div className="p-2 rounded-lg bg-slate-950 border border-slate-800 space-y-1.5">
                                             <div className="flex items-center justify-between">
-                                              <span className="text-[10px] font-bold text-sky-300 uppercase">Opções da Gaveta</span>
+                                              <span className="text-[11px] font-bold text-slate-200">Opções da Gaveta</span>
                                               <button
                                                 type="button"
                                                 onClick={() => {
@@ -3667,7 +2229,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                                     opcoes: [...atuais, `Opção ${atuais.length + 1}`]
                                                   });
                                                 }}
-                                                className="px-2 py-0.5 rounded bg-emerald-600 text-white text-[10px] font-bold"
+                                                className="px-2 py-0.5 rounded bg-slate-100 text-white text-[11px] font-bold"
                                               >
                                                 + Opção
                                               </button>
@@ -3702,7 +2264,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                           {(opcao.gaveta?.tipo === 'texto_longo' || opcao.gaveta?.tipo === 'texto_curto' || !opcao.gaveta?.tipo || opcao.gaveta?.tipo === 'texto') && (
                                             <div>
-                                              <label className="text-[10px] font-bold text-slate-400 block mb-0.5">
+                                              <label className="text-[11px] font-bold text-slate-400 block mb-0.5">
                                                 Placeholder
                                               </label>
                                               <input
@@ -3713,12 +2275,12 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                                   placeholder: e.target.value
                                                 })}
                                                 placeholder="Digite aqui..."
-                                                className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-lg px-2 py-1 text-xs text-slate-200"
+                                                className="w-full bg-slate-950 border border-slate-700 focus:border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-200"
                                               />
                                             </div>
                                           )}
                                           <div>
-                                            <label className="text-[10px] font-bold text-slate-400 block mb-0.5">
+                                            <label className="text-[11px] font-bold text-slate-400 block mb-0.5">
                                               Texto do Botão
                                             </label>
                                             <input
@@ -3729,7 +2291,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                                 botaoConfirmar: e.target.value
                                               })}
                                               placeholder="Confirmar & Avançar"
-                                              className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-lg px-2 py-1 text-xs text-amber-300 font-bold"
+                                              className="w-full bg-slate-950 border border-slate-700 focus:border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-200 font-bold"
                                             />
                                           </div>
                                         </div>
@@ -3753,206 +2315,15 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               {/* ABA: TELA FINAL (AGRADECIMENTO / CONCLUÍDO)            */}
               {/* ====================================================== */}
               {activeTab === 'fim' && (
-                <div className="space-y-4">
-                  <div className="space-y-3">
-                    <div>
-                      <span className="text-xs font-black text-amber-400 uppercase tracking-wide block">
-                        Textos da Tela de Agradecimento (Tela Fim)
-                      </span>
-                      <p className="text-[11px] text-slate-400 mt-0.5">
-                        Aparece assim que o visitante confirma a quantidade de pessoas.
-                      </p>
-                    </div>
-
-                    <div className="space-y-2.5">
-                      {/* TÍTULO 1 E TÍTULO 2 PARA QUEBRAR O TÍTULO */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <div>
-                          <label className="text-[10px] font-bold text-slate-400 block mb-0.5">
-                            Título 1 (Linha 1)
-                          </label>
-                          <input
-                            type="text"
-                            value={config.finalTitulo1 ?? 'MUITO OBRIGADO'}
-                            onChange={(e) => setConfig({ 
-                              ...config, 
-                              finalTitulo1: e.target.value,
-                              finalTitulo: `${e.target.value} ${config.finalTitulo2 || ''}`.trim()
-                            })}
-                            placeholder="MUITO OBRIGADO"
-                            className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-white"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="text-[10px] font-bold text-slate-400 block mb-0.5">
-                            Título 2 (Linha 2 - Quebra do Título)
-                          </label>
-                          <input
-                            type="text"
-                            value={config.finalTitulo2 ?? 'PELA SUA PRESENÇA.'}
-                            onChange={(e) => setConfig({ 
-                              ...config, 
-                              finalTitulo2: e.target.value,
-                              finalTitulo: `${config.finalTitulo1 || ''} ${e.target.value}`.trim()
-                            })}
-                            placeholder="PELA SUA PRESENÇA."
-                            className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-amber-300"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-400 block mb-0.5">
-                          Mensagem / Complemento (Após o nome do evento)
-                        </label>
-                        <input
-                          type="text"
-                          value={config.finalMensagem ?? 'será espetacular!'}
-                          onChange={(e) => setConfig({ ...config, finalMensagem: e.target.value })}
-                          placeholder="será espetacular!"
-                          className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-3 py-1.5 text-xs font-bold text-amber-300"
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <div>
-                          <label className="text-[10px] font-bold text-slate-400 block mb-0.5">
-                            Status de Conclusão
-                          </label>
-                          <input
-                            type="text"
-                            value={config.finalStatus ?? 'REGISTRO CONCLUÍDO!'}
-                            onChange={(e) => setConfig({ ...config, finalStatus: e.target.value })}
-                            placeholder="REGISTRO CONCLUÍDO!"
-                            className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1 text-xs font-bold text-emerald-400"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="text-[10px] font-bold text-slate-400 block mb-0.5">
-                            Instrução ao Visitante
-                          </label>
-                          <input
-                            type="text"
-                            value={config.finalInstrucao ?? 'pode guardar seu celular'}
-                            onChange={(e) => setConfig({ ...config, finalInstrucao: e.target.value })}
-                            placeholder="pode guardar seu celular"
-                            className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1 text-xs text-slate-300"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* VÁRIOS SLIDERS: TÍTULO, MENSAGEM, STATUS E INSTRUÇÃO DA TELA FIM */}
-                  <div className="pt-4 border-t border-slate-800 space-y-3">
-                    <div className="flex items-center gap-2 pb-1 border-b border-slate-800/80">
-                      <SlidersHorizontal className="w-4 h-4 text-amber-400" />
-                      <span className="text-xs font-black text-white uppercase tracking-wider">
-                        Tamanho das Fontes da Tela de Agradecimento
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {/* Slider 1: Título Principal */}
-                      <div className="space-y-1.5 p-1">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="font-bold text-white">Título (Linhas 1 e 2)</span>
-                          <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
-                            {config.finalTituloFonteTamanho || config.finalFonteTamanho || 26}px
-                          </span>
-                        </div>
-                        <input
-                          type="range"
-                          min="16"
-                          max="40"
-                          step="1"
-                          value={config.finalTituloFonteTamanho || config.finalFonteTamanho || 26}
-                          onChange={(e) => setConfig({ 
-                            ...config, 
-                            finalTituloFonteTamanho: Number(e.target.value),
-                            finalFonteTamanho: Number(e.target.value)
-                          })}
-                          className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                        />
-                        <div className="flex justify-between text-[9px] text-slate-500 font-mono">
-                          <span>16px (Menor)</span>
-                          <span>40px (Maior)</span>
-                        </div>
-                      </div>
-
-                      {/* Slider 2: Mensagem / Complemento */}
-                      <div className="space-y-1.5 p-1">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="font-bold text-amber-300">Mensagem do Evento</span>
-                          <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
-                            {config.finalMensagemFonteTamanho || 16}px
-                          </span>
-                        </div>
-                        <input
-                          type="range"
-                          min="12"
-                          max="28"
-                          step="1"
-                          value={config.finalMensagemFonteTamanho || 16}
-                          onChange={(e) => setConfig({ ...config, finalMensagemFonteTamanho: Number(e.target.value) })}
-                          className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                        />
-                        <div className="flex justify-between text-[9px] text-slate-500 font-mono">
-                          <span>12px</span>
-                          <span>28px</span>
-                        </div>
-                      </div>
-
-                      {/* Slider 3: Status de Conclusão */}
-                      <div className="space-y-1.5 p-1">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="font-bold text-emerald-400">Status de Conclusão</span>
-                          <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
-                            {config.finalStatusFonteTamanho || 18}px
-                          </span>
-                        </div>
-                        <input
-                          type="range"
-                          min="12"
-                          max="28"
-                          step="1"
-                          value={config.finalStatusFonteTamanho || 18}
-                          onChange={(e) => setConfig({ ...config, finalStatusFonteTamanho: Number(e.target.value) })}
-                          className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                        />
-                        <div className="flex justify-between text-[9px] text-slate-500 font-mono">
-                          <span>12px</span>
-                          <span>28px</span>
-                        </div>
-                      </div>
-
-                      {/* Slider 4: Instrução ao Visitante */}
-                      <div className="space-y-1.5 p-1">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="font-bold text-slate-300">Instrução ao Visitante</span>
-                          <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
-                            {config.finalInstrucaoFonteTamanho || 13}px
-                          </span>
-                        </div>
-                        <input
-                          type="range"
-                          min="10"
-                          max="22"
-                          step="1"
-                          value={config.finalInstrucaoFonteTamanho || 13}
-                          onChange={(e) => setConfig({ ...config, finalInstrucaoFonteTamanho: Number(e.target.value) })}
-                          className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                        />
-                        <div className="flex justify-between text-[9px] text-slate-500 font-mono">
-                          <span>10px</span>
-                          <span>22px</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <EstiloLinhasTitulo
+                  linhas={[
+                    { rotulo: 'Título 1', texto: config.finalTitulo1 ?? 'MUITO OBRIGADO', onTexto: (v) => setConfig((c) => ({ ...c, finalTitulo1: v, finalTitulo: `${v} ${c.finalTitulo2 || ''}`.trim() })), tamanho: config.finalTituloFonteTamanho || config.finalFonteTamanho || 26, min: 16, max: 40, onTamanho: (v) => setConfig((c) => ({ ...c, finalTituloFonteTamanho: v, finalFonteTamanho: v })) },
+                    { rotulo: 'Título 2', texto: config.finalTitulo2 ?? 'PELA SUA PRESENÇA.', onTexto: (v) => setConfig((c) => ({ ...c, finalTitulo2: v, finalTitulo: `${c.finalTitulo1 || ''} ${v}`.trim() })), tamanho: config.finalTituloFonteTamanho || config.finalFonteTamanho || 26, min: 16, max: 40, onTamanho: (v) => setConfig((c) => ({ ...c, finalTituloFonteTamanho: v, finalFonteTamanho: v })) },
+                    { rotulo: 'Mensagem', texto: config.finalMensagem ?? 'será espetacular!', onTexto: (v) => setCampo('finalMensagem', v), tamanho: config.finalMensagemFonteTamanho || 16, min: 12, max: 28, onTamanho: (v) => setCampo('finalMensagemFonteTamanho', v) },
+                    { rotulo: 'Conclusão', texto: config.finalStatus ?? 'REGISTRO CONCLUÍDO!', onTexto: (v) => setCampo('finalStatus', v), tamanho: config.finalStatusFonteTamanho || 18, min: 12, max: 28, onTamanho: (v) => setCampo('finalStatusFonteTamanho', v) },
+                    { rotulo: 'Instrução', texto: config.finalInstrucao ?? 'pode guardar seu celular', onTexto: (v) => setCampo('finalInstrucao', v), tamanho: config.finalInstrucaoFonteTamanho || 13, min: 10, max: 22, onTamanho: (v) => setCampo('finalInstrucaoFonteTamanho', v) }
+                  ]}
+                />
               )}
 
               {/* ====================================================== */}
@@ -3960,420 +2331,64 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               {/* ====================================================== */}
               {activeTab === 'acompanhantes' && (
                 <div className="space-y-4">
-                  {/* Barra Superior com botão de Desativar/Ocultar esta tela caso o admin não queira no fluxo */}
-                  <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-800">
-                    <div className="flex items-center gap-2">
-                      <Users className="w-4 h-4 text-amber-400" />
-                      <span className="text-xs font-black text-white">
-                        Tela de Contagem de Acompanhantes / Grupo
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setConfig(prev => ({ ...prev, mostrarTelaAcompanhantes: false }));
-                        setActiveTab('tela_1');
-                      }}
-                      className="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 text-xs font-bold flex items-center gap-1 transition"
-                      title="Remover tela de acompanhantes deste evento"
-                    >
-                      <EyeOff className="w-3.5 h-3.5" />
-                      <span>Ocultar Tela de Acompanhantes</span>
-                    </button>
-                  </div>
+                  <SubAbas
+                    valor={subTabTela2}
+                    onChange={setSubTabTela2}
+                    opcoes={[
+                      { id: 'pergunta', label: 'Textos' },
+                      { id: 'botoes', label: 'Botões de quantidade' },
+                      { id: 'individual', label: 'Botão "Só eu"' }
+                    ]}
+                  />
 
-                  {/* Navegação Secundária Minimalista da Tela 2 */}
-                  <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-900/90 rounded-2xl border border-slate-800 self-start">
-                    <button
-                      type="button"
-                      onClick={() => setSubTabTela2('botoes')}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                        subTabTela2 === 'botoes'
-                          ? 'bg-amber-400 text-slate-950 shadow-md font-black'
-                          : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-                      }`}
-                    >
-                      <SlidersHorizontal className="w-3.5 h-3.5" />
-                      <span>Botões Numéricos (2 a 10)</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setSubTabTela2('pergunta')}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                        subTabTela2 === 'pergunta'
-                          ? 'bg-amber-400 text-slate-950 shadow-md font-black'
-                          : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-                      }`}
-                    >
-                      <Type className="w-3.5 h-3.5" />
-                      <span>Título da Pergunta</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setSubTabTela2('individual')}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                        subTabTela2 === 'individual'
-                          ? 'bg-amber-400 text-slate-950 shadow-md font-black'
-                          : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-                      }`}
-                    >
-                      <User className="w-3.5 h-3.5" />
-                      <span>Botão "Só Eu" (1 Pessoa)</span>
-                    </button>
-                  </div>
-
-                  {/* 1. TÍTULO DA PERGUNTA TELA 2 */}
                   {subTabTela2 === 'pergunta' && (
-                    <div className="space-y-3 animate-fade-in pt-1">
-                      <div className="flex items-center justify-between pb-1 border-b border-slate-800/80">
-                        <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wide">
-                          Título da Pergunta (Tela 2)
-                        </span>
-                        <span className="text-[10px] text-slate-400">
-                          Use Título 1 e 2 para quebrar em 2 linhas
-                        </span>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <div>
-                          <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Título 1 (1ª Linha)</label>
-                          <input
-                            type="text"
-                            value={config.pergunta2Titulo || ''}
-                            onChange={(e) => setConfig({ ...config, pergunta2Titulo: e.target.value })}
-                            placeholder="Ex: Você está só ou tem mais"
-                            className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1 text-xs font-bold text-white"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Título 2 (2ª Linha - Opcional)</label>
-                          <input
-                            type="text"
-                            value={config.pergunta2Titulo2 || ''}
-                            onChange={(e) => setConfig({ ...config, pergunta2Titulo2: e.target.value })}
-                            placeholder="Ex: pessoas te acompanhando?"
-                            className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1 text-xs font-bold text-amber-300"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Slider de Tamanho da Fonte da Pergunta 2 */}
-                      <div className="pt-2 border-t border-slate-800/80">
-                        <div className="flex items-center justify-between text-xs mb-1">
-                          <span className="font-bold text-slate-300">Tamanho da Fonte da Pergunta 2</span>
-                          <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[11px]">
-                            {config.pergunta2FonteTamanho || 18}px
-                          </span>
-                        </div>
-                        <input
-                          type="range"
-                          min="14"
-                          max="28"
-                          step="1"
-                          value={config.pergunta2FonteTamanho || 18}
-                          onChange={(e) => setConfig({ ...config, pergunta2FonteTamanho: Number(e.target.value) })}
-                          className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                        />
-                        <div className="flex justify-between text-[9px] text-slate-500 font-mono">
-                          <span>14px (Menor)</span>
-                          <span>18px (Padrão)</span>
-                          <span>28px (Maior)</span>
-                        </div>
-                      </div>
-                    </div>
+                    <Secao titulo="Pergunta">
+                      <Campo rotulo="Título, linha 1" valor={config.pergunta2Titulo} onChange={(v) => setCampo('pergunta2Titulo', v)} placeholder="Você está só ou tem mais" />
+                      <Campo rotulo="Título, linha 2 (opcional)" valor={config.pergunta2Titulo2} onChange={(v) => setCampo('pergunta2Titulo2', v)} placeholder="pessoas te acompanhando?" />
+                      <Deslizante rotulo="Tamanho" valor={config.pergunta2FonteTamanho || 18} min={14} max={28} onChange={(v) => setCampo('pergunta2FonteTamanho', v)} />
+                    </Secao>
                   )}
 
-                  {/* 2. DESIGN & ESTILO DOS BOTÕES NUMÉRICOS (TELA 2) */}
                   {subTabTela2 === 'botoes' && (
-                    <div className="space-y-4 animate-fade-in">
-                      <div className="flex items-center justify-between pb-1 border-b border-slate-800">
-                        <div className="flex items-center gap-2">
-                          <SlidersHorizontal className="w-4 h-4 text-amber-400" />
-                          <span className="text-xs font-black text-amber-400 uppercase tracking-wide">
-                            Estilo dos Botões de Quantidade (Tela 2)
-                          </span>
-                        </div>
-                        <span className="text-[10px] text-slate-400">
-                          Customização dos botões 2 a +10
-                        </span>
-                      </div>
-
-                      {/* LINHA 1: ALTURA, LARGURA E COR DO BOTÃO */}
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        {/* Altura */}
-                        <div className="space-y-1.5">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="font-bold text-slate-200">Altura do Botão</span>
-                            <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md text-[11px]">
-                              {config.btnQtdAltura || 74}px
-                            </span>
-                          </div>
-                          <input
-                            type="range"
-                            min="48"
-                            max="100"
-                            step="2"
-                            value={config.btnQtdAltura || 74}
-                            onChange={(e) => setConfig({ ...config, btnQtdAltura: Number(e.target.value) })}
-                            className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                          />
-                          <div className="flex justify-between text-[9px] text-slate-500 font-mono">
-                            <span>48px</span>
-                            <span>74px</span>
-                            <span>100px</span>
-                          </div>
-                        </div>
-
-                        {/* Largura */}
-                        <div className="space-y-1.5">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="font-bold text-slate-200">Largura do Botão</span>
-                            <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md text-[11px]">
-                              {config.btnQtdLargura || 100}%
-                            </span>
-                          </div>
-                          <input
-                            type="range"
-                            min="60"
-                            max="100"
-                            step="2"
-                            value={config.btnQtdLargura || 100}
-                            onChange={(e) => setConfig({ ...config, btnQtdLargura: Number(e.target.value) })}
-                            className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                          />
-                          <div className="flex justify-between text-[9px] text-slate-500 font-mono">
-                            <span>60% (Compacto)</span>
-                            <span>100% (Cheio)</span>
-                          </div>
-                        </div>
-
-                        {/* Cor do Botão em Listbox */}
-                        <div className="space-y-1.5">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="font-bold text-slate-200">Cor do Botão</span>
-                            <span className="w-3.5 h-3.5 rounded-full inline-block border border-slate-700" style={{ backgroundColor: CORES_BOTAO_QTD.find(c => c.id === (config.btnQtdCor || 'slate'))?.hex }} />
-                          </div>
-                          <select
-                            value={config.btnQtdCor || 'slate'}
-                            onChange={(e) => setConfig({ ...config, btnQtdCor: e.target.value })}
-                            className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-amber-300"
-                          >
-                            {CORES_BOTAO_QTD.map(c => (
-                              <option key={c.id} value={c.id} className="bg-slate-950 text-white">
-                                {c.label}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-
-                      {/* LINHA 2: EFEITO EM LISTBOX, PROFUNDIDADE E ESPESSURA DA LINHA */}
-                      <div className="pt-3 border-t border-slate-800 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        {/* Efeito em Listbox */}
-                        <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-slate-200 block">
-                            Efeito & Acabamento
-                          </label>
-                          <select
-                            value={config.btnQtdEfeito || 'efeito_3d'}
-                            onChange={(e) => setConfig({ ...config, btnQtdEfeito: e.target.value })}
-                            className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-amber-300"
-                          >
-                            {EFEITOS_CARDS.map(ef => (
-                              <option key={ef.id} value={ef.id} className="bg-slate-950 text-white">
-                                {ef.label}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        {/* Profundidade / Relevo */}
-                        <div className="space-y-1.5">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="font-bold text-slate-200">Profundidade / Relevo</span>
-                            <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md text-[11px]">
-                              Nível {config.btnQtdProfundidade || 5}
-                            </span>
-                          </div>
-                          <input
-                            type="range"
-                            min="1"
-                            max="10"
-                            step="1"
-                            value={config.btnQtdProfundidade || 5}
-                            onChange={(e) => setConfig({ ...config, btnQtdProfundidade: Number(e.target.value) })}
-                            className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                          />
-                          <div className="flex justify-between text-[9px] text-slate-500 font-mono">
-                            <span>1 (Sutil)</span>
-                            <span>5 (Padrão)</span>
-                            <span>10 (Máx)</span>
-                          </div>
-                        </div>
-
-                        {/* Espessura da Linha (Borda) */}
-                        <div className="space-y-1.5">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="font-bold text-slate-200">Espessura da Linha</span>
-                            <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md text-[11px]">
-                              {config.btnQtdBordaEspessura || 1}px
-                            </span>
-                          </div>
-                          <input
-                            type="range"
-                            min="1"
-                            max="6"
-                            step="1"
-                            value={config.btnQtdBordaEspessura || 1}
-                            onChange={(e) => setConfig({ ...config, btnQtdBordaEspessura: Number(e.target.value) })}
-                            className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                          />
-                          <div className="flex justify-between text-[9px] text-slate-500 font-mono">
-                            <span>1px (Fina)</span>
-                            <span>3px (Média)</span>
-                            <span>6px (Grossa)</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* LINHA 3: TAMANHO E COR DOS NÚMEROS + TAMANHO E COR DAS DESCRIÇÕES */}
-                      <div className="pt-3 border-t border-slate-800 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                        {/* Tamanho do Número */}
-                        <div className="space-y-1.5">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="font-bold text-slate-200">Tamanho Número</span>
-                            <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md text-[11px]">
-                              {config.btnQtdFonteNumero || 34}px
-                            </span>
-                          </div>
-                          <input
-                            type="range"
-                            min="18"
-                            max="48"
-                            step="1"
-                            value={config.btnQtdFonteNumero || 34}
-                            onChange={(e) => setConfig({ ...config, btnQtdFonteNumero: Number(e.target.value) })}
-                            className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                          />
-                          <div className="flex justify-between text-[9px] text-slate-500 font-mono">
-                            <span>18px</span>
-                            <span>34px</span>
-                            <span>48px</span>
-                          </div>
-                        </div>
-
-                        {/* Cor do Número em Listbox */}
-                        <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-slate-200 block">
-                            Cor dos Números
-                          </label>
-                          <select
-                            value={config.btnQtdCorNumero || 'branco'}
-                            onChange={(e) => setConfig({ ...config, btnQtdCorNumero: e.target.value })}
-                            className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-amber-300"
-                          >
-                            {CORES_NUMERO_QTD.map(c => (
-                              <option key={c.id} value={c.id} className="bg-slate-950 text-white">
-                                {c.label}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        {/* Tamanho da Descrição */}
-                        <div className="space-y-1.5">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="font-bold text-slate-200">Tamanho Legenda</span>
-                            <span className="font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md text-[11px]">
-                              {config.btnQtdFonteDescricao || 11}px
-                            </span>
-                          </div>
-                          <input
-                            type="range"
-                            min="9"
-                            max="16"
-                            step="1"
-                            value={config.btnQtdFonteDescricao || 11}
-                            onChange={(e) => setConfig({ ...config, btnQtdFonteDescricao: Number(e.target.value) })}
-                            className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                          />
-                          <div className="flex justify-between text-[9px] text-slate-500 font-mono">
-                            <span>9px</span>
-                            <span>11px</span>
-                            <span>16px</span>
-                          </div>
-                        </div>
-
-                        {/* Cor da Descrição em Listbox */}
-                        <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-slate-200 block">
-                            Cor da Legenda
-                          </label>
-                          <select
-                            value={config.btnQtdCorDescricao || 'branco_80'}
-                            onChange={(e) => setConfig({ ...config, btnQtdCorDescricao: e.target.value })}
-                            className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-amber-300"
-                          >
-                            {CORES_DESCRICAO_QTD.map(c => (
-                              <option key={c.id} value={c.id} className="bg-slate-950 text-white">
-                                {c.label}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-                    </div>
+                    <>
+                      <Secao titulo="Forma">
+                        <Deslizante rotulo="Altura" valor={config.btnQtdAltura || 74} min={44} max={100} onChange={(v) => setCampo('btnQtdAltura', v)} />
+                        <Deslizante rotulo="Largura" valor={config.btnQtdLargura || 100} min={60} max={100} passo={2} unidade="%" onChange={(v) => setCampo('btnQtdLargura', v)} />
+                        <Deslizante rotulo="Borda" valor={config.btnQtdBordaEspessura || 1} min={1} max={6} onChange={(v) => setCampo('btnQtdBordaEspessura', v)} />
+                      </Secao>
+                      <Secao titulo="Cor e efeito">
+                        <Cores rotulo="Cor do botão" opcoes={CORES_BOTAO_QTD} campo="dot" valor={config.btnQtdCor || 'slate'} onChange={(v) => setCampo('btnQtdCor', v)} />
+                        <Segmentos rotulo="Efeito" opcoes={EFEITOS_CARDS} valor={config.btnQtdEfeito || 'efeito_3d'} onChange={(v) => setCampo('btnQtdEfeito', v)} />
+                        <Deslizante rotulo="Intensidade" valor={config.btnQtdProfundidade || 5} min={1} max={10} unidade="" onChange={(v) => setCampo('btnQtdProfundidade', v)} />
+                      </Secao>
+                      <Secao titulo="Número e legenda">
+                        <Deslizante rotulo="Número" valor={config.btnQtdFonteNumero || 34} min={18} max={48} onChange={(v) => setCampo('btnQtdFonteNumero', v)} />
+                        <Cores rotulo="Cor do número" opcoes={CORES_NUMERO_QTD} campo="dot" valor={config.btnQtdCorNumero || 'branco'} onChange={(v) => setCampo('btnQtdCorNumero', v)} />
+                        <Deslizante rotulo="Legenda" valor={config.btnQtdFonteDescricao || 11} min={9} max={16} onChange={(v) => setCampo('btnQtdFonteDescricao', v)} />
+                        <Lista rotulo="Cor da legenda" opcoes={CORES_DESCRICAO_QTD} valor={config.btnQtdCorDescricao || 'branco_80'} onChange={(v) => setCampo('btnQtdCorDescricao', v)} />
+                      </Secao>
+                    </>
                   )}
 
-                  {/* 3. BOTÃO INDIVIDUAL E DIVISOR */}
                   {subTabTela2 === 'individual' && (
-                  <div className="space-y-4 animate-fade-in">
-                    {/* 1. TEXTO DO DIVISOR DAS QUANTIDADES (PRIMEIRO) */}
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-black text-amber-400 uppercase tracking-wide block">
-                        Texto do Divisor das Quantidades
-                      </label>
-                      <input
-                        type="text"
-                        value={config.divisorQtdTexto || ''}
-                        onChange={(e) => setConfig({ ...config, divisorQtdTexto: e.target.value })}
-                        placeholder="Ex: Quantas pessoas vieram com você?"
-                        className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-3 py-1.5 text-xs font-bold text-white"
-                      />
-                    </div>
-
-                    {/* 2. TEXTO DO BOTÃO INDIVIDUAL (1 PESSOA) */}
-                    <div className="pt-4 border-t border-slate-800 space-y-2.5">
-                      <span className="text-xs font-black text-emerald-400 uppercase tracking-wide block">
-                        Texto do Botão Individual (1 Pessoa)
-                      </span>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                        <div>
-                          <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Texto Principal</label>
-                          <input
-                            type="text"
-                            value={config.opcaoIndividualTitulo || ''}
-                            onChange={(e) => setConfig({ ...config, opcaoIndividualTitulo: e.target.value })}
-                            placeholder="Ex: SÓ EU"
-                            className="w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-lg px-2.5 py-1.5 text-xs font-bold text-white"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Complemento</label>
-                          <input
-                            type="text"
-                            value={config.opcaoIndividualSubtitulo || ''}
-                            onChange={(e) => setConfig({ ...config, opcaoIndividualSubtitulo: e.target.value })}
-                            placeholder="Ex: , vim sozinho"
-                            className="w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-lg px-2.5 py-1.5 text-xs text-slate-300"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                    <Secao titulo="Textos">
+                      <Campo rotulo="Botão de 1 pessoa" valor={config.opcaoIndividualTitulo} onChange={(v) => setCampo('opcaoIndividualTitulo', v)} placeholder="SÓ EU" />
+                      <Campo rotulo="Complemento" valor={config.opcaoIndividualSubtitulo} onChange={(v) => setCampo('opcaoIndividualSubtitulo', v)} placeholder=", vim sozinho" />
+                      <Campo rotulo="Divisor antes das quantidades" valor={config.divisorQtdTexto} onChange={(v) => setCampo('divisorQtdTexto', v)} placeholder="Quantas pessoas vieram com você?" />
+                    </Secao>
                   )}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCampo('mostrarTelaAcompanhantes', false);
+                      setActiveTab('tela_1');
+                    }}
+                    className="text-xs text-slate-400 hover:text-white flex items-center gap-1.5"
+                  >
+                    <EyeOff className="w-3.5 h-3.5" />
+                    <span>Não usar esta tela neste evento</span>
+                  </button>
                 </div>
               )}
 
@@ -4394,19 +2409,19 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
             {/* Linha vertical que brilha em verde no hover ou durante o arrasto */}
             <div className={`h-full transition-all duration-150 ${
               isDragging
-                ? 'w-[3px] bg-emerald-400 shadow-[0_0_15px_#10b981,0_0_30px_#34d399]'
-                : 'w-[2px] bg-slate-800 group-hover:w-[3px] group-hover:bg-emerald-400 group-hover:shadow-[0_0_12px_#34d399,0_0_24px_#10b981]'
+                ? 'w-[3px] bg-slate-100'
+                : 'w-[2px] bg-slate-800 group-hover:w-[3px] group-hover:bg-slate-400 group-hover:'
             }`} />
 
             {/* Pílula / Botão de pegada central com efeito verde */}
             <div className={`absolute top-1/2 -translate-y-1/2 w-4 h-10 rounded-full border flex flex-col items-center justify-center gap-1 transition-all ${
               isDragging
-                ? 'bg-emerald-500 border-emerald-300 shadow-[0_0_15px_#10b981] scale-110'
-                : 'bg-slate-900 border-slate-700 group-hover:border-emerald-400 group-hover:bg-emerald-950 group-hover:shadow-[0_0_12px_#34d399]'
+                ? 'bg-slate-100 border-slate-700 scale-110'
+                : 'bg-slate-900 border-slate-700 group-hover:border-slate-400 group-hover:bg-slate-400 group-hover:'
             }`}>
-              <div className={`w-1 h-1 rounded-full transition-colors ${isDragging ? 'bg-black' : 'bg-slate-400 group-hover:bg-emerald-300'}`} />
-              <div className={`w-1 h-1 rounded-full transition-colors ${isDragging ? 'bg-black' : 'bg-slate-400 group-hover:bg-emerald-300'}`} />
-              <div className={`w-1 h-1 rounded-full transition-colors ${isDragging ? 'bg-black' : 'bg-slate-400 group-hover:bg-emerald-300'}`} />
+              <div className={`w-1 h-1 rounded-full transition-colors ${isDragging ? 'bg-black' : 'bg-slate-400 group-hover:bg-slate-400'}`} />
+              <div className={`w-1 h-1 rounded-full transition-colors ${isDragging ? 'bg-black' : 'bg-slate-400 group-hover:bg-slate-400'}`} />
+              <div className={`w-1 h-1 rounded-full transition-colors ${isDragging ? 'bg-black' : 'bg-slate-400 group-hover:bg-slate-400'}`} />
             </div>
           </div>
 
@@ -4469,8 +2484,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         type="button"
                         data-preview="1"
                         onClick={() => setActiveTab(`extra_${i}`)}
-                        className={`w-full max-w-[260px] aspect-[9/16] rounded-2xl border-2 border-dashed flex items-center justify-center p-4 text-center text-xs ${
-                          activeTab === `extra_${i}` ? 'border-amber-400 text-amber-300' : 'border-slate-700 text-slate-500'
+                        className={`w-full max-w-[260px] aspect-[9/16] rounded-2xl border border-dashed flex items-center justify-center p-4 text-center text-xs ${
+                          activeTab === `extra_${i}` ? 'border-slate-200 text-slate-200' : 'border-slate-700 text-slate-500'
                         }`}
                       >
                         Tela {i + 2} está desativada e não aparece no celular
@@ -4481,7 +2496,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               })()}
             </div>
 
-            <p className="text-[10px] text-slate-500 mt-auto py-2 font-medium text-center shrink-0">
+            <p className="text-[11px] text-slate-500 mt-auto py-2 font-medium text-center shrink-0">
               {modeloAtual.nome} • tamanho real do aparelho em escala — o celular selecionado é interativo
             </p>
           </div>
@@ -4498,32 +2513,32 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 type="button"
                 onClick={onClose}
                 disabled={salvando}
-                className="px-4 py-1.5 text-xs font-bold text-slate-300 hover:text-white rounded-xl bg-slate-800 hover:bg-slate-750 transition"
+                className="px-4 py-1.5 text-xs font-bold text-slate-300 hover:text-white rounded-xl bg-slate-800 hover:bg-slate-700 transition"
               >
                 Cancelar
               </button>
             )}
 
-            <span className={`text-[11px] font-bold ${autoSalvo === 'erro' ? 'text-rose-300' : autoSalvo === 'pendente' ? 'text-amber-300' : 'text-emerald-400'}`}>
+            <span className={`text-[11px] font-bold ${autoSalvo === 'erro' ? 'text-rose-300' : autoSalvo === 'pendente' ? 'text-slate-200' : 'text-slate-200'}`}>
               {autoSalvo === 'pendente' ? 'Salvando automaticamente...' : autoSalvo === 'salvo' ? '✓ Salvo no banco' : autoSalvo === 'erro' ? 'Erro ao salvar — verifique o login' : ''}
             </span>
             <button
               type="button"
               onClick={handleSalvar}
               disabled={salvando}
-              className="px-5 py-1.5 text-xs font-black text-slate-950 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 rounded-xl shadow-lg shadow-amber-500/25 active:scale-95 transition flex items-center gap-1.5 disabled:opacity-50"
+              className="px-5 py-1.5 text-xs font-semibold text-slate-950 bg-slate-100 hover:bg-white rounded-xl shadow-lg  active:scale-95 transition flex items-center gap-1.5 disabled:opacity-50"
             >
               {salvo ? (
                 <>
                   <Check className="w-4 h-4" />
-                  <span>Salvo no Firebase!</span>
+                  <span>Salvo</span>
                 </>
               ) : salvando ? (
                 <span>Salvando...</span>
               ) : (
                 <>
                   <Save className="w-4 h-4" />
-                  <span>Salvar Configurações</span>
+                  <span>Salvar</span>
                 </>
               )}
             </button>
@@ -4538,11 +2553,11 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
             <div className="bg-slate-900 border border-slate-700 rounded-2xl p-5 max-w-2xl w-full shadow-2xl space-y-4">
               <div className="flex items-center justify-between pb-2 border-b border-slate-800">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-lg bg-slate-700/40 text-slate-200 flex items-center justify-center">
                     <Plus className="w-4 h-4" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-black text-white">Inserir Nova Tela</h3>
+                    <h3 className="text-sm font-semibold text-white">Inserir Nova Tela</h3>
                     <p className="text-[11px] text-slate-400">Qual o tipo de pergunta deseja adicionar?</p>
                   </div>
                 </div>
@@ -4561,9 +2576,9 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     key={tp.id}
                     type="button"
                     onClick={() => handleAdicionarTela(tp.id)}
-                    className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-400/80 hover:bg-slate-900 text-left transition group space-y-1 shadow-sm"
+                    className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-slate-400 hover:bg-slate-900 text-left transition group space-y-1 shadow-sm"
                   >
-                    <h4 className="text-xs font-black text-white group-hover:text-amber-300 transition-colors">
+                    <h4 className="text-xs font-semibold text-white group-hover:text-white transition-colors">
                       {tp.label}
                     </h4>
                     <p className="text-[11px] text-slate-400 leading-snug">
@@ -4594,11 +2609,11 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
             <div className="bg-slate-900 border border-slate-700 rounded-3xl p-5 max-w-2xl w-full shadow-2xl space-y-4 my-auto">
               <div className="flex items-center justify-between pb-3 border-b border-slate-800">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-sky-500/20 text-sky-400 border border-sky-500/40 flex items-center justify-center">
+                  <div className="w-9 h-9 rounded-xl bg-slate-700/40 text-slate-200 border border-slate-700 flex items-center justify-center">
                     <Sparkles className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-base font-black text-white">Modelos Prontos de Pesquisa</h3>
+                    <h3 className="text-base font-semibold text-white">Modelos Prontos de Pesquisa</h3>
                     <p className="text-xs text-slate-400">Selecione um preset para carregar um fluxo completo pré-configurado com 1 toque</p>
                   </div>
                 </div>
@@ -4615,14 +2630,14 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 {PRESETS_PESQUISAS.map((preset) => (
                   <div
                     key={preset.id}
-                    className="p-4 rounded-2xl bg-slate-950 border border-slate-800 hover:border-sky-500/60 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md group"
+                    className="p-4 rounded-2xl bg-slate-950 border border-slate-800 hover:border-slate-400 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md group"
                   >
                     <div className="space-y-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-sky-500/15 border border-sky-500/30 text-sky-300">
+                        <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-700/40 border border-slate-700 text-slate-200">
                           {preset.tag}
                         </span>
-                        <h4 className="text-sm font-black text-white group-hover:text-sky-300 transition-colors">
+                        <h4 className="text-sm font-semibold text-white group-hover:text-white transition-colors">
                           {preset.nome}
                         </h4>
                       </div>
@@ -4634,7 +2649,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     <button
                       type="button"
                       onClick={() => handleAplicarPreset(preset.id)}
-                      className="px-4 py-2 bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-400 hover:to-sky-500 text-slate-950 font-black text-xs rounded-xl shadow-md active:scale-95 transition flex items-center justify-center gap-1.5 shrink-0"
+                      className="px-4 py-2 bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-400 hover:to-sky-500 text-slate-950 font-semibold text-xs rounded-xl shadow-md active:scale-95 transition flex items-center justify-center gap-1.5 shrink-0"
                     >
                       <Check className="w-4 h-4" />
                       <span>Aplicar Modelo</span>
@@ -4664,7 +2679,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
             <div className="bg-slate-900 border border-slate-700 rounded-3xl p-5 max-w-2xl w-full shadow-2xl space-y-4 my-auto max-h-[92vh] overflow-y-auto custom-scrollbar">
               <div className="flex items-center justify-between pb-3 border-b border-slate-800">
                 <div>
-                  <h3 className="text-base font-black text-white flex items-center gap-2"><Sparkles className="w-4 h-4 text-amber-400" /> Criar telas com IA</h3>
+                  <h3 className="text-base font-semibold text-white flex items-center gap-2"><Sparkles className="w-4 h-4 text-slate-200" /> Criar telas com IA</h3>
                   <p className="text-xs text-slate-400">Envie um questionário, avaliação ou simulado e revise as telas antes de aplicar.</p>
                 </div>
                 <button type="button" onClick={() => setShowImportModal(false)} className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800">
@@ -4686,8 +2701,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 modalFeedback.tipo === 'erro' 
                   ? 'bg-rose-500/20 text-rose-400 border-rose-500/40 shadow-rose-950/40' 
                   : modalFeedback.tipo === 'sucesso'
-                  ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-emerald-950/40'
-                  : 'bg-amber-500/20 text-amber-400 border-amber-500/40 shadow-amber-950/40'
+                  ? 'bg-slate-700/40 text-slate-200 border-slate-700 shadow-emerald-950/40'
+                  : 'bg-slate-700/40 text-slate-200 border-slate-700 shadow-amber-950/40'
               }`}>
                 {modalFeedback.tipo === 'erro' ? (
                   <AlertTriangle className="w-7 h-7" />
@@ -4699,7 +2714,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               </div>
 
               <div>
-                <h3 className="text-base sm:text-lg font-black text-white">
+                <h3 className="text-base sm:text-lg font-semibold text-white">
                   {modalFeedback.titulo}
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-300 mt-2 leading-relaxed">
@@ -4712,7 +2727,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                   <button
                     type="button"
                     onClick={() => setModalFeedback(prev => ({ ...prev, isOpen: false }))}
-                    className="flex-1 py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 font-bold text-xs transition active:scale-95"
+                    className="flex-1 py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition active:scale-95"
                   >
                     Cancelar
                   </button>
@@ -4725,10 +2740,10 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     }
                     setModalFeedback(prev => ({ ...prev, isOpen: false }));
                   }}
-                  className={`flex-1 py-2.5 px-4 rounded-xl font-black text-xs transition active:scale-95 shadow-lg ${
+                  className={`flex-1 py-2.5 px-4 rounded-xl font-semibold text-xs transition active:scale-95 shadow-lg ${
                     modalFeedback.tipo === 'erro'
                       ? 'bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white shadow-rose-900/30'
-                      : 'bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 shadow-amber-900/30'
+                      : 'bg-slate-100 hover:bg-white text-slate-950 shadow-amber-900/30'
                   }`}
                 >
                   {modalFeedback.btnTexto || 'Entendido'}

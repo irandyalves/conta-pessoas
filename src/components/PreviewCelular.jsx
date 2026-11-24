@@ -65,7 +65,7 @@ export default function PreviewCelular({
       <div
         className={`relative w-full max-w-[260px] ${moldura} bg-black overflow-hidden transition-shadow duration-300 ${
           selecionado
-            ? 'ring-4 ring-amber-400 border-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.55)]'
+            ? 'ring-2 ring-white ring-offset-4 ring-offset-slate-950 border-slate-700'
             : 'border-slate-800 shadow-xl'
         }`}
       >
@@ -93,13 +93,13 @@ export default function PreviewCelular({
               type="button"
               onClick={onSelecionar}
               aria-label={`Editar ${rotulo}`}
-              className="absolute inset-0 w-full h-full cursor-pointer bg-transparent hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-400"
+              className="absolute inset-0 w-full h-full cursor-pointer bg-transparent hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
             />
           )}
         </div>
       </div>
       {rotulo && (
-        <span className={`text-[10px] font-bold ${selecionado ? 'text-amber-300' : 'text-slate-500'}`}>{rotulo}</span>
+        <span className={`text-xs ${selecionado ? 'text-white font-semibold' : 'text-slate-400'}`}>{rotulo}</span>
       )}
     </div>
   );

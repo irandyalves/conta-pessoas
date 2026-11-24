@@ -56,47 +56,114 @@ export const parseScaleLegendItems = (rawLegend = '') => {
 };
 
 
-export function getEfeitoStyle(efeito = 'padrao', profundidade = 5) {
+// Acabamentos. O fundo do formulário é quase preto, então o volume vem da LUZ (bordas e reflexos claros):
+// sombra preta sozinha não aparece. `rgb` = cor do brilho.
+export function getEfeitoStyle(efeito = 'padrao', profundidade = 5, rgb = '251, 191, 36') {
   const p = Math.max(1, Math.min(10, Number(profundidade) || 5));
-  
+  const r = (n) => Math.round(n * 10) / 10;
+
   switch (efeito) {
+    case 'nenhum':
+      return {};
     case 'efeito_3d':
       return {
-        borderBottomWidth: `${p}px`,
-        borderBottomColor: 'rgba(0, 0, 0, 0.95)',
-        boxShadow: `0 ${p * 1.5}px ${p * 2.5}px rgba(0, 0, 0, 0.6)`,
+        borderColor: 'rgba(255, 255, 255, 0.22)',
+        boxShadow: `inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 ${r(1 + p * 0.7)}px 0 #3b4a63, 0 ${r(3 + p * 1.2)}px ${r(p * 1.8)}px rgba(0, 0, 0, 0.7)`
       };
     case 'entalhe':
       return {
-        boxShadow: `inset 0 ${p * 1.2}px ${p * 2}px rgba(0, 0, 0, 0.9), inset 0 -${Math.round(p * 0.5)}px ${p}px rgba(255, 255, 255, 0.08)`,
-        borderTopColor: 'rgba(255, 255, 255, 0.1)',
-        borderBottomColor: 'rgba(0, 0, 0, 0.9)',
+        borderColor: 'rgba(255, 255, 255, 0.08)',
+        boxShadow: `inset 0 ${r(1 + p * 0.7)}px ${r(3 + p * 1.2)}px rgba(0, 0, 0, 0.95), inset 0 -1px 0 rgba(255, 255, 255, ${(0.1 + p * 0.02).toFixed(2)}), 0 1px 0 rgba(255, 255, 255, 0.16)`
       };
     case 'alto_relevo':
       return {
-        boxShadow: `0 ${p * 1.5}px ${p * 2.5}px rgba(0, 0, 0, 0.7), inset 0 ${Math.max(1, Math.round(p * 0.4))}px ${Math.max(1, Math.round(p * 0.4))}px rgba(255, 255, 255, 0.25), inset 0 -${Math.max(1, Math.round(p * 0.4))}px ${Math.max(1, Math.round(p * 0.4))}px rgba(0, 0, 0, 0.6)`,
-        borderTopColor: 'rgba(255, 255, 255, 0.3)',
-        borderBottomColor: 'rgba(0, 0, 0, 0.8)',
+        borderColor: 'rgba(255, 255, 255, 0.14)',
+        boxShadow: `inset 0 ${r(1 + p * 0.25)}px ${r(1 + p * 0.4)}px rgba(255, 255, 255, ${(0.16 + p * 0.024).toFixed(2)}), inset 0 -${r(1 + p * 0.4)}px ${r(2 + p * 0.8)}px rgba(0, 0, 0, 0.6), 0 ${r(1 + p * 0.5)}px ${r(2 + p)}px rgba(0, 0, 0, 0.7)`
       };
     case 'vidro':
       return {
         backdropFilter: `blur(${p * 2.5}px)`,
         WebkitBackdropFilter: `blur(${p * 2.5}px)`,
-        boxShadow: `0 ${p * 1.2}px ${p * 2.5}px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, ${0.1 + p * 0.02})`,
-        borderColor: `rgba(255, 255, 255, ${0.15 + p * 0.025})`,
+        borderColor: `rgba(255, 255, 255, ${(0.16 + p * 0.025).toFixed(2)})`,
+        boxShadow: `inset 0 1px 1px rgba(255, 255, 255, ${(0.18 + p * 0.03).toFixed(2)}), inset 0 ${r(8 + p * 2)}px ${r(10 + p * 2)}px -${r(6 + p)}px rgba(255, 255, 255, ${(0.1 + p * 0.025).toFixed(2)}), 0 ${r(p)}px ${r(p * 2)}px rgba(0, 0, 0, 0.5)`
       };
     case 'glow':
       return {
-        boxShadow: `0 0 ${p * 2.5}px rgba(245, 158, 11, ${0.2 + p * 0.04}), inset 0 0 ${p * 1.2}px rgba(245, 158, 11, 0.15)`,
-        borderColor: 'rgba(251, 191, 36, 0.6)',
+        borderColor: `rgba(${rgb}, 0.7)`,
+        boxShadow: `0 0 ${r(4 + p * 2.2)}px rgba(${rgb}, ${(0.25 + p * 0.04).toFixed(2)}), inset 0 0 ${r(p * 1.6)}px rgba(${rgb}, 0.18)`
       };
     case 'padrao':
     default:
       return {
-        boxShadow: `0 ${p}px ${p * 1.5}px rgba(0, 0, 0, 0.35)`,
+        boxShadow: `0 ${p}px ${r(p * 1.5)}px rgba(0, 0, 0, 0.35)`
       };
   }
 }
+
+// Altura dos cards de opção. O mínimo real era 82px (ícone + margens fixas travavam o card);
+// agora é 60% disso e o ícone e as margens encolhem junto. 49px ainda é confortável para o dedo.
+export const CARD_ALTURA_MIN = 49;
+export const CARD_ALTURA_MAX = 130;
+export const alturaCard = (valor) => Math.max(CARD_ALTURA_MIN, Math.min(CARD_ALTURA_MAX, Number(valor) || 82));
+export const medidasCard = (valor) => {
+  const h = alturaCard(valor);
+  const f = Math.max(0, Math.min(1, (h - CARD_ALTURA_MIN) / (82 - CARD_ALTURA_MIN)));
+  const icone = Math.round(28 + 20 * f);
+  const py = Math.round(4 + 12 * f);
+  return {
+    caixa: { minHeight: `${h}px`, paddingTop: `${py}px`, paddingBottom: `${py}px` },
+    icone: { width: `${icone}px`, height: `${icone}px` }
+  };
+};
+
+// ==========================================
+// TELA DE INÍCIO (CAPA): cada título é um card com espaço, altura e acabamento
+// ==========================================
+export const CAPA_ESPACO_PADRAO = 10;
+export const CAPA_ALTURA_MIN = 60; // % da altura original
+const RGB_FUNDO = {
+  escuro: '148, 163, 184', dourado: '251, 191, 36', verde: '16, 185, 129', azul: '14, 165, 233',
+  roxo: '168, 85, 247', laranja: '249, 115, 22', rosa: '244, 63, 94'
+};
+
+export const linhasCapa = (cfg = {}) => {
+  const ehCard = (cfg.capaFormato || 'card') === 'card';
+  const efeito = cfg.capaEfeito || 'alto_relevo';
+  const altura = Math.max(CAPA_ALTURA_MIN, Math.min(150, Number(cfg.capaAltura) || 100)) / 100;
+  const padY = Math.max(0, (altura - 0.6) * 15);
+
+  const base = [
+    { id: 'capaTitulo1', conteudo: cfg.capaTitulo1, tamanho: cfg.capaFonteTamanho || 18, cor: 'branco', fundo: cfg.capaCaptionFundo || 'transparente' },
+    { id: 'capaTitulo2', conteudo: cfg.capaTitulo2, tamanho: 16, cor: 'dourado', fundo: 'transparente' },
+    { id: 'capaTitulo3', conteudo: cfg.capaTitulo3, tamanho: 15, cor: 'verde', fundo: 'transparente' },
+    { id: 'capaTextoAbaixo', conteudo: cfg.capaTextoAbaixo || cfg.pergunta1TextoAbaixo, tamanho: 14, cor: 'cinza', fundo: 'escuro', texto: true }
+  ];
+
+  return base.filter((l) => l.conteudo).map((l) => {
+    const fundo = cfg[`${l.id}Fundo`] || l.fundo;
+    const classes = getCaptionFundoClass(fundo);
+    const cor = classes.split(' ').filter((c) => /^(bg-|border)/.test(c)).join(' ');
+    return {
+      id: l.id,
+      conteudo: l.conteudo,
+      texto: Boolean(l.texto),
+      tamanho: Number(cfg[`${l.id}Tamanho`]) || l.tamanho,
+      cor: cfg[`${l.id}Cor`] || l.cor,
+      bold: cfg[`${l.id}Bold`],
+      alinhamento: cfg[`${l.id}Alinhamento`] || cfg.capaAlinhamento || 'center',
+      espaco: Number(cfg[`${l.id}Espaco`] ?? CAPA_ESPACO_PADRAO),
+      entrelinha: l.texto ? Math.max(1.12, 1.6 * altura) : Math.max(1.05, 1.25 * altura),
+      classeCaixa: !classes ? '' : ehCard ? `${cor} rounded-2xl` : `${cor} border-x-0 -mx-4 sm:-mx-6`,
+      caixa: {
+        paddingTop: padY,
+        paddingBottom: padY,
+        paddingLeft: classes ? 14 : 0,
+        paddingRight: classes ? 14 : 0,
+        ...(classes && ehCard ? getEfeitoStyle(efeito, cfg.capaProfundidade || 5, RGB_FUNDO[fundo]) : {})
+      }
+    };
+  });
+};
 
 // Faixa de fundo "de fora a fora" para UMA linha de texto (título OU subtítulo).
 // sangria = classes de margem negativa iguais ao padding do container (ex.: '-mx-2.5 px-2.5').

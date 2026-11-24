@@ -38,7 +38,7 @@ import {
   DEFAULT_EVENT_TITLE,
   DEFAULT_EVENT_ID
 } from '../firebase';
-import { espacos, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getEfeitoStyle, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems } from '../utils/estilos';
+import { linhasCapa, medidasCard, espacos, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getEfeitoStyle, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems } from '../utils/estilos';
 
 const DISPOSITIVO_BLOQUEADO_KEY = 'presenca_dispositivo_bloqueado_voto';
 const DISPOSITIVO_VOTO_TIME_KEY = 'presenca_dispositivo_hora_voto';
@@ -150,6 +150,18 @@ const BTN_DESC_CLASSES = {
   laranja: 'text-orange-300',
 };
 
+// Progresso de quem está respondendo: fica só nesta aba do navegador, por evento
+const chaveProgresso = (eventoId) => `responder_progresso_${eventoId}`;
+const chaveResetVisto = (eventoId) => `responder_reset_visto_${eventoId}`;
+const lerProgresso = (eventoId) => {
+  try {
+    const p = JSON.parse(sessionStorage.getItem(chaveProgresso(eventoId)) || 'null');
+    return p && typeof p.passo === 'string' && p.passo !== 'final' ? p : null;
+  } catch (e) {
+    return null;
+  }
+};
+
 export default function MobileForm({ preview = false }) {
   // preview = true: tela dentro do editor (iframe). Recebe a config por postMessage,
   // não lê/grava no Firestore e não trava o aparelho. Renderiza EXATAMENTE como o celular.
@@ -190,6 +202,10 @@ export default function MobileForm({ preview = false }) {
     }
   });
 
+  // Evento cujo progresso já foi lido (só depois disso é permitido gravar por cima)
+  const [eventoProgresso, setEventoProgresso] = useState(null);
+  const slideRestauradoRef = useRef(null);
+
   // Reavalia o bloqueio e reset caso o activeEventId mude dinamicamente
   useEffect(() => {
     if (preview) return;
@@ -200,17 +216,21 @@ export default function MobileForm({ preview = false }) {
       setCurrentStep('final');
       setFinalizado(true);
     } else {
-      setCurrentStep('p1');
+      // Atualizar a página (F5 ou puxar para baixo) continua na mesma tela, com as respostas já dadas
+      const salvo = lerProgresso(activeEventId);
+      slideRestauradoRef.current = salvo ? { passo: salvo.passo, slide: salvo.extraSlide || 0 } : null;
+      setCurrentStep(salvo?.passo || 'p1');
       setFinalizado(false);
-      setP1SlideIndex(0);
-      setMotivo('');
-      setExtras({});
-      setGavetasAbertas({});
-      setGavetas({});
-      setGavetaRespondidas({});
-      setTextos({});
-      setJaClicouComecar(false);
+      setP1SlideIndex(salvo?.p1Slide || 0);
+      setMotivo(salvo?.motivo || '');
+      setExtras(salvo?.extras || {});
+      setGavetasAbertas(salvo?.gavetasAbertas || {});
+      setGavetas(salvo?.gavetas || {});
+      setGavetaRespondidas(salvo?.gavetaRespondidas || {});
+      setTextos(salvo?.textos || {});
+      setJaClicouComecar(Boolean(salvo?.jaClicouComecar));
     }
+    setEventoProgresso(activeEventId);
   }, [activeEventId]);
 
   // Etapa inicial: se já votou, fica travado em 'final'; se não, começa em 'p1'
@@ -305,7 +325,20 @@ export default function MobileForm({ preview = false }) {
     if (preview) return;
     const unsub = escutarResetGlobal((resetEm) => {
       const horaVoto = localStorage.getItem(DISPOSITIVO_VOTO_TIME_EVENTO_KEY) || localStorage.getItem(DISPOSITIVO_VOTO_TIME_KEY);
-      if (resetEm && (!horaVoto || new Date(resetEm) > new Date(horaVoto))) {
+      if (!resetEm) return;
+      const travado = localStorage.getItem(DISPOSITIVO_BLOQUEADO_EVENTO_KEY) === 'true' ||
+        (activeEventId === DEFAULT_EVENT_ID && localStorage.getItem(DISPOSITIVO_BLOQUEADO_KEY) === 'true');
+      // Quem ainda está respondendo só volta ao início se o admin zerar DE NOVO.
+      // (o servidor reenvia o último "zerar" a cada atualização da página)
+      let resetVisto = null;
+      try {
+        resetVisto = sessionStorage.getItem(chaveResetVisto(activeEventId));
+        if (!resetVisto || new Date(resetEm) > new Date(resetVisto)) sessionStorage.setItem(chaveResetVisto(activeEventId), resetEm);
+      } catch (e) {}
+      const zerar = travado
+        ? (!horaVoto || new Date(resetEm) > new Date(horaVoto))
+        : Boolean(resetVisto && new Date(resetEm) > new Date(resetVisto));
+      if (zerar) {
         localStorage.removeItem(DISPOSITIVO_BLOQUEADO_EVENTO_KEY);
         localStorage.removeItem(DISPOSITIVO_VOTO_TIME_EVENTO_KEY);
         localStorage.removeItem(DISPOSITIVO_BLOQUEADO_KEY);
@@ -328,13 +361,9 @@ export default function MobileForm({ preview = false }) {
   }, [activeEventId]);
 
   // 2. ESCUTA O STATUS DA SESSÃO (START / PAUSAR DESTE EVENTO) EM TEMPO REAL
-  const sessaoAnteriorRef = useRef(null);
   useEffect(() => {
     if (preview) return;
-    sessaoAnteriorRef.current = null;
     const unsub = escutarStatusSessao((ativa) => {
-      const anterior = sessaoAnteriorRef.current;
-      sessaoAnteriorRef.current = ativa;
       setSessaoAtiva(ativa);
 
       // SE ESTE DISPOSITIVO JÁ VOTOU NESTE EVENTO, NUNCA SAI DA TELA FINAL
@@ -347,21 +376,47 @@ export default function MobileForm({ preview = false }) {
         return;
       }
 
-      // Só volta para a Tela 1 quando a pesquisa ACABOU de ser liberada.
-      // Outras atualizações da sessão (zerar, novo sessaoId, resposta atrasada do servidor)
-      // não podem mais jogar quem está respondendo de volta para o início.
-      if (ativa && anterior === false) {
-        setCurrentStep('p1');
-      }
+      // Liberar, pausar ou atualizar a página não tira ninguém da tela em que estava:
+      // só o "Zerar tudo" do admin volta ao início.
     }, activeEventId);
     return () => unsub && unsub();
   }, [activeEventId]);
 
-  // Cada tela extra começa na primeira página de opções
+  // Cada tela extra começa na primeira página de opções (ou na página em que estava antes de atualizar)
   useEffect(() => {
-    setExtraSlideIndex(0);
+    const r = slideRestauradoRef.current;
+    if (r && r.passo === currentStep) {
+      slideRestauradoRef.current = null;
+      setExtraSlideIndex(r.slide);
+    } else {
+      setExtraSlideIndex(0);
+    }
     setCampoObrigatorioErro(null);
   }, [currentStep]);
+
+  // Guarda o progresso a cada mudança de tela ou resposta
+  useEffect(() => {
+    if (preview || eventoProgresso !== activeEventId) return;
+    try {
+      if (currentStep === 'final') {
+        sessionStorage.removeItem(chaveProgresso(activeEventId));
+        return;
+      }
+      sessionStorage.setItem(chaveProgresso(activeEventId), JSON.stringify({
+        passo: currentStep,
+        p1Slide: p1SlideIndex,
+        extraSlide: extraSlideIndex,
+        motivo: comoChegou,
+        extras: respostasExtras,
+        gavetasAbertas,
+        gavetas: gavetaTextos,
+        gavetaRespondidas,
+        textos: dissertativaTextos,
+        jaClicouComecar
+      }));
+    } catch (e) {}
+  }, [preview, eventoProgresso, activeEventId, currentStep, p1SlideIndex, extraSlideIndex, comoChegou, respostasExtras,
+    gavetasAbertas, gavetaTextos, gavetaRespondidas, dissertativaTextos, jaClicouComecar]);
 
   // 4. BLOQUEIO DO BOTÃO "VOLTAR" DO NAVEGADOR
   useEffect(() => {
@@ -427,6 +482,16 @@ export default function MobileForm({ preview = false }) {
 
   // Telas extras ativas configuradas pelo admin
   const telasExtrasAtivas = (questionsConfig?.telasExtras || []).filter((t) => t.ativa !== false);
+
+  // Se o admin remover a tela em que a pessoa estava, vai para a última tela que ainda existe
+  // (espera um pouco: ao atualizar, a configuração do evento chega logo depois)
+  useEffect(() => {
+    if (preview || !currentStep.startsWith('extra_')) return undefined;
+    const total = telasExtrasAtivas.length;
+    if (parseInt(currentStep.split('_')[1], 10) < total) return undefined;
+    const t = setTimeout(() => setCurrentStep(total > 0 ? `extra_${total - 1}` : 'p1'), 8000);
+    return () => clearTimeout(t);
+  }, [preview, currentStep, telasExtrasAtivas.length]);
 
   // Renderizador universal de conteúdo de Gaveta (Texto, Radio, Checkbox, Slide, Data, Hora)
   // ---------- toque nas opções: vibra, destaca e só avança depois de 500ms ----------
@@ -987,49 +1052,24 @@ export default function MobileForm({ preview = false }) {
       <header className="w-full pt-2 pb-2 text-center">
         {/* TÍTULO DA CAPA (QUANDO BOTÃO COMEÇAR ESTÁ ATIVO E AINDA NÃO CLICOU) */}
         {currentStep === 'p1' && questionsConfig.mostrarBotaoComecar !== false && !jaClicouComecar && (
-          <div className="mt-2 pt-2 space-y-3">
-            <div className="shrink-0 space-y-1 pt-1">
-              {questionsConfig.capaTitulo1 && (
-                <div className={`${getAlinhamentoClass(questionsConfig.capaTitulo1Alinhamento || questionsConfig.capaAlinhamento)} ${getFaixaFundoClass(questionsConfig.capaTitulo1Fundo || questionsConfig.capaCaptionFundo || 'transparente', '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}>
-                  <h3
-                    style={{ fontSize: `${(questionsConfig.capaTitulo1Tamanho || questionsConfig.capaFonteTamanho || 18) * 1}px` }}
-                    className={`${pesoFonte(questionsConfig.capaTitulo1Bold, true)} leading-tight ${getCorTextoLinhaClass(questionsConfig.capaTitulo1Cor, 'text-white')}`}
+          <div className="mt-2 pt-3 flex flex-col">
+            {linhasCapa(questionsConfig).map((l, i, todas) => {
+              const Linha = l.texto ? 'p' : 'h3';
+              return (
+                <div
+                  key={l.id}
+                  style={{ ...l.caixa, marginBottom: i < todas.length - 1 ? l.espaco : 0 }}
+                  className={`${getAlinhamentoClass(l.alinhamento)} ${l.classeCaixa}`}
+                >
+                  <Linha
+                    style={{ fontSize: `${l.tamanho}px`, lineHeight: l.entrelinha }}
+                    className={`${pesoFonte(l.bold, !l.texto)} whitespace-pre-line ${getCorTextoLinhaClass(l.cor)}`}
                   >
-                    {questionsConfig.capaTitulo1}
-                  </h3>
+                    {l.conteudo}
+                  </Linha>
                 </div>
-              )}
-              {questionsConfig.capaTitulo2 && (
-                <div className={`${getAlinhamentoClass(questionsConfig.capaTitulo2Alinhamento || questionsConfig.capaAlinhamento)} ${getFaixaFundoClass(questionsConfig.capaTitulo2Fundo || 'transparente', '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}>
-                  <h3
-                    style={{ fontSize: `${(questionsConfig.capaTitulo2Tamanho || 16) * 1}px` }}
-                    className={`${pesoFonte(questionsConfig.capaTitulo2Bold, true)} leading-tight ${getCorTextoLinhaClass(questionsConfig.capaTitulo2Cor, 'text-amber-300')}`}
-                  >
-                    {questionsConfig.capaTitulo2}
-                  </h3>
-                </div>
-              )}
-              {questionsConfig.capaTitulo3 && (
-                <div className={`${getAlinhamentoClass(questionsConfig.capaTitulo3Alinhamento || questionsConfig.capaAlinhamento)} ${getFaixaFundoClass(questionsConfig.capaTitulo3Fundo || 'transparente', '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}>
-                  <h3
-                    style={{ fontSize: `${(questionsConfig.capaTitulo3Tamanho || 15) * 1}px` }}
-                    className={`${pesoFonte(questionsConfig.capaTitulo3Bold, true)} leading-tight ${getCorTextoLinhaClass(questionsConfig.capaTitulo3Cor, 'text-emerald-400')}`}
-                  >
-                    {questionsConfig.capaTitulo3}
-                  </h3>
-                </div>
-              )}
-              {(questionsConfig.capaTextoAbaixo || questionsConfig.pergunta1TextoAbaixo) && (
-                <div className={`${getAlinhamentoClass(questionsConfig.capaTextoAbaixoAlinhamento || questionsConfig.capaAlinhamento)} ${getFaixaFundoClass(questionsConfig.capaTextoAbaixoFundo || 'escuro', '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}>
-                  <p
-                    style={{ fontSize: `${(questionsConfig.capaTextoAbaixoTamanho || 14) * 1}px` }}
-                    className={`${pesoFonte(questionsConfig.capaTextoAbaixoBold, false)} leading-relaxed whitespace-pre-line ${getCorTextoLinhaClass(questionsConfig.capaTextoAbaixoCor, 'text-slate-300')}`}
-                  >
-                    {(questionsConfig.capaTextoAbaixo || questionsConfig.pergunta1TextoAbaixo)}
-                  </p>
-                </div>
-              )}
-            </div>
+              );
+            })}
           </div>
         )}
 
@@ -1204,6 +1244,7 @@ export default function MobileForm({ preview = false }) {
                     const cardFonteTituloCls = CARD_FONTE_TITULO_CLASSES[questionsConfig?.cardCorFonteTitulo] || 'text-white';
                     const cardFonteSubtituloCls = CARD_FONTE_SUBTITULO_CLASSES[questionsConfig?.cardCorFonteSubtitulo] || 'text-slate-400';
                     const cardEfeitoInline = getEfeitoStyle(questionsConfig?.cardEfeitoEstilo, questionsConfig?.cardProfundidade);
+                    const medidas = medidasCard(questionsConfig?.cardAltura);
 
                     const isGavetaAberta = isGavetaAbertaDe('p1', opcao);
 
@@ -1212,29 +1253,29 @@ export default function MobileForm({ preview = false }) {
                         <button
                           type="button"
                           onClick={() => comFeedback(`p1_${opcao.id}`, () => handleSelectComoChegou(opcao), opcao.temGaveta)}
-                          style={{ minHeight: `${questionsConfig.cardAltura || 82}px`, ...cardEfeitoInline }}
-                          className={`w-full text-left p-4 sm:p-5 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-between group border ${cardFundoCls} ${
+                          style={{ ...medidas.caixa, ...cardEfeitoInline }}
+                          className={`w-full text-left px-4 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-between group border border-white/15 ${cardFundoCls} ${
                             isGavetaAberta ? 'border-amber-400/80 ring-1 ring-amber-400/40' : ''
                           } ${efeitoClique(`p1_${opcao.id}`)
                           }`}
                         >
                           <div className="flex items-center gap-4 pr-2 min-w-0">
                             {questionsConfig?.mostrarIconesCards !== false && (
-                              <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border shadow-sm transition-transform group-hover:scale-105 ${corCls}`}>
-                                <IconComponent className="w-6 h-6" />
+                              <div style={medidas.icone} className={`rounded-xl flex items-center justify-center shrink-0 border ${corCls}`}>
+                                <IconComponent className="w-1/2 h-1/2" />
                               </div>
                             )}
                             <div className="min-w-0">
                               <h3 
                                 style={{ fontSize: `${questionsConfig.cardFonteTitulo || 16}px` }}
-                                className={`font-bold transition leading-snug truncate ${cardFonteTituloCls}`}
+                                className={`font-bold transition leading-snug line-clamp-2 ${cardFonteTituloCls}`}
                               >
                                 {opcao.titulo}
                               </h3>
                               {opcao.subtitulo && (
                                 <p 
                                   style={{ fontSize: `${questionsConfig.cardFonteSubtitulo || 12}px` }}
-                                  className={`mt-1 line-clamp-2 leading-snug ${cardFonteSubtituloCls}`}
+                                  className={`mt-0.5 line-clamp-2 leading-snug ${cardFonteSubtituloCls}`}
                                 >
                                   {opcao.subtitulo}
                                 </p>
@@ -1722,6 +1763,7 @@ export default function MobileForm({ preview = false }) {
                   const cardFonteTituloCls = CARD_FONTE_TITULO_CLASSES[tela.cardCorFonteTitulo || questionsConfig?.cardCorFonteTitulo] || 'text-white';
                   const cardFonteSubtituloCls = CARD_FONTE_SUBTITULO_CLASSES[tela.cardCorFonteSubtitulo || questionsConfig?.cardCorFonteSubtitulo] || 'text-slate-400';
                   const cardEfeitoInline = getEfeitoStyle(estiloEfeito, estiloProf);
+                  const medidas = medidasCard(tela.cardAltura || questionsConfig?.cardAltura);
 
                   const isGavetaAberta = isGavetaAbertaDe(tela.id, opt);
 
@@ -1730,29 +1772,29 @@ export default function MobileForm({ preview = false }) {
                       <button
                         type="button"
                         onClick={() => comFeedback(`ex_${tela.id}_${opt.id}`, () => handleSelectOpcaoExtra(idx, opt), opt.temGaveta)}
-                        style={{ minHeight: `${tela.cardAltura || questionsConfig.cardAltura || 60}px`, ...cardEfeitoInline }}
-                        className={`w-full text-left p-4 sm:p-5 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-between group border ${cardFundoCls} ${
+                        style={{ ...medidas.caixa, ...cardEfeitoInline }}
+                        className={`w-full text-left px-4 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-between group border border-white/15 ${cardFundoCls} ${
                           isGavetaAberta ? 'border-amber-400/80 ring-1 ring-amber-400/40' : ''
                         } ${efeitoClique(`ex_${tela.id}_${opt.id}`)
                         }`}
                       >
                         <div className="flex items-center gap-4 pr-2 min-w-0">
                           {mostrarIcones && (
-                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border shadow-sm transition-transform group-hover:scale-105 ${corCls}`}>
-                              <IconComp className="w-6 h-6" />
+                            <div style={medidas.icone} className={`rounded-xl flex items-center justify-center shrink-0 border ${corCls}`}>
+                              <IconComp className="w-1/2 h-1/2" />
                             </div>
                           )}
                           <div className="min-w-0">
                             <h3 
                               style={{ fontSize: `${fonteTitulo}px` }}
-                              className={`font-bold transition leading-snug truncate ${cardFonteTituloCls}`}
+                              className={`font-bold transition leading-snug line-clamp-2 ${cardFonteTituloCls}`}
                             >
                               {opt.titulo}
                             </h3>
                             {opt.subtitulo && (
                               <p 
                                 style={{ fontSize: `${fonteSub}px` }}
-                                className={`mt-1 line-clamp-2 leading-snug ${cardFonteSubtituloCls}`}
+                                className={`mt-0.5 line-clamp-2 leading-snug ${cardFonteSubtituloCls}`}
                               >
                                 {opt.subtitulo}
                               </p>
