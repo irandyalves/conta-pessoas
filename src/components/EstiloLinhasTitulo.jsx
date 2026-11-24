@@ -15,6 +15,7 @@ import { Alinhamento, Alternar, BarraFormato, Cores, MiniSlider, QuestaoArrastav
  *   bordaLargura, onBordaLargura, bordaLado, onBordaLado, espaco, onEspaco, aoLado (do texto), extra (fim da barra) e abaixo = controles próprios da linha }
  * Altura fica no cartão do Fundo e largura no da Borda. onEspaco: distância ENTRE esta linha e a próxima.
  * onOrdem (opcional): liga o arrastar e soltar das linhas que têm "chave"; recebe as chaves visíveis na ordem nova.
+ * fixa: a linha aparece mesmo vazia. semBarra: só o campo, sem formatação.
  * slotAcoes: elemento do cabeçalho (linha do entalhe) que recebe os botões de adicionar.
  * espacoResposta: controle que fica logo abaixo do campo do último título (distância até a resposta).
  * topo (opcional): configuração que vale para a lista, acima dos textos. Todo texto tem a lixeira à direita do campo; removivel: false tira.
@@ -28,7 +29,7 @@ export default function EstiloLinhasTitulo({ linhas, onOrdem, topo = null, slotA
   const manter = (l) => setMantidas((m) => (m[idDe(l)] ? m : { ...m, [idDe(l)]: true }));
   const remover = (l) => { setMantidas((m) => ({ ...m, [idDe(l)]: false })); l.onTexto(''); };
   const removivel = (l) => Boolean(l.onTexto) && l.removivel !== false;
-  const visivel = (l) => l.separador || Boolean(String(l.texto || '').trim()) || Boolean(mantidas[idDe(l)]);
+  const visivel = (l) => l.separador || l.fixa || Boolean(String(l.texto || '').trim()) || Boolean(mantidas[idDe(l)]);
   // numerar: o número segue a posição na tela, não o nome do campo
   let conta = 0;
   const visiveis = linhas.filter(visivel).map((l) => (l.numerar ? { ...l, rotulo: l.rotulo.replace(/\d+$/, String(++conta)) } : l));
@@ -42,7 +43,7 @@ export default function EstiloLinhasTitulo({ linhas, onOrdem, topo = null, slotA
     ids.splice(para, 0, ids.splice(de, 1)[0]);
     onOrdem(ids);
   };
-  const ultimoTitulo = espacoResposta ? visiveis.filter((l) => l.onTexto && /^(Título|Texto abaixo|Pergunta|Parte)/.test(l.rotulo)).pop() : null;
+  const ultimoTitulo = espacoResposta ? visiveis.filter((l) => l.onTexto && /^(Título|Texto abaixo|Texto de apoio|Pergunta|Parte)/.test(l.rotulo)).pop() : null;
   const Item = (l, i, conteudo) => (podeMover && l.chave ? (
     <QuestaoArrastavel key={idDe(l)} lista="linhas_texto" indice={moveis.indexOf(l)} total={moveis.length} onMover={mover} className="texto-linha texto-linha-movel">
       {conteudo}
@@ -78,7 +79,7 @@ export default function EstiloLinhasTitulo({ linhas, onOrdem, topo = null, slotA
         const editar = (e) => { manter(l); l.onTexto(e.target.value); };
         return Item(l, i, (
           <>
-            <BarraFormato>
+            {!l.semBarra && <BarraFormato>
               {l.onFamilia && <SeletorFonte rotulo="" valor={l.familia} onChange={l.onFamilia} />}
               {l.onTamanho && <MiniSlider rotulo="Tamanho" icone="tamanho" valor={l.tamanho} min={l.min ?? 9} max={l.max ?? 32} onChange={l.onTamanho} />}
               {l.onCor && <Cores rotulo="Texto" opcoes={CORES_TEXTO_LINHAS} valor={l.cor} onChange={l.onCor} />}
@@ -105,7 +106,7 @@ export default function EstiloLinhasTitulo({ linhas, onOrdem, topo = null, slotA
               )}
               {l.onEspaco && <MiniSlider rotulo="Espaço até o próximo texto" icone="espaco" valor={l.espaco} min={0} max={80} onChange={l.onEspaco} />}
               {l.extra}
-            </BarraFormato>
+            </BarraFormato>}
             <div className="texto-corpo">
               <span className="texto-nome">{l.rotulo}</span>
               {!l.onTexto

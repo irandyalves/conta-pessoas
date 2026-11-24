@@ -176,6 +176,7 @@
 
 /* ===== PADRÃO DE FORMATAÇÃO DO EDITOR ===== */
 .barra-formato { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; min-height: 24px; }
+.questao > .texto-lista { border-color: rgba(148, 163, 184, .18); border-radius: 10px; }
 .texto-lista { border-radius: 12px; overflow: clip; overflow-clip-margin: 0; border: 1px solid #263246; }
 .texto-linha { display: flex; flex-direction: column; gap: 4px; padding: 7px 8px 9px; }
 /* a barra começa junto com o canto esquerdo do campo: nome (64) + espaço (8) */

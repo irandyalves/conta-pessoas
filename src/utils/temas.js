@@ -48,6 +48,8 @@ const camposTela = (t) => ({
   instrucaoCor: 'tema', instrucaoFundo: 'transparente',
   tituloFundo: 'tema', titulo1Cor: 'tema', titulo2Cor: 'tema', titulo3Cor: 'tema',
   subFundo: 'tema', subtituloCor: 'tema',
+  ...fb('pag_titulo'), ...fb('pag_sub'), // título da página (telas de campo)
+  pag_tituloFundo: 'tema', pag_titulo1Cor: 'tema', pag_titulo2Cor: 'tema', pag_titulo3Cor: 'tema', pag_subFundo: 'tema', pag_subtituloCor: 'tema',
   legendaFundo: 'tema', legendaCor: 'tema', itemFundo: 'tema', itemCor: 'tema'
 });
 

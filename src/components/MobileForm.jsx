@@ -45,6 +45,7 @@ import { configSeta } from '../utils/setas';
 import Rosto from './Rosto';
 import BarraProgresso from './BarraProgresso';
 import BotaoSoEu, { DivisorQtd } from './BotaoSoEu';
+import { paginaDe, temTituloPagina } from '../utils/pagina';
 import TelaFinal from './TelaFinal';
 import { atributosCampo, erroDeFormato, mascaraTelefone, mensagemFalta, usaMaiusculas, valorGravado } from '../utils/campoTexto';
 import { camposDoTexto, exemploDe, linhasFinais } from '../utils/telaFinal';
@@ -1326,17 +1327,22 @@ export default function MobileForm({ preview = false }) {
         {/* TELA EXTRA (SE HOUVER) — mesmos títulos, cores, tamanhos e alinhamento do preview */}
         {currentStep.startsWith('extra_') && (() => {
           const idx = parseInt(currentStep.split('_')[1], 10);
-          const tela = telasExtrasAtivas[idx];
-          if (!tela) return null;
-          // Página com várias perguntas: a primeira também é pergunta, não título
-          if (continuaNaMesmaPagina(tela, telasExtrasAtivas[idx + 1])) return null;
-          const linha1 = tela.titulo1 || tela.titulo || `Pergunta da Tela ${idx + 2}`;
+          const perguntaAtual = telasExtrasAtivas[idx];
+          if (!perguntaAtual) return null;
+          const temPagina = temTituloPagina(perguntaAtual);
+          // Página com várias perguntas e sem título próprio: a primeira também é pergunta, não título
+          if (!temPagina && continuaNaMesmaPagina(perguntaAtual, telasExtrasAtivas[idx + 1])) return null;
+          const tela = temPagina ? paginaDe(perguntaAtual) : perguntaAtual;
+          const linha1 = tela.titulo1 || (temPagina ? '' : tela.titulo || `Pergunta da Tela ${idx + 2}`);
           return (
             <div className="mt-2 pt-2 border-t border-slate-800/60 flex flex-col" style={{ gap: espacos(tela).sub, marginBottom: espacos(tela).cards }}>
+              {(linha1 || tela.titulo2 || tela.titulo3) && (
               <div style={{ gap: espacos(tela).tit, ...faixaEstilo(estiloLinhas(tela).tituloFundo, tela.tituloFaixa ?? questionsConfig?.faixaPadrao), ...fonteEBorda(tela, 'titulo', estiloLinhas(tela).tituloFundo !== 'transparente') }} className={`t-titulo flex flex-col ${getAlinhamentoClass(estiloLinhas(tela).tituloAl)} ${getFaixaFundoClass(estiloLinhas(tela).tituloFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}>
+              {linha1 && (
               <h2 style={{ fontSize: `${tela.titulo1Tamanho || 20}px` }} className={`${pesoFonte(tela.tituloBold)} ${caixaAlta(tela.tituloCaixa)} leading-tight ${getCorTextoLinhaClass(tela.titulo1Cor, 'text-white')}`}>
                 <TituloRico texto={linha1} />
               </h2>
+              )}
               {tela.titulo2 && (
                 <h2 style={{ fontSize: `${tela.titulo2Tamanho || 15}px` }} className={`${pesoFonte(tela.tituloBold)} ${caixaAlta(tela.tituloCaixa)} leading-tight ${getCorTextoLinhaClass(tela.titulo2Cor, 'text-amber-300')}`}>
                   {tela.titulo2}
@@ -1348,6 +1354,7 @@ export default function MobileForm({ preview = false }) {
                 </h2>
               )}
               </div>
+              )}
               {tela.subtitulo && !subtituloRepeteLegenda(tela) && (
                 <p style={{ fontSize: `${tela.subtituloTamanho || 13}px`, ...faixaEstilo(estiloLinhas(tela).subFundo, tela.subFaixa ?? questionsConfig?.faixaPadrao), ...fonteEBorda(tela, 'sub', estiloLinhas(tela).subFundo !== 'transparente') }} className={`t-sub leading-snug ${getAlinhamentoClass(estiloLinhas(tela).subAl)} ${getFaixaFundoClass(estiloLinhas(tela).subFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')} ${tela.subBold ? 'font-bold' : ''} ${caixaAlta(tela.subCaixa)} ${getCorTextoLinhaClass(tela.subtituloCor, 'text-slate-300')}`}>
                   {tela.subtitulo}
@@ -1964,7 +1971,7 @@ export default function MobileForm({ preview = false }) {
                 className={`fade-in ${cabeTudo ? 'flex flex-col gap-2' : 'space-y-4 py-2'}`}
                 style={cabeTudo ? { minHeight: 'calc(100dvh - 80px)' } : undefined}
               >
-                {grupo.map((t, gi) => renderCampoTela(t, grupo.length > 1, gi === 0))}
+                {grupo.map((t, gi) => renderCampoTela(t, grupo.length > 1 || temTituloPagina(tela), gi === 0))}
 
                 {avisoGrade && !avisoGrade.oculto && createPortal(
                   <div className="aviso-desce" role="alert" onClick={() => setAvisoGrade((a) => a && { ...a, oculto: true })}>

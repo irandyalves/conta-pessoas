@@ -54,10 +54,12 @@ import {
 import GaleriaTemas from './GaleriaTemas';
 import { aplicarTema } from '../utils/temas';
 import { configSeta, CORES_SETA, DESENHOS_SETA } from '../utils/setas';
-import { corLinhaHex, CAPA_LARGURA_MIN, raioCapa, LINHAS_CAPA, ordemCapa, permutar, reordenar, textoCapa, alturaFaixa, FAIXA_MAX, FAIXA_MIN, gravarFaixaPadrao, lerGeral, gravarHerdado, herdaEstilo, ligarHeranca, semCamposHerdados, telaP1Cantos, CORES_BOTAO, CORES_LINHA, CORES_TEXTO_BOTAO, CARD_ESPACO_PADRAO, raiosCard, linhasCapa, alturaCard, CAPA_ESPACO_PADRAO, CARD_ALTURA_MAX, CARD_ALTURA_MIN, espacos, continuaNaMesmaPagina, extrairEstilo, aplicarEstilo, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems, getEfeitoStyle, CORES_TEXTO_LINHAS, ALINHAMENTOS_TEXTO, FUNDOS_CAPTION } from '../utils/estilos';
+import { corLinhaHex, soComuns, CAPA_LARGURA_MIN, raioCapa, LINHAS_CAPA, ordemCapa, permutar, reordenar, textoCapa, alturaFaixa, FAIXA_MAX, FAIXA_MIN, gravarFaixaPadrao, lerGeral, gravarHerdado, herdaEstilo, ligarHeranca, semCamposHerdados, telaP1Cantos, CORES_BOTAO, CORES_LINHA, CORES_TEXTO_BOTAO, CARD_ESPACO_PADRAO, raiosCard, linhasCapa, alturaCard, CAPA_ESPACO_PADRAO, CARD_ALTURA_MAX, CARD_ALTURA_MIN, espacos, continuaNaMesmaPagina, extrairEstilo, aplicarEstilo, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems, getEfeitoStyle, CORES_TEXTO_LINHAS, ALINHAMENTOS_TEXTO, FUNDOS_CAPTION } from '../utils/estilos';
 import ImportadorIA from './ImportadorIA';
 import RecuperarVersao from './RecuperarVersao';
 import { juntarComAnterior, telaAnterior } from '../utils/juntarTelas';
+import { aplicarNaPagina, chavePagina, comEstiloPagina, paginaDe, primeiraDaPagina, semPagina, temTituloPagina, transferirPagina } from '../utils/pagina';
+import LinhasPergunta from './LinhasPergunta';
 import useDesfazer from '../utils/useDesfazer';
 import IconeEspera, { ICONES_ESPERA } from './IconeEspera';
 import PreviewCelular from './PreviewCelular';
@@ -496,9 +498,12 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
   // COPIAR / COLAR / REPLICAR FORMATAÇÃO ENTRE TELAS
   const [estiloCopiado, setEstiloCopiado] = useState(null);
+  const origemEstilo = (ehP1, i) => {
+    const t = (config.telasExtras || [])[i];
+    return ehP1 ? config : temTituloPagina(t) ? paginaDe(t) : t;
+  };
   const copiarEstilo = (ehP1, extraIndex) => {
-    const origem = ehP1 ? config : (config.telasExtras || [])[extraIndex];
-    setEstiloCopiado(extrairEstilo(origem, ehP1));
+    setEstiloCopiado(extrairEstilo(origemEstilo(ehP1, extraIndex), ehP1));
   };
   const colarEstilo = (ehP1, extraIndex) => {
     if (!estiloCopiado) return;
@@ -506,17 +511,22 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
     const colar = herdaEstilo(config, ehP1 ? 'p1' : extraIndex) ? semCamposHerdados(estiloCopiado) : estiloCopiado;
     setConfig((prev) => ehP1
       ? aplicarEstilo(prev, colar, true)
-      : { ...prev, telasExtras: (prev.telasExtras || []).map((t, i) => (i === extraIndex ? aplicarEstilo(t, colar, false) : t)) });
+      : { ...prev, telasExtras: (prev.telasExtras || []).map((t, i) => (i === extraIndex ? aplicarNaPagina(t, (x) => aplicarEstilo(x, colar, false)) : t)) });
   };
   const replicarEmTodas = (ehP1, extraIndex) => {
-    const origem = ehP1 ? config : (config.telasExtras || [])[extraIndex];
-    const e = extrairEstilo(origem, ehP1);
+    const e = extrairEstilo(origemEstilo(ehP1, extraIndex), ehP1);
     mostrarConfirm(
       'Replicar formatação',
       'Aplicar o tamanho, cor, negrito, alinhamento e fundo do título/subtítulo, além do estilo dos cards, legenda e itens desta tela em TODAS as telas? Páginas que não herdam configurações mantêm os próprios cards e botões.',
       () => setConfig((prev) => ({
         ...aplicarEstilo(prev, herdaEstilo(prev, 'p1') || ehP1 ? e : semCamposHerdados(e), true),
-        telasExtras: (prev.telasExtras || []).map((t) => aplicarEstilo(t, t.herdarEstilo === false ? semCamposHerdados(e) : e, false))
+        telasExtras: (prev.telasExtras || []).map((t, i, telas) => {
+          const st = t.herdarEstilo === false ? semCamposHerdados(e) : e;
+          // a página tem título próprio: a formatação dos títulos vai para ele, não para as perguntas
+          const p = primeiraDaPagina(telas, i);
+          if (p !== i && temTituloPagina(telas[p])) return aplicarEstilo(t, soComuns(st), false);
+          return aplicarNaPagina(t, (x) => aplicarEstilo(x, st, false));
+        })
       })),
       'Replicar em todas'
     );
@@ -547,14 +557,16 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
     const telas = [...c.telasExtras];
     const primeira = telas[indices[0]].mesmaPagina;
     const ordem = moverItem(indices.map((i) => telas[i]), de, para);
-    indices.forEach((i, k) => { telas[i] = ordem[k]; });
+    const velha = c.telasExtras[indices[0]];
+    indices.forEach((i, k) => { telas[i] = k === 0 ? transferirPagina(velha, ordem[k]) : semPagina(ordem[k]); });
     return { ...c, telasExtras: comPagina(telas, indices, primeira) };
   });
   const adicionarPergunta = (depoisDe, formato = '') => setConfig((c) => {
     const base = c.telasExtras[depoisDe];
     const f = formatoPorId(formato);
     const nova = {
-      ...base,
+      ...semPagina(base),
+      pag_titulo1: '',
       id: `tela_${Date.now()}`,
       tipo: formato ? 'texto_curto' : 'texto',
       titulo: f.titulo || 'Nova pergunta',
@@ -593,7 +605,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
       setConfig((c) => {
         const primeira = c.telasExtras[indices[0]].mesmaPagina;
         const restantes = indices.filter((_, k) => k !== pos);
-        const telas = comPagina(c.telasExtras, restantes, primeira);
+        const telas = comPagina(c.telasExtras, restantes, primeira).map((t, i) => (pos === 0 && i === restantes[0] ? transferirPagina(c.telasExtras[indices[0]], t) : t));
         return { ...c, telasExtras: telas.filter((_, i) => i !== indices[pos]) };
       });
       setActiveTab(indices.length > 1 ? `extra_${indices[0]}` : 'inicio');
@@ -782,7 +794,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
   };
   const abrirPagina = (membros) => {
     setActiveTab(`extra_${membros[0]}`);
-    if (membros.length > 1) setSubTabExtra('lista');
+    if (membros.length > 1 || ['texto', 'texto_curto'].includes(config.telasExtras[membros[0]]?.tipo)) setSubTabExtra('lista');
   };
 
   const cardsAtivosP1 = (config.opcoesChegada || []).filter(c => c.ativo !== false);
@@ -2091,12 +2103,90 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                   return subTabExtra;
                 })();
 
+                // Telas de campo: a aba Títulos cuida só do título da página; cada pergunta fica na aba Perguntas
+                const modoTitulo = temLista ? 'pagina' : 'tela';
+                const iTitulo = temLista ? membros[0] : extraIndex;
+                const alvoTitulo = temLista ? paginaDe(config.telasExtras[iTitulo]) : telaAlvo;
+                const gravarTexto = (i, modo, k, v) => {
+                  if (modo !== 'pagina') { handleUpdateTelaProp(i, k, v); return; }
+                  if (k === 'titulo') return;
+                  setConfig((c) => ({ ...c, telasExtras: c.telasExtras.map((t, n) => (n === i ? { ...comEstiloPagina(t), [chavePagina(k)]: v } : t)) }));
+                };
+                const linhasDe = (telaAlvo, extraIndex, modo, semFaixa = false) => {
+                            const cardsAtivos = (telaAlvo.opcoes || []).filter((o) => o.ativo !== false);
+                            const e = estiloLinhas(telaAlvo);
+                            const gravarProp = (k, v) => gravarTexto(extraIndex, modo, k, v);
+                            const set = (k) => (v) => gravarProp(k, v);
+                            const linhasTela = [
+                              { chave: 'titulo1', removivel: false, rotulo: 'Título 1', texto: telaAlvo.titulo1 ?? telaAlvo.titulo ?? '', onTexto: (v) => { set('titulo1')(v); set('titulo')(`${v} ${telaAlvo.titulo2 || ''}`.trim()); }, tamanho: telaAlvo.titulo1Tamanho || 18, min: 11, max: 36, onTamanho: set('titulo1Tamanho'), cor: telaAlvo.titulo1Cor || 'branco', onCor: set('titulo1Cor'), bold: telaAlvo.tituloBold !== false, onBold: set('tituloBold'), caixa: telaAlvo.tituloCaixa, onCaixa: set('tituloCaixa'), ...fonteBordaLinha((k) => telaAlvo[`titulo${k}`], (k, v) => gravarProp(`titulo${k}`, v)), alinhamento: e.tituloAl, onAlinhamento: set('tituloAlinhamento'), fundo: e.tituloFundo, onFundo: set('tituloFundo'), faixa: telaAlvo.tituloFaixa ?? config.faixaPadrao, onFaixa: (v) => gravarEstilo(extraIndex, 'tituloFaixa', v) },
+                              { chave: 'titulo2', rotulo: 'Título 2', texto: telaAlvo.titulo2 ?? '', onTexto: (v) => { set('titulo2')(v); set('titulo')(`${telaAlvo.titulo1 || telaAlvo.titulo || ''} ${v}`.trim()); }, tamanho: telaAlvo.titulo2Tamanho || 15, min: 11, max: 36, onTamanho: set('titulo2Tamanho'), cor: telaAlvo.titulo2Cor || 'dourado', onCor: set('titulo2Cor') },
+                              { chave: 'titulo3', rotulo: 'Título 3', texto: telaAlvo.titulo3 ?? '', onTexto: set('titulo3'), tamanho: telaAlvo.titulo3Tamanho || 14, min: 11, max: 36, onTamanho: set('titulo3Tamanho'), cor: telaAlvo.titulo3Cor || 'verde', onCor: set('titulo3Cor') },
+                              { rotulo: 'Texto abaixo', texto: telaAlvo.subtitulo ?? '', onTexto: set('subtitulo'), multilinha: true, tamanho: telaAlvo.subtituloTamanho || 12, min: 9, max: 26, onTamanho: set('subtituloTamanho'), cor: telaAlvo.subtituloCor || 'cinza', onCor: set('subtituloCor'), bold: Boolean(telaAlvo.subBold), onBold: set('subBold'), caixa: telaAlvo.subCaixa, onCaixa: set('subCaixa'), ...fonteBordaLinha((k) => telaAlvo[`sub${k}`], (k, v) => gravarProp(`sub${k}`, v)), alinhamento: e.subAl, onAlinhamento: set('subAlinhamento'), fundo: e.subFundo, onFundo: set('subFundo'), faixa: telaAlvo.subFaixa ?? config.faixaPadrao, onFaixa: (v) => gravarEstilo(extraIndex, 'subFaixa', v) },
+                              ...(telaAlvo.tipo === 'slider' ? [
+                                {
+                                  rotulo: 'Instrução', texto: instrucaoDaEscala(telaAlvo), onTexto: set('sliderInstrucao'), multilinha: true, placeholder: INSTRUCAO_PADRAO,
+                                  tamanho: telaAlvo.instrucaoTamanho || 14, min: 9, max: 28, onTamanho: set('instrucaoTamanho'),
+                                  cor: telaAlvo.instrucaoCor || 'tema', onCor: set('instrucaoCor'),
+                                  bold: Boolean(telaAlvo.instrucaoBold), onBold: set('instrucaoBold'), caixa: telaAlvo.instrucaoCaixa, onCaixa: set('instrucaoCaixa'),
+                                  ...fonteBordaLinha((k) => telaAlvo[`instrucao${k}`], (k, v) => gravarProp(`instrucao${k}`, v)),
+                                  alinhamento: telaAlvo.instrucaoAlinhamento || 'center', onAlinhamento: set('instrucaoAlinhamento'),
+                                  fundo: telaAlvo.instrucaoFundo || 'transparente', onFundo: set('instrucaoFundo'), faixa: telaAlvo.instrucaoAltura, onFaixa: set('instrucaoAltura'),
+                                  abaixo: (
+                                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+                                      <Segmentos rotulo="Posição" opcoes={[{ id: 'acima', label: 'Acima da escala' }, { id: 'abaixo', label: 'Abaixo da escala' }]} valor={telaAlvo.instrucaoPosicao || 'acima'} onChange={set('instrucaoPosicao')} />
+                                      <MiniSlider rotulo="Espaço" valor={Number(telaAlvo.instrucaoEspaco ?? 16)} min={0} max={60} onChange={set('instrucaoEspaco')} />
+                                      <button type="button" onClick={() => set('sliderInstrucao')(INSTRUCAO_PADRAO)} className="px-2 py-1 rounded-md text-[11px] font-semibold bg-slate-950/60 text-slate-200 hover:bg-slate-800 hover:text-white transition">Usar texto sugerido</button>
+                                    </div>
+                                  )
+                                }
+                              ] : []),
+                              ...(telaAlvo.tipo === 'grade' ? [
+                                { rotulo: 'Legenda', texto: telaAlvo.legendaEscala ?? '', onTexto: set('legendaEscala'), placeholder: '1 = Péssimo; 5 = Ótimo; NA = Não se aplica', tamanho: telaAlvo.escalaTamanho || 9, min: 7, max: 18, onTamanho: set('escalaTamanho'), cor: telaAlvo.legendaCor || 'cinza', onCor: set('legendaCor'), alinhamento: telaAlvo.legendaAlinhamento || 'center', onAlinhamento: set('legendaAlinhamento'),
+                                  extra: (
+                                    <>
+                                      <Segmentos
+                                        rotulo=""
+                                        opcoes={[
+                                          { id: 0, label: 'Corrida', dica: 'Uma ao lado da outra', conteudo: <WrapText className="w-3.5 h-3.5" /> },
+                                          { id: 1, label: '1 coluna', conteudo: <span className="flex items-center gap-1"><Rows3 className="w-3.5 h-3.5" />1</span> },
+                                          { id: 2, label: '2 colunas', conteudo: <span className="flex items-center gap-1"><Columns2 className="w-3.5 h-3.5" />2</span> }
+                                        ]}
+                                        valor={Number(telaAlvo.legendaColunas) || 0}
+                                        onChange={set('legendaColunas')}
+                                      />
+                                      <button
+                                        type="button"
+                                        aria-pressed={Boolean(telaAlvo.legendaIcones)}
+                                        title="Mostrar uma carinha ao lado de cada nota da legenda"
+                                        onClick={() => set('legendaIcones')(!telaAlvo.legendaIcones)}
+                                        className={`flex items-center gap-1 px-2 h-6 rounded-md text-[11px] font-semibold transition ${telaAlvo.legendaIcones ? 'bg-slate-100 text-slate-900' : 'bg-slate-950/60 text-slate-400 hover:text-white'}`}
+                                      >
+                                        <IconeRosto className="w-3.5 h-3.5" /> Ícones
+                                      </button>
+                                    </>
+                                  ),
+                                  bold: Boolean(telaAlvo.legendaBold), onBold: set('legendaBold'), caixa: telaAlvo.legendaCaixa, onCaixa: set('legendaCaixa'), ...fonteBordaLinha((k) => telaAlvo[`legenda${k}`], (k, v) => gravarProp(`legenda${k}`, v)), fundo: telaAlvo.legendaFundo || 'escuro', onFundo: set('legendaFundo'), faixa: telaAlvo.legendaFaixa, onFaixa: set('legendaFaixa') },
+                                { rotulo: 'Itens da grade', texto: cardsAtivos.map((o) => o.titulo).join(', '), tamanho: telaAlvo.itemTamanho || 12, min: 8, max: 20, onTamanho: set('itemTamanho'), cor: telaAlvo.itemCor || 'branco', onCor: set('itemCor'), bold: telaAlvo.itemBold !== false, onBold: set('itemBold'), caixa: telaAlvo.itemCaixa, onCaixa: set('itemCaixa'), ...fonteBordaLinha((k) => telaAlvo[`item${k}`], (k, v) => gravarProp(`item${k}`, v)), fundo: telaAlvo.itemFundo || 'escuro', onFundo: set('itemFundo'), faixa: telaAlvo.itemFaixa, onFaixa: set('itemFaixa') }
+                              ] : [])
+                            ];
+                            if (modo === 'pagina') return linhasTela.slice(0, 4).map((l) => ({ ...l, removivel: true }));
+                            if (modo !== 'pergunta') return linhasTela;
+                            const semFundo = semFaixa ? { onFundo: undefined, onFaixa: undefined } : {};
+                            return linhasTela.map((l) => {
+                              if (l.rotulo === 'Título 1') return { ...l, ...semFundo, chave: 'pergunta', rotulo: 'Pergunta', multilinha: true, fixa: true };
+                              if (l.rotulo === 'Texto abaixo') return { ...l, ...semFundo, rotulo: 'Texto de apoio' };
+                              // Títulos 2 e 3 entram na mesma frase da pergunta, com o estilo dela
+                              if (l.rotulo === 'Título 2' || l.rotulo === 'Título 3') return String(l.texto || '').trim() ? { rotulo: l.rotulo.replace('Título', 'Parte'), texto: l.texto, onTexto: l.onTexto, semBarra: true } : null;
+                              return l;
+                            }).filter(Boolean);
+                };
+
                 return (
                   <div className="painel-tela">
                     {/* Barra Superior da Tela Extra */}
                     <TopoPainel slot={setSlotAcoes} titulo={`Tela ${numTela}`} onExcluir={() => (membros.length > 1 ? excluirPagina(membros, numTela) : handleExcluirTela(extraIndex))}>
                       {/* Seletor Completo de Tipo da Tela Extra (10 Tipos Mundiais) */}
-                      <div className="flex items-center gap-2">
+                      <div className={membros.length > 1 ? 'hidden' : 'flex items-center gap-2'}>
                         <select
                           aria-label="Tipo da tela"
                           title="Tipo da tela"
@@ -2123,10 +2213,10 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     <SubAbas
                       valor={subAtual}
                       onChange={setSubTabExtra}
-                      lateral={<>{subAtual !== 'lista' && <BotaoObrigatorio valor={telaAlvo.obrigatorio} onChange={(v) => handleUpdateTelaProp(extraIndex, 'obrigatorio', v)} />}{Heranca(membros)}</>}
+                      lateral={<>{!temLista && <BotaoObrigatorio valor={telaAlvo.obrigatorio} onChange={(v) => handleUpdateTelaProp(extraIndex, 'obrigatorio', v)} />}{Heranca(membros)}</>}
                       opcoes={[
-                        ...(temLista ? [{ id: 'lista', label: rotuloPerguntas(membros.length) }] : []),
                         { id: 'pergunta', label: 'Títulos' },
+                        ...(temLista ? [{ id: 'lista', label: rotuloPerguntas(membros.length) }] : []),
                         ...(semCampo ? [] : [{
                           id: 'opcoes',
                           label: ['texto', 'texto_curto', 'data', 'hora', 'slider', 'rating'].includes(telaAlvo.tipo)
@@ -2141,8 +2231,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
                     {subAtual === 'lista' && (
                       <div className="space-y-3">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-xs font-semibold text-slate-200 mr-auto">{rotuloPerguntas(membros.length)} nesta página</span>
+                        <div className="flex flex-wrap items-center justify-end gap-2">
                           {FORMATOS_CAMPO.filter((f) => f.id).map((f) => (
                             <button
                               key={f.id}
@@ -2167,6 +2256,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                           {membros.map((iTela, pos) => {
                             const t = config.telasExtras[iTela];
                             const set = (k) => (v) => handleUpdateTelaProp(iTela, k, v);
+                            const ehCampoTexto = ['texto', 'texto_curto'].includes(t.tipo);
                             return (
                               <QuestaoArrastavel
                                 key={t.id || iTela}
@@ -2176,18 +2266,23 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                 onMover={(de, para) => moverPergunta(membros, de, para)}
                                 className="-mx-3 px-5 py-2.5 flex flex-col gap-2 border-t border-dashed border-slate-600"
                               >
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <span className="text-xs font-semibold text-slate-200 w-4">{pos + 1}</span>
+                                <LinhasPergunta
+                                  key={t.id || iTela}
+                                  cabecalho={(
+                                    <>
+                                  {membros.length > 1 && <span className="text-xs font-semibold text-slate-200 w-4">{pos + 1}</span>}
                                   <BotaoObrigatorio valor={t.obrigatorio} onChange={set('obrigatorio')} />
-                                  <select
-                                    value={t.tipo}
-                                    aria-label="Tipo da pergunta"
-                                    onChange={(e) => set('tipo')(e.target.value)}
-                                    className={`bg-slate-950/60 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-200 ${['texto', 'texto_curto'].includes(t.tipo) ? '' : 'hidden'}`}
-                                  >
-                                    <option value="texto">Campo longo</option>
-                                    <option value="texto_curto">Campo de uma linha</option>
-                                  </select>
+                                  {membros.length > 1 && ehCampoTexto && (
+                                    <select
+                                      value={t.tipo}
+                                      aria-label="Tipo da pergunta"
+                                      onChange={(e) => set('tipo')(e.target.value)}
+                                      className="bg-slate-950/60 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-200"
+                                    >
+                                      <option value="texto">Campo longo</option>
+                                      <option value="texto_curto">Campo de uma linha</option>
+                                    </select>
+                                  )}
                                   {['texto', 'texto_curto'].includes(t.tipo) && (
                                     <select
                                       value={t.formatoCampo || ''}
@@ -2203,36 +2298,42 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                       {FORMATOS_CAMPO.map((f) => <option key={f.id} value={f.id}>{f.label}</option>)}
                                     </select>
                                   )}
-                                  <button
-                                    type="button"
-                                    onClick={() => { setActiveTab(`extra_${iTela}`); setSubTabExtra('pergunta'); }}
-                                    className="px-2.5 py-1.5 rounded-lg text-xs text-slate-300 bg-slate-800 hover:bg-slate-700"
-                                  >
-                                    Formatar texto
-                                  </button>
-                                  <button type="button" title="Excluir pergunta" aria-label="Excluir pergunta" onClick={() => excluirPergunta(membros, pos)} className="ml-auto p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition">
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
-                                </div>
-                                <Campo
-                                  rotulo="Pergunta"
-                                  multilinha
-                                  linhas={2}
-                                  valor={[t.titulo1 ?? t.titulo, t.titulo2, t.titulo3].filter(Boolean).join(' ')}
-                                  onChange={(v) => setConfig((c) => ({
-                                    ...c,
-                                    telasExtras: c.telasExtras.map((x, i) => (i === iTela ? { ...x, titulo: v, titulo1: v, titulo2: '', titulo3: '' } : x))
-                                  }))}
+                                  {!ehCampoTexto && !['data', 'hora', 'rating'].includes(t.tipo) && (
+                                    <button
+                                      type="button"
+                                      onClick={() => { setActiveTab(`extra_${iTela}`); setSubTabExtra('opcoes'); }}
+                                      className="px-2.5 py-1.5 rounded-lg text-xs text-slate-300 bg-slate-800 hover:bg-slate-700"
+                                    >
+                                      Opções da resposta
+                                    </button>
+                                  )}
+                                    </>
+                                  )}
+                                  fim={membros.length > 1 && (
+                                    <button type="button" title="Excluir pergunta" aria-label="Excluir pergunta" onClick={() => excluirPergunta(membros, pos)} className="texto-lixeira">
+                                      <Trash2 className="w-[14px] h-[14px]" />
+                                    </button>
+                                  )}
+                                  linhas={[
+                                    ...linhasDe(t, iTela, 'pergunta', emGrupo || temTituloPagina(config.telasExtras[membros[0]])),
+                                    ...(ehCampoTexto ? [{
+                                      chave: 'campo', rotulo: 'Resposta (campo)', semBarra: true, fixa: true, removivel: false,
+                                      texto: t.placeholder ?? '', onTexto: set('placeholder'), placeholder: 'Digite sua resposta aqui...',
+                                      abaixo: (
+                                        <div className="texto-abaixo items-center">
+                                          {!['email', 'telefone'].includes(t.formatoCampo) && <Chave rotulo="Sempre em MAIÚSCULAS" valor={Boolean(t.maiusculas)} onChange={set('maiusculas')} />}
+                                          {t.tipo === 'texto' && membros.length === 1 && <MiniSlider rotulo="Altura do campo" valor={t.linhas || 4} min={2} max={10} unidade=" linhas" onChange={set('linhas')} />}
+                                        </div>
+                                      )
+                                    }] : [])
+                                  ]}
+                                  espacoResposta={(
+                                    <>
+                                      {String(t.subtitulo || '').trim() && <MiniSlider rotulo="Até o texto de apoio" valor={espacos(t, false).sub} min={0} max={60} onChange={set('espacoSub')} />}
+                                      <EspacoAte rotulo="Espaço para a resposta" valor={espacos(t, false).cards} onChange={set('espacoCards')} />
+                                    </>
+                                  )}
                                 />
-                                {['texto', 'texto_curto'].includes(t.tipo) && (
-                                  <Campo rotulo="Dica dentro do campo" valor={t.placeholder} onChange={set('placeholder')} placeholder="Digite sua resposta aqui..." />
-                                )}
-                                {['texto', 'texto_curto'].includes(t.tipo) && !['email', 'telefone'].includes(t.formatoCampo) && (
-                                  <Chave rotulo={t.formatoCampo === 'nome' ? 'Nome sempre em MAIÚSCULAS' : 'Resposta sempre em MAIÚSCULAS'} descricao="Mesmo que a pessoa digite em minúsculas, aparece e fica gravado em maiúsculas." valor={Boolean(t.maiusculas)} onChange={set('maiusculas')} />
-                                )}
-                                {t.tipo === 'texto' && membros.length === 1 && (
-                                  <Deslizante rotulo="Altura" valor={t.linhas || 4} min={2} max={10} unidade=" linhas" onChange={set('linhas')} />
-                                )}
                               </QuestaoArrastavel>
                             );
                           })}
@@ -2271,33 +2372,29 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
                     {subAtual === 'pergunta' && (
                       <div className="space-y-2.5">
-                        {membros.length > 1 && (
-                          <Segmentos
-                            rotulo="Formatar pergunta"
-                            opcoes={membros.map((m, i) => ({ id: m, label: String(i + 1) }))}
-                            valor={extraIndex}
-                            onChange={(m) => setActiveTab(`extra_${m}`)}
-                          />
-                        )}
                         <EstiloLinhasTitulo
                           key={activeTab}
                           topo={(
                             <>
                               <ControleEspacos
-                                valores={espacos(telaAlvo, false)}
-                                titulos={emGrupo ? [telaAlvo.titulo1 || telaAlvo.titulo] : [telaAlvo.titulo1 || telaAlvo.titulo, telaAlvo.titulo2, telaAlvo.titulo3]}
-                                subtitulo={telaAlvo.subtitulo}
-                                onChange={(k, v) => handleUpdateTelaProp(extraIndex, { tit: 'espacoTitulos', sub: 'espacoSub' }[k], v)}
+                                valores={espacos(alvoTitulo, false)}
+                                titulos={[alvoTitulo.titulo1 || alvoTitulo.titulo, alvoTitulo.titulo2, alvoTitulo.titulo3]}
+                                subtitulo={alvoTitulo.subtitulo}
+                                onChange={(k, v) => gravarTexto(iTitulo, modoTitulo, { tit: 'espacoTitulos', sub: 'espacoSub' }[k], v)}
                               />
-                              {BarraFormatacao({ ehP1: false, extraIndex })}
+                              {BarraFormatacao({ ehP1: false, extraIndex: iTitulo })}
                             </>
                           )}
-                          espacoResposta={<EspacoAte rotulo={ehCards ? 'Espaço para o primeiro card' : 'Espaço para a resposta'} valor={espacos(telaAlvo, false).cards} onChange={(v) => handleUpdateTelaProp(extraIndex, 'espacoCards', v)} />}
+                          espacoResposta={temLista && !temTituloPagina(config.telasExtras[iTitulo]) ? null : <EspacoAte rotulo={ehCards ? 'Espaço para o primeiro card' : temLista ? 'Espaço para a primeira pergunta' : 'Espaço para a resposta'} valor={espacos(alvoTitulo, false).cards} onChange={(v) => gravarTexto(iTitulo, modoTitulo, 'espacoCards', v)} />}
                           slotAcoes={slotAcoes}
                           onOrdem={(ids) => setConfig((c) => ({
                             ...c,
                             telasExtras: c.telasExtras.map((t, i) => {
-                              if (i !== extraIndex) return t;
+                              if (i !== iTitulo) return t;
+                              if (temLista) {
+                                const base = comEstiloPagina(t);
+                                return { ...base, ...permutar(Object.fromEntries([1, 2, 3].map((n) => [`titulo${n}`, Object.fromEntries([['', ''], ['Tamanho', [18, 15, 14][n - 1]], ['Cor', ['branco', 'dourado', 'verde'][n - 1]]].map(([k, padrao]) => [`pag_titulo${n}${k}`, base[`pag_titulo${n}${k}`] ?? padrao]))])), ids) };
+                              }
                               const novo = {
                                 ...t,
                                 ...permutar({
@@ -2309,70 +2406,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                               return { ...novo, titulo: `${novo.titulo1} ${novo.titulo2 || ''}`.trim() };
                             })
                           }))}
-                          linhas={(() => {
-                            const e = estiloLinhas(telaAlvo);
-                            const set = (k) => (v) => handleUpdateTelaProp(extraIndex, k, v);
-                            const linhasTela = [
-                              { chave: 'titulo1', removivel: false, rotulo: 'Título 1', texto: telaAlvo.titulo1 ?? telaAlvo.titulo ?? '', onTexto: (v) => { set('titulo1')(v); set('titulo')(`${v} ${telaAlvo.titulo2 || ''}`.trim()); }, tamanho: telaAlvo.titulo1Tamanho || 18, min: 11, max: 36, onTamanho: set('titulo1Tamanho'), cor: telaAlvo.titulo1Cor || 'branco', onCor: set('titulo1Cor'), bold: telaAlvo.tituloBold !== false, onBold: set('tituloBold'), caixa: telaAlvo.tituloCaixa, onCaixa: set('tituloCaixa'), ...fonteBordaLinha((k) => telaAlvo[`titulo${k}`], (k, v) => handleUpdateTelaProp(extraIndex, `titulo${k}`, v)), alinhamento: e.tituloAl, onAlinhamento: set('tituloAlinhamento'), fundo: e.tituloFundo, onFundo: set('tituloFundo'), faixa: telaAlvo.tituloFaixa ?? config.faixaPadrao, onFaixa: (v) => gravarEstilo(extraIndex, 'tituloFaixa', v) },
-                              { chave: 'titulo2', rotulo: 'Título 2', texto: telaAlvo.titulo2 ?? '', onTexto: (v) => { set('titulo2')(v); set('titulo')(`${telaAlvo.titulo1 || telaAlvo.titulo || ''} ${v}`.trim()); }, tamanho: telaAlvo.titulo2Tamanho || 15, min: 11, max: 36, onTamanho: set('titulo2Tamanho'), cor: telaAlvo.titulo2Cor || 'dourado', onCor: set('titulo2Cor') },
-                              { chave: 'titulo3', rotulo: 'Título 3', texto: telaAlvo.titulo3 ?? '', onTexto: set('titulo3'), tamanho: telaAlvo.titulo3Tamanho || 14, min: 11, max: 36, onTamanho: set('titulo3Tamanho'), cor: telaAlvo.titulo3Cor || 'verde', onCor: set('titulo3Cor') },
-                              { rotulo: 'Texto abaixo', texto: telaAlvo.subtitulo ?? '', onTexto: set('subtitulo'), multilinha: true, tamanho: telaAlvo.subtituloTamanho || 12, min: 9, max: 26, onTamanho: set('subtituloTamanho'), cor: telaAlvo.subtituloCor || 'cinza', onCor: set('subtituloCor'), bold: Boolean(telaAlvo.subBold), onBold: set('subBold'), caixa: telaAlvo.subCaixa, onCaixa: set('subCaixa'), ...fonteBordaLinha((k) => telaAlvo[`sub${k}`], (k, v) => handleUpdateTelaProp(extraIndex, `sub${k}`, v)), alinhamento: e.subAl, onAlinhamento: set('subAlinhamento'), fundo: e.subFundo, onFundo: set('subFundo'), faixa: telaAlvo.subFaixa ?? config.faixaPadrao, onFaixa: (v) => gravarEstilo(extraIndex, 'subFaixa', v) },
-                              ...(telaAlvo.tipo === 'slider' ? [
-                                {
-                                  rotulo: 'Instrução', texto: instrucaoDaEscala(telaAlvo), onTexto: set('sliderInstrucao'), multilinha: true, placeholder: INSTRUCAO_PADRAO,
-                                  tamanho: telaAlvo.instrucaoTamanho || 14, min: 9, max: 28, onTamanho: set('instrucaoTamanho'),
-                                  cor: telaAlvo.instrucaoCor || 'tema', onCor: set('instrucaoCor'),
-                                  bold: Boolean(telaAlvo.instrucaoBold), onBold: set('instrucaoBold'), caixa: telaAlvo.instrucaoCaixa, onCaixa: set('instrucaoCaixa'),
-                                  ...fonteBordaLinha((k) => telaAlvo[`instrucao${k}`], (k, v) => handleUpdateTelaProp(extraIndex, `instrucao${k}`, v)),
-                                  alinhamento: telaAlvo.instrucaoAlinhamento || 'center', onAlinhamento: set('instrucaoAlinhamento'),
-                                  fundo: telaAlvo.instrucaoFundo || 'transparente', onFundo: set('instrucaoFundo'), faixa: telaAlvo.instrucaoAltura, onFaixa: set('instrucaoAltura'),
-                                  abaixo: (
-                                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
-                                      <Segmentos rotulo="Posição" opcoes={[{ id: 'acima', label: 'Acima da escala' }, { id: 'abaixo', label: 'Abaixo da escala' }]} valor={telaAlvo.instrucaoPosicao || 'acima'} onChange={set('instrucaoPosicao')} />
-                                      <MiniSlider rotulo="Espaço" valor={Number(telaAlvo.instrucaoEspaco ?? 16)} min={0} max={60} onChange={set('instrucaoEspaco')} />
-                                      <button type="button" onClick={() => set('sliderInstrucao')(INSTRUCAO_PADRAO)} className="px-2 py-1 rounded-md text-[11px] font-semibold bg-slate-950/60 text-slate-200 hover:bg-slate-800 hover:text-white transition">Usar texto sugerido</button>
-                                    </div>
-                                  )
-                                }
-                              ] : []),
-                              ...(telaAlvo.tipo === 'grade' ? [
-                                { rotulo: 'Legenda', texto: telaAlvo.legendaEscala ?? '', onTexto: set('legendaEscala'), placeholder: '1 = Péssimo; 5 = Ótimo; NA = Não se aplica', tamanho: telaAlvo.escalaTamanho || 9, min: 7, max: 18, onTamanho: set('escalaTamanho'), cor: telaAlvo.legendaCor || 'cinza', onCor: set('legendaCor'), alinhamento: telaAlvo.legendaAlinhamento || 'center', onAlinhamento: set('legendaAlinhamento'),
-                                  extra: (
-                                    <>
-                                      <Segmentos
-                                        rotulo=""
-                                        opcoes={[
-                                          { id: 0, label: 'Corrida', dica: 'Uma ao lado da outra', conteudo: <WrapText className="w-3.5 h-3.5" /> },
-                                          { id: 1, label: '1 coluna', conteudo: <span className="flex items-center gap-1"><Rows3 className="w-3.5 h-3.5" />1</span> },
-                                          { id: 2, label: '2 colunas', conteudo: <span className="flex items-center gap-1"><Columns2 className="w-3.5 h-3.5" />2</span> }
-                                        ]}
-                                        valor={Number(telaAlvo.legendaColunas) || 0}
-                                        onChange={set('legendaColunas')}
-                                      />
-                                      <button
-                                        type="button"
-                                        aria-pressed={Boolean(telaAlvo.legendaIcones)}
-                                        title="Mostrar uma carinha ao lado de cada nota da legenda"
-                                        onClick={() => set('legendaIcones')(!telaAlvo.legendaIcones)}
-                                        className={`flex items-center gap-1 px-2 h-6 rounded-md text-[11px] font-semibold transition ${telaAlvo.legendaIcones ? 'bg-slate-100 text-slate-900' : 'bg-slate-950/60 text-slate-400 hover:text-white'}`}
-                                      >
-                                        <IconeRosto className="w-3.5 h-3.5" /> Ícones
-                                      </button>
-                                    </>
-                                  ),
-                                  bold: Boolean(telaAlvo.legendaBold), onBold: set('legendaBold'), caixa: telaAlvo.legendaCaixa, onCaixa: set('legendaCaixa'), ...fonteBordaLinha((k) => telaAlvo[`legenda${k}`], (k, v) => handleUpdateTelaProp(extraIndex, `legenda${k}`, v)), fundo: telaAlvo.legendaFundo || 'escuro', onFundo: set('legendaFundo'), faixa: telaAlvo.legendaFaixa, onFaixa: set('legendaFaixa') },
-                                { rotulo: 'Itens da grade', texto: cardsAtivos.map((o) => o.titulo).join(', '), tamanho: telaAlvo.itemTamanho || 12, min: 8, max: 20, onTamanho: set('itemTamanho'), cor: telaAlvo.itemCor || 'branco', onCor: set('itemCor'), bold: telaAlvo.itemBold !== false, onBold: set('itemBold'), caixa: telaAlvo.itemCaixa, onCaixa: set('itemCaixa'), ...fonteBordaLinha((k) => telaAlvo[`item${k}`], (k, v) => handleUpdateTelaProp(extraIndex, `item${k}`, v)), fundo: telaAlvo.itemFundo || 'escuro', onFundo: set('itemFundo'), faixa: telaAlvo.itemFaixa, onFaixa: set('itemFaixa') }
-                              ] : [])
-                            ];
-                            if (!emGrupo) return linhasTela;
-                            return linhasTela.map((l) => {
-                              if (l.rotulo === 'Título 1') return { ...l, rotulo: 'Pergunta', multilinha: true, onFundo: undefined, onFaixa: undefined };
-                              if (l.rotulo === 'Texto abaixo') return { ...l, onFundo: undefined, onFaixa: undefined };
-                              // Títulos 2 e 3 entram na mesma frase da pergunta, com o estilo dela
-                              if (l.rotulo === 'Título 2' || l.rotulo === 'Título 3') return String(l.texto || '').trim() ? { rotulo: l.rotulo.replace('Título', 'Parte'), texto: l.texto, onTexto: l.onTexto } : null;
-                              return l;
-                            }).filter(Boolean);
-                          })()}
+                          linhas={linhasDe(alvoTitulo, iTitulo, modoTitulo)}
                         />
                         {extraIndex > 0 && TIPOS_CAMPO_PAGINA.includes(telaAlvo.tipo) && TIPOS_CAMPO_PAGINA.includes((config.telasExtras || [])[extraIndex - 1]?.tipo) && (
                           <Secao>

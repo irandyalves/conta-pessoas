@@ -1,3 +1,4 @@
+import { separarTitulos } from './utils/pagina';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import {
   getFirestore,
@@ -1049,6 +1050,7 @@ export function normalizeQuestionsConfig(config) {
           gaveta: normalizeGaveta(op)
         })) : []
       }));
+    merged.telasExtras = separarTitulos(merged.telasExtras);
   }
 
   return merged;

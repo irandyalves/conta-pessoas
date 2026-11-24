@@ -427,6 +427,8 @@ const COMUNS = ['cardBordaLado', 'legendaBordaLado', 'itemBordaLado', 'instrucao
   'cardCorFonteSubtitulo', 'cardFonteTitulo', 'cardFonteSubtitulo', 'escalaTamanho', 'legendaCor', 'legendaBold', 'legendaFundo', 'legendaAlinhamento', 'legendaColunas', 'legendaIcones', 'instrucaoTamanho', 'instrucaoCor', 'instrucaoBold', 'instrucaoCaixa', 'instrucaoFamilia', 'instrucaoBorda', 'instrucaoBordaLargura', 'instrucaoAlinhamento', 'instrucaoFundo', 'instrucaoAltura', 'instrucaoEspaco', 'instrucaoPosicao',
   'itemTamanho', 'itemCor', 'itemBold', 'itemFundo', 'legendaFaixa', 'itemFaixa', 'legendaCaixa', 'itemCaixa'];
 
+export const soComuns = (estilo = {}) => Object.fromEntries(Object.entries(estilo).filter(([k]) => COMUNS.includes(k)));
+
 export function extrairEstilo(origem, ehP1) {
   const mapa = ehP1 ? MAPA_P1 : MAPA_EXTRA;
   const e = {};

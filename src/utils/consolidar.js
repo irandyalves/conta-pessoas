@@ -232,7 +232,7 @@ export function consolidar(presencas = [], config = null) {
     const entradas = principais[t.id] || [];
     if (t.ativa === false && !entradas.length) return;
     const nomes = (t.opcoes || []).filter((o) => o?.ativo !== false).map((o) => limpar(o?.titulo)).filter(Boolean);
-    const base = { id: t.id, titulo: limpar(tituloTela(t, i)), detalhe: limpar(t.subtitulo) };
+    const base = { id: t.id, titulo: limpar(tituloTela(t, i)), detalhe: limpar(t.subtitulo || t.pag_titulo1) };
     const tipo = t.tipo || 'cards';
     if (TIPOS_ESCOLHA.includes(tipo)) perguntas.push(montar(base, 'escolha', entradas, { nomes }));
     else if (tipo === 'checkbox') perguntas.push(montar(base, 'multipla', entradas, { nomes }));
