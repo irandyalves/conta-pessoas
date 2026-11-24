@@ -1772,7 +1772,7 @@ export default function MobileForm({ preview = false }) {
                   })}
                   className={`w-3/4 py-4 px-4 rounded-2xl font-black text-base border flex items-center justify-center gap-2 transition-colors ${faltaObrigatoria ? 'bg-red-900 border-red-800 text-white' : 'bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 shadow-xl shadow-amber-950/60 border-amber-300'} ${clicado === `avancar_${tela.id}` ? 'efeito-acender' : ''}`}
                 >
-                  <span>{tela.botaoTexto || 'Avançar'}</span>
+                  <span>{questionsConfig?.botaoAvancarTexto || 'Avançar'}</span>
                   <ChevronRight className="w-5 h-5" />
                 </button>
                 </div>

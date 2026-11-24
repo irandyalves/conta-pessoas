@@ -1021,6 +1021,18 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 ))}
               </select>
             </div>
+
+            {/* Texto do botão Avançar: um só para todas as páginas */}
+            <label className="flex items-center gap-2 pl-3 border-l border-slate-800" title="Vale para todas as páginas">
+              <span className="text-xs text-slate-400">Botão</span>
+              <input
+                type="text"
+                value={config.botaoAvancarTexto ?? 'Avançar'}
+                onChange={(e) => setCampo('botaoAvancarTexto', e.target.value)}
+                placeholder="Avançar"
+                className="w-32 bg-slate-950 border border-slate-700 focus:border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none"
+              />
+            </label>
           </div>
 
           <div className="flex items-center gap-2">
@@ -1743,7 +1755,9 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 const posLigada = telasLigadas.indexOf(telaAlvo);
                 const emGrupo = posLigada >= 0 && (continuaNaMesmaPagina(telasLigadas[posLigada - 1], telaAlvo) || continuaNaMesmaPagina(telaAlvo, telasLigadas[posLigada + 1]));
                 const temAparencia = ehCards && cardsAtivos.length > 0;
-                const subAtual = subTabExtra === 'aparencia' && !temAparencia ? 'pergunta' : subTabExtra;
+                // Data, hora e estrelas não têm nada para ajustar no campo
+                const semCampo = ['data', 'hora', 'rating'].includes(telaAlvo.tipo);
+                const subAtual = (subTabExtra === 'aparencia' && !temAparencia) || (subTabExtra === 'opcoes' && semCampo) ? 'pergunta' : subTabExtra;
 
                 return (
                   <div className="space-y-4">
@@ -1794,12 +1808,12 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       onChange={setSubTabExtra}
                       opcoes={[
                         { id: 'pergunta', label: 'Textos' },
-                        {
+                        ...(semCampo ? [] : [{
                           id: 'opcoes',
                           label: ['texto', 'texto_curto', 'data', 'hora', 'slider', 'rating'].includes(telaAlvo.tipo)
                             ? 'Campo de resposta'
                             : rotuloPerguntas(cardsAtivos.length)
-                        },
+                        }]),
                         ...(temAparencia ? [{ id: 'aparencia', label: 'Aparência dos cards' }] : [])
                       ]}
                     />
@@ -1959,21 +1973,9 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             </div>
                           )}
 
-                          <div>
-                            <label className="text-[11px] font-bold text-slate-400 block mb-1">
-                              Texto do Botão de Avançar
-                            </label>
-                            <input
-                              type="text"
-                              value={telaAlvo.botaoTexto || ''}
-                              onChange={(e) => handleUpdateTelaProp(extraIndex, 'botaoTexto', e.target.value)}
-                              placeholder="Avançar"
-                              className="w-full bg-slate-900 border border-slate-700 focus:border-slate-300 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-200 shadow-inner"
-                            />
-                          </div>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2 border-t border-slate-800">
+                        <div className={telaAlvo.tipo === 'texto' && !emGrupo ? 'grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2 border-t border-slate-800' : 'hidden'}>
                           {telaAlvo.tipo === 'texto' && !emGrupo && (
                             <div className="flex items-center justify-between text-xs bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
                               <span className="text-slate-300 font-bold">Altura (Linhas):</span>
