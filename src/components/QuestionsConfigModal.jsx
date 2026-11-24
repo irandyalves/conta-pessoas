@@ -51,7 +51,7 @@ import {
   saveEventTitle,
   DEFAULT_QUESTIONS_CONFIG 
 } from '../firebase';
-import { alturaCard, CAPA_ESPACO_PADRAO, CARD_ALTURA_MAX, CARD_ALTURA_MIN, espacos, continuaNaMesmaPagina, extrairEstilo, aplicarEstilo, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems, getEfeitoStyle, CORES_TEXTO_LINHAS, ALINHAMENTOS_TEXTO, FUNDOS_CAPTION } from '../utils/estilos';
+import { linhasCapa, alturaCard, CAPA_ESPACO_PADRAO, CARD_ALTURA_MAX, CARD_ALTURA_MIN, espacos, continuaNaMesmaPagina, extrairEstilo, aplicarEstilo, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems, getEfeitoStyle, CORES_TEXTO_LINHAS, ALINHAMENTOS_TEXTO, FUNDOS_CAPTION } from '../utils/estilos';
 import ImportadorIA from './ImportadorIA';
 import IconeEspera, { ICONES_ESPERA } from './IconeEspera';
 import PreviewCelular from './PreviewCelular';
@@ -471,13 +471,16 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
   };
 
   // Aparência dos cards de opção: a mesma para a Tela 1 e para as telas extras
-  const AparenciaCards = ({ ler, gravar, campoIcones, porPagina }) => (
+  const AparenciaCards = ({ ler, gravar, campoIcones, porPagina, opcoes }) => {
+    // Só mostra ajuste do que aparece no celular (ex.: sem descrição nos cards, nada de descrição aqui)
+    const temDescricao = opcoes.some((o) => String(o.subtitulo || '').trim());
+    return (
     <>
       <Secao titulo="Tamanho">
         <Deslizante rotulo="Altura do card" valor={alturaCard(ler('cardAltura'))} min={CARD_ALTURA_MIN} max={CARD_ALTURA_MAX} onChange={(v) => gravar('cardAltura', v)} />
         <Deslizante rotulo="Título" valor={ler('cardFonteTitulo') || 16} min={12} max={24} onChange={(v) => gravar('cardFonteTitulo', v)} />
-        <Deslizante rotulo="Descrição" valor={ler('cardFonteSubtitulo') || 12} min={9} max={18} onChange={(v) => gravar('cardFonteSubtitulo', v)} />
-        <Segmentos rotulo="Cards por página" opcoes={[2, 3, 4, 5, 6, 8, 10, 12, 15].map((n) => ({ id: n, label: String(n) }))} valor={porPagina} onChange={(v) => gravar('cardsPorTela', v)} />
+        {temDescricao && <Deslizante rotulo="Descrição" valor={ler('cardFonteSubtitulo') || 12} min={9} max={18} onChange={(v) => gravar('cardFonteSubtitulo', v)} />}
+        {opcoes.length > 2 && <Deslizante rotulo="Cards por página" valor={Math.min(15, porPagina)} min={2} max={15} unidade="" onChange={(v) => gravar('cardsPorTela', v)} />}
         <Chave rotulo="Mostrar ícones nos cards" valor={ler(campoIcones) !== false} onChange={(v) => gravar(campoIcones, v)} />
       </Secao>
       <Secao titulo="Efeito">
@@ -487,10 +490,11 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
       <Secao titulo="Cores">
         <Cores rotulo="Fundo do card" opcoes={FUNDOS_CARDS} campo="amostra" quadrado valor={ler('cardFundoEstilo') || 'escuro'} onChange={(v) => gravar('cardFundoEstilo', v)} />
         <Cores rotulo="Título" opcoes={CORES_FONTE_TITULO} campo="dot" valor={ler('cardCorFonteTitulo') || 'branco'} onChange={(v) => gravar('cardCorFonteTitulo', v)} />
-        <Cores rotulo="Descrição" opcoes={CORES_FONTE_SUBTITULO} campo="dot" valor={ler('cardCorFonteSubtitulo') || 'cinza'} onChange={(v) => gravar('cardCorFonteSubtitulo', v)} />
+        {temDescricao && <Cores rotulo="Descrição" opcoes={CORES_FONTE_SUBTITULO} campo="dot" valor={ler('cardCorFonteSubtitulo') || 'cinza'} onChange={(v) => gravar('cardCorFonteSubtitulo', v)} />}
       </Secao>
     </>
-  );
+    );
+  };
 
   // SALVAMENTO AUTOMÁTICO NO BANCO: 1,5s depois da última alteração
   const [autoSalvo, setAutoSalvo] = useState('');
@@ -530,6 +534,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
   // Cálculos dinâmicos da Tela 1
   const cardsAtivosP1 = (config.opcoesChegada || []).filter(c => c.ativo !== false);
+  const subAtualP1 = subTabTela1 === 'aparencia' && cardsAtivosP1.length === 0 ? 'opcoes' : subTabTela1;
   const cardsPorTelaP1 = Number(config.cardsPorTela) || 4;
   const totalPaginasPreviewP1 = Math.max(1, Math.ceil(cardsAtivosP1.length / cardsPorTelaP1));
   const safePreviewPageP1 = Math.min(previewPage, totalPaginasPreviewP1 - 1);
@@ -1214,6 +1219,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     </div>
                   </Secao>
                   <EstiloLinhasTitulo
+                    key={activeTab}
                     linhas={[['1', 'DENTRO DE INSTANTES', 'branco'], ['2', 'ESTARÁ LIBERADO', 'dourado'], ['3', 'PARA RESPONDER.', 'verde']].map(([n, texto, cor]) => ({
                       rotulo: `Linha ${n}`,
                       texto: config[`esperaLinha${n}`] ?? texto,
@@ -1236,6 +1242,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 <div className="space-y-4">
                   {/* Mesma ordem do celular: o slider entre dois títulos é o espaço entre eles */}
                   <EstiloLinhasTitulo
+                    key={activeTab}
                     linhas={[
                       { id: 'capaTitulo1', rotulo: 'Título 1', tam: config.capaFonteTamanho || 18, min: 12, max: 36, cor: 'branco', fundo: config.capaCaptionFundo || 'transparente', bold: true },
                       { id: 'capaTitulo2', rotulo: 'Título 2', tam: 16, min: 10, max: 32, cor: 'dourado', fundo: 'transparente', bold: true },
@@ -1268,6 +1275,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     })}
                   />
 
+                  {linhasCapa(config).some((l) => l.classeCaixa) && (
                   <Secao titulo="Cards dos títulos" descricao="Vale para os títulos que têm cor de fundo. A altura de cada um fica dentro do título.">
                     <Segmentos rotulo="Formato" opcoes={[{ id: 'card', label: 'Card' }, { id: 'faixa', label: 'Faixa de ponta a ponta' }]} valor={config.capaFormato || 'card'} onChange={(v) => setCampo('capaFormato', v)} />
                     {(config.capaFormato || 'card') === 'card' && (
@@ -1279,6 +1287,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       </>
                     )}
                   </Secao>
+                  )}
 
                   <Secao>
                     <Chave rotulo="Mostrar botão de começar" descricao="Desligado, o participante cai direto na Tela 1." valor={config.mostrarBotaoComecar !== false} onChange={(v) => setCampo('mostrarBotaoComecar', v)} />
@@ -1295,18 +1304,19 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               {activeTab === 'tela_1' && (
                 <div className="space-y-4">
                   <SubAbas
-                    valor={subTabTela1}
+                    valor={subAtualP1}
                     onChange={setSubTabTela1}
                     opcoes={[
                       { id: 'pergunta', label: 'Textos' },
                       { id: 'opcoes', label: `Opções (${cardsAtivosP1.length})` },
-                      { id: 'aparencia', label: 'Aparência dos cards' }
+                      ...(cardsAtivosP1.length > 0 ? [{ id: 'aparencia', label: 'Aparência dos cards' }] : [])
                     ]}
                   />
 
-                  {subTabTela1 === 'pergunta' && (
+                  {subAtualP1 === 'pergunta' && (
                     <div className="space-y-4">
                       <EstiloLinhasTitulo
+                        key={activeTab}
                         linhas={(() => {
                           const e = estiloLinhas(config, 'pergunta1');
                           return [
@@ -1319,29 +1329,31 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       />
                       <ControleEspacos
                         valores={espacos(config, true)}
+                        titulos={[config.pergunta1Titulo, config.pergunta1Titulo2, config.pergunta1Titulo3]}
+                        subtitulo={config.pergunta1TextoAbaixo}
                         onChange={(k, v) => setCampo('pergunta1' + { tit: 'EspacoTitulos', sub: 'EspacoSub', cards: 'EspacoCards' }[k], v)}
                       />
                       {BarraFormatacao({ ehP1: true })}
                     </div>
                   )}
 
-                  {subTabTela1 === 'aparencia' && (
+                  {subAtualP1 === 'aparencia' && (
                     <div className="space-y-4">
-                      {AparenciaCards({ ler: (k) => config[k], gravar: setCampo, campoIcones: 'mostrarIconesCards', porPagina: cardsPorTelaP1 })}
+                      {AparenciaCards({ ler: (k) => config[k], gravar: setCampo, campoIcones: 'mostrarIconesCards', porPagina: cardsPorTelaP1, opcoes: cardsAtivosP1 })}
                       {BarraFormatacao({ ehP1: true })}
                     </div>
                   )}
 
                   {/* 3. LISTA REFEITA DE OPÇÕES / CARDS DA TELA 1 */}
-                  {subTabTela1 === 'opcoes' && (
+                  {subAtualP1 === 'opcoes' && (
                   <div className="space-y-3 pt-1 animate-fade-in">
                     <div className="flex items-center justify-between">
                       <div>
                         <span className="text-xs font-semibold text-slate-200 block">
-                          Opções de Resposta Cadastradas
+                          Opções de resposta
                         </span>
                         <span className="text-[11px] text-slate-400">
-                          {config.opcoesChegada?.length || 0} total • {cardsAtivosP1.length} ativas no celular
+                          {cardsAtivosP1.length} de {config.opcoesChegada?.length || 0} visíveis no celular
                         </span>
                       </div>
 
@@ -1351,11 +1363,11 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         className="px-3 py-1.5 bg-slate-100 hover:bg-white active:scale-95 text-slate-900 font-bold text-xs rounded-xl shadow-md transition flex items-center gap-1.5"
                       >
                         <Plus className="w-3.5 h-3.5" />
-                        <span>Adicionar Opção</span>
+                        <span>Adicionar opção</span>
                       </button>
                     </div>
 
-                    <div className="space-y-2.5">
+                    <div>
                       {(config.opcoesChegada || []).length === 0 && (
                         <div className="py-6 border-t border-slate-800 text-center space-y-2">
                           <p className="text-xs font-bold text-slate-300">
@@ -1374,14 +1386,10 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         return (
                           <div
                             key={opcao.id || idx}
-                            className={`rounded-2xl border transition-all p-3.5 space-y-3 shadow-md ${
-                              isAtivo 
-                                ? 'bg-slate-950/90 border-slate-800 hover:border-slate-700' 
-                                : 'bg-slate-950/40 border-slate-900 opacity-50'
-                            }`}
+                            className={`-mx-4 sm:-mx-5 px-4 sm:px-5 py-4 space-y-3 border-t border-dashed border-slate-600 ${isAtivo ? '' : 'opacity-50'}`}
                           >
                             {/* Barra Superior do Card */}
-                            <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-800">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
                               <div className="flex items-center gap-2">
                                 <button
                                   type="button"
@@ -1393,7 +1401,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                   }`}
                                 >
                                   {isAtivo ? <Eye className="w-3.5 h-3.5 text-slate-200" /> : <EyeOff className="w-3.5 h-3.5 text-slate-500" />}
-                                  <span>{isAtivo ? 'Visível no Celular' : 'Oculto'}</span>
+                                  <span>{isAtivo ? 'Visível' : 'Oculto'}</span>
                                 </button>
 
                                 {isAtivo && (
@@ -1410,7 +1418,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                     className="px-2 py-0.5 rounded-lg bg-slate-700/40 hover:bg-slate-700 border border-slate-700 text-slate-200 text-[11px] font-bold flex items-center gap-1 transition"
                                   >
                                     <ArrowRight className="w-3 h-3" />
-                                    <span>Daqui p/ frente → Nova Tela</span>
+                                    <span>Daqui em diante, nova tela</span>
                                   </button>
                                 )}
                               </div>
@@ -1457,7 +1465,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                               <div>
                                 <label className="text-[11px] font-bold text-slate-400 block mb-1">
-                                  Título da Opção (Texto Principal)
+                                  Título
                                 </label>
                                 <input
                                   type="text"
@@ -1470,7 +1478,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
                               <div>
                                 <label className="text-[11px] font-bold text-slate-400 block mb-1">
-                                  Descrição / Detalhe (Opcional)
+                                  Descrição (opcional)
                                 </label>
                                 <input
                                   type="text"
@@ -1483,7 +1491,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             </div>
 
                             {/* CONFIGURAÇÃO DE GAVETA CONDICIONAL NA TELA 1 (MULTI-COMPONENTE) */}
-                            <div className="pt-2 border-t border-slate-800">
+                            <div>
                               <label className="flex items-center gap-2 cursor-pointer select-none">
                                 <input
                                   type="checkbox"
@@ -1514,7 +1522,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                   className="w-4 h-4 rounded border-slate-700 bg-slate-900 text-slate-200 focus:ring-slate-200"
                                 />
                                 <span className={`text-xs font-bold ${opcao.temGaveta ? 'text-slate-200' : 'text-slate-400'}`}>
-                                  🗄️ Abrir Gaveta ao Selecionar (Subpergunta: Texto, Radio Button, Checkbox, Slide, Data/Hora)
+                                  Abrir uma subpergunta ao escolher esta opção
                                 </span>
                               </label>
 
@@ -1712,7 +1720,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 const limitCards = Number(telaAlvo.cardsPorTela) || 4;
                 const iconesEditorTela = iconesDaTela(cardsAtivos);
                 const ehCards = (telaAlvo.tipo || 'cards') === 'cards';
-                const subAtual = subTabExtra === 'aparencia' && !ehCards ? 'pergunta' : subTabExtra;
+                const temAparencia = ehCards && cardsAtivos.length > 0;
+                const subAtual = subTabExtra === 'aparencia' && !temAparencia ? 'pergunta' : subTabExtra;
 
                 return (
                   <div className="space-y-4">
@@ -1720,10 +1729,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-slate-800">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-semibold text-slate-200">
-                          Configurando Tela {numTela}
-                        </span>
-                        <span className="px-2 py-0.5 rounded-lg text-[11px] font-bold border bg-slate-700/40 border-slate-700 text-slate-200">
-                          ✓ Ativa no Celular
+                          Tela {numTela}
                         </span>
                       </div>
 
@@ -1772,13 +1778,14 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             ? 'Campo de resposta'
                             : telaAlvo.tipo === 'grade' ? `Itens da grade (${cardsAtivos.length})` : `Opções (${cardsAtivos.length})`
                         },
-                        ...(ehCards ? [{ id: 'aparencia', label: 'Aparência dos cards' }] : [])
+                        ...(temAparencia ? [{ id: 'aparencia', label: 'Aparência dos cards' }] : [])
                       ]}
                     />
 
                     {subAtual === 'pergunta' && (
                       <div className="space-y-4">
                         <EstiloLinhasTitulo
+                          key={activeTab}
                           linhas={(() => {
                             const e = estiloLinhas(telaAlvo);
                             const set = (k) => (v) => handleUpdateTelaProp(extraIndex, k, v);
@@ -1796,6 +1803,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         />
                         <ControleEspacos
                           valores={espacos(telaAlvo, false)}
+                          titulos={[telaAlvo.titulo1 || telaAlvo.titulo, telaAlvo.titulo2, telaAlvo.titulo3]}
+                          subtitulo={telaAlvo.subtitulo}
                           onChange={(k, v) => handleUpdateTelaProp(extraIndex, { tit: 'espacoTitulos', sub: 'espacoSub', cards: 'espacoCards' }[k], v)}
                         />
                         {extraIndex > 0 && TIPOS_CAMPO_PAGINA.includes(telaAlvo.tipo) && TIPOS_CAMPO_PAGINA.includes((config.telasExtras || [])[extraIndex - 1]?.tipo) && (
@@ -1818,7 +1827,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                           ler: (k) => telaAlvo[k] ?? config[k],
                           gravar: (k, v) => handleUpdateTelaProp(extraIndex, k, v),
                           campoIcones: 'mostrarIcones',
-                          porPagina: limitCards
+                          porPagina: limitCards,
+                          opcoes: cardsAtivos
                         })}
                         {BarraFormatacao({ ehP1: false, extraIndex })}
                       </div>
@@ -2020,18 +2030,14 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             </button>
                           </div>
 
-                          <div className="space-y-2">
+                          <div>
                             {(telaAlvo.opcoes || []).map((opcao, optIdx) => {
                               const isAtivo = opcao.ativo !== false;
 
                               return (
                                 <div
                                   key={opcao.id || optIdx}
-                                  className={`rounded-xl border transition-all p-3 space-y-2.5 ${
-                                    isAtivo 
-                                      ? 'bg-slate-950 border-slate-800 shadow-sm' 
-                                      : 'bg-slate-950/40 border-slate-900 opacity-55'
-                                  }`}
+                                  className={`-mx-4 sm:-mx-5 px-4 sm:px-5 py-4 space-y-3 border-t border-dashed border-slate-600 ${isAtivo ? '' : 'opacity-50'}`}
                                 >
                                   <div className="flex items-center justify-between gap-2">
                                     <div className="flex items-center gap-1.5">
@@ -2056,7 +2062,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                           className="px-2 py-0.5 rounded-lg bg-slate-700/40 hover:bg-slate-700 border border-slate-700 text-slate-200 text-[11px] font-bold flex items-center gap-1 transition"
                                         >
                                           <ArrowRight className="w-3 h-3" />
-                                          <span>Daqui p/ frente → Tela {numTela + 1}</span>
+                                          <span>Daqui em diante, Tela {numTela + 1}</span>
                                         </button>
                                       )}
                                     </div>
@@ -2074,7 +2080,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                         />
                                       )}
 
-                                      <div className="flex items-center gap-1">
+                                      <div className={ehCards ? 'flex items-center gap-1' : 'hidden'}>
                                         {CORES.map(c => (
                                           <button
                                             key={c.id}
@@ -2100,7 +2106,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     <div>
-                                      <label className="text-[11px] font-bold text-slate-400 block mb-0.5">Título da Opção</label>
+                                      <label className="text-[11px] font-bold text-slate-400 block mb-0.5">Título</label>
                                       <input
                                         type="text"
                                         value={opcao.titulo || ''}
@@ -2110,7 +2116,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                       />
                                     </div>
                                     <div>
-                                      <label className="text-[11px] font-bold text-slate-400 block mb-0.5">Descrição (Opcional)</label>
+                                      <label className="text-[11px] font-bold text-slate-400 block mb-0.5">Descrição (opcional)</label>
                                       <input
                                         type="text"
                                         value={opcao.subtitulo || ''}
@@ -2122,7 +2128,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                   </div>
 
                                   {/* CONFIGURAÇÃO DE GAVETA CONDICIONAL MULTI-COMPONENTE NA OPÇÃO EXTRA */}
-                                  <div className="pt-1.5 border-t border-slate-800">
+                                  <div className={['cards', 'radio', 'checkbox'].includes(telaAlvo.tipo || 'cards') ? '' : 'hidden'}>
                                     <label className="flex items-center gap-2 cursor-pointer select-none">
                                       <input
                                         type="checkbox"
@@ -2153,7 +2159,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                         className="w-3.5 h-3.5 rounded border-slate-700 bg-slate-900 text-slate-200 focus:ring-slate-200"
                                       />
                                       <span className={`text-[11px] font-bold ${opcao.temGaveta ? 'text-slate-200' : 'text-slate-400'}`}>
-                                        🗄️ Abrir Gaveta ao Selecionar (Texto, Radio, Checkbox, Slide, Data/Hora)
+                                        Abrir uma subpergunta ao escolher esta opção
                                       </span>
                                     </label>
 
@@ -2304,6 +2310,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               {/* ====================================================== */}
               {activeTab === 'fim' && (
                 <EstiloLinhasTitulo
+                  key={activeTab}
                   linhas={[
                     { rotulo: 'Título 1', texto: config.finalTitulo1 ?? 'MUITO OBRIGADO', onTexto: (v) => setConfig((c) => ({ ...c, finalTitulo1: v, finalTitulo: `${v} ${c.finalTitulo2 || ''}`.trim() })), tamanho: config.finalTituloFonteTamanho || config.finalFonteTamanho || 26, min: 16, max: 40, onTamanho: (v) => setConfig((c) => ({ ...c, finalTituloFonteTamanho: v, finalFonteTamanho: v })) },
                     { rotulo: 'Título 2', texto: config.finalTitulo2 ?? 'PELA SUA PRESENÇA.', onTexto: (v) => setConfig((c) => ({ ...c, finalTitulo2: v, finalTitulo: `${c.finalTitulo1 || ''} ${v}`.trim() })), tamanho: config.finalTituloFonteTamanho || config.finalFonteTamanho || 26, min: 16, max: 40, onTamanho: (v) => setConfig((c) => ({ ...c, finalTituloFonteTamanho: v, finalFonteTamanho: v })) },
@@ -2464,6 +2471,12 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         rotulo={tl.rotulo}
                         selecionado={(tl.membros || [tl.chave]).includes(activeTab)}
                         onSelecionar={() => setActiveTab(tl.chave)}
+                        onNavegar={(passo) => {
+                          const m = /^extra_(\d+)$/.exec(passo);
+                          const chaveReal = m && ativas[Number(m[1])] ? `extra_${ativas[Number(m[1])].i}` : null;
+                          const alvo = telas.find((t) => t.passo === passo) || telas.find((t) => chaveReal && (t.membros || []).includes(chaveReal));
+                          if (alvo) setActiveTab(alvo.chave);
+                        }}
                       />
                     ))}
                     {desativadas.map(({ i }) => (

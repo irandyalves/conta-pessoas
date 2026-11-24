@@ -15,10 +15,14 @@ export default function PreviewCelular({
   moldura = '',
   selecionado = false,
   onSelecionar,
+  onNavegar,
   rotulo = ''
 }) {
   const caixaRef = useRef(null);
   const frameRef = useRef(null);
+  const raizRef = useRef(null);
+  const atualRef = useRef({});
+  atualRef.current = { passo, onNavegar };
   const [escala, setEscala] = useState(0.65);
   // Conta quantas vezes o iframe ficou pronto (se recarregar, reenvia a config)
   const [pronto, setPronto] = useState(0);
@@ -39,6 +43,16 @@ export default function PreviewCelular({
   useEffect(() => {
     const aoReceber = (e) => {
       if (e.origin !== window.location.origin) return;
+      // Avançou/voltou dentro desta prévia: ela volta para a própria tela e o editor seleciona a outra.
+      // Assim as configurações ao lado são sempre da tela que está à mostra.
+      if (e.source === frameRef.current?.contentWindow && e.data?.tipo === 'responder-preview-navegou') {
+        atualRef.current.onNavegar?.(e.data.passo);
+        frameRef.current.contentWindow.postMessage(
+          { tipo: 'responder-preview', passo: atualRef.current.passo, forcar: true },
+          window.location.origin
+        );
+        return;
+      }
       if (e.source === frameRef.current?.contentWindow && e.data?.tipo === 'responder-preview-pronto') {
         setPronto((n) => n + 1);
       }
@@ -46,6 +60,10 @@ export default function PreviewCelular({
     window.addEventListener('message', aoReceber);
     return () => window.removeEventListener('message', aoReceber);
   }, []);
+
+  useEffect(() => {
+    if (selecionado) raizRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, [selecionado]);
 
   // Envia a config ao vivo (cada edição aparece na hora, sem salvar)
   useEffect(() => {
@@ -61,7 +79,7 @@ export default function PreviewCelular({
   }, [pronto, config, titulo, passo]);
 
   return (
-    <div className="w-full flex flex-col items-center gap-1.5 p-0.5" data-preview="1">
+    <div ref={raizRef} className="w-full flex flex-col items-center gap-1.5 p-0.5" data-preview="1">
       <div
         className={`relative w-full max-w-[260px] ${moldura} bg-black overflow-hidden transition-shadow duration-300 ${
           selecionado

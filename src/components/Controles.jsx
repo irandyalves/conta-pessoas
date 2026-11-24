@@ -64,17 +64,17 @@ function Amostra({ classe, quadrado, selecionada, nome, onClick }) {
   );
 }
 
-export function Cores({ rotulo, opcoes, valor, onChange, campo = 'bg', quadrado = false }) {
+export function Cores({ rotulo, opcoes, valor, onChange, campo = 'bg', quadrado = false, lateral = null }) {
   const atual = opcoes.find((o) => o.id === valor) || opcoes[0];
   return (
     <div className="flex items-center gap-3">
       <span className={ROTULO}>{rotulo}</span>
-      <div className="flex flex-wrap items-center gap-0.5 flex-1 min-w-0">
+      <div className={`flex flex-wrap items-center gap-0.5 ${lateral ? 'shrink-0' : 'flex-1 min-w-0'}`}>
         {opcoes.map((o) => (
           <Amostra key={o.id} nome={o.label} quadrado={quadrado} classe={o[campo]} selecionada={o.id === atual.id} onClick={() => onChange(o.id)} />
         ))}
       </div>
-      <span className="text-xs text-slate-300 shrink-0 max-w-[110px] truncate">{atual.label}</span>
+      {lateral || <span className="text-xs text-slate-300 shrink-0 max-w-[110px] truncate">{atual.label}</span>}
     </div>
   );
 }

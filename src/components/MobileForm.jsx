@@ -9,6 +9,7 @@ import {
   Compass,
   ChevronRight,
   ChevronLeft,
+  ArrowLeft,
   ChevronDown,
   Sparkles,
   TreePine,
@@ -283,7 +284,7 @@ export default function MobileForm({ preview = false }) {
       if (!d || d.tipo !== 'responder-preview') return;
       if (d.config) setQuestionsConfig(normalizeQuestionsConfig(d.config));
       if (typeof d.titulo === 'string') setEventoTitulo(d.titulo || DEFAULT_EVENT_TITLE);
-      if (d.passo && d.passo !== ultimoPassoRef.current) {
+      if (d.passo && (d.forcar || d.passo !== ultimoPassoRef.current)) {
         ultimoPassoRef.current = d.passo;
         const passo = d.passo;
         setSessaoAtiva(passo !== 'espera');
@@ -303,6 +304,16 @@ export default function MobileForm({ preview = false }) {
     try { window.parent.postMessage({ tipo: 'responder-preview-pronto' }, window.location.origin); } catch (e) {}
     return () => window.removeEventListener('message', aoReceber);
   }, [preview]);
+
+  // Prévia: ao avançar/voltar tocando no celular, avisa o editor, que seleciona a tela certa
+  useEffect(() => {
+    if (!preview || !ultimoPassoRef.current) return;
+    const atual = !sessaoAtiva ? 'espera'
+      : currentStep === 'p1' ? (questionsConfig?.mostrarBotaoComecar !== false && !jaClicouComecar ? 'comecar' : 'tela_1')
+      : currentStep;
+    if (atual === ultimoPassoRef.current) return;
+    try { window.parent.postMessage({ tipo: 'responder-preview-navegou', passo: atual }, window.location.origin); } catch (e) {}
+  }, [preview, currentStep, jaClicouComecar, sessaoAtiva, questionsConfig]);
 
   // 1. ESCUTA O BOTÃO "ZERAR TUDO" DO ADMIN PARA ESTE EVENTO
   useEffect(() => {
@@ -1634,8 +1645,8 @@ export default function MobileForm({ preview = false }) {
                                   <button
                                     key={col}
                                     type="button"
-                                    onClick={() => handleSelectGradeCol(col)}
-                                    className={`py-2.5 rounded-xl text-xs sm:text-sm font-black border transition active:scale-95 ${
+                                    onClick={() => comFeedback(`gr_${itemKey}_${col}`, () => handleSelectGradeCol(col), true)}
+                                    className={`py-2.5 rounded-xl text-xs sm:text-sm font-black border transition-colors ${clicado === `gr_${itemKey}_${col}` ? 'efeito-acender' : ''} ${
                                       isActive
                                         ? corGradeSelecionada(col, cols)
                                         : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-amber-400/60'
@@ -1677,9 +1688,18 @@ export default function MobileForm({ preview = false }) {
                 <div className="h-28" />
                 <div className="fixed bottom-0 inset-x-0 z-30 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent">
                 <div className="max-w-md mx-auto">
+                <div className="flex items-center justify-between gap-3">
                 <button
                   type="button"
-                  onClick={() => {
+                  aria-label="Voltar à pergunta anterior"
+                  onClick={() => comFeedback(`voltar_${tela.id}`, voltarParaAnterior)}
+                  className={`w-14 h-14 shrink-0 rounded-2xl flex items-center justify-center text-white ${clicado === `voltar_${tela.id}` ? 'efeito-acender' : ''}`}
+                >
+                  <ArrowLeft className="w-6 h-6" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => comFeedback(`avancar_${tela.id}`, () => {
                     // Valida TODAS as perguntas desta página (estrelas não tocadas não viram "5 estrelas")
                     const faltando = grupo.find((t) => t.obrigatorio && !temValor(valorFinal(t)));
                     if (faltando) {
@@ -1693,22 +1713,12 @@ export default function MobileForm({ preview = false }) {
                       return novo;
                     });
                     avancarParaProxima(null);
-                  }}
-                  className="w-full py-4 px-6 rounded-2xl font-black text-base bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-slate-950 shadow-xl shadow-amber-950/60 active:scale-[0.98] transition border border-amber-300 flex items-center justify-center gap-2"
+                  })}
+                  className={`w-3/4 py-4 px-4 rounded-2xl font-black text-base bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 shadow-xl shadow-amber-950/60 border border-amber-300 flex items-center justify-center gap-2 ${clicado === `avancar_${tela.id}` ? 'efeito-acender' : ''}`}
                 >
                   <span>{tela.botaoTexto || 'Avançar'}</span>
                   <ChevronRight className="w-5 h-5" />
                 </button>
-
-                <div className="pt-2 text-center">
-                  <button
-                    type="button"
-                    onClick={voltarParaAnterior}
-                    className="text-xs text-slate-400 hover:text-white flex items-center justify-center gap-1 mx-auto py-1"
-                  >
-                    <ChevronLeft className="w-3.5 h-3.5" />
-                    <span>Voltar à pergunta anterior</span>
-                  </button>
                 </div>
                 </div>
                 </div>
