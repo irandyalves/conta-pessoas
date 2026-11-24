@@ -283,16 +283,24 @@ export default function DashboardView({ onChangeView }) {
     }
   };
 
-  const hoje = new Date().toLocaleDateString('pt-BR');
+  // Data do "dia do culto" calculada no relógio do ADMIN a partir de criadoEm.
+  // Respostas até as 04:00 contam para o dia anterior (evento que passa da meia-noite).
+  const diaDoCulto = (iso, fallback) => {
+    const t = Date.parse(iso || '');
+    if (Number.isNaN(t)) return fallback || '';
+    return new Date(t - 4 * 3600 * 1000).toLocaleDateString('pt-BR');
+  };
+  const hoje = diaDoCulto(new Date().toISOString());
 
   const presencasFiltradas = presencas.filter((item) => {
+    const dia = diaDoCulto(item.criadoEm, item.dataCulto);
     if (filtroData === 'hoje') {
-      return item.dataCulto === hoje;
+      return dia === hoje;
     }
     if (filtroData === 'personalizado') {
       const [y, m, d] = dataPersonalizada.split('-');
       const dataFormatada = `${d}/${m}/${y}`;
-      return item.dataCulto === dataFormatada;
+      return dia === dataFormatada;
     }
     return true;
   });

@@ -808,7 +808,7 @@ export function escutarStatusSessao(callback, targetEventId = null) {
 // ==========================================
 // NORMALIZAÇÃO DE CONFIGURAÇÕES DE PERGUNTAS
 // ==========================================
-function normalizeQuestionsConfig(config) {
+export function normalizeQuestionsConfig(config) {
   if (!config) return DEFAULT_QUESTIONS_CONFIG;
   const merged = { ...DEFAULT_QUESTIONS_CONFIG, ...config };
   

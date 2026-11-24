@@ -30,6 +30,7 @@ import {
   escutarTituloEvento, 
   escutarResetGlobal,
   escutarConfigPerguntas,
+  normalizeQuestionsConfig,
   escutarStatusSessao,
   getActiveEventId,
   escutarEventoAtivoGlobal,
@@ -149,7 +150,9 @@ const BTN_DESC_CLASSES = {
   laranja: 'text-orange-300',
 };
 
-export default function MobileForm() {
+export default function MobileForm({ preview = false }) {
+  // preview = true: tela dentro do editor (iframe). Recebe a config por postMessage,
+  // não lê/grava no Firestore e não trava o aparelho. Renderiza EXATAMENTE como o celular.
   const [activeEventId, setActiveEventIdState] = useState(() => getActiveEventId());
   
   // Detecta se a URL tem parâmetro de evento fixo (ex: lido via QR Code ?e=...)
@@ -159,7 +162,7 @@ export default function MobileForm() {
 
   // Se NÃO for URL fixo, escuta a transmissão em tempo real do evento ativo do admin
   useEffect(() => {
-    if (!isUrlFixo) {
+    if (!isUrlFixo && !preview) {
       const unsub = escutarEventoAtivoGlobal((globalEventId) => {
         if (globalEventId && globalEventId !== activeEventId) {
           setActiveEventIdState(globalEventId);
@@ -178,6 +181,7 @@ export default function MobileForm() {
   
   // BLOQUEIO PERMANENTE DO DISPOSITIVO APÓS O VOTO POR EVENTO
   const [dispositivoBloqueado, setDispositivoBloqueado] = useState(() => {
+    if (preview) return false;
     try {
       return localStorage.getItem(DISPOSITIVO_BLOQUEADO_EVENTO_KEY) === 'true' ||
         (activeEventId === DEFAULT_EVENT_ID && localStorage.getItem(DISPOSITIVO_BLOQUEADO_KEY) === 'true');
@@ -188,6 +192,7 @@ export default function MobileForm() {
 
   // Reavalia o bloqueio e reset caso o activeEventId mude dinamicamente
   useEffect(() => {
+    if (preview) return;
     const jaVotou = localStorage.getItem(`presenca_dispositivo_bloqueado_voto_${activeEventId}`) === 'true' ||
       (activeEventId === DEFAULT_EVENT_ID && localStorage.getItem(DISPOSITIVO_BLOQUEADO_KEY) === 'true');
     setDispositivoBloqueado(jaVotou);
@@ -210,6 +215,7 @@ export default function MobileForm() {
 
   // Etapa inicial: se já votou, fica travado em 'final'; se não, começa em 'p1'
   const [currentStep, setCurrentStep] = useState(() => {
+    if (preview) return 'p1';
     try {
       const travado = localStorage.getItem(DISPOSITIVO_BLOQUEADO_EVENTO_KEY) === 'true' ||
         (activeEventId === DEFAULT_EVENT_ID && localStorage.getItem(DISPOSITIVO_BLOQUEADO_KEY) === 'true');
@@ -232,6 +238,8 @@ export default function MobileForm() {
   const [enviando, setEnviando] = useState(false);
   const [erroEnvio, setErroEnvio] = useState('');
   const [envioPendente, setEnvioPendente] = useState(false);
+  // "+10": abre um seletor para informar o número exato (antes gravava só 10)
+  const [qtdGrande, setQtdGrande] = useState(null);
   const enviandoRef = useRef(false);
   const ultimoEnvioRef = useRef(null);
 
@@ -252,6 +260,7 @@ export default function MobileForm() {
   const setTextos = aplicar(textosRef, setDissertativaTextos);
   const [countdown, setCountdown] = useState(10);
   const [finalizado, setFinalizado] = useState(() => {
+    if (preview) return false;
     try {
       return localStorage.getItem(DISPOSITIVO_BLOQUEADO_EVENTO_KEY) === 'true' ||
         (activeEventId === DEFAULT_EVENT_ID && localStorage.getItem(DISPOSITIVO_BLOQUEADO_KEY) === 'true');
@@ -260,8 +269,40 @@ export default function MobileForm() {
     }
   });
 
+  // 0. MODO PREVIEW DO EDITOR: recebe config/título/tela por postMessage
+  const ultimoPassoRef = useRef(null);
+  useEffect(() => {
+    if (!preview) return;
+    const aoReceber = (e) => {
+      if (e.origin !== window.location.origin) return;
+      const d = e.data;
+      if (!d || d.tipo !== 'responder-preview') return;
+      if (d.config) setQuestionsConfig(normalizeQuestionsConfig(d.config));
+      if (typeof d.titulo === 'string') setEventoTitulo(d.titulo || DEFAULT_EVENT_TITLE);
+      if (d.passo && d.passo !== ultimoPassoRef.current) {
+        ultimoPassoRef.current = d.passo;
+        const passo = d.passo;
+        setSessaoAtiva(passo !== 'espera');
+        setJaClicouComecar(passo !== 'comecar');
+        setP1SlideIndex(0);
+        setMotivo('');
+        setExtras({});
+        setGavetasAbertas({});
+        setGavetas({});
+        setGavetaRespondidas({});
+        setTextos({});
+        setCountdown(10);
+        setCurrentStep(['espera', 'comecar', 'tela_1'].includes(passo) ? 'p1' : passo);
+      }
+    };
+    window.addEventListener('message', aoReceber);
+    try { window.parent.postMessage({ tipo: 'responder-preview-pronto' }, window.location.origin); } catch (e) {}
+    return () => window.removeEventListener('message', aoReceber);
+  }, [preview]);
+
   // 1. ESCUTA O BOTÃO "ZERAR TUDO" DO ADMIN PARA ESTE EVENTO
   useEffect(() => {
+    if (preview) return;
     const unsub = escutarResetGlobal((resetEm) => {
       const horaVoto = localStorage.getItem(DISPOSITIVO_VOTO_TIME_EVENTO_KEY) || localStorage.getItem(DISPOSITIVO_VOTO_TIME_KEY);
       if (resetEm && (!horaVoto || new Date(resetEm) > new Date(horaVoto))) {
@@ -289,6 +330,7 @@ export default function MobileForm() {
   // 2. ESCUTA O STATUS DA SESSÃO (START / PAUSAR DESTE EVENTO) EM TEMPO REAL
   const sessaoAnteriorRef = useRef(null);
   useEffect(() => {
+    if (preview) return;
     sessaoAnteriorRef.current = null;
     const unsub = escutarStatusSessao((ativa) => {
       const anterior = sessaoAnteriorRef.current;
@@ -323,6 +365,7 @@ export default function MobileForm() {
 
   // 4. BLOQUEIO DO BOTÃO "VOLTAR" DO NAVEGADOR
   useEffect(() => {
+    if (preview) return;
     if (currentStep === 'final') {
       const handlePop = (e) => {
         e.preventDefault();
@@ -336,6 +379,7 @@ export default function MobileForm() {
 
   // Escuta título do evento configurável pelo Admin para este evento
   useEffect(() => {
+    if (preview) return;
     const unsub = escutarTituloEvento((titulo) => {
       if (titulo) setEventoTitulo(titulo);
     }, activeEventId);
@@ -344,6 +388,7 @@ export default function MobileForm() {
 
   // Escuta configuração de perguntas e subtítulos do Firebase para este evento
   useEffect(() => {
+    if (preview) return;
     const unsub = escutarConfigPerguntas((cfg) => {
       if (cfg) setQuestionsConfig(cfg);
     }, activeEventId);
@@ -352,6 +397,7 @@ export default function MobileForm() {
 
   // Timer de 10 segundos na tela final
   useEffect(() => {
+    if (preview) return;
     let timer;
     if (currentStep === 'final' && countdown > 0) {
       timer = setInterval(() => {
@@ -758,6 +804,7 @@ export default function MobileForm() {
 
   // Ao escolher quantidade de acompanhantes (ou finalizar na última tela): registra e trava este dispositivo
   const handleSelectQtd = (qtd, overrideComoChegou = null) => {
+    if (preview) { setCurrentStep('final'); return; }
     const estaBloqueadoAntes = enviandoRef.current || dispositivoBloqueado || currentStep === 'final' || 
       localStorage.getItem(DISPOSITIVO_BLOQUEADO_EVENTO_KEY) === 'true' || 
       (activeEventId === DEFAULT_EVENT_ID && localStorage.getItem(DISPOSITIVO_BLOQUEADO_KEY) === 'true');
@@ -812,7 +859,7 @@ export default function MobileForm() {
   // PRIORIDADE 1: SE O APARELHO JÁ VOTOU NESTE EVENTO, FICA BLOQUEADO NA TELA FINAL!
   // NÃO ADIANTA ATUALIZAR A PÁGINA (F5) NEM REABRIR O NAVEGADOR!
   // ==============================================================
-  const isVotadoNesteEvento = dispositivoBloqueado || currentStep === 'final' || 
+  const isVotadoNesteEvento = preview ? currentStep === 'final' : dispositivoBloqueado || currentStep === 'final' || 
     localStorage.getItem(DISPOSITIVO_BLOQUEADO_EVENTO_KEY) === 'true' ||
     (activeEventId === DEFAULT_EVENT_ID && localStorage.getItem(DISPOSITIVO_BLOQUEADO_KEY) === 'true');
 
@@ -1823,7 +1870,7 @@ export default function MobileForm() {
                 return (
                   <button
                     key={op.valor}
-                    onClick={() => comFeedback(`qtd_${op.valor}`, () => handleSelectQtd(op.valor))}
+                    onClick={() => comFeedback(`qtd_${op.valor}`, () => (op.valor === 10 ? setQtdGrande(10) : handleSelectQtd(op.valor)))}
                     style={{ 
                       minHeight: `${btnAltura}px`, 
                       width: btnLargura,
@@ -1849,6 +1896,21 @@ export default function MobileForm() {
                 );
               })}
             </div>
+
+            {qtdGrande !== null && (
+              <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-6" onClick={() => setQtdGrande(null)}>
+                <div className="w-full max-w-xs bg-slate-900 border border-slate-700 rounded-3xl p-6 space-y-5 text-center" onClick={(e) => e.stopPropagation()}>
+                  <p className="font-black text-white text-lg">Quantas pessoas?</p>
+                  <div className="flex items-center justify-center gap-4">
+                    <button type="button" onClick={() => setQtdGrande((n) => Math.max(10, n - 1))} className="w-14 h-14 rounded-2xl bg-slate-800 text-white text-3xl font-black active:scale-95">−</button>
+                    <span className="w-20 text-5xl font-black text-amber-400 tabular-nums">{qtdGrande}</span>
+                    <button type="button" onClick={() => setQtdGrande((n) => Math.min(100, n + 1))} className="w-14 h-14 rounded-2xl bg-slate-800 text-white text-3xl font-black active:scale-95">+</button>
+                  </div>
+                  <button type="button" onClick={() => { const n = qtdGrande; setQtdGrande(null); handleSelectQtd(n); }} className="w-full py-4 rounded-2xl bg-amber-400 text-slate-950 font-black text-sm uppercase tracking-wider">Confirmar</button>
+                  <button type="button" onClick={() => setQtdGrande(null)} className="text-xs text-slate-400">Cancelar</button>
+                </div>
+              </div>
+            )}
 
             {/* Botão Voltar */}
             <div className="pt-2 text-center">

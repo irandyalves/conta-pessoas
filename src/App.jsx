@@ -12,6 +12,7 @@ function lerViewDaUrl() {
   const viewParam = params.get('view');
   const path = window.location.pathname.toLowerCase();
   if (viewParam === 'admin' || path.includes('/admin')) return 'admin';
+  if (viewParam === 'preview') return 'preview';
   if (viewParam === 'telao' || path.includes('/telao')) return 'telao';
   return 'form';
 }
@@ -73,6 +74,7 @@ export default function App() {
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans select-none">
       <div className="flex-1">
         {view === 'form' && <MobileForm />}
+        {view === 'preview' && <MobileForm preview />}
 
         {view === 'telao' && (
           <ScreenView 
