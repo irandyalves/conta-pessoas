@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, Plus } from 'lucide-react';
+import { Eye, EyeOff, Plus, Trash2 } from 'lucide-react';
 import { alturaFaixa, CORES_LINHA, CORES_TEXTO_LINHAS, FAIXA_MAX, FAIXA_MIN, FUNDOS_CAPTION } from '../utils/estilos';
 import { Alinhamento, Alternar, BarraFormato, Cores, Deslizante, MiniSlider, QuestaoArrastavel, Secao, SeletorFonte } from './Controles';
 
@@ -11,30 +11,55 @@ import { Alinhamento, Alternar, BarraFormato, Cores, Deslizante, MiniSlider, Que
  *   italico, onItalico, caixa, onCaixa, alinhamento, onAlinhamento, fundo, onFundo, faixa, onFaixa, borda, onBorda,
  *   bordaLargura, onBordaLargura, espaco, onEspaco, aoLado (do texto), extra (fim da barra) e abaixo = controles próprios da linha }
  * Altura fica no cartão do Fundo e largura no da Borda. onEspaco: distância ENTRE esta linha e a próxima.
- * onOrdem (opcional): liga o arrastar e soltar; recebe as "chave" das linhas visíveis na ordem nova.
+ * onOrdem (opcional): liga o arrastar e soltar das linhas que têm "chave"; recebe as chaves visíveis na ordem nova.
+ * topo (opcional): configuração que vale para a lista, acima dos textos. removivel: mostra a lixeira na linha.
  * Linha { separador: true, ligado, onLigado } = linha divisória.
  */
-export default function EstiloLinhasTitulo({ linhas, onOrdem }) {
+export default function EstiloLinhasTitulo({ linhas, onOrdem, topo = null }) {
   // Só aparecem os textos que estão no celular. Os vazios ficam num botão "adicionar";
   // quem já foi aberto ou editado continua visível mesmo que o texto seja apagado.
   const [mantidas, setMantidas] = useState({});
-  const manter = (rotulo) => setMantidas((m) => (m[rotulo] ? m : { ...m, [rotulo]: true }));
-  const visivel = (l) => l.separador || Boolean(String(l.texto || '').trim()) || Boolean(mantidas[l.rotulo]);
-  const visiveis = linhas.filter(visivel);
-  const vazias = linhas.filter((l) => !visivel(l));
+  const idDe = (l) => l.chave || l.rotulo;
+  const manter = (l) => setMantidas((m) => (m[idDe(l)] ? m : { ...m, [idDe(l)]: true }));
+  const remover = (l) => { setMantidas((m) => ({ ...m, [idDe(l)]: false })); l.onTexto(''); };
+  const visivel = (l) => l.separador || Boolean(String(l.texto || '').trim()) || Boolean(mantidas[idDe(l)]);
+  // numerar: o número segue a posição na tela, não o nome do campo
+  let conta = 0;
+  const visiveis = linhas.filter(visivel).map((l) => (l.numerar ? { ...l, rotulo: l.rotulo.replace(/d+$/, String(++conta)) } : l));
+  // "Título 2", "Título 3"... viram um botão só: adiciona o próximo que estiver vazio
+  const grupo = (l) => l.rotulo.replace(/\s*\d+$/, '');
+  const vazias = linhas.filter((l) => !visivel(l)).filter((l, i, t) => t.findIndex((x) => grupo(x) === grupo(l)) === i);
+  const moveis = onOrdem ? visiveis.filter((l) => l.chave) : [];
+  const podeMover = moveis.length > 1;
   const mover = (de, para) => {
-    const ids = visiveis.map((l) => l.chave);
+    const ids = moveis.map((l) => l.chave);
     ids.splice(para, 0, ids.splice(de, 1)[0]);
     onOrdem(ids);
   };
-  const Item = (l, i, conteudo) => (onOrdem ? (
-    <QuestaoArrastavel key={l.rotulo} lista="linhas_texto" indice={i} total={visiveis.length} onMover={mover} className="texto-linha texto-linha-movel">
+  const Item = (l, i, conteudo) => (podeMover && l.chave ? (
+    <QuestaoArrastavel key={idDe(l)} lista="linhas_texto" indice={moveis.indexOf(l)} total={moveis.length} onMover={mover} className="texto-linha texto-linha-movel">
       {conteudo}
     </QuestaoArrastavel>
-  ) : <div key={l.rotulo} className={`questao questao-fixa texto-linha ${i % 2 ? 'questao-par' : ''}`}>{conteudo}</div>);
+  ) : <div key={idDe(l)} className={`questao questao-fixa texto-linha ${podeMover ? 'texto-linha-movel' : ''} ${i % 2 ? 'questao-par' : ''}`}>{conteudo}</div>);
 
   return (
     <div className="texto-lista">
+      {(topo || vazias.length > 0) && (
+        <div className="texto-topo">
+          {topo}
+          <div className="texto-topo-acoes">
+            {vazias.map((l) => {
+              const principal = /\d$/.test(l.rotulo);
+              return (
+                <button key={idDe(l)} type="button" onClick={() => manter(l)} className={`texto-add ${principal ? '' : 'texto-add-2'}`}>
+                  <Plus className="w-4 h-4" strokeWidth={4} />
+                  <span>{principal ? `Add ${grupo(l)}` : l.rotulo}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
       {visiveis.map((l, i) => {
         if (l.separador) {
           return Item(l, i, (
@@ -48,7 +73,7 @@ export default function EstiloLinhasTitulo({ linhas, onOrdem }) {
           ));
         }
         const temFundo = Boolean(l.onFundo) && l.fundo !== 'transparente';
-        const editar = (e) => { manter(l.rotulo); l.onTexto(e.target.value); };
+        const editar = (e) => { manter(l); l.onTexto(e.target.value); };
         return Item(l, i, (
           <>
             <div className="flex items-start gap-2">
@@ -59,6 +84,7 @@ export default function EstiloLinhasTitulo({ linhas, onOrdem }) {
                   ? <textarea rows={1} aria-label={l.rotulo} value={l.texto ?? ''} placeholder={l.placeholder || 'Vazio, não aparece no celular'} onChange={editar} className="texto-campo texto-campo-cresce" />
                   : <input type="text" aria-label={l.rotulo} value={l.texto ?? ''} placeholder={l.placeholder || 'Vazio, não aparece no celular'} onChange={editar} className="texto-campo" />}
               {l.aoLado}
+              {l.removivel && <button type="button" className="texto-lixeira" title={`Remover ${l.rotulo}`} aria-label={`Remover ${l.rotulo}`} onClick={() => remover(l)}><Trash2 className="w-4 h-4" /></button>}
             </div>
             <BarraFormato>
               {l.onFamilia && <SeletorFonte rotulo="" valor={l.familia} onChange={l.onFamilia} />}
@@ -92,16 +118,6 @@ export default function EstiloLinhasTitulo({ linhas, onOrdem }) {
           </>
         ));
       })}
-      {vazias.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1 px-3 py-1.5 border-t border-dashed border-slate-600">
-          {vazias.map((l) => (
-            <button key={l.rotulo} type="button" onClick={() => manter(l.rotulo)} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] text-slate-400 hover:text-white hover:bg-slate-800 transition">
-              <Plus className="w-3 h-3" />
-              <span>{l.rotulo}</span>
-            </button>
-          ))}
-        </div>
-      )}
     </div>
   );
 }

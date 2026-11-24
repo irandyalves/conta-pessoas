@@ -59,6 +59,7 @@ const camposP1 = (t) => ({
   pergunta1SubFundo: 'tema', pergunta1TextoAbaixoCor: 'tema'
 });
 
+const TEXTOS_CAPA = ['capaTitulo1', 'capaTitulo2', 'capaTitulo3', 'capaTitulo4', 'capaTitulo5', 'capaTitulo6', 'capaTextoAbaixo'];
 const camposGerais = (t) => ({
   cardRaioEsq: t.raio,
   cardRaioDir: t.raioDir ?? t.raio,
@@ -67,8 +68,8 @@ const camposGerais = (t) => ({
   ...comPrefixo('comecar', BOTAO_VAZIO),
   setaCor: t.seta,
   capaEfeito: 'nenhum',
-  ...['capaTitulo1', 'capaTitulo2', 'capaTitulo3', 'capaTextoAbaixo'].reduce((o, id) => ({ ...o, ...fb(id) }), {}),
-  ...Object.fromEntries(['capaTitulo1', 'capaTitulo2', 'capaTitulo3', 'capaTextoAbaixo'].flatMap((id) => [[`${id}Cor`, 'tema'], [`${id}Fundo`, 'tema']])),
+  ...TEXTOS_CAPA.reduce((o, id) => ({ ...o, ...fb(id) }), {}),
+  ...Object.fromEntries(TEXTOS_CAPA.flatMap((id) => [[`${id}Cor`, 'tema'], [`${id}Fundo`, 'tema']])),
   esperaLinha1Cor: 'tema', esperaLinha2Cor: 'tema', esperaLinha3Cor: 'tema',
   ...Object.fromEntries(['esperaLinha1', 'esperaLinha2', 'esperaLinha3', 'pergunta2', 'finalTitulo', 'finalTitulo1', 'finalTitulo2', 'finalMensagem', 'finalStatus', 'finalInstrucao'].map((id) => [`${id}Familia`, 'padrao'])),
   ...Object.fromEntries(['finalTitulo1', 'finalTitulo2', 'finalMensagem', 'finalStatus', 'finalInstrucao'].flatMap((id) => [[`${id}Cor`, 'tema'], [`${id}Fundo`, 'transparente'], [`${id}Borda`, 'padrao'], [`${id}BordaLargura`, null]])),

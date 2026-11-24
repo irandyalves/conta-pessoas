@@ -233,15 +233,57 @@ const RGB_FUNDO = {
   roxo: '168, 85, 247', laranja: '249, 115, 22', rosa: '244, 63, 94'
 };
 
+// Textos da capa: até 6 títulos e o texto, na ordem que o usuário arrastar
+export const LINHAS_CAPA = [
+  { id: 'capaTitulo1', rotulo: 'Título 1', tamanho: 18, min: 12, max: 36, cor: 'branco' },
+  { id: 'capaTitulo2', rotulo: 'Título 2', tamanho: 16, min: 10, max: 32, cor: 'dourado' },
+  { id: 'capaTitulo3', rotulo: 'Título 3', tamanho: 15, min: 10, max: 30, cor: 'verde' },
+  { id: 'capaTitulo4', rotulo: 'Título 4', tamanho: 15, min: 10, max: 30, cor: 'branco' },
+  { id: 'capaTitulo5', rotulo: 'Título 5', tamanho: 15, min: 10, max: 30, cor: 'branco' },
+  { id: 'capaTitulo6', rotulo: 'Título 6', tamanho: 15, min: 10, max: 30, cor: 'branco' },
+  { id: 'capaTextoAbaixo', rotulo: 'Texto abaixo', tamanho: 14, min: 9, max: 26, cor: 'cinza', fundo: 'escuro', texto: true }
+];
+export const ordemCapa = (cfg = {}) => {
+  const ids = LINHAS_CAPA.map((l) => l.id);
+  const salva = (Array.isArray(cfg.capaOrdem) ? cfg.capaOrdem : []).filter((id, i, l) => ids.includes(id) && l.indexOf(id) === i);
+  return [...salva, ...ids.filter((id) => !salva.includes(id))];
+};
+// visiveis = ids que estão na tela, já na ordem nova; os que não aparecem guardam o lugar deles
+export const reordenar = (ordem, visiveis) => {
+  const fila = [...visiveis];
+  return ordem.map((id) => (visiveis.includes(id) ? fila.shift() : id));
+};
+// Troca de lugar o CONTEÚDO de linhas numeradas (título 1, 2, 3): cada texto leva o tamanho e a cor.
+// linhas = { chave: { campo: valorAtual } } na ordem dos lugares; campos na mesma posição trocam entre si.
+export const permutar = (linhas, novaOrdem) => {
+  const lugares = Object.keys(linhas).filter((k) => novaOrdem.includes(k));
+  const out = {};
+  lugares.forEach((lugar, i) => {
+    const destino = Object.keys(linhas[lugar]);
+    const valores = Object.values(linhas[novaOrdem[i]]);
+    destino.forEach((campo, k) => { out[campo] = valores[k]; });
+  });
+  return out;
+};
+
+// Sem texto próprio, a capa usa o da Tela 1; capaSemTexto = o usuário apagou (não mexe no da Tela 1)
+export const textoCapa = (cfg = {}) => (cfg.capaSemTexto ? '' : cfg.capaTextoAbaixo || cfg.pergunta1TextoAbaixo || '');
+
 export const linhasCapa = (cfg = {}) => {
   const ehCard = (cfg.capaFormato || 'card') === 'card';
   const efeito = cfg.capaEfeito || 'alto_relevo';
-  const base = [
-    { id: 'capaTitulo1', conteudo: cfg.capaTitulo1, tamanho: cfg.capaFonteTamanho || 18, cor: 'branco', fundo: cfg.capaCaptionFundo || 'transparente' },
-    { id: 'capaTitulo2', conteudo: cfg.capaTitulo2, tamanho: 16, cor: 'dourado', fundo: 'transparente' },
-    { id: 'capaTitulo3', conteudo: cfg.capaTitulo3, tamanho: 15, cor: 'verde', fundo: 'transparente' },
-    { id: 'capaTextoAbaixo', conteudo: cfg.capaTextoAbaixo || cfg.pergunta1TextoAbaixo, tamanho: 14, cor: 'cinza', fundo: 'escuro', texto: true }
-  ];
+  const base = ordemCapa(cfg).map((id) => {
+    const l = LINHAS_CAPA.find((x) => x.id === id);
+    const primeiro = id === 'capaTitulo1';
+    return {
+      id,
+      conteudo: l.texto ? textoCapa(cfg) : cfg[id],
+      tamanho: primeiro ? cfg.capaFonteTamanho || 18 : l.tamanho,
+      cor: l.cor,
+      fundo: l.fundo || (primeiro && cfg.capaCaptionFundo) || 'transparente',
+      texto: l.texto
+    };
+  });
 
   return base.filter((l) => l.conteudo).map((l) => {
     const fundo = cfg[`${l.id}Fundo`] || l.fundo;
@@ -411,7 +453,7 @@ export const gravarFaixaPadrao = (cfg, valor) => {
     faixaPadrao: valor,
     telasExtras: (cfg.telasExtras || []).map((t) => (t?.herdarEstilo === false ? t : { ...t, tituloFaixa: valor, subFaixa: valor }))
   };
-  ['capaTitulo1', 'capaTitulo2', 'capaTitulo3', 'capaTextoAbaixo'].forEach((id) => { out[`${id}Altura`] = valor; });
+  LINHAS_CAPA.forEach(({ id }) => { out[`${id}Altura`] = valor; });
   if (cfg.herdarEstiloP1 !== false) { out.pergunta1TituloFaixa = valor; out.pergunta1SubFaixa = valor; }
   return out;
 };
