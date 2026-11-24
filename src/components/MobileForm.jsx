@@ -40,7 +40,7 @@ import {
   DEFAULT_EVENT_ID
 } from '../firebase';
 import { componenteIcone, iconesDaTela } from '../utils/icones';
-import { CARD_ESPACO_PADRAO, faixaEstilo, linhasCapa, medidasCard, espacos, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getEfeitoStyle, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems } from '../utils/estilos';
+import { cantosCard, CARD_ESPACO_PADRAO, faixaEstilo, linhasCapa, medidasCard, espacos, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getEfeitoStyle, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems } from '../utils/estilos';
 
 const DISPOSITIVO_BLOQUEADO_KEY = 'presenca_dispositivo_bloqueado_voto';
 const DISPOSITIVO_VOTO_TIME_KEY = 'presenca_dispositivo_hora_voto';
@@ -146,6 +146,26 @@ const lerProgresso = (eventoId) => {
     return null;
   }
 };
+
+// Rodapé das telas sem botão Avançar: seta e ANTERIOR centralizados embaixo
+function RodapeAnterior({ onClick, aceso }) {
+  return (
+    <>
+      <div className="h-20" />
+      <div className="fixed bottom-0 inset-x-0 z-30 flex justify-center pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent pointer-events-none">
+        <button
+          type="button"
+          aria-label="Voltar à pergunta anterior"
+          onClick={onClick}
+          className={`pointer-events-auto h-14 px-6 rounded-2xl flex flex-col items-center justify-center gap-0.5 text-white ${aceso ? 'efeito-acender' : ''}`}
+        >
+          <ArrowLeft className="w-6 h-6" strokeWidth={2.75} />
+          <span className="text-[10px] font-light tracking-wide leading-none">ANTERIOR</span>
+        </button>
+      </div>
+    </>
+  );
+}
 
 export default function MobileForm({ preview = false }) {
   // preview = true: tela dentro do editor (iframe). Recebe a config por postMessage,
@@ -1117,6 +1137,8 @@ export default function MobileForm({ preview = false }) {
           const idx = parseInt(currentStep.split('_')[1], 10);
           const tela = telasExtrasAtivas[idx];
           if (!tela) return null;
+          // Página com várias perguntas: a primeira também é pergunta, não título
+          if (continuaNaMesmaPagina(tela, telasExtrasAtivas[idx + 1])) return null;
           const linha1 = tela.titulo1 || tela.titulo || `Pergunta da Tela ${idx + 2}`;
           return (
             <div className="mt-2 pt-2 border-t border-slate-800/60 flex flex-col" style={{ gap: espacos(tela).sub, marginBottom: espacos(tela).cards }}>
@@ -1240,7 +1262,7 @@ export default function MobileForm({ preview = false }) {
                     const cardFonteTituloCls = CARD_FONTE_TITULO_CLASSES[questionsConfig?.cardCorFonteTitulo] || 'text-white';
                     const cardFonteSubtituloCls = CARD_FONTE_SUBTITULO_CLASSES[questionsConfig?.cardCorFonteSubtitulo] || 'text-slate-400';
                     const cardEfeitoInline = getEfeitoStyle(questionsConfig?.cardEfeitoEstilo, questionsConfig?.cardProfundidade);
-                    const medidas = medidasCard(questionsConfig?.cardAltura, questionsConfig?.cardRaio);
+                    const medidas = medidasCard(questionsConfig?.cardAltura, cantosCard(questionsConfig));
 
                     const isGavetaAberta = isGavetaAbertaDe('p1', opcao);
 
@@ -1390,16 +1412,16 @@ export default function MobileForm({ preview = false }) {
 
           // 1. TEXTO LONGO, TEXTO CURTO, DATA, HORA, SLIDER, RATING, DROPDOWN, RADIO, CHECKBOX, GRADE
           if (['texto', 'texto_curto', 'data', 'hora', 'slider', 'rating', 'dropdown', 'radio', 'checkbox', 'grade'].includes(tela.tipo)) {
-            const renderCampoTela = (tela, mostrarTitulo) => {
+            const renderCampoTela = (tela, mostrarTitulo, primeira) => {
             const valKey = tela.id;
             const valAtual = dissertativaTextos[valKey] ?? '';
             const opcoesAtivas = (tela.opcoes || []).filter(o => o.ativo !== false);
             const selectedChecks = paraLista(valAtual);
             const defaultSliderVal = Math.round(((tela.sliderMin ?? 0) + (tela.sliderMax ?? 10)) / 2);
             return (
-              <div key={tela.id} id={`campo_${tela.id}`} className="space-y-3 scroll-mt-4">
+              <div key={tela.id} id={`campo_${tela.id}`} className="scroll-mt-4">
                 {mostrarTitulo && (
-                  <div className={`pt-3 border-t border-slate-800/60 space-y-1 ${getAlinhamentoClass(estiloLinhas(tela).tituloAl)}`}>
+                  <div style={{ gap: espacos(tela).sub, marginBottom: espacos(tela).cards }} className={`flex flex-col ${primeira ? '' : 'pt-4 border-t border-slate-800/60'} ${getAlinhamentoClass(estiloLinhas(tela).tituloAl)}`}>
                     <h3 style={{ fontSize: `${tela.titulo1Tamanho || 18}px` }} className={`${pesoFonte(tela.tituloBold)} leading-tight ${getCorTextoLinhaClass(tela.titulo1Cor, 'text-white')}`}>
                       {[tela.titulo1 || tela.titulo, tela.titulo2, tela.titulo3].filter(Boolean).join(' ')}
                     </h3>
@@ -1417,6 +1439,7 @@ export default function MobileForm({ preview = false }) {
                       value={valAtual}
                       onChange={(e) => setTextos((prev) => ({ ...prev, [valKey]: e.target.value }))}
                       placeholder={tela.placeholder || 'Digite sua resposta aqui...'}
+                      style={{ borderRadius: cantosCard(questionsConfig, tela) }}
                       className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-2xl p-4 text-sm sm:text-base text-white placeholder-slate-500 focus:outline-none transition resize-none shadow-inner"
                     />
                   )}
@@ -1427,6 +1450,7 @@ export default function MobileForm({ preview = false }) {
                       value={valAtual}
                       onChange={(e) => setTextos((prev) => ({ ...prev, [valKey]: e.target.value }))}
                       placeholder={tela.placeholder || 'Digite sua resposta curta...'}
+                      style={{ borderRadius: cantosCard(questionsConfig, tela) }}
                       className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-2xl p-4 text-sm sm:text-base text-white placeholder-slate-500 focus:outline-none transition shadow-inner"
                     />
                   )}
@@ -1436,6 +1460,7 @@ export default function MobileForm({ preview = false }) {
                       type="date"
                       value={valAtual}
                       onChange={(e) => setTextos((prev) => ({ ...prev, [valKey]: e.target.value }))}
+                      style={{ borderRadius: cantosCard(questionsConfig, tela) }}
                       className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-2xl p-4 text-base text-white focus:outline-none"
                     />
                   )}
@@ -1445,6 +1470,7 @@ export default function MobileForm({ preview = false }) {
                       type="time"
                       value={valAtual}
                       onChange={(e) => setTextos((prev) => ({ ...prev, [valKey]: e.target.value }))}
+                      style={{ borderRadius: cantosCard(questionsConfig, tela) }}
                       className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-2xl p-4 text-base text-white focus:outline-none"
                     />
                   )}
@@ -1491,6 +1517,7 @@ export default function MobileForm({ preview = false }) {
                     <select
                       value={valAtual}
                       onChange={(e) => setTextos((prev) => ({ ...prev, [valKey]: e.target.value }))}
+                      style={{ borderRadius: cantosCard(questionsConfig, tela) }}
                       className="w-full bg-slate-950 border border-amber-500/50 focus:border-amber-400 rounded-2xl p-4 text-sm sm:text-base font-bold text-white focus:outline-none"
                     >
                       <option value="">Toque para selecionar na lista...</option>
@@ -1509,6 +1536,7 @@ export default function MobileForm({ preview = false }) {
                           <div key={opt.id} className="space-y-2">
                             <label
                               onClick={() => setTextos((prev) => ({ ...prev, [valKey]: opt.titulo }))}
+                              style={{ borderRadius: cantosCard(questionsConfig, tela) }}
                               className={`flex items-center gap-3.5 p-4 rounded-2xl border cursor-pointer transition ${
                                 isSel
                                   ? 'bg-amber-500/15 border-amber-400 text-white shadow-md'
@@ -1541,6 +1569,7 @@ export default function MobileForm({ preview = false }) {
                         return (
                           <div key={opt.id} className="space-y-2">
                             <label
+                              style={{ borderRadius: cantosCard(questionsConfig, tela) }}
                               className={`flex items-center gap-3.5 p-4 rounded-2xl border cursor-pointer transition ${
                                 isChecked
                                   ? 'bg-amber-500/15 border-amber-400 text-white shadow-md'
@@ -1652,7 +1681,7 @@ export default function MobileForm({ preview = false }) {
                   )}
                 </div>
                 {campoObrigatorioErro === tela.id && (
-                  <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-300 text-xs font-bold flex items-center gap-2">
+                  <div className="mt-3 p-3 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-300 text-xs font-bold flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
                     <span>Por favor, preencha ou selecione uma resposta antes de continuar.</span>
                   </div>
@@ -1670,7 +1699,7 @@ export default function MobileForm({ preview = false }) {
 
             return (
               <div className="space-y-4 fade-in py-2">
-                {grupo.map((t, gi) => renderCampoTela(t, gi > 0))}
+                {grupo.map((t, gi) => renderCampoTela(t, grupo.length > 1, gi === 0))}
 
                 {/* Espaço para o rodapé fixo não cobrir o conteúdo */}
                 <div className="h-28" />
@@ -1749,7 +1778,7 @@ export default function MobileForm({ preview = false }) {
                   const cardFonteTituloCls = CARD_FONTE_TITULO_CLASSES[tela.cardCorFonteTitulo || questionsConfig?.cardCorFonteTitulo] || 'text-white';
                   const cardFonteSubtituloCls = CARD_FONTE_SUBTITULO_CLASSES[tela.cardCorFonteSubtitulo || questionsConfig?.cardCorFonteSubtitulo] || 'text-slate-400';
                   const cardEfeitoInline = getEfeitoStyle(estiloEfeito, estiloProf);
-                  const medidas = medidasCard(tela.cardAltura || questionsConfig?.cardAltura, tela.cardRaio ?? questionsConfig?.cardRaio);
+                  const medidas = medidasCard(tela.cardAltura || questionsConfig?.cardAltura, cantosCard(questionsConfig, tela));
 
                   const isGavetaAberta = isGavetaAbertaDe(tela.id, opt);
 
@@ -1814,23 +1843,7 @@ export default function MobileForm({ preview = false }) {
                 </div>
               )}
 
-              {/* Botão para voltar à etapa anterior */}
-              <div className="pt-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (idx === 0) {
-                      setCurrentStep('p1');
-                    } else {
-                      setCurrentStep(`extra_${idx - 1}`);
-                    }
-                  }}
-                  className="text-xs text-slate-400 hover:text-white flex items-center gap-1 mx-auto py-1"
-                >
-                  <ChevronLeft className="w-3.5 h-3.5" />
-                  <span>Voltar para pergunta anterior</span>
-                </button>
-              </div>
+              <RodapeAnterior aceso={clicado === `voltar_${tela.id}`} onClick={() => comFeedback(`voltar_${tela.id}`, voltarParaAnterior)} />
             </div>
           );
         })()}
@@ -1941,22 +1954,14 @@ export default function MobileForm({ preview = false }) {
             )}
 
             {/* Botão Voltar */}
-            <div className="pt-2 text-center">
-              <button
-                type="button"
-                onClick={() => {
-                  if (telasExtrasAtivas.length > 0) {
-                    setCurrentStep(`extra_${telasExtrasAtivas.length - 1}`);
-                  } else {
-                    setCurrentStep('p1');
-                  }
-                }}
-                className="text-xs text-slate-400 hover:text-white flex items-center justify-center gap-1 mx-auto py-1"
-              >
-                <ChevronLeft className="w-3.5 h-3.5" />
-                <span>Voltar à pergunta anterior</span>
-              </button>
-            </div>
+            <RodapeAnterior
+              aceso={clicado === 'voltar_acomp'}
+              onClick={() => comFeedback('voltar_acomp', () => {
+                let alvo = telasExtrasAtivas.length - 1;
+                while (alvo > 0 && continuaNaMesmaPagina(telasExtrasAtivas[alvo - 1], telasExtrasAtivas[alvo])) alvo--;
+                setCurrentStep(alvo >= 0 ? `extra_${alvo}` : 'p1');
+              })}
+            />
           </div>
         )}
       </main>

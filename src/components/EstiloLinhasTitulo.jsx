@@ -34,7 +34,7 @@ export default function EstiloLinhasTitulo({ linhas }) {
                 <span className="flex items-center gap-1.5 shrink-0" aria-hidden="true">
                   {cor && <span className={`w-2.5 h-2.5 rounded-full ${cor.bg}`} />}
                   {fundo && <span className={`w-2.5 h-2.5 rounded-sm ${fundo.dot}`} />}
-                  <span className="text-xs tabular-nums text-slate-400 w-9 text-right">{l.tamanho}px</span>
+                  {l.tamanho && <span className="text-xs tabular-nums text-slate-400 w-9 text-right">{l.tamanho}px</span>}
                 </span>
               }
             >

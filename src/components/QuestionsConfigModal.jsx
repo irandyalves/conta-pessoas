@@ -51,7 +51,7 @@ import {
   saveEventTitle,
   DEFAULT_QUESTIONS_CONFIG 
 } from '../firebase';
-import { CARD_ESPACO_PADRAO, CARD_RAIO_PADRAO, linhasCapa, alturaCard, CAPA_ESPACO_PADRAO, CARD_ALTURA_MAX, CARD_ALTURA_MIN, espacos, continuaNaMesmaPagina, extrairEstilo, aplicarEstilo, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems, getEfeitoStyle, CORES_TEXTO_LINHAS, ALINHAMENTOS_TEXTO, FUNDOS_CAPTION } from '../utils/estilos';
+import { CARD_ESPACO_PADRAO, raiosCard, linhasCapa, alturaCard, CAPA_ESPACO_PADRAO, CARD_ALTURA_MAX, CARD_ALTURA_MIN, espacos, continuaNaMesmaPagina, extrairEstilo, aplicarEstilo, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems, getEfeitoStyle, CORES_TEXTO_LINHAS, ALINHAMENTOS_TEXTO, FUNDOS_CAPTION } from '../utils/estilos';
 import ImportadorIA from './ImportadorIA';
 import IconeEspera, { ICONES_ESPERA } from './IconeEspera';
 import PreviewCelular from './PreviewCelular';
@@ -134,6 +134,7 @@ export const EFEITOS_CARDS = [
 const EFEITOS_CAPA = [{ id: 'nenhum', label: 'Nenhum' }, ...EFEITOS_CARDS.filter((e) => e.id !== 'padrao')];
 
 // Sub-abas de uma tela (Textos, Opções, Aparência)
+const rotuloPerguntas = (n) => <>Perguntas <strong className="font-bold text-amber-300">({n})</strong></>;
 const SubAbas = ({ opcoes, valor, onChange }) => (
   <div className="flex gap-1 rounded-xl bg-slate-950/60 p-1">
     {opcoes.map((o) => (
@@ -485,7 +486,10 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
       <Secao titulo="Tamanho">
         <Deslizante rotulo="Altura do card" valor={alturaCard(ler('cardAltura'))} min={CARD_ALTURA_MIN} max={CARD_ALTURA_MAX} onChange={(v) => gravar('cardAltura', v)} />
         <Deslizante rotulo="Espaço entre cards" valor={Number(ler('cardEspaco') ?? CARD_ESPACO_PADRAO)} min={0} max={40} onChange={(v) => gravar('cardEspaco', v)} />
-        <Deslizante rotulo="Cantos" valor={Number(ler('cardRaio') ?? CARD_RAIO_PADRAO)} min={0} max={40} onChange={(v) => gravar('cardRaio', v)} />
+        <div className="grid grid-cols-2 gap-4" title="Vale para todas as perguntas do evento">
+          <Deslizante rotulo="Cantos esquerda" valor={raiosCard(config, { cardRaio: ler('cardRaio') }).esq} min={0} max={40} onChange={(v) => setCampo('cardRaioEsq', v)} />
+          <Deslizante rotulo="Cantos direita" valor={raiosCard(config, { cardRaio: ler('cardRaio') }).dir} min={0} max={40} onChange={(v) => setCampo('cardRaioDir', v)} />
+        </div>
         <Deslizante rotulo="Título" valor={ler('cardFonteTitulo') || 16} min={12} max={24} onChange={(v) => gravar('cardFonteTitulo', v)} />
         {temDescricao && <Deslizante rotulo="Descrição" valor={ler('cardFonteSubtitulo') || 12} min={9} max={18} onChange={(v) => gravar('cardFonteSubtitulo', v)} />}
         {opcoes.length > 2 && <Deslizante rotulo="Cards por página" valor={Math.min(15, porPagina)} min={2} max={15} unidade="" onChange={(v) => gravar('cardsPorTela', v)} />}
@@ -1316,7 +1320,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     onChange={setSubTabTela1}
                     opcoes={[
                       { id: 'pergunta', label: 'Textos' },
-                      { id: 'opcoes', label: `Opções (${cardsAtivosP1.length})` },
+                      { id: 'opcoes', label: rotuloPerguntas(cardsAtivosP1.length) },
                       ...(cardsAtivosP1.length > 0 ? [{ id: 'aparencia', label: 'Aparência dos cards' }] : [])
                     ]}
                   />
@@ -1358,7 +1362,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     <div className="flex items-center justify-between">
                       <div>
                         <span className="text-xs font-semibold text-slate-200 block">
-                          Opções de resposta
+                          {rotuloPerguntas(config.opcoesChegada?.length || 0)}
                         </span>
                         <span className="text-[11px] text-slate-400">
                           {cardsAtivosP1.length} de {config.opcoesChegada?.length || 0} visíveis no celular
@@ -1398,7 +1402,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             indice={idx}
                             total={(config.opcoesChegada || []).length}
                             onMover={(de, para) => setConfig((c) => ({ ...c, opcoesChegada: moverItem(c.opcoesChegada, de, para) }))}
-                            className={`-mx-4 sm:-mx-5 px-4 sm:px-5 py-4 space-y-3 border-t border-dashed border-slate-600 ${isAtivo ? '' : 'opacity-50'}`}
+                            className={`-mx-4 sm:-mx-5 px-4 sm:px-5 py-4 flex flex-col gap-3 border-t border-dashed border-slate-600 ${isAtivo ? '' : 'opacity-50'}`}
                           >
                             {/* Barra Superior do Card */}
                             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1732,6 +1736,10 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 const limitCards = Number(telaAlvo.cardsPorTela) || 4;
                 const iconesEditorTela = iconesDaTela(cardsAtivos);
                 const ehCards = (telaAlvo.tipo || 'cards') === 'cards';
+                // Página com várias perguntas: no celular cada uma é pergunta simples, sem faixa de título
+                const telasLigadas = (config.telasExtras || []).filter((t) => t && t.ativa !== false);
+                const posLigada = telasLigadas.indexOf(telaAlvo);
+                const emGrupo = posLigada >= 0 && (continuaNaMesmaPagina(telasLigadas[posLigada - 1], telaAlvo) || continuaNaMesmaPagina(telaAlvo, telasLigadas[posLigada + 1]));
                 const temAparencia = ehCards && cardsAtivos.length > 0;
                 const subAtual = subTabExtra === 'aparencia' && !temAparencia ? 'pergunta' : subTabExtra;
 
@@ -1788,7 +1796,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                           id: 'opcoes',
                           label: ['texto', 'texto_curto', 'data', 'hora', 'slider', 'rating'].includes(telaAlvo.tipo)
                             ? 'Campo de resposta'
-                            : telaAlvo.tipo === 'grade' ? `Itens da grade (${cardsAtivos.length})` : `Opções (${cardsAtivos.length})`
+                            : rotuloPerguntas(cardsAtivos.length)
                         },
                         ...(temAparencia ? [{ id: 'aparencia', label: 'Aparência dos cards' }] : [])
                       ]}
@@ -1801,7 +1809,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                           linhas={(() => {
                             const e = estiloLinhas(telaAlvo);
                             const set = (k) => (v) => handleUpdateTelaProp(extraIndex, k, v);
-                            return [
+                            const linhasTela = [
                               { rotulo: 'Título 1', texto: telaAlvo.titulo1 ?? telaAlvo.titulo ?? '', onTexto: (v) => { set('titulo1')(v); set('titulo')(`${v} ${telaAlvo.titulo2 || ''}`.trim()); }, tamanho: telaAlvo.titulo1Tamanho || 18, min: 11, max: 36, onTamanho: set('titulo1Tamanho'), cor: telaAlvo.titulo1Cor || 'branco', onCor: set('titulo1Cor'), bold: telaAlvo.tituloBold !== false, onBold: set('tituloBold'), alinhamento: e.tituloAl, onAlinhamento: set('tituloAlinhamento'), fundo: e.tituloFundo, onFundo: set('tituloFundo'), faixa: telaAlvo.tituloFaixa, onFaixa: set('tituloFaixa') },
                               { rotulo: 'Título 2', texto: telaAlvo.titulo2 ?? '', onTexto: (v) => { set('titulo2')(v); set('titulo')(`${telaAlvo.titulo1 || telaAlvo.titulo || ''} ${v}`.trim()); }, tamanho: telaAlvo.titulo2Tamanho || 15, min: 11, max: 36, onTamanho: set('titulo2Tamanho'), cor: telaAlvo.titulo2Cor || 'dourado', onCor: set('titulo2Cor') },
                               { rotulo: 'Título 3', texto: telaAlvo.titulo3 ?? '', onTexto: set('titulo3'), tamanho: telaAlvo.titulo3Tamanho || 14, min: 11, max: 36, onTamanho: set('titulo3Tamanho'), cor: telaAlvo.titulo3Cor || 'verde', onCor: set('titulo3Cor') },
@@ -1811,11 +1819,19 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                 { rotulo: 'Itens da grade', texto: cardsAtivos.map((o) => o.titulo).join(', '), tamanho: telaAlvo.itemTamanho || 12, min: 8, max: 20, onTamanho: set('itemTamanho'), cor: telaAlvo.itemCor || 'branco', onCor: set('itemCor'), bold: telaAlvo.itemBold !== false, onBold: set('itemBold'), fundo: telaAlvo.itemFundo || 'escuro', onFundo: set('itemFundo'), faixa: telaAlvo.itemFaixa, onFaixa: set('itemFaixa') }
                               ] : [])
                             ];
+                            if (!emGrupo) return linhasTela;
+                            return linhasTela.map((l) => {
+                              if (l.rotulo === 'Título 1') return { ...l, rotulo: 'Pergunta', multilinha: true, onFundo: undefined, onFaixa: undefined };
+                              if (l.rotulo === 'Texto abaixo') return { ...l, onFundo: undefined, onFaixa: undefined };
+                              // Títulos 2 e 3 entram na mesma frase da pergunta, com o estilo dela
+                              if (l.rotulo === 'Título 2' || l.rotulo === 'Título 3') return String(l.texto || '').trim() ? { rotulo: l.rotulo.replace('Título', 'Parte'), texto: l.texto, onTexto: l.onTexto } : null;
+                              return l;
+                            }).filter(Boolean);
                           })()}
                         />
                         <ControleEspacos
                           valores={espacos(telaAlvo, false)}
-                          titulos={[telaAlvo.titulo1 || telaAlvo.titulo, telaAlvo.titulo2, telaAlvo.titulo3]}
+                          titulos={emGrupo ? [telaAlvo.titulo1 || telaAlvo.titulo] : [telaAlvo.titulo1 || telaAlvo.titulo, telaAlvo.titulo2, telaAlvo.titulo3]}
                           subtitulo={telaAlvo.subtitulo}
                           onChange={(k, v) => handleUpdateTelaProp(extraIndex, { tit: 'espacoTitulos', sub: 'espacoSub', cards: 'espacoCards' }[k], v)}
                         />
@@ -2029,7 +2045,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         <div className="space-y-2.5">
                           <div className="flex items-center justify-between">
                             <span className="text-xs font-bold text-slate-300">
-                              {telaAlvo.tipo === 'grade' ? 'Itens da Grade / Tabela' : 'Opções Cadastradas'} ({telaAlvo.opcoes?.length || 0}) — {TIPOS_PERGUNTA.find(t => t.id === telaAlvo.tipo)?.short || 'Opções'}
+                              {rotuloPerguntas(telaAlvo.opcoes?.length || 0)}
                             </span>
 
                             <button
@@ -2056,7 +2072,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                     ...c,
                                     telasExtras: (c.telasExtras || []).map((t, i) => (i === extraIndex ? { ...t, opcoes: moverItem(t.opcoes, de, para) } : t))
                                   }))}
-                                  className={`-mx-4 sm:-mx-5 px-4 sm:px-5 py-4 space-y-3 border-t border-dashed border-slate-600 ${isAtivo ? '' : 'opacity-50'}`}
+                                  className={`-mx-4 sm:-mx-5 px-4 sm:px-5 py-4 flex flex-col gap-3 border-t border-dashed border-slate-600 ${isAtivo ? '' : 'opacity-50'}`}
                                 >
                                   <div className="flex items-center justify-between gap-2">
                                     <div className="flex items-center gap-1.5">

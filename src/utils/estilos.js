@@ -107,13 +107,22 @@ export const CARD_ALTURA_MAX = 130;
 export const alturaCard = (valor) => Math.max(CARD_ALTURA_MIN, Math.min(CARD_ALTURA_MAX, Number(valor) || 82));
 export const CARD_ESPACO_PADRAO = 12;
 export const CARD_RAIO_PADRAO = 16;
-export const medidasCard = (valor, raio) => {
+// Cantos da esquerda e da direita: valem para todas as perguntas do evento
+export const raiosCard = (cfg = {}, tela = {}) => {
+  const antigo = tela?.cardRaio ?? cfg?.cardRaio ?? CARD_RAIO_PADRAO;
+  return { esq: Number(cfg?.cardRaioEsq ?? antigo), dir: Number(cfg?.cardRaioDir ?? antigo) };
+};
+export const cantosCard = (cfg, tela) => {
+  const { esq, dir } = raiosCard(cfg, tela);
+  return `${esq}px ${dir}px ${dir}px ${esq}px`;
+};
+export const medidasCard = (valor, cantos) => {
   const h = alturaCard(valor);
   const f = Math.max(0, Math.min(1, (h - CARD_ALTURA_MIN) / (82 - CARD_ALTURA_MIN)));
   const icone = Math.round(28 + 20 * f);
   const py = Math.round(4 + 12 * f);
   return {
-    caixa: { borderRadius: `${Number(raio ?? CARD_RAIO_PADRAO)}px`, minHeight: `${h}px`, paddingTop: `${py}px`, paddingBottom: `${py}px` },
+    caixa: { borderRadius: cantos, minHeight: `${h}px`, paddingTop: `${py}px`, paddingBottom: `${py}px` },
     icone: { width: `${icone}px`, height: `${icone}px` }
   };
 };
