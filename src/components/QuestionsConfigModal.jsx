@@ -499,10 +499,10 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
   const [slotAcoes, setSlotAcoes] = useState(null); // linha do entalhe: botões de adicionar texto
 
   const BarraFormatacao = ({ ehP1, extraIndex }) => {
-    const classe = 'px-2.5 py-1.5 rounded-lg text-xs text-slate-300 bg-slate-800/60 hover:bg-slate-700 hover:text-white transition disabled:opacity-40';
+    const classe = 'h-6 px-2.5 rounded-md text-[11px] font-semibold text-slate-300 bg-slate-800 hover:bg-slate-700 hover:text-white transition disabled:opacity-40';
     return (
-      <div className="flex flex-wrap items-center gap-1.5">
-        <span className="text-[11px] text-slate-400 w-[74px] pl-3">Formatação</span>
+      <div className="linha-efeito" style={{ columnGap: 6 }}>
+        <span className="mr-1.5">Formatação</span>
         <button type="button" onClick={() => copiarEstilo(ehP1, extraIndex)} className={classe}>Copiar</button>
         <button type="button" disabled={!estiloCopiado} onClick={() => colarEstilo(ehP1, extraIndex)} className={classe}>Colar aqui</button>
         <button type="button" onClick={() => replicarEmTodas(ehP1, extraIndex)} className={classe}>Usar em todas as telas</button>
@@ -1586,6 +1586,17 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     <div className="space-y-2.5">
                       <EstiloLinhasTitulo
                         key={activeTab}
+                        topo={(
+                          <>
+                            <ControleEspacos
+                            valores={espacos(config, true)}
+                            titulos={[config.pergunta1Titulo, config.pergunta1Titulo2, config.pergunta1Titulo3]}
+                            subtitulo={config.pergunta1TextoAbaixo}
+                            onChange={(k, v) => setCampo('pergunta1' + { tit: 'EspacoTitulos', sub: 'EspacoSub', cards: 'EspacoCards' }[k], v)}
+                            />
+                            {BarraFormatacao({ ehP1: true })}
+                          </>
+                        )}
                         slotAcoes={slotAcoes}
                         onOrdem={(ids) => setConfig((c) => ({
                           ...c,
@@ -1605,20 +1616,13 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                           ];
                         })()}
                       />
-                      <ControleEspacos
-                        valores={espacos(config, true)}
-                        titulos={[config.pergunta1Titulo, config.pergunta1Titulo2, config.pergunta1Titulo3]}
-                        subtitulo={config.pergunta1TextoAbaixo}
-                        onChange={(k, v) => setCampo('pergunta1' + { tit: 'EspacoTitulos', sub: 'EspacoSub', cards: 'EspacoCards' }[k], v)}
-                      />
-                      {BarraFormatacao({ ehP1: true })}
                     </div>
                   )}
 
                   {subAtualP1 === 'aparencia' && (
                     <div className="space-y-2.5">
-                      {AparenciaCards({ ler: (k) => config[k], gravar: (k, v) => gravarEstilo('p1', k, v), campoIcones: 'mostrarIconesCards', porPagina: cardsPorTelaP1, opcoes: cardsAtivosP1, raios: raiosCard(config, telaP1Cantos(config)) })}
                       {BarraFormatacao({ ehP1: true })}
+                      {AparenciaCards({ ler: (k) => config[k], gravar: (k, v) => gravarEstilo('p1', k, v), campoIcones: 'mostrarIconesCards', porPagina: cardsPorTelaP1, opcoes: cardsAtivosP1, raios: raiosCard(config, telaP1Cantos(config)) })}
                     </div>
                   )}
 
@@ -2178,6 +2182,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
                     {subAtual === 'efeitos' && (
                       <div className="space-y-2.5">
+                        {BarraFormatacao({ ehP1: false, extraIndex })}
                         {telaAlvo.tipo === 'grade' && (
                           <Secao titulo="Notas">
                             <Segmentos rotulo="Mostrar" opcoes={[{ id: 'numeros', label: 'Números' }, { id: 'rostos', label: 'Carinhas' }]} valor={(telaAlvo.gradeFormato ?? config.gradeFormato) || 'numeros'} onChange={(v) => gravarEstilo(extraIndex, 'gradeFormato', v)} />
@@ -2201,7 +2206,6 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                           fontePadrao: 16
                         })}
                         {propria && ConfigSetas(lerGeral(config, telaAlvo, 'seta'), (k, v) => membros.forEach((m) => handleUpdateTelaProp(m, `seta${k}`, v)))}
-                        {BarraFormatacao({ ehP1: false, extraIndex })}
                       </div>
                     )}
 
@@ -2217,6 +2221,17 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         )}
                         <EstiloLinhasTitulo
                           key={activeTab}
+                          topo={(
+                            <>
+                              <ControleEspacos
+                                valores={espacos(telaAlvo, false)}
+                                titulos={emGrupo ? [telaAlvo.titulo1 || telaAlvo.titulo] : [telaAlvo.titulo1 || telaAlvo.titulo, telaAlvo.titulo2, telaAlvo.titulo3]}
+                                subtitulo={telaAlvo.subtitulo}
+                                onChange={(k, v) => handleUpdateTelaProp(extraIndex, { tit: 'espacoTitulos', sub: 'espacoSub', cards: 'espacoCards' }[k], v)}
+                              />
+                              {BarraFormatacao({ ehP1: false, extraIndex })}
+                            </>
+                          )}
                           slotAcoes={slotAcoes}
                           onOrdem={(ids) => setConfig((c) => ({
                             ...c,
@@ -2298,12 +2313,6 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             }).filter(Boolean);
                           })()}
                         />
-                        <ControleEspacos
-                          valores={espacos(telaAlvo, false)}
-                          titulos={emGrupo ? [telaAlvo.titulo1 || telaAlvo.titulo] : [telaAlvo.titulo1 || telaAlvo.titulo, telaAlvo.titulo2, telaAlvo.titulo3]}
-                          subtitulo={telaAlvo.subtitulo}
-                          onChange={(k, v) => handleUpdateTelaProp(extraIndex, { tit: 'espacoTitulos', sub: 'espacoSub', cards: 'espacoCards' }[k], v)}
-                        />
                         {extraIndex > 0 && TIPOS_CAMPO_PAGINA.includes(telaAlvo.tipo) && TIPOS_CAMPO_PAGINA.includes((config.telasExtras || [])[extraIndex - 1]?.tipo) && (
                           <Secao>
                             <Chave
@@ -2314,12 +2323,12 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             />
                           </Secao>
                         )}
-                        {BarraFormatacao({ ehP1: false, extraIndex })}
                       </div>
                     )}
 
                     {subAtual === 'aparencia' && (
                       <div className="space-y-2.5">
+                        {BarraFormatacao({ ehP1: false, extraIndex })}
                         {AparenciaCards({
                           ler: (k) => telaAlvo[k] ?? config[k],
                           gravar: (k, v) => gravarEstilo(extraIndex, k, v),
@@ -2328,7 +2337,6 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                           porPagina: limitCards,
                           opcoes: cardsAtivos
                         })}
-                        {BarraFormatacao({ ehP1: false, extraIndex })}
                       </div>
                     )}
 

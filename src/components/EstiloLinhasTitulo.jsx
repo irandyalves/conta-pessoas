@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Eye, EyeOff, Plus, Trash2 } from 'lucide-react';
 import { alturaFaixa, CORES_LINHA, CORES_TEXTO_LINHAS, FAIXA_MAX, FAIXA_MIN, FUNDOS_CAPTION } from '../utils/estilos';
-import { Alinhamento, Alternar, BarraFormato, Cores, Deslizante, MiniSlider, QuestaoArrastavel, Secao, SeletorFonte } from './Controles';
+import { Alinhamento, Alternar, BarraFormato, Cores, MiniSlider, QuestaoArrastavel, SeletorFonte } from './Controles';
 
 /**
  * PADRÃO DE TEXTO DO SISTEMA: cada texto ocupa duas linhas, nome + texto e a barra de formatação.
@@ -124,10 +124,10 @@ export function ControleEspacos({ valores, onChange, titulos = [], subtitulo = '
   const qtd = titulos.filter((t) => String(t || '').trim()).length;
   const temTexto = Boolean(String(subtitulo || '').trim());
   return (
-    <Secao titulo="Espaçamento">
-      {qtd > 1 && <Deslizante rotulo="Entre títulos" valor={valores.tit} min={0} max={40} onChange={(v) => onChange('tit', v)} />}
-      {qtd > 0 && temTexto && <Deslizante rotulo="Até o texto" valor={valores.sub} min={0} max={60} onChange={(v) => onChange('sub', v)} />}
-      <Deslizante rotulo="Até a resposta" valor={valores.cards} min={0} max={80} onChange={(v) => onChange('cards', v)} />
-    </Secao>
+    <div className="linha-efeito" title="Distância entre os textos no celular">
+      {qtd > 1 && <MiniSlider rotulo="Entre títulos" valor={valores.tit} min={0} max={40} onChange={(v) => onChange('tit', v)} />}
+      {qtd > 0 && temTexto && <MiniSlider rotulo="Até o texto" valor={valores.sub} min={0} max={60} onChange={(v) => onChange('sub', v)} />}
+      <MiniSlider rotulo="Até a resposta" valor={valores.cards} min={0} max={80} onChange={(v) => onChange('cards', v)} />
+    </div>
   );
 }
