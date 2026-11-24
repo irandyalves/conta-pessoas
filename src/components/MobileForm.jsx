@@ -1410,19 +1410,7 @@ export default function MobileForm({ preview = false }) {
                     )}
                   </div>
                 )}
-                <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs sm:text-sm font-black text-amber-300 uppercase tracking-wider flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-amber-400" />
-                      <span>Responda abaixo:</span>
-                    </label>
-                    {temValor(valAtual) && (
-                      <span className="text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3" /> Preenchido
-                      </span>
-                    )}
-                  </div>
-
+                <div className="space-y-4">
                   {tela.tipo === 'texto' && (
                     <textarea
                       rows={tela.linhas || 4}
@@ -1594,7 +1582,7 @@ export default function MobileForm({ preview = false }) {
                       {tela.legendaEscala && (
                         <p
                           style={{ fontSize: `${tela.escalaTamanho || 9}px`, ...faixaEstilo(tela.legendaFundo || 'escuro', tela.legendaFaixa) }}
-                          className={`text-center leading-snug ${tela.legendaBold ? 'font-bold' : ''} ${getCorTextoLinhaClass(tela.legendaCor, 'text-slate-300')} ${getFaixaFundoClass(tela.legendaFundo || 'escuro', '-mx-5 px-5 sm:-mx-6 sm:px-6')}`}
+                          className={`text-center leading-snug ${tela.legendaBold ? 'font-bold' : ''} ${getCorTextoLinhaClass(tela.legendaCor, 'text-slate-300')} ${getFaixaFundoClass(tela.legendaFundo || 'escuro', '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}
                         >
                           {parseScaleLegendItems(tela.legendaEscala).map((item, li) => (
                             <span key={li}>
@@ -1630,7 +1618,7 @@ export default function MobileForm({ preview = false }) {
                           <div
                             key={opt.id || oi}
                             style={faixaEstilo(tela.itemFundo || 'escuro', tela.itemFaixa)}
-                            className={`space-y-2 text-left border-y ${getFaixaFundoClass(tela.itemFundo || 'escuro', '-mx-5 px-5 sm:-mx-6 sm:px-6')} rounded-none`}
+                            className={`space-y-2 text-left border-y ${getFaixaFundoClass(tela.itemFundo || 'escuro', '-mx-4 px-4 sm:-mx-6 sm:px-6')} rounded-none`}
                           >
                             <span
                               style={{ fontSize: `${tela.itemTamanho || 13}px` }}
