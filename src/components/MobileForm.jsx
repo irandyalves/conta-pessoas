@@ -41,7 +41,7 @@ import {
   DEFAULT_EVENT_ID
 } from '../firebase';
 import { componenteIcone, iconesDaTela } from '../utils/icones';
-import { cantosCard, CARD_ESPACO_PADRAO, faixaEstilo, linhasCapa, medidasCard, espacos, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getEfeitoStyle, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems } from '../utils/estilos';
+import { estiloBotao, cantosCard, CARD_ESPACO_PADRAO, faixaEstilo, linhasCapa, medidasCard, espacos, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getEfeitoStyle, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems } from '../utils/estilos';
 
 const DISPOSITIVO_BLOQUEADO_KEY = 'presenca_dispositivo_bloqueado_voto';
 const DISPOSITIVO_VOTO_TIME_KEY = 'presenca_dispositivo_hora_voto';
@@ -1696,6 +1696,7 @@ export default function MobileForm({ preview = false }) {
                                     key={col}
                                     type="button"
                                     onClick={() => comFeedback(`gr_${itemKey}_${col}`, () => handleSelectGradeCol(col), true)}
+                                    style={estiloBotao((k) => tela[`grade${k}`] ?? questionsConfig?.[`grade${k}`], isActive)}
                                     className={`py-2.5 rounded-xl text-xs sm:text-sm font-black border transition-colors ${clicado === `gr_${itemKey}_${col}` ? 'efeito-acender' : ''} ${
                                       isActive
                                         ? corGradeSelecionada(col, cols)
@@ -1770,6 +1771,7 @@ export default function MobileForm({ preview = false }) {
                     });
                     avancarParaProxima(null);
                   })}
+                  style={estiloBotao((k) => questionsConfig?.[`avancar${k}`], faltaObrigatoria)}
                   className={`w-3/4 py-4 px-4 rounded-2xl font-black text-base border flex items-center justify-center gap-2 transition-colors ${faltaObrigatoria ? 'bg-red-900 border-red-800 text-white' : 'bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 shadow-xl shadow-amber-950/60 border-amber-300'} ${clicado === `avancar_${tela.id}` ? 'efeito-acender' : ''}`}
                 >
                   <span>{questionsConfig?.botaoAvancarTexto || 'Avançar'}</span>

@@ -100,6 +100,64 @@ export function getEfeitoStyle(efeito = 'padrao', profundidade = 5, rgb = '251, 
   }
 }
 
+// ==========================================
+// BOTÕES (números da grade e Avançar): cor, linha, efeito e profundidade
+// Campos: <prefixo>Efeito, Profundidade, Cor, CorTexto, Linha, LinhaEspessura, Altura, Raio
+// ==========================================
+export const CORES_BOTAO = [
+  { id: 'padrao', label: 'Original', hex: 'conic-gradient(#0f172a 0 50%, #fbbf24 50% 100%)' },
+  { id: 'transparente', label: 'Sem cor', hex: 'transparent', dot: 'border border-dashed border-slate-400' },
+  { id: 'noite', label: 'Noite', hex: '#0f172a', dot: 'border border-slate-600' },
+  { id: 'grafite', label: 'Grafite', hex: '#475569' },
+  { id: 'branco', label: 'Branco', hex: '#f1f5f9' },
+  { id: 'dourado', label: 'Dourado', hex: '#fbbf24' },
+  { id: 'laranja', label: 'Laranja', hex: '#c2410c' },
+  { id: 'vermelho', label: 'Vermelho', hex: '#991b1b' },
+  { id: 'rosa', label: 'Rosa', hex: '#be185d' },
+  { id: 'roxo', label: 'Roxo', hex: '#6d28d9' },
+  { id: 'azul', label: 'Azul', hex: '#1d4ed8' },
+  { id: 'ciano', label: 'Turquesa', hex: '#0f766e' },
+  { id: 'verde', label: 'Verde', hex: '#047857' }
+];
+export const CORES_LINHA = [
+  { id: 'padrao', label: 'Original', hex: 'conic-gradient(#334155 0 50%, #fbbf24 50% 100%)' },
+  { id: 'transparente', label: 'Sem linha', hex: 'transparent', dot: 'border border-dashed border-slate-400' },
+  { id: 'cinza', label: 'Cinza', hex: '#64748b' },
+  { id: 'branco', label: 'Branco', hex: '#ffffff' },
+  { id: 'preto', label: 'Preto', hex: '#020617', dot: 'border border-slate-600' },
+  { id: 'dourado', label: 'Dourado', hex: '#fbbf24' },
+  { id: 'laranja', label: 'Laranja', hex: '#fb923c' },
+  { id: 'vermelho', label: 'Vermelho', hex: '#f87171' },
+  { id: 'rosa', label: 'Rosa', hex: '#f472b6' },
+  { id: 'roxo', label: 'Roxo', hex: '#c084fc' },
+  { id: 'azul', label: 'Azul', hex: '#38bdf8' },
+  { id: 'verde', label: 'Verde', hex: '#34d399' }
+];
+export const CORES_TEXTO_BOTAO = CORES_LINHA.filter((c) => c.id !== 'transparente');
+const hexDe = (lista, id) => (id && id !== 'padrao' ? lista.find((c) => c.id === id)?.hex : undefined);
+const rgbDe = (hex) => (/^#[0-9a-f]{6}$/i.test(hex || '') ? [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(', ') : undefined);
+
+// ler = (campo) => valor. soForma: botão já marcado/vermelho mantém a própria cor e só muda o formato.
+export const estiloBotao = (ler, soForma = false) => {
+  const efeito = ler('Efeito');
+  const cor = hexDe(CORES_BOTAO, ler('Cor'));
+  const linha = hexDe(CORES_LINHA, ler('Linha'));
+  const texto = hexDe(CORES_TEXTO_BOTAO, ler('CorTexto'));
+  const usaEfeito = efeito && efeito !== 'nenhum';
+  const { borderColor, ...fx } = usaEfeito ? getEfeitoStyle(efeito, ler('Profundidade') || 5, rgbDe(linha) || rgbDe(cor)) : {};
+  const st = {};
+  if (ler('LinhaEspessura') !== undefined) st.borderWidth = `${ler('LinhaEspessura')}px`;
+  if (ler('Raio') !== undefined) st.borderRadius = `${ler('Raio')}px`;
+  if (ler('Altura') !== undefined) Object.assign(st, { height: `${ler('Altura')}px`, paddingTop: 0, paddingBottom: 0 });
+  if (soForma) return st;
+  Object.assign(st, fx);
+  if (cor) st.background = efeito === 'vidro' && cor.startsWith('#') ? `${cor}99` : cor;
+  else if (efeito === 'vidro') st.opacity = 0.95;
+  if (linha || borderColor) st.borderColor = linha || borderColor;
+  if (texto) st.color = texto;
+  return st;
+};
+
 // Altura dos cards de opção. O mínimo real era 82px (ícone + margens fixas travavam o card);
 // agora é 60% disso e o ícone e as margens encolhem junto. 49px ainda é confortável para o dedo.
 export const CARD_ALTURA_MIN = 49;
@@ -248,7 +306,7 @@ const MAPA_EXTRA = {
   espacoTitulos: 'espacoTitulos', espacoSub: 'espacoSub', espacoCards: 'espacoCards'
 };
 // Campos com o mesmo nome nos dois lugares
-const COMUNS = ['cardAltura', 'cardEspaco', 'cardRaio', 'cardsPorTela', 'cardFundoEstilo', 'cardEfeitoEstilo', 'cardProfundidade', 'cardCorFonteTitulo',
+const COMUNS = ['gradeEfeito', 'gradeProfundidade', 'gradeCor', 'gradeCorTexto', 'gradeLinha', 'gradeLinhaEspessura', 'gradeAltura', 'gradeRaio', 'cardAltura', 'cardEspaco', 'cardRaio', 'cardsPorTela', 'cardFundoEstilo', 'cardEfeitoEstilo', 'cardProfundidade', 'cardCorFonteTitulo',
   'cardCorFonteSubtitulo', 'cardFonteTitulo', 'cardFonteSubtitulo', 'escalaTamanho', 'legendaCor', 'legendaBold', 'legendaFundo',
   'itemTamanho', 'itemCor', 'itemBold', 'itemFundo', 'legendaFaixa', 'itemFaixa'];
 

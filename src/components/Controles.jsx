@@ -47,7 +47,7 @@ export function Deslizante({ rotulo, valor, min, max, passo = 1, unidade = 'px',
 }
 
 // Amostra de cor: bolinha (13px) ou quadrinho (20px). A área de toque é maior que o desenho.
-function Amostra({ classe, quadrado, selecionada, nome, onClick }) {
+function Amostra({ classe, hex, quadrado, selecionada, nome, onClick }) {
   return (
     <button
       type="button"
@@ -58,7 +58,8 @@ function Amostra({ classe, quadrado, selecionada, nome, onClick }) {
       className={`p-1 rounded-md transition ${selecionada ? 'bg-slate-100/15' : 'hover:bg-slate-100/10'}`}
     >
       <span
-        className={`block ${quadrado ? 'w-5 h-5 rounded border border-white/20' : 'w-[13px] h-[13px] rounded-full'} ${classe} ${selecionada ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-800' : ''}`}
+        style={hex ? { background: hex } : undefined}
+        className={`block ${quadrado ? 'w-5 h-5 rounded border border-white/20' : 'w-[13px] h-[13px] rounded-full'} ${classe || ''} ${selecionada ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-800' : ''}`}
       />
     </button>
   );
@@ -71,7 +72,7 @@ export function Cores({ rotulo, opcoes, valor, onChange, campo = 'bg', quadrado 
       <span className={ROTULO}>{rotulo}</span>
       <div className={`flex flex-wrap items-center gap-0.5 ${lateral ? 'shrink-0' : 'flex-1 min-w-0'}`}>
         {opcoes.map((o) => (
-          <Amostra key={o.id} nome={o.label} quadrado={quadrado} classe={o[campo]} selecionada={o.id === atual.id} onClick={() => onChange(o.id)} />
+          <Amostra key={o.id} nome={o.label} quadrado={quadrado} classe={campo === 'hex' ? o.dot : o[campo]} hex={o.hex && campo === 'hex' ? o.hex : undefined} selecionada={o.id === atual.id} onClick={() => onChange(o.id)} />
         ))}
       </div>
       {lateral || <span className="text-xs text-slate-300 shrink-0 max-w-[110px] truncate">{atual.label}</span>}

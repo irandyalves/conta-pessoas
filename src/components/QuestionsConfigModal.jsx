@@ -51,7 +51,7 @@ import {
   saveEventTitle,
   DEFAULT_QUESTIONS_CONFIG 
 } from '../firebase';
-import { CARD_ESPACO_PADRAO, raiosCard, linhasCapa, alturaCard, CAPA_ESPACO_PADRAO, CARD_ALTURA_MAX, CARD_ALTURA_MIN, espacos, continuaNaMesmaPagina, extrairEstilo, aplicarEstilo, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems, getEfeitoStyle, CORES_TEXTO_LINHAS, ALINHAMENTOS_TEXTO, FUNDOS_CAPTION } from '../utils/estilos';
+import { CORES_BOTAO, CORES_LINHA, CORES_TEXTO_BOTAO, CARD_ESPACO_PADRAO, raiosCard, linhasCapa, alturaCard, CAPA_ESPACO_PADRAO, CARD_ALTURA_MAX, CARD_ALTURA_MIN, espacos, continuaNaMesmaPagina, extrairEstilo, aplicarEstilo, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems, getEfeitoStyle, CORES_TEXTO_LINHAS, ALINHAMENTOS_TEXTO, FUNDOS_CAPTION } from '../utils/estilos';
 import ImportadorIA from './ImportadorIA';
 import IconeEspera, { ICONES_ESPERA } from './IconeEspera';
 import PreviewCelular from './PreviewCelular';
@@ -474,6 +474,71 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
         <button type="button" disabled={!estiloCopiado} onClick={() => colarEstilo(ehP1, extraIndex)} className={classe}>Colar aqui</button>
         <button type="button" onClick={() => replicarEmTodas(ehP1, extraIndex)} className={classe}>Usar em todas as telas</button>
       </div>
+    );
+  };
+
+  // Perguntas que dividem a mesma página: cada uma é uma tela ligada à anterior por "mesmaPagina"
+  const comPagina = (telas, indices, primeira) => telas.map((t, i) => {
+    const pos = indices.indexOf(i);
+    if (pos < 0) return t;
+    return { ...t, mesmaPagina: pos === 0 ? primeira : true };
+  });
+  const moverPergunta = (indices, de, para) => setConfig((c) => {
+    const telas = [...c.telasExtras];
+    const primeira = telas[indices[0]].mesmaPagina;
+    const ordem = moverItem(indices.map((i) => telas[i]), de, para);
+    indices.forEach((i, k) => { telas[i] = ordem[k]; });
+    return { ...c, telasExtras: comPagina(telas, indices, primeira) };
+  });
+  const adicionarPergunta = (depoisDe) => setConfig((c) => {
+    const base = c.telasExtras[depoisDe];
+    const nova = {
+      ...base,
+      id: `tela_${Date.now()}`,
+      tipo: 'texto',
+      titulo: 'Nova pergunta',
+      titulo1: 'Nova pergunta',
+      titulo2: '',
+      titulo3: '',
+      subtitulo: '',
+      opcoes: [],
+      obrigatorio: false,
+      ativa: true,
+      mesmaPagina: true
+    };
+    const telas = [...c.telasExtras];
+    telas.splice(depoisDe + 1, 0, nova);
+    return { ...c, telasExtras: telas };
+  });
+  const excluirPergunta = (indices, pos) => mostrarConfirm(
+    'Excluir pergunta',
+    'Excluir esta pergunta da página?',
+    () => {
+      setConfig((c) => {
+        const primeira = c.telasExtras[indices[0]].mesmaPagina;
+        const restantes = indices.filter((_, k) => k !== pos);
+        const telas = comPagina(c.telasExtras, restantes, primeira);
+        return { ...c, telasExtras: telas.filter((_, i) => i !== indices[pos]) };
+      });
+      setActiveTab(indices.length > 1 ? `extra_${indices[0]}` : 'inicio');
+    },
+    'Excluir'
+  );
+
+  // Efeitos de um botão: os mesmos dos cards, mais cores, linha, altura e cantos
+  const EfeitosBotao = ({ titulo, descricao, ler, gravar, alturaPadrao, alturaMax, raioPadrao }) => {
+    const efeito = ler('Efeito') || 'nenhum';
+    return (
+      <Secao titulo={titulo} descricao={descricao}>
+        <Segmentos rotulo="Efeito" opcoes={EFEITOS_CAPA} valor={efeito} onChange={(v) => gravar('Efeito', v)} />
+        {efeito !== 'nenhum' && <Deslizante rotulo="Profundidade" valor={ler('Profundidade') || 5} min={1} max={10} unidade="" onChange={(v) => gravar('Profundidade', v)} />}
+        <Cores rotulo="Cor do botão" opcoes={CORES_BOTAO} campo="hex" valor={ler('Cor') || 'padrao'} onChange={(v) => gravar('Cor', v)} />
+        <Cores rotulo="Cor do texto" opcoes={CORES_TEXTO_BOTAO} campo="hex" valor={ler('CorTexto') || 'padrao'} onChange={(v) => gravar('CorTexto', v)} />
+        <Cores rotulo="Cor da linha" opcoes={CORES_LINHA} campo="hex" valor={ler('Linha') || 'padrao'} onChange={(v) => gravar('Linha', v)} />
+        <Deslizante rotulo="Espessura da linha" valor={ler('LinhaEspessura') ?? 1} min={0} max={6} onChange={(v) => gravar('LinhaEspessura', v)} />
+        <Deslizante rotulo="Altura" valor={ler('Altura') ?? alturaPadrao} min={28} max={alturaMax} onChange={(v) => gravar('Altura', v)} />
+        <Deslizante rotulo="Cantos" valor={ler('Raio') ?? raioPadrao} min={0} max={40} onChange={(v) => gravar('Raio', v)} />
+      </Secao>
     );
   };
 
@@ -1754,10 +1819,25 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 const telasLigadas = (config.telasExtras || []).filter((t) => t && t.ativa !== false);
                 const posLigada = telasLigadas.indexOf(telaAlvo);
                 const emGrupo = posLigada >= 0 && (continuaNaMesmaPagina(telasLigadas[posLigada - 1], telaAlvo) || continuaNaMesmaPagina(telaAlvo, telasLigadas[posLigada + 1]));
+                // Perguntas que aparecem juntas nesta página (índices reais em telasExtras)
+                let iniGrupo = posLigada;
+                let fimGrupo = posLigada;
+                while (iniGrupo > 0 && continuaNaMesmaPagina(telasLigadas[iniGrupo - 1], telasLigadas[iniGrupo])) iniGrupo--;
+                while (fimGrupo >= 0 && fimGrupo + 1 < telasLigadas.length && continuaNaMesmaPagina(telasLigadas[fimGrupo], telasLigadas[fimGrupo + 1])) fimGrupo++;
+                const membros = posLigada < 0 ? [extraIndex] : telasLigadas.slice(iniGrupo, fimGrupo + 1).map((t) => (config.telasExtras || []).indexOf(t));
+                const ehTexto = ['texto', 'texto_curto'].includes(telaAlvo.tipo);
+                const temLista = emGrupo || ehTexto;
+                const temBotaoAvancar = !ehCards;
                 const temAparencia = ehCards && cardsAtivos.length > 0;
                 // Data, hora e estrelas não têm nada para ajustar no campo
-                const semCampo = ['data', 'hora', 'rating'].includes(telaAlvo.tipo);
-                const subAtual = (subTabExtra === 'aparencia' && !temAparencia) || (subTabExtra === 'opcoes' && semCampo) ? 'pergunta' : subTabExtra;
+                const semCampo = ehTexto || ['data', 'hora', 'rating'].includes(telaAlvo.tipo);
+                const subAtual = (() => {
+                  if (subTabExtra === 'opcoes' && semCampo) return temLista ? 'lista' : 'pergunta';
+                  if (subTabExtra === 'lista' && !temLista) return semCampo ? 'pergunta' : 'opcoes';
+                  if (subTabExtra === 'aparencia' && !temAparencia) return temBotaoAvancar ? 'efeitos' : 'pergunta';
+                  if (subTabExtra === 'efeitos' && !temBotaoAvancar) return temAparencia ? 'aparencia' : 'pergunta';
+                  return subTabExtra;
+                })();
 
                 return (
                   <div className="space-y-4">
@@ -1807,18 +1887,115 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       valor={subAtual}
                       onChange={setSubTabExtra}
                       opcoes={[
+                        ...(temLista ? [{ id: 'lista', label: rotuloPerguntas(membros.length) }] : []),
                         { id: 'pergunta', label: 'Textos' },
                         ...(semCampo ? [] : [{
                           id: 'opcoes',
                           label: ['texto', 'texto_curto', 'data', 'hora', 'slider', 'rating'].includes(telaAlvo.tipo)
                             ? 'Campo de resposta'
-                            : rotuloPerguntas(cardsAtivos.length)
+                            : temLista ? `Itens da Tela ${numTela} (${cardsAtivos.length})` : rotuloPerguntas(cardsAtivos.length)
                         }]),
-                        ...(temAparencia ? [{ id: 'aparencia', label: 'Aparência dos cards' }] : [])
+                        ...(temAparencia ? [{ id: 'aparencia', label: 'Aparência dos cards' }] : []),
+                        ...(temBotaoAvancar ? [{ id: 'efeitos', label: 'Efeitos' }] : [])
                       ]}
                     />
 
-                    <BotaoObrigatorio valor={telaAlvo.obrigatorio} onChange={(v) => handleUpdateTelaProp(extraIndex, 'obrigatorio', v)} />
+                    {subAtual !== 'lista' && <BotaoObrigatorio valor={telaAlvo.obrigatorio} onChange={(v) => handleUpdateTelaProp(extraIndex, 'obrigatorio', v)} />}
+
+                    {subAtual === 'lista' && (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-semibold text-slate-200">{rotuloPerguntas(membros.length)} nesta página</span>
+                          <button
+                            type="button"
+                            onClick={() => adicionarPergunta(membros[membros.length - 1])}
+                            className="px-3 py-1.5 bg-slate-100 hover:bg-white text-slate-900 font-bold text-xs rounded-xl shadow-md active:scale-95 transition flex items-center gap-1.5"
+                          >
+                            <Plus className="w-4 h-4 text-emerald-600" strokeWidth={4} />
+                            <span>Add Questões</span>
+                          </button>
+                        </div>
+                        <div>
+                          {membros.map((iTela, pos) => {
+                            const t = config.telasExtras[iTela];
+                            const set = (k) => (v) => handleUpdateTelaProp(iTela, k, v);
+                            return (
+                              <QuestaoArrastavel
+                                key={t.id || iTela}
+                                lista={`pagina_${membros[0]}`}
+                                indice={pos}
+                                total={membros.length}
+                                onMover={(de, para) => moverPergunta(membros, de, para)}
+                                className="-mx-4 sm:-mx-5 px-4 sm:px-5 py-4 flex flex-col gap-3 border-t border-dashed border-slate-600"
+                              >
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="text-xs text-slate-400">Tela {iTela + 2}</span>
+                                  <BotaoObrigatorio valor={t.obrigatorio} onChange={set('obrigatorio')} />
+                                  <select
+                                    value={t.tipo}
+                                    aria-label="Tipo da pergunta"
+                                    onChange={(e) => set('tipo')(e.target.value)}
+                                    className={`bg-slate-950/60 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-200 ${['texto', 'texto_curto'].includes(t.tipo) ? '' : 'hidden'}`}
+                                  >
+                                    <option value="texto">Campo longo</option>
+                                    <option value="texto_curto">Campo de uma linha</option>
+                                  </select>
+                                  <button
+                                    type="button"
+                                    onClick={() => { setActiveTab(`extra_${iTela}`); setSubTabExtra('pergunta'); }}
+                                    className="px-2.5 py-1.5 rounded-lg text-xs text-slate-300 bg-slate-800 hover:bg-slate-700"
+                                  >
+                                    Formatar texto
+                                  </button>
+                                  <button type="button" title="Excluir pergunta" aria-label="Excluir pergunta" onClick={() => excluirPergunta(membros, pos)} className="ml-auto p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition">
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                                <Campo
+                                  rotulo="Pergunta"
+                                  multilinha
+                                  linhas={2}
+                                  valor={[t.titulo1 ?? t.titulo, t.titulo2, t.titulo3].filter(Boolean).join(' ')}
+                                  onChange={(v) => setConfig((c) => ({
+                                    ...c,
+                                    telasExtras: c.telasExtras.map((x, i) => (i === iTela ? { ...x, titulo: v, titulo1: v, titulo2: '', titulo3: '' } : x))
+                                  }))}
+                                />
+                                {['texto', 'texto_curto'].includes(t.tipo) && (
+                                  <Campo rotulo="Dica dentro do campo" valor={t.placeholder} onChange={set('placeholder')} placeholder="Digite sua resposta aqui..." />
+                                )}
+                                {t.tipo === 'texto' && membros.length === 1 && (
+                                  <Deslizante rotulo="Altura do campo" valor={t.linhas || 4} min={2} max={10} unidade=" linhas" onChange={set('linhas')} />
+                                )}
+                              </QuestaoArrastavel>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {subAtual === 'efeitos' && (
+                      <div className="space-y-4">
+                        {telaAlvo.tipo === 'grade' && EfeitosBotao({
+                          titulo: 'Botões de resposta',
+                          ler: (k) => telaAlvo[`grade${k}`] ?? config[`grade${k}`],
+                          gravar: (k, v) => handleUpdateTelaProp(extraIndex, `grade${k}`, v),
+                          alturaPadrao: 38,
+                          alturaMax: 72,
+                          raioPadrao: 12
+                        })}
+                        {EfeitosBotao({
+                          titulo: 'Botão Avançar',
+                          descricao: 'Vale para todas as páginas.',
+                          ler: (k) => config[`avancar${k}`],
+                          gravar: (k, v) => setCampo(`avancar${k}`, v),
+                          alturaPadrao: 58,
+                          alturaMax: 80,
+                          raioPadrao: 16
+                        })}
+                        {BarraFormatacao({ ehP1: false, extraIndex })}
+                      </div>
+                    )}
 
                     {subAtual === 'pergunta' && (
                       <div className="space-y-4">
