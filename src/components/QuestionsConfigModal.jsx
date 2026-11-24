@@ -741,6 +741,12 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
     }
   }, [eventTitle]);
 
+  const semAcompanhantes = Boolean(config.acompanhantesExcluida) && config.mostrarTelaAcompanhantes === false;
+  useEffect(() => {
+    if (semAcompanhantes && activeTab === 'acompanhantes') setActiveTab('inicio');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [semAcompanhantes, activeTab]);
+
   // Alinha a tela do preview sempre que a aba ativa mudar
   useEffect(() => {
     setPreviewScreen(activeTab);
@@ -1123,6 +1129,17 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
     );
   };
 
+  // Tela de acompanhantes: excluída sai das abas e da prévia; volta por "Nova tela" com os ajustes guardados
+  const excluirAcompanhantes = () => mostrarConfirm(
+    'Excluir Tela',
+    'Excluir a tela de acompanhantes deste evento? Para trazer de volta, use "Nova tela".',
+    () => {
+      setConfig((c) => ({ ...c, mostrarTelaAcompanhantes: false, acompanhantesExcluida: true }));
+      setActiveTab('inicio');
+    },
+    'Excluir'
+  );
+
   const handleUpdateTelaProp = (extraIndex, field, value) => {
     setConfig((prev) => {
       const novasTelas = [...(prev.telasExtras || [])];
@@ -1381,6 +1398,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                   </Aba>
                 );
               })}
+              {!semAcompanhantes && (
               <Aba
                 ativa={activeTab === 'acompanhantes'}
                 oculta={telaOculta('acompanhantes')}
@@ -1390,6 +1408,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               >
                 <Users className="w-4 h-4" /> {telaOculta('acompanhantes') ? 'Acompanhantes' : `Tela ${paginasExtras.length + 2}`}
               </Aba>
+              )}
               <Aba ativa={activeTab === 'fim'} onClick={() => setActiveTab('fim')}>Fim</Aba>
 
               {/* Botão + Add Tab em verde (com apenas um +) */}
@@ -2945,9 +2964,9 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               {/* ====================================================== */}
               {/* ABA: TELA DE ACOMPANHANTES (OPCIONAL)                  */}
               {/* ====================================================== */}
-              {activeTab === 'acompanhantes' && (
+              {activeTab === 'acompanhantes' && !semAcompanhantes && (
                 <div className="painel-tela">
-                  <TopoPainel slot={setSlotAcoes} titulo={telaOculta('acompanhantes') ? 'Acompanhantes' : `Tela ${paginasExtras.length + 2}`} />
+                  <TopoPainel slot={setSlotAcoes} titulo={telaOculta('acompanhantes') ? 'Acompanhantes' : `Tela ${paginasExtras.length + 2}`} onExcluir={excluirAcompanhantes} />
                   <SubAbas
                     valor={subTabTela2}
                     onChange={setSubTabTela2}
@@ -3029,14 +3048,6 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     );
                   })()}
 
-                  <button
-                    type="button"
-                    onClick={() => alternarTela('acompanhantes')}
-                    className="text-xs text-slate-400 hover:text-white flex items-center gap-1.5"
-                  >
-                    <EyeOff className="w-3.5 h-3.5" />
-                    <span>{telaOculta('acompanhantes') ? 'Usar esta tela neste evento' : 'Não usar esta tela neste evento'}</span>
-                  </button>
                 </div>
               )}
 
@@ -3106,7 +3117,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     indices: membros,
                     rotulo: `Tela ${numero}`
                   })),
-                  { chave: 'acompanhantes', passo: 'acompanhantes', rotulo: 'Acompanhantes' },
+                  ...(semAcompanhantes ? [] : [{ chave: 'acompanhantes', passo: 'acompanhantes', rotulo: 'Acompanhantes' }]),
                   { chave: 'fim', passo: 'final', rotulo: 'Tela final', fixa: true }
                 ].map((t) => ({ ...t, oculta: telaOculta(t.chave) }));
 
@@ -3234,11 +3245,16 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[65vh] overflow-y-auto custom-scrollbar pr-1">
-                {TIPOS_PERGUNTA.map((tp) => (
+                {[...(semAcompanhantes ? [{ id: 'acompanhantes', label: '👥 Acompanhantes', desc: 'Traz de volta a tela que pergunta quantas pessoas vieram junto' }] : []), ...TIPOS_PERGUNTA].map((tp) => (
                   <button
                     key={tp.id}
                     type="button"
-                    onClick={() => handleAdicionarTela(tp.id)}
+                    onClick={() => {
+                      if (tp.id !== 'acompanhantes') { handleAdicionarTela(tp.id); return; }
+                      setShowTipoNovaTelaModal(false);
+                      setConfig((c) => ({ ...c, mostrarTelaAcompanhantes: true, acompanhantesExcluida: false }));
+                      setActiveTab('acompanhantes');
+                    }}
                     className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-slate-400 hover:bg-slate-900 text-left transition group space-y-1 shadow-sm"
                   >
                     <h4 className="text-xs font-semibold text-white group-hover:text-white transition-colors">
