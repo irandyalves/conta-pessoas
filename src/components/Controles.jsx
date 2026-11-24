@@ -66,7 +66,7 @@ export function MiniSlider({ rotulo, icone, valor, min, max, passo = 1, unidade 
         step={passo}
         value={valor}
         onChange={(e) => onChange(Number(e.target.value))}
-        className={`ed-range ${Icone ? 'w-[42px]' : 'w-[72px]'}`}
+        className={`ed-range ${Icone ? 'w-[32px]' : 'w-[72px]'}`}
         style={{ '--p': `${Math.max(0, Math.min(100, ((valor - min) / (max - min)) * 100))}%` }}
       />
       <span className={`text-[11px] tabular-nums text-slate-200 ${!Icone ? 'w-9' : passo < 1 ? 'w-7' : 'w-5'}`}>{valor}{Icone ? '' : unidade}</span>
@@ -140,7 +140,7 @@ export function SeletorFonte({ valor, onChange, rotulo = 'Fonte' }) {
     <div className="ed-cel relative flex items-center gap-2 min-w-0">
       {rotulo && <span className={ROTULO}>{rotulo}</span>}
       <button type="button" aria-expanded={aberto} onClick={() => setAberto(!aberto)}
-        className={`flex items-center justify-between gap-1 rounded-md bg-slate-950/60 border text-[12px] text-white ${rotulo ? 'w-[150px] px-2 py-1 border-slate-700 hover:border-slate-500' : 'w-[92px] h-[22px] px-1.5 border-transparent hover:border-slate-600'}`}>
+        className={`flex items-center justify-between gap-1 rounded-md border text-[12px] text-white ${rotulo ? 'w-[150px] px-2 py-1 bg-slate-950/60 border-slate-700 hover:border-slate-500' : 'w-[68px] h-[22px] pl-px pr-1 border-transparent hover:border-slate-600'}`}>
         <span className="truncate" style={{ fontFamily: familiaCss(valor) }}>{atual?.nome || 'Padrão'}</span>
         <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
       </button>
@@ -165,7 +165,7 @@ export function SeletorFonte({ valor, onChange, rotulo = 'Fonte' }) {
 const ICONE_ALINHAMENTO = { left: AlignLeft, center: AlignCenter, right: AlignRight };
 export function Alinhamento({ valor, onChange }) {
   return (
-    <div className="flex gap-0.5 rounded-md bg-slate-950/60 p-0.5">
+    <div className="flex gap-px">
       {[['left', 'Alinhar à esquerda'], ['center', 'Centralizar'], ['right', 'Alinhar à direita']].map(([id, nome]) => {
         const Icone = ICONE_ALINHAMENTO[id];
         return (
@@ -183,7 +183,7 @@ export function Alinhamento({ valor, onChange }) {
 export function Alternar({ rotulo, nome, valor, onChange }) {
   return (
     <button type="button" title={nome} aria-label={nome} aria-pressed={Boolean(valor)} onClick={() => onChange(!valor)}
-      className={`px-0.5 min-w-[20px] h-[20px] rounded-[5px] text-[10px] font-bold transition ${valor ? 'bg-slate-100 text-slate-900' : 'bg-slate-950/60 text-slate-400 hover:text-white'}`}>
+      className={`px-0.5 min-w-[20px] h-[20px] rounded-[5px] text-[10px] font-bold transition ${valor ? 'bg-slate-100 text-slate-900' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>
       {rotulo}
     </button>
   );

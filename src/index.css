@@ -163,20 +163,22 @@
 }
 
 /* ===== PADRÃO DE FORMATAÇÃO DO EDITOR ===== */
-.barra-formato { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; padding: 3px; border-radius: 9px; background: rgba(2, 6, 23, .42); min-height: 28px; }
+.barra-formato { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; min-height: 24px; }
 .texto-lista { border-radius: 12px; overflow: clip; overflow-clip-margin: 0; border: 1px solid #263246; }
-.texto-linha { display: flex; flex-direction: column; gap: 5px; padding: 8px; }
+.texto-linha { display: flex; flex-direction: column; gap: 4px; padding: 7px 8px 9px; }
+/* a barra começa junto com o canto esquerdo do campo: nome (64) + espaço (8) */
+.texto-linha .barra-formato { margin-left: 72px; }
 .texto-linha + .texto-linha { border-top: 1px dashed #475569; }
 .texto-linha-movel { padding-left: 22px; }
 .questao-fixa, .questao-fixa:active { cursor: default; }
-.texto-nome { min-width: 62px; flex: none; white-space: nowrap; font-size: 11px; line-height: 1.25; color: #94a3b8; }
+.texto-nome { width: 64px; flex: none; white-space: nowrap; font-size: 11px; line-height: 1.25; color: #94a3b8; }
 .texto-campo { flex: 1; min-width: 0; width: 100%; padding: 4px 9px; border-radius: 7px; border: 1px solid transparent; background: rgba(2, 6, 23, .55); color: #fff; font-size: 13px; line-height: 1.5; resize: none; transition: border-color .15s; }
 .texto-campo:hover { border-color: #334155; }
 .texto-campo:focus { outline: none; border-color: #34d399; }
 .texto-campo::placeholder { color: #64748b; }
 .texto-campo-cresce { field-sizing: content; max-height: 130px; min-height: 30px; }
 
-.cor-chip { position: relative; display: inline-flex; align-items: center; gap: 5px; height: 21px; padding: 0 6px; border-radius: 7px; background: rgba(15, 23, 42, .9); font-size: 12px; font-weight: 700; white-space: nowrap; cursor: pointer; transition: box-shadow .15s; }
+.cor-chip { position: relative; display: inline-flex; align-items: center; gap: 5px; height: 21px; padding: 0 6px; border-radius: 7px; background: transparent; font-size: 12px; font-weight: 700; white-space: nowrap; cursor: pointer; transition: box-shadow .15s; }
 .cor-chip:hover, .cor-chip[aria-expanded='true'] { box-shadow: 0 0 0 1px #64748b; }
 .cor-chip:disabled { opacity: .38; cursor: not-allowed; box-shadow: none; }
 .cor-chip-claro { background: #e2e8f0; }
@@ -248,3 +250,20 @@
 .texto-add-2 svg { color: #34d399; }
 .texto-lixeira { flex: none; display: grid; place-items: center; width: 28px; height: 30px; border-radius: 7px; color: #64748b; transition: background .15s, color .15s; }
 .texto-lixeira:hover { background: rgba(239, 68, 68, .18); color: #f87171; }
+
+/* Campos de digitar: luz fina em cima que desce pelos lados afinando até sumir */
+:is(.editor, .campos-luz) :is(input:not([type]), input[type='text'], input[type='search'], input[type='number'], input[type='email'], input[type='url'], textarea) {
+  --luz: rgba(255, 255, 255, .92);
+  --luz-lado: rgba(255, 255, 255, .5);
+  border: 1px solid transparent;
+  background:
+    linear-gradient(#0b1322, #0b1322) padding-box,
+    linear-gradient(to bottom, var(--luz) 0, var(--luz-lado) 30%, transparent 88%) border-box;
+  /* meia-lua: engrossa em cima e afina sozinha na curva dos cantos */
+  box-shadow: inset 0 .7px 0 var(--luz-lado);
+}
+:is(.editor, .campos-luz) :is(input:not([type]), input[type='text'], input[type='search'], input[type='number'], input[type='email'], input[type='url'], textarea):focus {
+  --luz: #34d399;
+  --luz-lado: rgba(52, 211, 153, .55);
+  outline: none;
+}

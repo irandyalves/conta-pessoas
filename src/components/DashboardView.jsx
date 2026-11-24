@@ -401,7 +401,7 @@ export default function DashboardView({ onChangeView }) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex font-sans">
+    <div className="campos-luz min-h-screen bg-slate-950 text-slate-100 flex font-sans">
       
       {/* ============================================================== */}
       {/* OVERLAY MOBILE PARA O SLIDE BAR                                */}
