@@ -60,7 +60,7 @@ import IconeEspera, { ICONES_ESPERA } from './IconeEspera';
 import PreviewCelular from './PreviewCelular';
 import CamposFinais from './CamposFinais';
 import { FORMATOS_CAMPO, formatoPorId } from '../utils/campoTexto';
-import { chaveTamanho, estiloLinhaFinal, LINHAS_FINAL } from '../utils/telaFinal';
+import { chaveTamanho, estiloLinhaFinal, linhaFinal, linhasFinais, ordemFinal, reordenarFinal, temDivisor } from '../utils/telaFinal';
 import BarraProgresso, { CORES_PROGRESSO, CORES_PROGRESSO_LAYOUT, ESTILOS_PROGRESSO, usaDuasCores } from './BarraProgresso';
 import { Columns2, Rows3, Smile as IconeRosto, WrapText } from 'lucide-react';
 import EscalaVisual, { ESTILOS_ESCALA, INSTRUCAO_PADRAO, instrucaoDaEscala } from './EscalaVisual';
@@ -1312,7 +1312,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               >
                 <span>Início</span>
               </button>
-              <OlhoTela oculta={telaOculta('inicio_comecar')} rotulo="o Início" onClick={() => alternarTela('inicio_comecar')} className="mt-0.5" />
+              <OlhoTela oculta={telaOculta('inicio_comecar')} rotulo="o Início" onClick={() => alternarTela('inicio_comecar')} className="-mt-0.5" />
               </div>
 
               {/* Tela 1 (Perguntas / Cards) */}
@@ -1333,7 +1333,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                   {cardsAtivosP1.length}
                 </span>
               </button>
-              <OlhoTela oculta={telaOculta('tela_1')} rotulo="a Tela 1" onClick={() => alternarTela('tela_1')} className="mt-0.5" />
+              <OlhoTela oculta={telaOculta('tela_1')} rotulo="a Tela 1" onClick={() => alternarTela('tela_1')} className="-mt-0.5" />
               </div>
 
               {/* Telas Extras Criadas Dinamicamente (Tela 2, Tela 3, etc. conforme ordem real) */}
@@ -1361,7 +1361,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       </span>
                     )}
                   </button>
-                  <OlhoTela oculta={oculta} rotulo={`a Tela ${numTela}`} onClick={() => alternarTela(tabKey, membros)} className="mt-0.5" />
+                  <OlhoTela oculta={oculta} rotulo={`a Tela ${numTela}`} onClick={() => alternarTela(tabKey, membros)} className="-mt-0.5" />
                   </div>
                 );
               })}
@@ -1381,7 +1381,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                   <Users className="w-4 h-4" />
                   <span>{telaOculta('acompanhantes') ? 'Acompanhantes' : `Tela ${paginasExtras.length + 2}`}</span>
                 </button>
-                <OlhoTela oculta={telaOculta('acompanhantes')} rotulo="a tela de acompanhantes" onClick={() => alternarTela('acompanhantes')} className="mt-0.5" />
+                <OlhoTela oculta={telaOculta('acompanhantes')} rotulo="a tela de acompanhantes" onClick={() => alternarTela('acompanhantes')} className="-mt-0.5" />
               </div>
 
               {/* Fim */}
@@ -2832,7 +2832,10 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               {activeTab === 'fim' && (
                 <EstiloLinhasTitulo
                   key={activeTab}
-                  linhas={LINHAS_FINAL.map((l, i) => {
+                  onOrdem={(ids) => setConfig((c) => ({ ...c, finalOrdem: reordenarFinal(c, ids) }))}
+                  linhas={ordemFinal(config).map((id) => {
+                    if (id === 'divisor') return { chave: id, rotulo: 'Linha divisória', separador: true, ligado: temDivisor(config), onLigado: (v) => setCampo('finalDivisor', v) };
+                    const l = linhaFinal(id);
                     const e = estiloLinhaFinal(config, l);
                     const onTexto = (v) => setConfig((c) => {
                       const novo = { ...c, [l.id]: v };
@@ -2840,7 +2843,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       return novo;
                     });
                     return {
-                      rotulo: l.rotulo, texto: e.texto, onTexto, multilinha: l.multilinha,
+                      chave: id, rotulo: l.rotulo, texto: e.texto, onTexto, multilinha: l.multilinha,
                       tamanho: e.tamanho, min: l.min, max: l.max, onTamanho: (v) => setCampo(chaveTamanho(l), v),
                       familia: e.familia, onFamilia: (v) => setCampo(`${l.id}Familia`, v),
                       cor: e.cor, onCor: (v) => setCampo(`${l.id}Cor`, v),
@@ -2852,7 +2855,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       borda: config[`${l.id}Borda`], onBorda: (v) => setCampo(`${l.id}Borda`, v),
                       bordaLargura: config[`${l.id}BordaLargura`], onBordaLargura: (v) => setCampo(`${l.id}BordaLargura`, v),
                       espaco: e.espaco,
-                      onEspaco: i < LINHAS_FINAL.length - 1 && LINHAS_FINAL.slice(i + 1).some((x) => String(estiloLinhaFinal(config, x).texto || '').trim()) ? (v) => setCampo(`${l.id}Espaco`, v) : undefined,
+                      onEspaco: linhasFinais(config).slice(0, -1).some((x) => x.id === id) ? (v) => setCampo(`${l.id}Espaco`, v) : undefined,
                       abaixo: <CamposFinais config={config} linha={l.id} texto={e.texto} tamanhoLinha={e.tamanho} min={l.min} max={l.max} onTexto={onTexto} setConfig={setConfig} />
                     };
                   })}

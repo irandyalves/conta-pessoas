@@ -15,12 +15,27 @@ export const LINHAS_FINAL = [
 
 const ehTitulo = (id) => id === 'finalTitulo1' || id === 'finalTitulo2';
 
-// Espaço padrão depois de uma linha: maior quando a próxima que aparece fica do outro lado da linha divisória
-const BAIXO = ['finalStatus', 'finalInstrucao'];
+// Ordem dos itens da tela final (o usuário arrasta). 'divisor' = a linha entre os blocos.
+const ORDEM_PADRAO = ['finalTitulo1', 'finalTitulo2', 'finalMensagem', 'divisor', 'finalStatus', 'finalInstrucao'];
+export function ordemFinal(cfg = {}) {
+  const salva = (Array.isArray(cfg.finalOrdem) ? cfg.finalOrdem : []).filter((id, i, l) => ORDEM_PADRAO.includes(id) && l.indexOf(id) === i);
+  return salva.length ? [...salva, ...ORDEM_PADRAO.filter((id) => !salva.includes(id))] : ORDEM_PADRAO;
+}
+export const linhaFinal = (id) => LINHAS_FINAL.find((l) => l.id === id);
+export const temDivisor = (cfg) => cfg?.finalDivisor !== false;
+// visíveis = ids que estão na tela, já na ordem nova; os que não aparecem guardam o lugar deles
+export function reordenarFinal(cfg, visiveis) {
+  const fila = [...visiveis];
+  return ordemFinal(cfg).map((id) => (visiveis.includes(id) ? fila.shift() : id));
+}
+
+// Espaço padrão depois de uma linha: maior quando a linha divisória vem logo em seguida
 function espacoPadrao(cfg, l) {
-  const i = LINHAS_FINAL.findIndex((x) => x.id === l.id);
-  const prox = LINHAS_FINAL.slice(i + 1).find((x) => String(cfg[x.id] ?? x.padrao).trim());
-  return prox && BAIXO.includes(prox.id) && !BAIXO.includes(l.id) ? 44 : Math.min(l.espaco, 12);
+  const ordem = ordemFinal(cfg);
+  const resto = ordem.slice(ordem.indexOf(l.id) + 1);
+  const prox = resto.findIndex((id) => id !== 'divisor' && String(cfg[id] ?? linhaFinal(id).padrao).trim());
+  const div = resto.indexOf('divisor');
+  return temDivisor(cfg) && div >= 0 && prox > div ? 44 : Math.min(l.espaco, 12);
 }
 
 // Valores em uso de uma linha. Os títulos 1 e 2 herdam o estilo antigo, que era dos dois juntos.
@@ -42,15 +57,19 @@ export function estiloLinhaFinal(cfg = {}, l) {
 }
 export const chaveTamanho = (l) => (ehTitulo(l.id) ? `${l.id}Tamanho` : `${l.id}FonteTamanho`);
 
-// Linhas que aparecem no celular, com o espaço antes de cada uma
+// Linhas que aparecem no celular, na ordem escolhida, com o espaço antes de cada uma
 export function linhasFinais(cfg = {}) {
-  const todas = LINHAS_FINAL.map((l) => ({ ...l, ...estiloLinhaFinal(cfg, l) })).filter((l) => String(l.texto || '').trim());
-  return todas.map((l, i) => ({
-    ...l,
-    antes: i ? todas[i - 1].espaco : 0,
-    // a linha divisória separa os títulos/mensagem da conclusão/instrução
-    divisor: i > 0 && BAIXO.includes(l.id) && !BAIXO.includes(todas[i - 1].id)
-  }));
+  const out = [];
+  let divisor = false;
+  ordemFinal(cfg).forEach((id) => {
+    if (id === 'divisor') { divisor = out.length > 0 && temDivisor(cfg); return; }
+    const l = linhaFinal(id);
+    const e = estiloLinhaFinal(cfg, l);
+    if (!String(e.texto || '').trim()) return;
+    out.push({ ...l, ...e, antes: out.length ? out[out.length - 1].espaco : 0, divisor });
+    divisor = false;
+  });
+  return out;
 }
 
 export const nomeLimpo = (t) => String(t || '').replace(/[{}]/g, '').replace(/^\s*\d{1,3}[.)]\s+/, '').replace(/[:*?]+\s*$/, '').replace(/\s+/g, ' ').trim();

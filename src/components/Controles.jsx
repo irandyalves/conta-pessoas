@@ -216,17 +216,18 @@ export function Alternar({ rotulo, nome, valor, onChange }) {
 }
 
 // Linha que abre e fecha. Fechada mostra o conteúdo atual, então dá para ler a tela inteira de relance.
-export function Dobra({ titulo, resumo, lateral, aberta: inicial = false, children }) {
+// semFundo: dentro de uma questão arrastável, o fundo é o da questão e o cabeçalho também serve para arrastar
+export function Dobra({ titulo, resumo, lateral, aberta: inicial = false, semFundo = false, children }) {
   const [aberta, setAberta] = useState(inicial);
   return (
-    <div className={`rounded-lg transition-colors ${aberta ? 'bg-slate-800/60' : 'bg-slate-800/40 hover:bg-slate-800/60'}`}>
-      <button type="button" aria-expanded={aberta} onClick={() => setAberta(!aberta)} className="w-full flex items-center gap-2 px-3 py-1.5 text-left">
+    <div className={`rounded-lg transition-colors ${semFundo ? '' : aberta ? 'bg-slate-800/60' : 'bg-slate-800/40 hover:bg-slate-800/60'}`}>
+      <button type="button" data-alca={semFundo ? '1' : undefined} aria-expanded={aberta} onClick={() => setAberta(!aberta)} className={`w-full flex items-center gap-2 py-1.5 text-left ${semFundo ? 'px-1' : 'px-3'}`}>
         <span className="text-[11px] text-slate-400 w-[74px] shrink-0">{titulo}</span>
         <span className={`flex-1 min-w-0 truncate text-[13px] ${resumo ? 'text-slate-100' : 'text-slate-500'}`}>{resumo || 'Vazio, não aparece no celular'}</span>
         {lateral}
         <ChevronDown className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform ${aberta ? 'rotate-180' : ''}`} />
       </button>
-      {aberta && <div className="px-3 pb-2.5 pt-0.5 space-y-2">{children}</div>}
+      {aberta && <div className={`pb-2.5 pt-0.5 space-y-2 ${semFundo ? 'px-1' : 'px-3'}`}>{children}</div>}
     </div>
   );
 }
