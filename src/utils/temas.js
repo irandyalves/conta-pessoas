@@ -1,8 +1,9 @@
 // ==========================================
 // LAYOUTS PRONTOS (presets) DO FORMULÁRIO
 // O desenho de cada layout está em src/temas.css (classe .tema-<id>).
-// Aplicar um layout = trocar o tema e deixar os ajustes em "Do layout";
-// qualquer ajuste manual feito depois continua valendo por cima.
+// Trocar de layout muda só o visual (cores, fundos, efeitos, cantos, espaço).
+// Fontes, bordas dos títulos, alturas, tamanhos e textos são do usuário: nunca mudam.
+// Cada layout guarda os próprios ajustes de visual: voltar a ele traz tudo de volta.
 // ==========================================
 export const TEMAS = [
   { id: 'tribunal', nome: 'Tribunal', descricao: 'Sóbrio e institucional', fonte: 'Spectral:wght@500;700', raio: 4, espaco: 8, seta: 'branco' },
@@ -70,37 +71,81 @@ const camposGerais = (t) => ({
   esperaLinha1Cor: 'tema', esperaLinha2Cor: 'tema', esperaLinha3Cor: 'tema'
 });
 
+// Do usuário, não do layout: a troca não mexe nestes campos
+const doUsuario = (k) => /Familia$|Altura$/.test(k) || (/Borda(Largura)?$/.test(k) && !k.startsWith('card'));
+const filtrar = (o, f) => Object.fromEntries(Object.entries(o || {}).filter(([k, v]) => f(k, v)));
+const doLayout = (campos) => filtrar(campos, (k) => !doUsuario(k));
+const vazio = (v) => v === undefined || v === null || v === 'padrao';
 const guardar = (obj, campos) => Object.fromEntries(Object.keys(campos).map((k) => [k, obj[k] === undefined ? null : obj[k]]));
+const herda = (tela) => tela?.herdarEstilo !== false;
 
-export const aplicarTema = (cfg, id) => {
-  const usandoTema = Boolean(temaPorId(cfg.tema));
+const visualGeral = (cfg, t) => doLayout({ ...camposGerais(t), ...(cfg.herdarEstiloP1 === false ? {} : camposP1(t)) });
+const visualTela = (t) => doLayout(camposTela(t));
 
-  // "Meu layout": volta exatamente ao que estava antes do primeiro preset
-  if (!temaPorId(id)) {
-    if (!usandoTema) return cfg;
-    const salvo = cfg.layoutSalvo || {};
-    const limpo = (o) => Object.fromEntries(Object.entries(o || {}).map(([k, v]) => [k, v]));
-    return {
-      ...cfg,
-      ...limpo(salvo.cfg),
-      tema: 'original',
-      layoutSalvo: null,
-      telasExtras: (cfg.telasExtras || []).map((t) => (t?.herdarEstilo === false ? t : { ...t, ...limpo(salvo.telas?.[t.id]) }))
-    };
-  }
+// Os ajustes ficam em texto (JSON): o Firestore troca o valor inteiro em vez de misturar com o antigo
+const lerSalvo = (cfg, id) => {
+  try { return JSON.parse(cfg.layoutsSalvos?.[id] || 'null'); } catch { return null; }
+};
 
+const tirarFoto = (cfg, id) => {
   const t = temaPorId(id);
-  const geral = { ...camposGerais(t), ...(cfg.herdarEstiloP1 === false ? {} : camposP1(t)) };
-  const salvo = usandoTema ? cfg.layoutSalvo : {
-    cfg: guardar(cfg, geral),
-    telas: Object.fromEntries((cfg.telasExtras || []).filter((x) => x?.id).map((x) => [x.id, guardar(x, camposTela(t))]))
+  const base = t || TEMAS[0]; // "Meu layout": só importam os nomes dos campos
+  const foto = (obj, campos) => {
+    const tudo = guardar(obj, campos);
+    return t ? filtrar(tudo, (k, v) => v !== campos[k]) : tudo; // layout pronto: só o que foi mexido
   };
+  return JSON.stringify({
+    cfg: foto(cfg, visualGeral(cfg, base)),
+    telas: Object.fromEntries((cfg.telasExtras || []).filter((x) => x?.id && herda(x)).map((x) => [x.id, foto(x, visualTela(base))]))
+  });
+};
+
+// Formato antigo (layoutSalvo): vira a foto do "Meu layout" e devolve as fontes/bordas/alturas que a troca tinha apagado
+const migrar = (cfg) => {
+  const antigo = cfg.layoutSalvo;
+  if (!antigo) return cfg;
+  const recuperar = (obj, salvo) => filtrar(salvo, (k, v) => doUsuario(k) && !vazio(v) && vazio(obj[k]));
   return {
     ...cfg,
-    ...geral,
-    tema: id,
-    mostrarProgresso: cfg.mostrarProgresso ?? true,
-    layoutSalvo: salvo,
-    telasExtras: (cfg.telasExtras || []).map((x) => (x?.herdarEstilo === false ? x : { ...x, ...camposTela(t) }))
+    ...recuperar(cfg, antigo.cfg),
+    telasExtras: (cfg.telasExtras || []).map((x) => (herda(x) ? { ...x, ...recuperar(x, antigo.telas?.[x?.id]) } : x)),
+    layoutSalvo: null,
+    layoutsSalvos: {
+      ...cfg.layoutsSalvos,
+      original: JSON.stringify({
+        cfg: doLayout(antigo.cfg),
+        telas: Object.fromEntries(Object.entries(antigo.telas || {}).map(([k, v]) => [k, doLayout(v)]))
+      })
+    }
+  };
+};
+
+export const aplicarTema = (cfgAtual, id) => {
+  const de = temaPorId(cfgAtual.tema) ? cfgAtual.tema : 'original';
+  const para = temaPorId(id) ? id : 'original';
+  if (de === para) return cfgAtual;
+
+  const cfg = migrar(cfgAtual);
+  const t = temaPorId(para);
+  const salvo = lerSalvo(cfg, para) || {};
+  const layoutsSalvos = { ...cfg.layoutsSalvos, [de]: tirarFoto(cfg, de) };
+
+  // "Meu layout" em página criada depois: segue o visual de outra página guardada
+  const modelo = Object.values(salvo.telas || {})[0] || {};
+  const semTema = (x) => Object.fromEntries(Object.keys(visualTela(TEMAS[0])).filter((k) => x[k] === 'tema').map((k) => [k, null]));
+  const visualDaTela = (x) => {
+    const guardado = salvo.telas?.[x?.id];
+    if (t) return { ...visualTela(t), ...guardado };
+    return guardado || { ...semTema(x), ...modelo };
+  };
+  const geral = t ? visualGeral(cfg, t) : null;
+
+  return {
+    ...cfg,
+    ...(t ? { ...geral, ...filtrar(salvo.cfg, (k) => k in geral) } : salvo.cfg),
+    tema: para,
+    ...(t ? { mostrarProgresso: cfg.mostrarProgresso ?? true } : {}),
+    layoutsSalvos,
+    telasExtras: (cfg.telasExtras || []).map((x) => (herda(x) ? { ...x, ...visualDaTela(x) } : x))
   };
 };

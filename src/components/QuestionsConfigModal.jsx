@@ -1427,17 +1427,10 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     <p className="text-xs text-slate-400 mt-0.5">O que você muda aqui vale para todas, menos nas páginas com "Herdar" desligado.</p>
                   </div>
 
-                  <Secao titulo="Layout pronto" descricao="Troca o visual de todas as páginas. Depois você ainda pode ajustar o que quiser.">
+                  <Secao titulo="Layout pronto" descricao="Clique e troca só o visual (cores, fundos, efeitos). Textos, fontes e tamanhos ficam, e cada layout guarda as próprias cores.">
                     <GaleriaTemas
                       atual={config.tema}
-                      onEscolher={(id, nome) => mostrarConfirm(
-                        id === 'original' ? 'Voltar ao meu layout' : `Usar o layout ${nome}`,
-                        id === 'original'
-                          ? 'O visual volta a ser o que estava antes do primeiro layout pronto. Ajustes feitos depois dele serão perdidos.'
-                          : 'Cores, títulos, cards, notas e botões de todas as páginas passam a usar este layout. Seu visual atual fica guardado em "Meu layout". Páginas com "Herdar" desligado não mudam.',
-                        () => setConfig((c) => aplicarTema(c, id)),
-                        id === 'original' ? 'Voltar' : 'Usar layout'
-                      )}
+                      onEscolher={(id) => setConfig((c) => aplicarTema(c, id))}
                     />
                     <Chave rotulo="Barra de progresso" descricao="Linha fina no alto do celular mostrando quanto falta." valor={Boolean(config.mostrarProgresso)} onChange={(v) => setCampo('mostrarProgresso', v)} />
                   </Secao>
