@@ -58,14 +58,14 @@ import { alturaFaixa, FAIXA_MAX, FAIXA_MIN, gravarFaixaPadrao, lerGeral, gravarH
 import ImportadorIA from './ImportadorIA';
 import IconeEspera, { ICONES_ESPERA } from './IconeEspera';
 import PreviewCelular from './PreviewCelular';
-import CamposFinais from './CamposFinais';
+import CamposFinais, { InserirCampo } from './CamposFinais';
 import { FORMATOS_CAMPO, formatoPorId } from '../utils/campoTexto';
 import { chaveTamanho, estiloLinhaFinal, linhaFinal, linhasFinais, ordemFinal, reordenarFinal, temDivisor } from '../utils/telaFinal';
 import BarraProgresso, { CORES_PROGRESSO, CORES_PROGRESSO_LAYOUT, ESTILOS_PROGRESSO, usaDuasCores } from './BarraProgresso';
 import { Columns2, Rows3, Smile as IconeRosto, WrapText } from 'lucide-react';
 import EscalaVisual, { ESTILOS_ESCALA, INSTRUCAO_PADRAO, instrucaoDaEscala } from './EscalaVisual';
 import EstiloLinhasTitulo, { ControleEspacos } from './EstiloLinhasTitulo';
-import { BotaoObrigatorio, OlhoTela, Campo, Chave, Cores, Deslizante, Lista, MiniSlider, QuestaoArrastavel, Secao, Segmentos, SeletorFonte, SeletorIcone } from './Controles';
+import { Alternar, BarraFormato, BotaoObrigatorio, OlhoTela, Campo, Chave, Cores, Deslizante, Lista, MiniSlider, QuestaoArrastavel, Secao, Segmentos, SeletorFonte, SeletorIcone } from './Controles';
 import { ICONES_CARDS, iconesDaTela } from '../utils/icones';
 import { PRESETS_PESQUISAS } from '../utils/presets';
 
@@ -144,6 +144,7 @@ export const EFEITOS_CARDS = [
 // Fonte e borda de uma linha de texto (ler/gravar recebem 'Familia', 'Borda' ou 'BordaLargura')
 const fonteBordaLinha = (ler, gravar) => ({
   familia: ler('Familia'), onFamilia: (v) => gravar('Familia', v),
+  italico: ler('Italico'), onItalico: (v) => gravar('Italico', v),
   borda: ler('Borda'), onBorda: (v) => gravar('Borda', v),
   bordaLargura: ler('BordaLargura'), onBordaLargura: (v) => gravar('BordaLargura', v)
 });
@@ -152,21 +153,28 @@ const EFEITOS_CAPA = [{ id: 'nenhum', label: 'Nenhum' }, ...EFEITOS_CARDS.filter
 
 // Sub-abas de uma tela (Textos, Opções, Aparência)
 const rotuloPerguntas = (n) => <>Perguntas <strong className="font-bold text-amber-300">({n})</strong></>;
-const SubAbas = ({ opcoes, valor, onChange }) => (
-  <div className="flex gap-1 rounded-xl bg-slate-950/60 p-1">
-    {opcoes.map((o) => (
-      <button
-        key={o.id}
-        type="button"
-        aria-pressed={valor === o.id}
-        onClick={() => onChange(o.id)}
-        className={`flex-1 px-3 py-1.5 rounded-lg text-xs transition ${valor === o.id ? 'bg-slate-700 text-white font-semibold' : 'text-slate-400 hover:text-white'}`}
-      >
-        {o.label}
-      </button>
-    ))}
+const SubAbas = ({ opcoes, valor, onChange, lateral = null }) => (
+  <div className="sub-abas">
+    <div className="sub-abas-lista">
+      {opcoes.map((o) => (
+        <button key={o.id} type="button" aria-pressed={valor === o.id} onClick={() => onChange(o.id)}>{o.label}</button>
+      ))}
+    </div>
+    {lateral && <div className="sub-abas-lateral">{lateral}</div>}
   </div>
 );
+
+// Aba do alto: borda verde fininha na que está aberta
+const Aba = ({ ativa, oculta = false, onClick, olho = null, titulo, children }) => {
+  const raiz = useRef(null);
+  useEffect(() => { if (ativa) raiz.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }, [ativa]);
+  return (
+  <div ref={raiz} className={`aba ${ativa ? 'aba-ativa' : ''} ${oculta ? 'aba-oculta' : ''}`}>
+    <button type="button" title={titulo} aria-current={ativa ? 'page' : undefined} onClick={onClick}>{children}</button>
+    {olho}
+  </div>
+  );
+};
 
 // OPÇÕES DE CORES DA FONTE DO TÍTULO DOS CARDS (EM BOLINHAS)
 export const CORES_FONTE_TITULO = [
@@ -571,14 +579,16 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
     return (
       <Secao titulo={titulo} descricao={descricao}>
         {topo}
+        <BarraFormato>
+          <SeletorFonte rotulo="" valor={ler('Familia')} onChange={(v) => gravar('Familia', v)} />
+          {fontePadrao && <MiniSlider rotulo="Tamanho do texto" icone="tamanho" valor={ler('Fonte') ?? fontePadrao} min={11} max={32} onChange={(v) => gravar('Fonte', v)} />}
+          <Cores rotulo="Texto" opcoes={CORES_TEXTO_BOTAO} campo="hex" valor={ler('CorTexto') || 'padrao'} onChange={(v) => gravar('CorTexto', v)} />
+          <Cores rotulo="Fundo" opcoes={CORES_BOTAO} campo="hex" valor={ler('Cor') || 'padrao'} onChange={(v) => gravar('Cor', v)} />
+          <Cores rotulo="Borda" opcoes={CORES_LINHA} campo="hex" valor={ler('Linha') || 'padrao'} onChange={(v) => gravar('Linha', v)} lateral={<MiniSlider rotulo="Largura" valor={ler('LinhaEspessura') ?? espessuraPadrao} min={0} max={6} passo={0.5} onChange={(v) => gravar('LinhaEspessura', v)} />} />
+          <Alternar rotulo={<em>I</em>} nome="Itálico" valor={ler('Italico')} onChange={(v) => gravar('Italico', v)} />
+        </BarraFormato>
         <Segmentos rotulo="Efeito" opcoes={EFEITOS_CAPA} valor={efeito} onChange={(v) => gravar('Efeito', v)} />
-        <SeletorFonte valor={ler('Familia')} onChange={(v) => gravar('Familia', v)} />
         {efeito !== 'nenhum' && <Deslizante rotulo="Profundidade" valor={ler('Profundidade') || 5} min={1} max={10} unidade="" onChange={(v) => gravar('Profundidade', v)} />}
-        <Cores rotulo="Cor do botão" opcoes={CORES_BOTAO} campo="hex" valor={ler('Cor') || 'padrao'} onChange={(v) => gravar('Cor', v)} />
-        <Cores rotulo="Cor do texto" opcoes={CORES_TEXTO_BOTAO} campo="hex" valor={ler('CorTexto') || 'padrao'} onChange={(v) => gravar('CorTexto', v)} />
-        <Cores rotulo="Borda" opcoes={CORES_LINHA} campo="hex" valor={ler('Linha') || 'padrao'} onChange={(v) => gravar('Linha', v)} />
-        <Deslizante rotulo="Largura borda" valor={ler('LinhaEspessura') ?? espessuraPadrao} min={0} max={6} passo={0.5} onChange={(v) => gravar('LinhaEspessura', v)} />
-        {fontePadrao && <Deslizante rotulo="Tamanho texto" valor={ler('Fonte') ?? fontePadrao} min={11} max={32} onChange={(v) => gravar('Fonte', v)} />}
         {comLargura && <Deslizante rotulo="Largura" valor={ler('Largura') ?? 100} min={40} max={100} passo={5} unidade="%" onChange={(v) => gravar('Largura', v)} />}
         <Deslizante rotulo="Altura" valor={ler('Altura') ?? alturaPadrao} min={28} max={alturaMax} onChange={(v) => gravar('Altura', v)} />
         <Deslizante rotulo="Cantos" valor={ler('Raio') ?? raioPadrao} min={0} max={40} onChange={(v) => gravar('Raio', v)} />
@@ -597,7 +607,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
           valor={ler('Desenho') || 'seta'}
           onChange={(v) => gravar('Desenho', v)}
         />
-        <Cores rotulo="Cor" opcoes={CORES_SETA} campo="hex" valor={ler('Cor') || 'branco'} onChange={(v) => gravar('Cor', v)} />
+        <BarraFormato><Cores rotulo="Cor" opcoes={CORES_SETA} campo="hex" valor={ler('Cor') || 'branco'} onChange={(v) => gravar('Cor', v)} /></BarraFormato>
         <Deslizante rotulo="Tamanho" valor={seta.tamanho} min={16} max={36} onChange={(v) => gravar('Tamanho', v)} />
         <Deslizante rotulo="Espessura" valor={seta.espessura} min={1} max={4} passo={0.25} unidade="" onChange={(v) => gravar('Espessura', v)} />
         <div className="grid grid-cols-2 gap-3">
@@ -615,12 +625,11 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
     const lista = Array.isArray(origens) ? origens : [origens];
     const herda = herdaEstilo(config, lista[0]);
     return (
-      <button
-        type="button"
-        role="switch"
-        aria-checked={herda}
-        title={herda ? 'Ligado: cards, botões, setas e altura das faixas são os mesmos de todas as páginas' : 'Desligado: esta página tem configurações próprias'}
-        onClick={() => mostrarConfirm(
+      <Chave
+        rotulo="Herdar configurações"
+        descricao={herda ? 'Ligado: cards, botões, setas e altura das faixas são os mesmos de todas as páginas' : 'Desligado: esta página tem configurações próprias'}
+        valor={herda}
+        onChange={() => mostrarConfirm(
           herda ? 'Parar de herdar' : 'Voltar a herdar',
           herda
             ? 'Esta página passa a ter cards, botões, setas e altura das faixas próprios: mudanças nas outras não chegam aqui, e as daqui não vão para as outras.'
@@ -628,13 +637,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
           () => setConfig((c) => lista.reduce((acc, o) => ligarHeranca(acc, o, !herda), c)),
           herda ? 'Não herdar' : 'Herdar'
         )}
-        className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs bg-slate-800 text-slate-200 hover:bg-slate-700 transition"
-      >
-        <span>Herdar configurações</span>
-        <span className={`w-7 h-4 rounded-full relative transition ${herda ? 'bg-slate-100' : 'bg-slate-600'}`}>
-          <span className={`absolute top-0.5 w-3 h-3 rounded-full transition-all ${herda ? 'left-[14px] bg-slate-900' : 'left-0.5 bg-slate-300'}`} />
-        </span>
-      </button>
+      />
     );
   };
 
@@ -644,6 +647,18 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
     const temDescricao = opcoes.some((o) => String(o.subtitulo || '').trim());
     return (
     <>
+      <Secao titulo="Texto e cores">
+        <BarraFormato>
+          <SeletorFonte rotulo="" valor={ler('cardFamilia')} onChange={(v) => gravar('cardFamilia', v)} />
+          <MiniSlider rotulo="Tamanho do título" icone="tamanho" valor={ler('cardFonteTitulo') || 16} min={12} max={24} onChange={(v) => gravar('cardFonteTitulo', v)} />
+          <Cores rotulo="Título" opcoes={CORES_FONTE_TITULO} campo="dot" valor={ler('cardCorFonteTitulo') || 'branco'} onChange={(v) => gravar('cardCorFonteTitulo', v)} />
+          <Cores rotulo="Fundo" opcoes={FUNDOS_CARDS} campo="amostra" quadrado valor={ler('cardFundoEstilo') || 'escuro'} onChange={(v) => gravar('cardFundoEstilo', v)} />
+          <Cores rotulo="Borda" opcoes={CORES_LINHA} campo="hex" valor={ler('cardBorda') || 'padrao'} onChange={(v) => gravar('cardBorda', v)} lateral={<MiniSlider rotulo="Largura" valor={ler('cardBordaLargura') ?? 1} min={0} max={10} passo={0.5} onChange={(v) => gravar('cardBordaLargura', v)} />} />
+          <Alternar rotulo={<em>I</em>} nome="Itálico" valor={ler('cardItalico')} onChange={(v) => gravar('cardItalico', v)} />
+          {temDescricao && <MiniSlider rotulo="Tamanho da descrição" icone="tamanho" valor={ler('cardFonteSubtitulo') || 12} min={9} max={18} onChange={(v) => gravar('cardFonteSubtitulo', v)} />}
+          {temDescricao && <Cores rotulo="Descrição" opcoes={CORES_FONTE_SUBTITULO} campo="dot" valor={ler('cardCorFonteSubtitulo') || 'cinza'} onChange={(v) => gravar('cardCorFonteSubtitulo', v)} />}
+        </BarraFormato>
+      </Secao>
       <Secao titulo="Tamanho">
         <Deslizante rotulo="Altura do card" valor={alturaCard(ler('cardAltura'))} min={CARD_ALTURA_MIN} max={CARD_ALTURA_MAX} onChange={(v) => gravar('cardAltura', v)} />
         <Deslizante rotulo="Espaço entre cards" valor={Number(ler('cardEspaco') ?? CARD_ESPACO_PADRAO)} min={0} max={40} onChange={(v) => gravar('cardEspaco', v)} />
@@ -651,21 +666,12 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
           <Deslizante rotulo="Cantos esquerda" valor={raios.esq} min={0} max={40} onChange={(v) => gravar('cardRaioEsq', v)} />
           <Deslizante rotulo="Cantos direita" valor={raios.dir} min={0} max={40} onChange={(v) => gravar('cardRaioDir', v)} />
         </div>
-        <SeletorFonte valor={ler('cardFamilia')} onChange={(v) => gravar('cardFamilia', v)} />
-        <Deslizante rotulo="Título" valor={ler('cardFonteTitulo') || 16} min={12} max={24} onChange={(v) => gravar('cardFonteTitulo', v)} />
-        {temDescricao && <Deslizante rotulo="Descrição" valor={ler('cardFonteSubtitulo') || 12} min={9} max={18} onChange={(v) => gravar('cardFonteSubtitulo', v)} />}
         {opcoes.length > 2 && <Deslizante rotulo="Cards por página" valor={Math.min(15, porPagina)} min={2} max={15} unidade="" onChange={(v) => gravar('cardsPorTela', v)} />}
         <Chave rotulo="Mostrar ícones nos cards" valor={ler(campoIcones) !== false} onChange={(v) => gravar('mostrarIcones', v)} />
       </Secao>
       <Secao titulo="Efeito">
         <Segmentos rotulo="Acabamento" opcoes={EFEITOS_CARDS} valor={ler('cardEfeitoEstilo') || 'padrao'} onChange={(v) => gravar('cardEfeitoEstilo', v)} />
         <Deslizante rotulo="Intensidade" valor={ler('cardProfundidade') || 5} min={1} max={10} unidade="" onChange={(v) => gravar('cardProfundidade', v)} />
-      </Secao>
-      <Secao titulo="Cores">
-        <Cores rotulo="Fundo do card" opcoes={FUNDOS_CARDS} campo="amostra" quadrado valor={ler('cardFundoEstilo') || 'escuro'} onChange={(v) => gravar('cardFundoEstilo', v)} />
-        <Cores rotulo="Borda" opcoes={CORES_LINHA} campo="hex" valor={ler('cardBorda') || 'padrao'} onChange={(v) => gravar('cardBorda', v)} lateral={<MiniSlider rotulo="Largura" valor={ler('cardBordaLargura') ?? 1} min={0} max={10} passo={0.5} onChange={(v) => gravar('cardBordaLargura', v)} />} />
-        <Cores rotulo="Título" opcoes={CORES_FONTE_TITULO} campo="dot" valor={ler('cardCorFonteTitulo') || 'branco'} onChange={(v) => gravar('cardCorFonteTitulo', v)} />
-        {temDescricao && <Cores rotulo="Descrição" opcoes={CORES_FONTE_SUBTITULO} campo="dot" valor={ler('cardCorFonteSubtitulo') || 'cinza'} onChange={(v) => gravar('cardCorFonteSubtitulo', v)} />}
       </Secao>
     </>
     );
@@ -1284,118 +1290,38 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
             {/* BARRA DE ABAS: BOAS-VINDAS, INÍCIO, TELA 1..X, FIM + BOTÃO + ADD TAB EM VERDE */}
             <div className="flex border-b border-slate-800 bg-slate-950/70 px-3 pt-2.5 shrink-0 gap-1.5 overflow-x-auto items-center custom-scrollbar">
               
-              {/* Boas-vindas (Espera / Entrada) */}
-              <button
-                type="button"
-                onClick={() => setActiveTab('inicio')}
-                className={`pb-2.5 px-3 text-xs sm:text-sm font-bold border-b-2 transition flex items-center gap-1.5 whitespace-nowrap ${
-                  activeTab === 'inicio'
-                    ? 'border-slate-200 text-slate-200'
-                    : 'border-transparent text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <span>Boas-vindas</span>
-              </button>
-
-              {/* Início (Capa / Botão COMEÇAR) */}
-              <div className="flex items-start">
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab('inicio_comecar');
-                }}
-                className={`${telaOculta('inicio_comecar') ? 'line-through opacity-60' : ''} pb-2.5 pl-3 pr-1 text-xs sm:text-sm font-bold border-b-2 transition flex items-center gap-1.5 whitespace-nowrap ${
-                  activeTab === 'inicio_comecar'
-                    ? 'border-slate-200 text-slate-200'
-                    : 'border-transparent text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <span>Início</span>
-              </button>
-              <OlhoTela oculta={telaOculta('inicio_comecar')} rotulo="o Início" onClick={() => alternarTela('inicio_comecar')} className="-mt-0.5" />
-              </div>
-
-              {/* Tela 1 (Perguntas / Cards) */}
-              <div className="flex items-start">
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab('tela_1');
-                }}
-                className={`${telaOculta('tela_1') ? 'line-through opacity-60' : ''} pb-2.5 pl-3 pr-1 text-xs sm:text-sm font-bold border-b-2 transition flex items-center gap-1.5 whitespace-nowrap ${
-                  activeTab === 'tela_1'
-                    ? 'border-slate-200 text-slate-200'
-                    : 'border-transparent text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <span>Tela 1</span>
-                <span className="text-[11px] bg-slate-800 text-slate-300 px-1.5 py-0.2 rounded-full tabular-nums">
-                  {cardsAtivosP1.length}
-                </span>
-              </button>
-              <OlhoTela oculta={telaOculta('tela_1')} rotulo="a Tela 1" onClick={() => alternarTela('tela_1')} className="-mt-0.5" />
-              </div>
-
-              {/* Telas Extras Criadas Dinamicamente (Tela 2, Tela 3, etc. conforme ordem real) */}
+              <Aba ativa={activeTab === 'inicio'} onClick={() => setActiveTab('inicio')}>Boas-vindas</Aba>
+              <Aba ativa={activeTab === 'inicio_comecar'} oculta={telaOculta('inicio_comecar')} onClick={() => setActiveTab('inicio_comecar')} olho={<OlhoTela oculta={telaOculta('inicio_comecar')} rotulo="o Início" onClick={() => alternarTela('inicio_comecar')} />}>Início</Aba>
+              <Aba ativa={activeTab === 'tela_1'} oculta={telaOculta('tela_1')} onClick={() => setActiveTab('tela_1')} olho={<OlhoTela oculta={telaOculta('tela_1')} rotulo="a Tela 1" onClick={() => alternarTela('tela_1')} />}>
+                Tela 1 <span className="aba-conta">{cardsAtivosP1.length}</span>
+              </Aba>
               {paginasExtras.map(({ membros, numero: numTela }) => {
-                const idx = membros[0];
-                const tela = config.telasExtras[idx];
-                const tabKey = `extra_${idx}`;
-                const cardsAtivos = (tela.opcoes || []).filter(o => o.ativo !== false).length;
-                const oculta = telaOculta(tabKey);
+                const tela = config.telasExtras[membros[0]];
+                const chave = `extra_${membros[0]}`;
+                const cardsAtivos = (tela.opcoes || []).filter((o) => o.ativo !== false).length;
+                const temConta = membros.length > 1 || ['cards', 'radio', 'checkbox', 'dropdown', 'grade'].includes(tela.tipo || 'cards');
                 return (
-                  <div key={tela.id || idx} className="flex items-start">
-                  <button
-                    type="button"
+                  <Aba
+                    key={tela.id || membros[0]}
+                    ativa={membros.some((m) => activeTab === `extra_${m}`)}
+                    oculta={telaOculta(chave)}
                     onClick={() => abrirPagina(membros)}
-                    className={`${oculta ? 'line-through opacity-60' : ''} pb-2.5 pl-3 pr-1 text-xs sm:text-sm font-bold border-b-2 transition flex items-center gap-1.5 whitespace-nowrap ${
-                      membros.some((m) => activeTab === `extra_${m}`)
-                        ? 'border-slate-200 text-slate-200'
-                        : 'border-transparent text-slate-400 hover:text-slate-200'
-                    }`}
+                    olho={<OlhoTela oculta={telaOculta(chave)} rotulo={`a Tela ${numTela}`} onClick={() => alternarTela(chave, membros)} />}
                   >
-                    <span>Tela {numTela}</span>
-                    {(membros.length > 1 || ['cards', 'radio', 'checkbox', 'dropdown', 'grade'].includes(tela.tipo || 'cards')) && (
-                      <span className="text-[11px] bg-slate-800 text-slate-300 px-1.5 py-0.2 rounded-full tabular-nums">
-                        {membros.length > 1 ? membros.length : cardsAtivos}
-                      </span>
-                    )}
-                  </button>
-                  <OlhoTela oculta={oculta} rotulo={`a Tela ${numTela}`} onClick={() => alternarTela(tabKey, membros)} className="-mt-0.5" />
-                  </div>
+                    Tela {numTela} {temConta && <span className="aba-conta">{membros.length > 1 ? membros.length : cardsAtivos}</span>}
+                  </Aba>
                 );
               })}
-
-              {/* Tela Acompanhantes (Opcional - se ativa aparece na sequência, ou pode ser ativada) */}
-              <div className="flex items-start">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('acompanhantes')}
-                  title="Contagem de pessoas no grupo"
-                  className={`${telaOculta('acompanhantes') ? 'line-through opacity-60' : ''} pb-2.5 pl-3 pr-1 text-xs sm:text-sm font-bold border-b-2 transition flex items-center gap-1.5 whitespace-nowrap ${
-                    activeTab === 'acompanhantes'
-                      ? 'border-slate-200 text-slate-200'
-                      : 'border-transparent text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  <Users className="w-4 h-4" />
-                  <span>{telaOculta('acompanhantes') ? 'Acompanhantes' : `Tela ${paginasExtras.length + 2}`}</span>
-                </button>
-                <OlhoTela oculta={telaOculta('acompanhantes')} rotulo="a tela de acompanhantes" onClick={() => alternarTela('acompanhantes')} className="-mt-0.5" />
-              </div>
-
-              {/* Fim */}
-              <button
-                type="button"
-                onClick={() => setActiveTab('fim')}
-                className={`pb-2.5 px-3 text-xs sm:text-sm font-bold border-b-2 transition flex items-center gap-1.5 whitespace-nowrap ${
-                  activeTab === 'fim'
-                    ? 'border-slate-200 text-slate-200'
-                    : 'border-transparent text-slate-400 hover:text-slate-200'
-                }`}
+              <Aba
+                ativa={activeTab === 'acompanhantes'}
+                oculta={telaOculta('acompanhantes')}
+                titulo="Contagem de pessoas no grupo"
+                onClick={() => setActiveTab('acompanhantes')}
+                olho={<OlhoTela oculta={telaOculta('acompanhantes')} rotulo="a tela de acompanhantes" onClick={() => alternarTela('acompanhantes')} />}
               >
-                <span>Fim</span>
-              </button>
+                <Users className="w-4 h-4" /> {telaOculta('acompanhantes') ? 'Acompanhantes' : `Tela ${paginasExtras.length + 2}`}
+              </Aba>
+              <Aba ativa={activeTab === 'fim'} onClick={() => setActiveTab('fim')}>Fim</Aba>
 
               {/* Botão + Add Tab em verde (com apenas um +) */}
               <button
@@ -1459,7 +1385,9 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       cor: config[`esperaLinha${n}Cor`] || cor,
                       onCor: (v) => setCampo(`esperaLinha${n}Cor`, v),
                       familia: config[`esperaLinha${n}Familia`],
-                      onFamilia: (v) => setCampo(`esperaLinha${n}Familia`, v)
+                      onFamilia: (v) => setCampo(`esperaLinha${n}Familia`, v),
+                      italico: config[`esperaLinha${n}Italico`],
+                      onItalico: (v) => setCampo(`esperaLinha${n}Italico`, v)
                     }))}
                   />
 
@@ -1497,14 +1425,16 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             );
                           })}
                         </div>
+                        <BarraFormato>
                         {usaDuasCores(config.progressoEstilo) ? (
                           <>
-                            <Cores rotulo="Começa em" campo="hex" opcoes={CORES_PROGRESSO} valor={config.progressoCor1 || 'vermelho'} onChange={(v) => setCampo('progressoCor1', v)} lateral={<span />} />
-                            <Cores rotulo="Termina em" campo="hex" opcoes={CORES_PROGRESSO} valor={config.progressoCor2 || 'verde'} onChange={(v) => setCampo('progressoCor2', v)} lateral={<span />} />
+                            <Cores rotulo="Começa em" campo="hex" opcoes={CORES_PROGRESSO} valor={config.progressoCor1 || 'vermelho'} onChange={(v) => setCampo('progressoCor1', v)} />
+                            <Cores rotulo="Termina em" campo="hex" opcoes={CORES_PROGRESSO} valor={config.progressoCor2 || 'verde'} onChange={(v) => setCampo('progressoCor2', v)} />
                           </>
                         ) : (
-                          <Cores rotulo="Cor" campo="hex" opcoes={CORES_PROGRESSO_LAYOUT} valor={config.progressoCor || 'layout'} onChange={(v) => setCampo('progressoCor', v)} lateral={<span />} />
+                          <Cores rotulo="Cor" campo="hex" opcoes={CORES_PROGRESSO_LAYOUT} valor={config.progressoCor || 'layout'} onChange={(v) => setCampo('progressoCor', v)} />
                         )}
+                        </BarraFormato>
                         <Deslizante rotulo="Altura" valor={Number(config.progressoAltura) || 4} min={2} max={14} onChange={(v) => setCampo('progressoAltura', v)} />
                       </>
                     )}
@@ -1615,10 +1545,11 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               {/* ABA: TELA 1 (COM TÍTULO 1 & 2 E SLIDERS DE DESIGN)    */}
               {/* ====================================================== */}
               {activeTab === 'tela_1' && (
-                <div className="space-y-2.5">
+                <div className="painel-tela">
                   <SubAbas
                     valor={subAtualP1}
                     onChange={setSubTabTela1}
+                    lateral={<>{cardsAtivosP1.length > 0 && <BotaoObrigatorio valor={config.pergunta1Obrigatoria} onChange={(v) => setCampo('pergunta1Obrigatoria', v)} />}{Heranca('p1')}</>}
                     opcoes={[
                       { id: 'pergunta', label: 'Títulos' },
                       { id: 'opcoes', label: rotuloPerguntas(cardsAtivosP1.length) },
@@ -1626,10 +1557,6 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     ]}
                   />
 
-                  <div className="flex flex-wrap items-center gap-2">
-                    {cardsAtivosP1.length > 0 && <BotaoObrigatorio valor={config.pergunta1Obrigatoria} onChange={(v) => setCampo('pergunta1Obrigatoria', v)} />}
-                    {Heranca('p1')}
-                  </div>
 
                   {subAtualP1 === 'pergunta' && (
                     <div className="space-y-2.5">
@@ -2068,7 +1995,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 })();
 
                 return (
-                  <div className="space-y-2.5">
+                  <div className="painel-tela">
                     {/* Barra Superior da Tela Extra */}
                     <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-slate-800">
                       <div className="flex items-center gap-2">
@@ -2114,6 +2041,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     <SubAbas
                       valor={subAtual}
                       onChange={setSubTabExtra}
+                      lateral={<>{subAtual !== 'lista' && <BotaoObrigatorio valor={telaAlvo.obrigatorio} onChange={(v) => handleUpdateTelaProp(extraIndex, 'obrigatorio', v)} />}{Heranca(membros)}</>}
                       opcoes={[
                         ...(temLista ? [{ id: 'lista', label: rotuloPerguntas(membros.length) }] : []),
                         { id: 'pergunta', label: 'Títulos' },
@@ -2128,10 +2056,6 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       ]}
                     />
 
-                    <div className="flex flex-wrap items-center gap-2">
-                      {subAtual !== 'lista' && <BotaoObrigatorio valor={telaAlvo.obrigatorio} onChange={(v) => handleUpdateTelaProp(extraIndex, 'obrigatorio', v)} />}
-                      {Heranca(membros)}
-                    </div>
 
                     {subAtual === 'lista' && (
                       <div className="space-y-3">
@@ -2856,7 +2780,9 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       bordaLargura: config[`${l.id}BordaLargura`], onBordaLargura: (v) => setCampo(`${l.id}BordaLargura`, v),
                       espaco: e.espaco,
                       onEspaco: linhasFinais(config).slice(0, -1).some((x) => x.id === id) ? (v) => setCampo(`${l.id}Espaco`, v) : undefined,
-                      abaixo: <CamposFinais config={config} linha={l.id} texto={e.texto} tamanhoLinha={e.tamanho} min={l.min} max={l.max} onTexto={onTexto} setConfig={setConfig} />
+                      italico: config[`${l.id}Italico`], onItalico: (v) => setCampo(`${l.id}Italico`, v),
+                      aoLado: <InserirCampo config={config} texto={e.texto} onTexto={onTexto} setConfig={setConfig} />,
+                      abaixo: <CamposFinais config={config} linha={l.id} texto={e.texto} tamanhoLinha={e.tamanho} min={l.min} max={l.max} setConfig={setConfig} />
                     };
                   })}
                 />
@@ -2881,8 +2807,11 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     <Secao titulo="Pergunta">
                       <Campo rotulo="Título, linha 1" valor={config.pergunta2Titulo} onChange={(v) => setCampo('pergunta2Titulo', v)} placeholder="Você está só ou tem mais" />
                       <Campo rotulo="Título, linha 2 (opcional)" valor={config.pergunta2Titulo2} onChange={(v) => setCampo('pergunta2Titulo2', v)} placeholder="pessoas te acompanhando?" />
-                      <SeletorFonte valor={config.pergunta2Familia} onChange={(v) => setCampo('pergunta2Familia', v)} />
-                      <Deslizante rotulo="Tamanho" valor={config.pergunta2FonteTamanho || 18} min={14} max={28} onChange={(v) => setCampo('pergunta2FonteTamanho', v)} />
+                      <BarraFormato>
+                        <SeletorFonte rotulo="" valor={config.pergunta2Familia} onChange={(v) => setCampo('pergunta2Familia', v)} />
+                        <MiniSlider rotulo="Tamanho" icone="tamanho" valor={config.pergunta2FonteTamanho || 18} min={14} max={28} onChange={(v) => setCampo('pergunta2FonteTamanho', v)} />
+                        <Alternar rotulo={<em>I</em>} nome="Itálico" valor={config.pergunta2Italico} onChange={(v) => setCampo('pergunta2Italico', v)} />
+                      </BarraFormato>
                     </Secao>
                   )}
 
@@ -2894,13 +2823,13 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         <Deslizante rotulo="Borda" valor={config.btnQtdBordaEspessura || 1} min={1} max={6} onChange={(v) => setCampo('btnQtdBordaEspessura', v)} />
                       </Secao>
                       <Secao titulo="Cor e efeito">
-                        <Cores rotulo="Cor do botão" opcoes={CORES_BOTAO_QTD} campo="dot" valor={config.btnQtdCor || 'slate'} onChange={(v) => setCampo('btnQtdCor', v)} />
+                        <BarraFormato><Cores rotulo="Botão" opcoes={CORES_BOTAO_QTD} campo="dot" valor={config.btnQtdCor || 'slate'} onChange={(v) => setCampo('btnQtdCor', v)} /></BarraFormato>
                         <Segmentos rotulo="Efeito" opcoes={EFEITOS_CARDS} valor={config.btnQtdEfeito || 'efeito_3d'} onChange={(v) => setCampo('btnQtdEfeito', v)} />
                         <Deslizante rotulo="Intensidade" valor={config.btnQtdProfundidade || 5} min={1} max={10} unidade="" onChange={(v) => setCampo('btnQtdProfundidade', v)} />
                       </Secao>
                       <Secao titulo="Número e legenda">
                         <Deslizante rotulo="Número" valor={config.btnQtdFonteNumero || 34} min={18} max={48} onChange={(v) => setCampo('btnQtdFonteNumero', v)} />
-                        <Cores rotulo="Cor do número" opcoes={CORES_NUMERO_QTD} campo="dot" valor={config.btnQtdCorNumero || 'branco'} onChange={(v) => setCampo('btnQtdCorNumero', v)} />
+                        <BarraFormato><Cores rotulo="Número" opcoes={CORES_NUMERO_QTD} campo="dot" valor={config.btnQtdCorNumero || 'branco'} onChange={(v) => setCampo('btnQtdCorNumero', v)} /></BarraFormato>
                         <Deslizante rotulo="Legenda" valor={config.btnQtdFonteDescricao || 11} min={9} max={16} onChange={(v) => setCampo('btnQtdFonteDescricao', v)} />
                         <Lista rotulo="Cor da legenda" opcoes={CORES_DESCRICAO_QTD} valor={config.btnQtdCorDescricao || 'branco_80'} onChange={(v) => setCampo('btnQtdCorDescricao', v)} />
                       </Secao>

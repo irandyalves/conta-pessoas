@@ -41,8 +41,9 @@ export default function TelaFinal({ config, valorDe, children }) {
                       fontSize: tamanho ? `${tamanho}px` : undefined,
                       color: corTextoHex(ler('Cor')),
                       fontWeight: (ler('Bold') ?? true) ? 800 : 400,
+                      fontStyle: ler('Italico') ? 'italic' : undefined,
                       // e-mail em caixa alta fica difícil de conferir
-                      textTransform: p.valor.includes('@') ? 'none' : undefined
+                      textTransform: p.valor.includes('@') ? 'none' : ler('Caixa') ? 'uppercase' : undefined
                     }}
                   >
                     {p.valor}

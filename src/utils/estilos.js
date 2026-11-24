@@ -154,6 +154,7 @@ export const fonteEBorda = (obj, prefixo, temFundo = true, faixa = true) => {
   const st = {};
   const familia = familiaCss(obj?.[`${prefixo}Familia`]);
   if (familia) st.fontFamily = familia;
+  if (obj?.[`${prefixo}Italico`]) st.fontStyle = 'italic';
   const cor = hexDe(CORES_LINHA, obj?.[`${prefixo}Borda`]);
   const largura = obj?.[`${prefixo}BordaLargura`];
   if (temFundo && (cor || largura != null)) {
@@ -177,6 +178,7 @@ export const estiloBotao = (ler, soForma = false) => {
   if (ler('LinhaEspessura') != null) st.borderWidth = `${ler('LinhaEspessura')}px`;
   if (ler('Raio') != null) st.borderRadius = `${ler('Raio')}px`;
   if (familiaCss(ler('Familia'))) st.fontFamily = familiaCss(ler('Familia'));
+  if (ler('Italico')) st.fontStyle = 'italic';
   if (ler('Fonte') != null) st.fontSize = `${ler('Fonte')}px`;
   if (ler('Altura') != null) Object.assign(st, { height: `${ler('Altura')}px`, paddingTop: 0, paddingBottom: 0 });
   if (soForma) return st;
@@ -324,7 +326,7 @@ export const corGradeSelecionada = (col, cols = []) => {
 // ==========================================
 const MAPA_P1 = {
   tituloTamanho: 'pergunta1FonteTamanho', tituloCor: 'pergunta1TituloCor', tituloBold: 'pergunta1TituloBold',
-  tituloFaixa: 'pergunta1TituloFaixa', subFaixa: 'pergunta1SubFaixa', tituloCaixa: 'pergunta1TituloCaixa', tituloFamilia: 'pergunta1TituloFamilia', tituloBorda: 'pergunta1TituloBorda', tituloBordaLargura: 'pergunta1TituloBordaLargura', subFamilia: 'pergunta1SubFamilia', subBorda: 'pergunta1SubBorda', subBordaLargura: 'pergunta1SubBordaLargura', subCaixa: 'pergunta1SubCaixa',
+  tituloFaixa: 'pergunta1TituloFaixa', subFaixa: 'pergunta1SubFaixa', tituloCaixa: 'pergunta1TituloCaixa', tituloFamilia: 'pergunta1TituloFamilia', tituloBorda: 'pergunta1TituloBorda', tituloBordaLargura: 'pergunta1TituloBordaLargura', subFamilia: 'pergunta1SubFamilia', subBorda: 'pergunta1SubBorda', subBordaLargura: 'pergunta1SubBordaLargura', subCaixa: 'pergunta1SubCaixa', tituloItalico: 'pergunta1TituloItalico', subItalico: 'pergunta1SubItalico',
   tituloAlinhamento: 'pergunta1TituloAlinhamento', tituloFundo: 'pergunta1TituloFundo',
   subTamanho: 'pergunta1TextoAbaixoTamanho', subCor: 'pergunta1TextoAbaixoCor', subBold: 'pergunta1SubBold',
   subAlinhamento: 'pergunta1SubAlinhamento', subFundo: 'pergunta1SubFundo',
@@ -333,7 +335,7 @@ const MAPA_P1 = {
 };
 const MAPA_EXTRA = {
   tituloTamanho: 'titulo1Tamanho', tituloCor: 'titulo1Cor', tituloBold: 'tituloBold',
-  tituloFaixa: 'tituloFaixa', subFaixa: 'subFaixa', tituloCaixa: 'tituloCaixa', tituloFamilia: 'tituloFamilia', tituloBorda: 'tituloBorda', tituloBordaLargura: 'tituloBordaLargura', subFamilia: 'subFamilia', subBorda: 'subBorda', subBordaLargura: 'subBordaLargura', subCaixa: 'subCaixa',
+  tituloFaixa: 'tituloFaixa', subFaixa: 'subFaixa', tituloCaixa: 'tituloCaixa', tituloFamilia: 'tituloFamilia', tituloBorda: 'tituloBorda', tituloBordaLargura: 'tituloBordaLargura', subFamilia: 'subFamilia', subBorda: 'subBorda', subBordaLargura: 'subBordaLargura', subCaixa: 'subCaixa', tituloItalico: 'tituloItalico', subItalico: 'subItalico',
   tituloAlinhamento: 'tituloAlinhamento', tituloFundo: 'tituloFundo',
   subTamanho: 'subtituloTamanho', subCor: 'subtituloCor', subBold: 'subBold',
   subAlinhamento: 'subAlinhamento', subFundo: 'subFundo',
@@ -341,7 +343,7 @@ const MAPA_EXTRA = {
   espacoTitulos: 'espacoTitulos', espacoSub: 'espacoSub', espacoCards: 'espacoCards'
 };
 // Campos com o mesmo nome nos dois lugares
-const COMUNS = ['cardFamilia', 'cardBorda', 'cardBordaLargura', 'gradeFamilia', 'legendaFamilia', 'legendaBorda', 'legendaBordaLargura', 'itemFamilia', 'itemBorda', 'itemBordaLargura', 'gradeFormato', 'gradeEfeito', 'gradeProfundidade', 'gradeCor', 'gradeCorTexto', 'gradeLinha', 'gradeLinhaEspessura', 'gradeAltura', 'gradeRaio', 'cardAltura', 'cardEspaco', 'cardRaio', 'cardsPorTela', 'cardFundoEstilo', 'cardEfeitoEstilo', 'cardProfundidade', 'cardCorFonteTitulo',
+const COMUNS = ['cardItalico', 'gradeItalico', 'legendaItalico', 'itemItalico', 'instrucaoItalico', 'cardFamilia', 'cardBorda', 'cardBordaLargura', 'gradeFamilia', 'legendaFamilia', 'legendaBorda', 'legendaBordaLargura', 'itemFamilia', 'itemBorda', 'itemBordaLargura', 'gradeFormato', 'gradeEfeito', 'gradeProfundidade', 'gradeCor', 'gradeCorTexto', 'gradeLinha', 'gradeLinhaEspessura', 'gradeAltura', 'gradeRaio', 'cardAltura', 'cardEspaco', 'cardRaio', 'cardsPorTela', 'cardFundoEstilo', 'cardEfeitoEstilo', 'cardProfundidade', 'cardCorFonteTitulo',
   'cardCorFonteSubtitulo', 'cardFonteTitulo', 'cardFonteSubtitulo', 'escalaTamanho', 'legendaCor', 'legendaBold', 'legendaFundo', 'legendaAlinhamento', 'legendaColunas', 'legendaIcones', 'instrucaoTamanho', 'instrucaoCor', 'instrucaoBold', 'instrucaoCaixa', 'instrucaoFamilia', 'instrucaoBorda', 'instrucaoBordaLargura', 'instrucaoAlinhamento', 'instrucaoFundo', 'instrucaoAltura', 'instrucaoEspaco', 'instrucaoPosicao',
   'itemTamanho', 'itemCor', 'itemBold', 'itemFundo', 'legendaFaixa', 'itemFaixa', 'legendaCaixa', 'itemCaixa'];
 
@@ -388,7 +390,7 @@ export const espacos = (cfg = {}, ehP1 = false, escala = 1) => {
 const PADROES_HERDADOS = {
   cardAltura: 82, cardEspaco: CARD_ESPACO_PADRAO, cardsPorTela: 4, cardFundoEstilo: 'escuro', cardEfeitoEstilo: 'padrao',
   cardProfundidade: 5, cardCorFonteTitulo: 'branco', cardCorFonteSubtitulo: 'cinza', cardFonteTitulo: 16, cardFonteSubtitulo: 12,
-  cardFamilia: 'padrao', cardBorda: 'padrao', cardBordaLargura: null, gradeFamilia: 'padrao',
+  cardFamilia: 'padrao', cardItalico: false, gradeItalico: false, cardBorda: 'padrao', cardBordaLargura: null, gradeFamilia: 'padrao',
   mostrarIcones: true, tituloFaixa: 100, subFaixa: 100,
   gradeEfeito: 'nenhum', gradeProfundidade: 5, gradeCor: 'padrao', gradeCorTexto: 'padrao', gradeLinha: 'padrao',
   gradeLinhaEspessura: 1, gradeAltura: 38, gradeRaio: 12, gradeFormato: 'numeros'

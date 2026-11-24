@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, MoveVertical, Plus } from 'lucide-react';
+import { Eye, EyeOff, Plus } from 'lucide-react';
 import { alturaFaixa, CORES_LINHA, CORES_TEXTO_LINHAS, FAIXA_MAX, FAIXA_MIN, FUNDOS_CAPTION } from '../utils/estilos';
-import { Alinhamento, Alternar, Campo, Cores, Deslizante, Dobra, MiniSlider, QuestaoArrastavel, Secao, SeletorFonte } from './Controles';
+import { Alinhamento, Alternar, BarraFormato, Cores, Deslizante, MiniSlider, QuestaoArrastavel, Secao, SeletorFonte } from './Controles';
 
 /**
- * Textos de uma tela, um por linha, na mesma ordem em que aparecem no celular.
+ * PADRÃO DE TEXTO DO SISTEMA: cada texto ocupa duas linhas, nome + texto e a barra de formatação.
+ * A barra tem sempre a mesma ordem: fonte, tamanho, Texto, Fundo, Borda, alinhamento, B I AA, espaço e extras.
  * Cada linha mostra só os controles cujo "on..." foi informado:
  * { rotulo, texto?, onTexto?, multilinha?, tamanho, min, max, onTamanho, familia, onFamilia, cor, onCor, bold, onBold,
- *   caixa, onCaixa, alinhamento, onAlinhamento, fundo, onFundo, faixa, onFaixa, borda, onBorda, bordaLargura, onBordaLargura,
- *   espaco, onEspaco, extra e abaixo (controles próprios da linha) }
- * Altura e borda aparecem quando a linha tem cor de fundo. onEspaco: distância ENTRE esta linha e a próxima.
+ *   italico, onItalico, caixa, onCaixa, alinhamento, onAlinhamento, fundo, onFundo, faixa, onFaixa, borda, onBorda,
+ *   bordaLargura, onBordaLargura, espaco, onEspaco, aoLado (do texto), extra (fim da barra) e abaixo = controles próprios da linha }
+ * Altura fica no cartão do Fundo e largura no da Borda. onEspaco: distância ENTRE esta linha e a próxima.
  * onOrdem (opcional): liga o arrastar e soltar; recebe as "chave" das linhas visíveis na ordem nova.
  * Linha { separador: true, ligado, onLigado } = linha divisória.
  */
@@ -27,24 +28,18 @@ export default function EstiloLinhasTitulo({ linhas, onOrdem }) {
     onOrdem(ids);
   };
   const Item = (l, i, conteudo) => (onOrdem ? (
-    <QuestaoArrastavel
-      key={l.rotulo}
-      lista="linhas_texto"
-      indice={i}
-      total={visiveis.length}
-      onMover={mover}
-      className="-mx-3 px-5 py-2 flex flex-col gap-1.5 border-t border-dashed border-slate-600"
-    >
+    <QuestaoArrastavel key={l.rotulo} lista="linhas_texto" indice={i} total={visiveis.length} onMover={mover} className="texto-linha texto-linha-movel">
       {conteudo}
     </QuestaoArrastavel>
-  ) : <React.Fragment key={l.rotulo}>{conteudo}</React.Fragment>);
+  ) : <div key={l.rotulo} className={`questao questao-fixa texto-linha ${i % 2 ? 'questao-par' : ''}`}>{conteudo}</div>);
+
   return (
-    <div className={onOrdem ? '' : 'space-y-1'}>
+    <div className="texto-lista">
       {visiveis.map((l, i) => {
         if (l.separador) {
           return Item(l, i, (
-            <div className="flex items-center gap-3 px-1 py-1">
-              <span className="text-[11px] text-slate-400 shrink-0">{l.rotulo}</span>
+            <div className="flex items-center gap-3">
+              <span className="texto-nome">{l.rotulo}</span>
               <span className={`flex-1 border-t ${l.ligado ? 'border-slate-300' : 'border-slate-700 border-dashed'}`} />
               <button type="button" aria-pressed={!l.ligado} title={l.ligado ? 'Ocultar a linha divisória' : 'Mostrar a linha divisória'} aria-label={l.ligado ? 'Ocultar a linha divisória' : 'Mostrar a linha divisória'} onClick={() => l.onLigado(!l.ligado)} className={`p-1 rounded-md transition ${l.ligado ? 'text-slate-500 hover:text-white' : 'text-rose-300 bg-rose-500/15'}`}>
                 {l.ligado ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
@@ -52,70 +47,53 @@ export default function EstiloLinhasTitulo({ linhas, onOrdem }) {
             </div>
           ));
         }
-        const cor = CORES_TEXTO_LINHAS.find((c) => c.id === l.cor);
-        const fundo = l.onFundo && l.fundo !== 'transparente' && FUNDOS_CAPTION.find((f) => f.id === l.fundo);
+        const temFundo = Boolean(l.onFundo) && l.fundo !== 'transparente';
+        const editar = (e) => { manter(l.rotulo); l.onTexto(e.target.value); };
         return Item(l, i, (
           <>
-            <Dobra
-              semFundo={Boolean(onOrdem)}
-              titulo={l.rotulo}
-              resumo={l.texto}
-              aberta={i === 0 || Boolean(mantidas[l.rotulo])}
-              lateral={
-                <span className="flex items-center gap-1.5 shrink-0" aria-hidden="true">
-                  {cor && <span className={`w-2 h-2 rounded-full ${cor.bg}`} />}
-                  {fundo && <span className={`w-2 h-2 rounded-sm ${fundo.dot}`} />}
-                  {l.tamanho && <span className="text-[11px] tabular-nums text-slate-400 w-8 text-right">{l.tamanho}px</span>}
-                </span>
-              }
-            >
-              {l.onTexto && <Campo valor={l.texto} onChange={(v) => { manter(l.rotulo); l.onTexto(v); }} multilinha={l.multilinha} placeholder={l.placeholder} />}
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-                {l.onFamilia && <SeletorFonte rotulo="" valor={l.familia} onChange={l.onFamilia} />}
-                {l.onTamanho && <MiniSlider rotulo="Tamanho" valor={l.tamanho} min={l.min ?? 9} max={l.max ?? 32} onChange={l.onTamanho} />}
-                {l.onAlinhamento && <Alinhamento valor={l.alinhamento} onChange={l.onAlinhamento} />}
-                {l.extra}
-                {(l.onBold || l.onCaixa) && (
-                  <span className="flex gap-1">
-                    {l.onBold && <Alternar rotulo="B" nome="Negrito" valor={l.bold} onChange={l.onBold} />}
-                    {l.onCaixa && <Alternar rotulo="AA" nome="Caixa alta" valor={l.caixa} onChange={l.onCaixa} />}
-                  </span>
-                )}
-              </div>
-              {l.onCor && <Cores rotulo="Texto" opcoes={CORES_TEXTO_LINHAS} valor={l.cor} onChange={l.onCor} lateral={<span />} />}
+            <div className="flex items-start gap-2">
+              <span className="texto-nome pt-[7px]">{l.rotulo}</span>
+              {!l.onTexto
+                ? <span className="flex-1 min-w-0 truncate text-[13px] text-slate-300 py-[5px]" title={l.texto}>{l.texto}</span>
+                : l.multilinha
+                  ? <textarea rows={1} aria-label={l.rotulo} value={l.texto ?? ''} placeholder={l.placeholder || 'Vazio, não aparece no celular'} onChange={editar} className="texto-campo texto-campo-cresce" />
+                  : <input type="text" aria-label={l.rotulo} value={l.texto ?? ''} placeholder={l.placeholder || 'Vazio, não aparece no celular'} onChange={editar} className="texto-campo" />}
+              {l.aoLado}
+            </div>
+            <BarraFormato>
+              {l.onFamilia && <SeletorFonte rotulo="" valor={l.familia} onChange={l.onFamilia} />}
+              {l.onTamanho && <MiniSlider rotulo="Tamanho" icone="tamanho" valor={l.tamanho} min={l.min ?? 9} max={l.max ?? 32} onChange={l.onTamanho} />}
+              {l.onCor && <Cores rotulo="Texto" opcoes={CORES_TEXTO_LINHAS} valor={l.cor} onChange={l.onCor} />}
               {l.onFundo && (
                 <Cores
-                  rotulo="Fundo"
-                  opcoes={FUNDOS_CAPTION}
-                  campo="dot"
-                  valor={l.fundo}
-                  onChange={l.onFundo}
-                  lateral={l.onFaixa && fundo ? <MiniSlider rotulo="Altura" valor={alturaFaixa(l.faixa)} min={FAIXA_MIN} max={FAIXA_MAX} passo={5} unidade="%" onChange={l.onFaixa} /> : <span />}
+                  rotulo="Fundo" opcoes={FUNDOS_CAPTION} campo="dot" valor={l.fundo} onChange={l.onFundo}
+                  lateral={l.onFaixa && temFundo && <MiniSlider rotulo="Altura" valor={alturaFaixa(l.faixa)} min={FAIXA_MIN} max={FAIXA_MAX} passo={5} unidade="%" onChange={l.onFaixa} />}
                 />
               )}
-              {l.onBorda && fundo && (
+              {l.onBorda && l.onFundo && (
                 <Cores
-                  rotulo="Borda"
-                  opcoes={CORES_LINHA}
-                  campo="hex"
-                  valor={l.borda || 'padrao'}
-                  onChange={l.onBorda}
+                  rotulo="Borda" opcoes={CORES_LINHA} campo="hex" valor={l.borda || 'padrao'} onChange={l.onBorda}
+                  desativado={temFundo ? '' : 'Escolha um fundo para poder usar a borda'}
                   lateral={<MiniSlider rotulo="Largura" valor={l.bordaLargura ?? 1} min={0} max={10} passo={0.5} onChange={l.onBordaLargura} />}
                 />
               )}
-              {l.abaixo}
-            </Dobra>
-            {l.onEspaco && (
-              <div className={`flex items-center gap-1.5 h-5 ${onOrdem ? 'pl-1' : 'pl-3'}`}>
-                <MoveVertical className="w-3 h-3 text-slate-500 shrink-0" />
-                <MiniSlider rotulo="Espaço" valor={l.espaco} min={0} max={80} onChange={l.onEspaco} />
-              </div>
-            )}
+              {l.onAlinhamento && <Alinhamento valor={l.alinhamento} onChange={l.onAlinhamento} />}
+              {(l.onBold || l.onItalico || l.onCaixa) && (
+                <span className="flex gap-0.5">
+                  {l.onBold && <Alternar rotulo="B" nome="Negrito" valor={l.bold} onChange={l.onBold} />}
+                  {l.onItalico && <Alternar rotulo={<em>I</em>} nome="Itálico" valor={l.italico} onChange={l.onItalico} />}
+                  {l.onCaixa && <Alternar rotulo="AA" nome="Maiúsculas" valor={l.caixa} onChange={l.onCaixa} />}
+                </span>
+              )}
+              {l.onEspaco && <MiniSlider rotulo="Espaço até o próximo texto" icone="espaco" valor={l.espaco} min={0} max={80} onChange={l.onEspaco} />}
+              {l.extra}
+            </BarraFormato>
+            {l.abaixo}
           </>
         ));
       })}
       {vazias.length > 0 && (
-        <div className={`flex flex-wrap items-center gap-1 ${onOrdem ? '-mx-3 px-5 py-2 border-t border-dashed border-slate-600' : 'pt-0.5'}`}>
+        <div className="flex flex-wrap items-center gap-1 px-3 py-1.5 border-t border-dashed border-slate-600">
           {vazias.map((l) => (
             <button key={l.rotulo} type="button" onClick={() => manter(l.rotulo)} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] text-slate-400 hover:text-white hover:bg-slate-800 transition">
               <Plus className="w-3 h-3" />

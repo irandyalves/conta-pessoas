@@ -1,12 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { AlignLeft, AlignCenter, AlignRight, ChevronDown, GripVertical, Eye, EyeOff } from 'lucide-react';
+import { AlignLeft, AlignCenter, AlignRight, ChevronDown, GripVertical, Eye, EyeOff, ALargeSmall, MoveVertical } from 'lucide-react';
 import { carregarFontes, familiaCss, FONTES, fontePorId } from '../utils/fontes';
+import Cores from './SeletorCor';
+
+export { Cores };
 
 // =====================================================================
 // CONTROLES DO EDITOR
 // Regra visual: o editor é neutro. Cor só aparece onde se ESCOLHE uma cor.
 // Todo ajuste é uma linha: nome à esquerda, controle à direita.
 // =====================================================================
+
+// Barra única de formatação: tudo o que muda a aparência de um texto ou botão, na mesma linha e na mesma ordem
+export const BarraFormato = ({ children }) => <div className="barra-formato">{children}</div>;
 
 const ROTULO = 'text-[11px] leading-tight text-slate-400 w-[74px] shrink-0';
 
@@ -46,10 +52,12 @@ export function Deslizante({ rotulo, valor, min, max, passo = 1, unidade = 'px',
 }
 
 // Slider curtinho, para usar ao lado de cores
-export function MiniSlider({ rotulo, valor, min, max, passo = 1, unidade = 'px', onChange }) {
+const ICONE_SLIDER = { tamanho: ALargeSmall, espaco: MoveVertical };
+export function MiniSlider({ rotulo, icone, valor, min, max, passo = 1, unidade = 'px', onChange }) {
+  const Icone = ICONE_SLIDER[icone];
   return (
-    <label className="flex items-center gap-1.5 shrink-0" title={rotulo}>
-      <span className="text-[11px] text-slate-400">{rotulo}</span>
+    <label className={`flex items-center shrink-0 ${Icone ? 'gap-0.5' : 'gap-1.5'}`} title={rotulo}>
+      {Icone ? <Icone className="w-4 h-4 text-slate-400" aria-hidden="true" /> : <span className="text-[11px] text-slate-400">{rotulo}</span>}
       <input
         type="range"
         aria-label={rotulo}
@@ -58,45 +66,11 @@ export function MiniSlider({ rotulo, valor, min, max, passo = 1, unidade = 'px',
         step={passo}
         value={valor}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="ed-range w-[72px]"
+        className={`ed-range ${Icone ? 'w-[42px]' : 'w-[72px]'}`}
         style={{ '--p': `${Math.max(0, Math.min(100, ((valor - min) / (max - min)) * 100))}%` }}
       />
-      <span className="text-[11px] tabular-nums text-slate-200 w-9">{valor}{unidade}</span>
+      <span className={`text-[11px] tabular-nums text-slate-200 ${Icone ? 'w-5' : 'w-9'}`}>{valor}{Icone ? '' : unidade}</span>
     </label>
-  );
-}
-
-// Amostra de cor: bolinha ou quadrinho. A área de toque é maior que o desenho.
-function Amostra({ classe, hex, quadrado, selecionada, nome, onClick }) {
-  return (
-    <button
-      type="button"
-      title={nome}
-      aria-label={nome}
-      aria-pressed={selecionada}
-      onClick={onClick}
-      className={`p-[3px] rounded transition ${selecionada ? '' : 'hover:bg-slate-100/10'}`}
-    >
-      <span
-        style={hex ? { background: hex } : undefined}
-        className={`block ${quadrado ? 'w-[18px] h-[18px] rounded border border-white/20' : 'w-3 h-3 rounded-full'} ${classe || ''} ${selecionada ? 'ring-2 ring-white ring-offset-1 ring-offset-slate-800' : ''}`}
-      />
-    </button>
-  );
-}
-
-export function Cores({ rotulo, opcoes, valor, onChange, campo = 'bg', quadrado = false, lateral = null }) {
-  const atual = opcoes.find((o) => o.id === valor) || opcoes[0];
-  return (
-    <div className={`${opcoes.length > 12 || lateral ? '' : 'ed-cel'} flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0`} title={atual.label}>
-      <span className={ROTULO}>{rotulo}</span>
-      <div className="flex flex-wrap items-center">
-        {opcoes.map((o) => (
-          <Amostra key={o.id} nome={o.label} quadrado={quadrado} classe={campo === 'hex' ? o.dot : o[campo]} hex={o.hex && campo === 'hex' ? o.hex : undefined} selecionada={o.id === atual.id} onClick={() => onChange(o.id)} />
-        ))}
-      </div>
-      {lateral}
-    </div>
   );
 }
 
@@ -122,11 +96,11 @@ export function Segmentos({ rotulo, opcoes, valor, onChange }) {
   );
 }
 
-export function Chave({ rotulo, descricao, valor, onChange }) {
+export function Chave({ rotulo, descricao, valor, onChange, vermelha = false }) {
   return (
     <button type="button" role="switch" aria-checked={Boolean(valor)} title={descricao} onClick={() => onChange(!valor)} className="ed-cel flex items-center gap-2 text-left">
-      <span className={`w-7 h-4 rounded-full relative shrink-0 transition ${valor ? 'bg-slate-100' : 'bg-slate-700'}`}>
-        <span className={`absolute top-0.5 w-3 h-3 rounded-full transition-all ${valor ? 'left-[14px] bg-slate-900' : 'left-0.5 bg-slate-400'}`} />
+      <span className={`w-7 h-4 rounded-full relative shrink-0 transition ${valor ? (vermelha ? 'bg-red-700' : 'bg-slate-100') : 'bg-slate-700'}`}>
+        <span className={`absolute top-0.5 w-3 h-3 rounded-full transition-all ${valor ? (vermelha ? 'left-[14px] bg-white' : 'left-[14px] bg-slate-900') : 'left-0.5 bg-slate-400'}`} />
       </span>
       <span className="text-[11px] text-slate-200">{rotulo}</span>
     </button>
@@ -166,7 +140,7 @@ export function SeletorFonte({ valor, onChange, rotulo = 'Fonte' }) {
     <div className="ed-cel relative flex items-center gap-2 min-w-0">
       {rotulo && <span className={ROTULO}>{rotulo}</span>}
       <button type="button" aria-expanded={aberto} onClick={() => setAberto(!aberto)}
-        className="flex items-center justify-between gap-1 w-[150px] px-2 py-1 rounded-md bg-slate-950/60 border border-slate-700 hover:border-slate-500 text-[12px] text-white">
+        className={`flex items-center justify-between gap-1 rounded-md bg-slate-950/60 border text-[12px] text-white ${rotulo ? 'w-[150px] px-2 py-1 border-slate-700 hover:border-slate-500' : 'w-[92px] h-6 px-1.5 border-transparent hover:border-slate-600'}`}>
         <span className="truncate" style={{ fontFamily: familiaCss(valor) }}>{atual?.nome || 'Padrão'}</span>
         <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
       </button>
@@ -196,7 +170,7 @@ export function Alinhamento({ valor, onChange }) {
         const Icone = ICONE_ALINHAMENTO[id];
         return (
           <button key={id} type="button" title={nome} aria-label={nome} aria-pressed={valor === id} onClick={() => onChange(id)}
-            className={`w-6 h-5 rounded flex items-center justify-center transition ${valor === id ? 'bg-slate-100 text-slate-900' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>
+            className={`w-[22px] h-5 rounded flex items-center justify-center transition ${valor === id ? 'bg-slate-100 text-slate-900' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>
             <Icone className="w-3 h-3" />
           </button>
         );
@@ -209,26 +183,9 @@ export function Alinhamento({ valor, onChange }) {
 export function Alternar({ rotulo, nome, valor, onChange }) {
   return (
     <button type="button" title={nome} aria-label={nome} aria-pressed={Boolean(valor)} onClick={() => onChange(!valor)}
-      className={`px-1.5 min-w-[26px] h-6 rounded-md text-[11px] font-bold transition ${valor ? 'bg-slate-100 text-slate-900' : 'bg-slate-950/60 text-slate-400 hover:text-white'}`}>
+      className={`px-1 min-w-[23px] h-6 rounded-md text-[11px] font-bold transition ${valor ? 'bg-slate-100 text-slate-900' : 'bg-slate-950/60 text-slate-400 hover:text-white'}`}>
       {rotulo}
     </button>
-  );
-}
-
-// Linha que abre e fecha. Fechada mostra o conteúdo atual, então dá para ler a tela inteira de relance.
-// semFundo: dentro de uma questão arrastável, o fundo é o da questão e o cabeçalho também serve para arrastar
-export function Dobra({ titulo, resumo, lateral, aberta: inicial = false, semFundo = false, children }) {
-  const [aberta, setAberta] = useState(inicial);
-  return (
-    <div className={`rounded-lg transition-colors ${semFundo ? '' : aberta ? 'bg-slate-800/60' : 'bg-slate-800/40 hover:bg-slate-800/60'}`}>
-      <button type="button" data-alca={semFundo ? '1' : undefined} aria-expanded={aberta} onClick={() => setAberta(!aberta)} className={`w-full flex items-center gap-2 py-1.5 text-left ${semFundo ? 'px-1' : 'px-3'}`}>
-        <span className="text-[11px] text-slate-400 w-[74px] shrink-0">{titulo}</span>
-        <span className={`flex-1 min-w-0 truncate text-[13px] ${resumo ? 'text-slate-100' : 'text-slate-500'}`}>{resumo || 'Vazio, não aparece no celular'}</span>
-        {lateral}
-        <ChevronDown className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform ${aberta ? 'rotate-180' : ''}`} />
-      </button>
-      {aberta && <div className={`pb-2.5 pt-0.5 space-y-2 ${semFundo ? 'px-1' : 'px-3'}`}>{children}</div>}
-    </div>
   );
 }
 
@@ -326,18 +283,9 @@ export function QuestaoArrastavel({ lista, indice, total, onMover, className = '
   );
 }
 
-// Pergunta obrigatória ou opcional. Vermelho fosco = obrigatória.
+// Pergunta obrigatória ou opcional. Vermelho = obrigatória.
 export function BotaoObrigatorio({ valor, onChange }) {
-  return (
-    <button
-      type="button"
-      aria-pressed={Boolean(valor)}
-      onClick={() => onChange(!valor)}
-      className={`px-3 py-1.5 rounded-lg text-xs transition ${valor ? 'bg-red-900 text-white font-semibold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
-    >
-      {valor ? 'Resposta obrigatória' : 'Resposta opcional'}
-    </button>
-  );
+  return <Chave vermelha rotulo="Resposta obrigatória" descricao={valor ? 'A pessoa só avança se responder' : 'A pessoa pode pular esta pergunta'} valor={Boolean(valor)} onChange={onChange} />;
 }
 
 // Olho: mostra ou oculta uma tela da pesquisa
