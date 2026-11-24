@@ -41,9 +41,10 @@ export function InserirCampo({ config, texto, onTexto, setConfig }) {
       <button
         type="button" aria-expanded={aberto} title="Inserir no texto o que a pessoa respondeu (nome, e-mail...)"
         onMouseDown={semPerderCursor} onClick={() => setAberto(!aberto)}
-        className="flex items-center gap-1 h-[30px] px-2 rounded-md text-[11px] font-semibold bg-slate-950/60 text-slate-300 hover:bg-slate-800 hover:text-white transition"
+        className="flex flex-col items-center justify-center gap-px min-h-[34px] -mt-0.5 px-1.5 py-0.5 rounded-md font-semibold bg-slate-950/60 text-slate-300 hover:bg-slate-800 hover:text-white transition"
       >
-        <Plus className="w-[10px] h-[10px] -mr-1" /><Braces className="w-3 h-3" /><span className="sr-only">Inserir campo</span>
+        <span className="flex items-center"><Plus className="w-[9px] h-[9px] -mr-0.5" /><Braces className="w-[11px] h-[11px]" /></span>
+        <span className="text-[9px] leading-[9px] text-center">Inserir<br />Campo</span>
       </button>
       {aberto && (
         <div className="absolute right-0 top-full mt-1 z-50 w-72 max-h-64 overflow-y-auto rounded-xl bg-slate-800 border border-slate-700 shadow-2xl p-1.5">

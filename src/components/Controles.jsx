@@ -54,10 +54,12 @@ export function Deslizante({ rotulo, valor, min, max, passo = 1, unidade = 'px',
 
 // Slider curtinho, para usar ao lado de cores
 const ICONE_SLIDER = { tamanho: ALargeSmall, espaco: MoveVertical, espessura: PenLine };
-export function MiniSlider({ rotulo, icone, valor, min, max, passo = 1, unidade = 'px', onChange }) {
+// simbolo: desenho ao lado do nome (icone troca o nome pelo desenho)
+export function MiniSlider({ rotulo, icone, simbolo: Simbolo, valor, min, max, passo = 1, unidade = 'px', onChange }) {
   const Icone = ICONE_SLIDER[icone];
   return (
     <label className={`flex items-center shrink-0 ${Icone ? 'gap-0.5' : 'gap-1.5'}`} title={rotulo}>
+      {Simbolo && <Simbolo className="w-[15px] h-[15px] text-slate-300" aria-hidden="true" />}
       {Icone ? <Icone className="w-[14px] h-[14px] text-slate-400" aria-hidden="true" /> : <span className="text-[11px] text-slate-400">{rotulo}</span>}
       <input
         type="range"

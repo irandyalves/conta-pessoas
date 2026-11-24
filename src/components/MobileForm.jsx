@@ -44,6 +44,7 @@ import { componenteIcone, iconesDaTela } from '../utils/icones';
 import { configSeta } from '../utils/setas';
 import Rosto from './Rosto';
 import BarraProgresso from './BarraProgresso';
+import BotaoSoEu, { DivisorQtd } from './BotaoSoEu';
 import TelaFinal from './TelaFinal';
 import { atributosCampo, erroDeFormato, mascaraTelefone, mensagemFalta, usaMaiusculas, valorGravado } from '../utils/campoTexto';
 import { camposDoTexto, exemploDe, linhasFinais } from '../utils/telaFinal';
@@ -2146,41 +2147,12 @@ export default function MobileForm({ preview = false }) {
         {/* ETAPA FINAL DE PERGUNTAS: ACOMPANHANTES (BOTÕES 3D)          */}
         {/* ============================================================ */}
         {currentStep === 'acompanhantes' && (
-          <div className="space-y-4 fade-in">
-            {/* Opção em Destaque: SÓ EU (BOTÃO 3D TÁTIL) */}
-            <button
-              onClick={() => comFeedback('qtd_1', () => handleSelectQtd(1))}
-              className={`${efeitoClique('qtd_1')} t-avancar t-soeu w-full p-5 sm:p-6 min-h-[96px] rounded-3xl border border-emerald-500/30 border-b-[6px] border-b-emerald-950 bg-gradient-to-b from-emerald-600 via-emerald-700 to-emerald-800 active:translate-y-1.5 active:border-b-2 active:shadow-md transition-all flex items-center justify-between shadow-xl shadow-emerald-950/60`}
-            >
-              <div className="flex items-center gap-4">
-                <div className="t-selo w-14 h-14 rounded-2xl bg-emerald-900/60 border border-emerald-400/40 flex items-center justify-center text-emerald-200 p-2.5 shadow-inner">
-                  <User className="w-8 h-8 drop-shadow" />
-                </div>
-                <div className="text-left">
-                  <h3 className="font-black text-2xl text-amber-300 drop-shadow-md flex items-baseline gap-1 flex-wrap">
-                    <span>{questionsConfig.opcaoIndividualTitulo || 'SÓ EU'}</span>
-                    <span className="text-sm sm:text-base font-semibold text-white">
-                      {questionsConfig.opcaoIndividualSubtitulo || ', vim sozinho'}
-                    </span>
-                  </h3>
-                </div>
-              </div>
-              <div className="t-selo w-12 h-12 rounded-2xl bg-emerald-950/70 border-2 border-emerald-400/50 flex items-center justify-center text-emerald-300 font-black text-2xl shadow-inner">
-                1
-              </div>
-            </button>
-
-            {/* Divisor */}
-            <div className="relative flex py-6 my-2 items-center">
-              <div className="flex-grow border-t border-slate-800/80"></div>
-              <span className="t-cor flex-shrink mx-3 text-xs sm:text-sm font-black text-amber-300 uppercase tracking-wider text-center">
-                {questionsConfig.divisorQtdTexto || 'Quantas pessoas vieram com você?'}
-              </span>
-              <div className="flex-grow border-t border-slate-800/80"></div>
-            </div>
+          <div className="fade-in">
+            <BotaoSoEu config={questionsConfig} className={efeitoClique('qtd_1')} onClick={() => comFeedback('qtd_1', () => handleSelectQtd(1))} />
+            <DivisorQtd config={questionsConfig} />
 
             {/* Grid dos Botões 2 a +10 */}
-            <div className="grid grid-cols-3 gap-3.5 pt-1">
+            <div className="grid grid-cols-3 gap-3.5 mb-4">
               {[
                 { valor: 2, label: '2' },
                 { valor: 3, label: '3' },

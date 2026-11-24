@@ -180,6 +180,7 @@
 .texto-linha { display: flex; flex-direction: column; gap: 4px; padding: 7px 8px 9px; }
 /* a barra começa junto com o canto esquerdo do campo: nome (64) + espaço (8) */
 .texto-linha .barra-formato { margin-left: 72px; }
+.texto-abaixo { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 3px 0 0 72px; }
 .texto-linha + .texto-linha { border-top: 1px dashed #475569; }
 .texto-linha-movel { padding-left: 22px; }
 .questao-fixa, .questao-fixa:active { cursor: default; }

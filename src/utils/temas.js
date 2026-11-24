@@ -74,6 +74,8 @@ const camposGerais = (t) => ({
   esperaLinha1Cor: 'tema', esperaLinha2Cor: 'tema', esperaLinha3Cor: 'tema',
   ...Object.fromEntries(['esperaLinha1', 'esperaLinha2', 'esperaLinha3', 'pergunta2', 'finalTitulo', 'finalTitulo1', 'finalTitulo2', 'finalMensagem', 'finalStatus', 'finalInstrucao'].map((id) => [`${id}Familia`, 'padrao'])),
   ...Object.fromEntries(['finalTitulo1', 'finalTitulo2', 'finalMensagem', 'finalStatus', 'finalInstrucao'].flatMap((id) => [[`${id}Cor`, 'tema'], [`${id}Fundo`, 'transparente'], [`${id}Borda`, 'padrao'], [`${id}BordaLargura`, null], [`${id}BordaLado`, 'inteira']])),
+  ...comPrefixo('soeu', BOTAO_VAZIO),
+  ...Object.fromEntries(['soeuTitulo', 'soeuCompl', 'divisorQtd'].flatMap((id) => [[`${id}Cor`, 'tema'], [`${id}Familia`, 'padrao']])),
   btnQtdCor: 'tema', btnQtdCorNumero: 'tema', btnQtdCorDescricao: 'tema', btnQtdEfeito: 'tema'
 });
 

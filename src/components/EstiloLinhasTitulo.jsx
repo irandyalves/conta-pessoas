@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { corLinhaHex } from '../utils/estilos';
 import { AjustesBorda } from './Controles';
-import { Eye, EyeOff, Plus, Trash2 } from 'lucide-react';
+import { Eye, EyeOff, Plus, Trash2, UnfoldVertical } from 'lucide-react';
 import { alturaFaixa, CORES_LINHA, CORES_TEXTO_LINHAS, FAIXA_MAX, FAIXA_MIN, FUNDOS_CAPTION } from '../utils/estilos';
 import { Alinhamento, Alternar, BarraFormato, Cores, MiniSlider, QuestaoArrastavel, SeletorFonte } from './Controles';
 
@@ -16,20 +16,22 @@ import { Alinhamento, Alternar, BarraFormato, Cores, MiniSlider, QuestaoArrastav
  * Altura fica no cartão do Fundo e largura no da Borda. onEspaco: distância ENTRE esta linha e a próxima.
  * onOrdem (opcional): liga o arrastar e soltar das linhas que têm "chave"; recebe as chaves visíveis na ordem nova.
  * slotAcoes: elemento do cabeçalho (linha do entalhe) que recebe os botões de adicionar.
+ * espacoResposta: controle que fica logo abaixo do campo do último título (distância até a resposta).
+ * fixa: a linha continua visível mesmo com o texto vazio.
  * topo (opcional): configuração que vale para a lista, acima dos textos. removivel: mostra a lixeira na linha.
  * Linha { separador: true, ligado, onLigado } = linha divisória.
  */
-export default function EstiloLinhasTitulo({ linhas, onOrdem, topo = null, slotAcoes = null }) {
+export default function EstiloLinhasTitulo({ linhas, onOrdem, topo = null, slotAcoes = null, espacoResposta = null }) {
   // Só aparecem os textos que estão no celular. Os vazios ficam num botão "adicionar";
   // quem já foi aberto ou editado continua visível mesmo que o texto seja apagado.
   const [mantidas, setMantidas] = useState({});
   const idDe = (l) => l.chave || l.rotulo;
   const manter = (l) => setMantidas((m) => (m[idDe(l)] ? m : { ...m, [idDe(l)]: true }));
   const remover = (l) => { setMantidas((m) => ({ ...m, [idDe(l)]: false })); l.onTexto(''); };
-  const visivel = (l) => l.separador || Boolean(String(l.texto || '').trim()) || Boolean(mantidas[idDe(l)]);
+  const visivel = (l) => l.separador || l.fixa || Boolean(String(l.texto || '').trim()) || Boolean(mantidas[idDe(l)]);
   // numerar: o número segue a posição na tela, não o nome do campo
   let conta = 0;
-  const visiveis = linhas.filter(visivel).map((l) => (l.numerar ? { ...l, rotulo: l.rotulo.replace(/d+$/, String(++conta)) } : l));
+  const visiveis = linhas.filter(visivel).map((l) => (l.numerar ? { ...l, rotulo: l.rotulo.replace(/\d+$/, String(++conta)) } : l));
   // "Título 2", "Título 3"... viram um botão só: adiciona o próximo que estiver vazio
   const grupo = (l) => l.rotulo.replace(/\s*\d+$/, '');
   const vazias = linhas.filter((l) => !visivel(l)).filter((l, i, t) => t.findIndex((x) => grupo(x) === grupo(l)) === i);
@@ -40,6 +42,7 @@ export default function EstiloLinhasTitulo({ linhas, onOrdem, topo = null, slotA
     ids.splice(para, 0, ids.splice(de, 1)[0]);
     onOrdem(ids);
   };
+  const ultimoTitulo = espacoResposta ? visiveis.filter((l) => l.onTexto && /^(Título|Texto abaixo|Pergunta|Parte)/.test(l.rotulo)).pop() : null;
   const Item = (l, i, conteudo) => (podeMover && l.chave ? (
     <QuestaoArrastavel key={idDe(l)} lista="linhas_texto" indice={moveis.indexOf(l)} total={moveis.length} onMover={mover} className="texto-linha texto-linha-movel">
       {conteudo}
@@ -58,6 +61,7 @@ export default function EstiloLinhasTitulo({ linhas, onOrdem, topo = null, slotA
         );
       }), slotAcoes)}
       {topo && <div className="texto-topo">{topo}</div>}
+      {espacoResposta && !ultimoTitulo && <div className="texto-topo">{espacoResposta}</div>}
       {visiveis.map((l, i) => {
         if (l.separador) {
           return Item(l, i, (
@@ -113,6 +117,7 @@ export default function EstiloLinhasTitulo({ linhas, onOrdem, topo = null, slotA
               {l.removivel && <button type="button" className="texto-lixeira" title={`Remover ${l.rotulo}`} aria-label={`Remover ${l.rotulo}`} onClick={() => remover(l)}><Trash2 className="w-[14px] h-[14px]" /></button>}
             </div>
             {l.abaixo}
+            {l === ultimoTitulo && <div className="texto-abaixo">{espacoResposta}</div>}
           </>
         ));
       })}
@@ -120,16 +125,19 @@ export default function EstiloLinhasTitulo({ linhas, onOrdem, topo = null, slotA
   );
 }
 
-// Espaços entre títulos, subtítulo e cards (valores em px)
+// Distância dos títulos até o que vem embaixo
+export const EspacoAte = ({ rotulo, valor, onChange, max = 80 }) => <MiniSlider rotulo={rotulo} simbolo={UnfoldVertical} valor={valor} min={0} max={max} onChange={onChange} />;
+
+// Espaços entre títulos e subtítulo (valores em px)
 export function ControleEspacos({ valores, onChange, titulos = [], subtitulo = '' }) {
   // Só os espaços que existem no celular com os textos atuais
   const qtd = titulos.filter((t) => String(t || '').trim()).length;
   const temTexto = Boolean(String(subtitulo || '').trim());
+  if (qtd < 2 && !(qtd && temTexto)) return null;
   return (
     <div className="linha-efeito" title="Distância entre os textos no celular">
       {qtd > 1 && <MiniSlider rotulo="Entre títulos" valor={valores.tit} min={0} max={40} onChange={(v) => onChange('tit', v)} />}
       {qtd > 0 && temTexto && <MiniSlider rotulo="Até o texto" valor={valores.sub} min={0} max={60} onChange={(v) => onChange('sub', v)} />}
-      <MiniSlider rotulo="Até a resposta" valor={valores.cards} min={0} max={80} onChange={(v) => onChange('cards', v)} />
     </div>
   );
 }

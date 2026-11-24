@@ -67,7 +67,8 @@ import { chaveTamanho, estiloLinhaFinal, linhaFinal, linhasFinais, ordemFinal, r
 import BarraProgresso, { CORES_PROGRESSO, CORES_PROGRESSO_LAYOUT, ESTILOS_PROGRESSO, usaDuasCores } from './BarraProgresso';
 import { ArrowLeft, Columns2, History, Redo2, Rows3, Smile as IconeRosto, Undo2, WrapText } from 'lucide-react';
 import EscalaVisual, { ESTILOS_ESCALA, INSTRUCAO_PADRAO, instrucaoDaEscala } from './EscalaVisual';
-import EstiloLinhasTitulo, { ControleEspacos } from './EstiloLinhasTitulo';
+import EstiloLinhasTitulo, { ControleEspacos, EspacoAte } from './EstiloLinhasTitulo';
+import { espacoAcomp } from './BotaoSoEu';
 import { AjustesBorda, LinhaEfeito, TopoPainel, Alternar, BarraFormato, BotaoObrigatorio, OlhoTela, Campo, Chave, Cores, Deslizante, Lista, MiniSlider, QuestaoArrastavel, Secao, Segmentos, SeletorFonte, SeletorIcone } from './Controles';
 import { ICONES_CARDS, iconesDaTela } from '../utils/icones';
 import { PRESETS_PESQUISAS } from '../utils/presets';
@@ -601,7 +602,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
   );
 
   // Efeitos de um botão: os mesmos dos cards, mais cores, linha, altura e cantos
-  const EfeitosBotao = ({ titulo, descricao, ler, gravar, alturaPadrao, alturaMax, raioPadrao, espessuraPadrao = 1, fontePadrao, comLargura, topo = null }) => {
+  const EfeitosBotao = ({ titulo, descricao, ler, gravar, alturaPadrao, alturaMax, raioPadrao, espessuraPadrao = 1, fontePadrao, comLargura, semLado = false, topo = null }) => {
     const efeito = ler('Efeito') || 'nenhum';
     return (
       <Secao titulo={titulo} descricao={descricao}>
@@ -611,7 +612,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
           {fontePadrao && <MiniSlider rotulo="Tamanho do texto" icone="tamanho" valor={ler('Fonte') ?? fontePadrao} min={11} max={32} onChange={(v) => gravar('Fonte', v)} />}
           <Cores rotulo="Texto" opcoes={CORES_TEXTO_BOTAO} campo="hex" valor={ler('CorTexto') || 'padrao'} onChange={(v) => gravar('CorTexto', v)} />
           <Cores rotulo="Fundo" opcoes={CORES_BOTAO} campo="hex" valor={ler('Cor') || 'padrao'} onChange={(v) => gravar('Cor', v)} />
-          <Cores rotulo="Borda" opcoes={CORES_LINHA} campo="hex" valor={ler('Linha') || 'padrao'} onChange={(v) => gravar('Linha', v)} lateral={<AjustesBorda largura={ler('LinhaEspessura') ?? espessuraPadrao} max={6} onLargura={(v) => gravar('LinhaEspessura', v)} lado={ler('LinhaLado')} onLado={comLargura ? undefined : (v) => gravar('LinhaLado', v)} cor={corLinhaHex(ler('Linha'))} />} />
+          <Cores rotulo="Borda" opcoes={CORES_LINHA} campo="hex" valor={ler('Linha') || 'padrao'} onChange={(v) => gravar('Linha', v)} lateral={<AjustesBorda largura={ler('LinhaEspessura') ?? espessuraPadrao} max={6} onLargura={(v) => gravar('LinhaEspessura', v)} lado={ler('LinhaLado')} onLado={semLado ? undefined : (v) => gravar('LinhaLado', v)} cor={corLinhaHex(ler('Linha'))} />} />
           <Alternar rotulo={<em>I</em>} nome="Itálico" valor={ler('Italico')} onChange={(v) => gravar('Italico', v)} />
         </BarraFormato>
         <LinhaEfeito rotulo="Efeito" opcoes={EFEITOS_CAPA} valor={efeito} onChange={(v) => gravar('Efeito', v)} intensidade={efeito !== 'nenhum' && { valor: ler('Profundidade') || 5, onChange: (v) => gravar('Profundidade', v) }} />
@@ -1534,7 +1535,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     raioPadrao: 16,
                     espessuraPadrao: 2.5,
                     fontePadrao: 16,
-                    comLargura: true
+                    comLargura: true,
+                    semLado: true // o contorno de luz gira em volta do botão
                   })}
 
                   {EfeitosBotao({
@@ -1650,11 +1652,12 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             valores={espacos(config, true)}
                             titulos={[config.pergunta1Titulo, config.pergunta1Titulo2, config.pergunta1Titulo3]}
                             subtitulo={config.pergunta1TextoAbaixo}
-                            onChange={(k, v) => setCampo('pergunta1' + { tit: 'EspacoTitulos', sub: 'EspacoSub', cards: 'EspacoCards' }[k], v)}
+                            onChange={(k, v) => setCampo('pergunta1' + { tit: 'EspacoTitulos', sub: 'EspacoSub' }[k], v)}
                             />
                             {BarraFormatacao({ ehP1: true })}
                           </>
                         )}
+                        espacoResposta={<EspacoAte rotulo="Espaço para o primeiro card" valor={espacos(config, true).cards} onChange={(v) => setCampo('pergunta1EspacoCards', v)} />}
                         slotAcoes={slotAcoes}
                         onOrdem={(ids) => setConfig((c) => ({
                           ...c,
@@ -2285,11 +2288,12 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                 valores={espacos(telaAlvo, false)}
                                 titulos={emGrupo ? [telaAlvo.titulo1 || telaAlvo.titulo] : [telaAlvo.titulo1 || telaAlvo.titulo, telaAlvo.titulo2, telaAlvo.titulo3]}
                                 subtitulo={telaAlvo.subtitulo}
-                                onChange={(k, v) => handleUpdateTelaProp(extraIndex, { tit: 'espacoTitulos', sub: 'espacoSub', cards: 'espacoCards' }[k], v)}
+                                onChange={(k, v) => handleUpdateTelaProp(extraIndex, { tit: 'espacoTitulos', sub: 'espacoSub' }[k], v)}
                               />
                               {BarraFormatacao({ ehP1: false, extraIndex })}
                             </>
                           )}
+                          espacoResposta={<EspacoAte rotulo={ehCards ? 'Espaço para o primeiro card' : 'Espaço para a resposta'} valor={espacos(telaAlvo, false).cards} onChange={(v) => handleUpdateTelaProp(extraIndex, 'espacoCards', v)} />}
                           slotAcoes={slotAcoes}
                           onOrdem={(ids) => setConfig((c) => ({
                             ...c,
@@ -2953,13 +2957,42 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     </>
                   )}
 
-                  {subTabTela2 === 'individual' && (
-                    <Secao titulo="Textos">
-                      <Campo rotulo="Botão de 1 pessoa" valor={config.opcaoIndividualTitulo} onChange={(v) => setCampo('opcaoIndividualTitulo', v)} placeholder="SÓ EU" />
-                      <Campo rotulo="Complemento" valor={config.opcaoIndividualSubtitulo} onChange={(v) => setCampo('opcaoIndividualSubtitulo', v)} placeholder=", vim sozinho" />
-                      <Campo rotulo="Divisor antes das quantidades" valor={config.divisorQtdTexto} onChange={(v) => setCampo('divisorQtdTexto', v)} placeholder="Quantas pessoas vieram com você?" />
-                    </Secao>
-                  )}
+                  {subTabTela2 === 'individual' && (() => {
+                    const espaco = (campo, rotulo) => <EspacoAte rotulo={rotulo} max={120} valor={espacoAcomp(config, campo)} onChange={(v) => setCampo(campo, v)} />;
+                    const linha = (id, campo, rotulo, placeholder, tamanho, max, caixa, abaixo) => ({
+                      chave: id, rotulo, placeholder, fixa: true,
+                      texto: config[campo] ?? '', onTexto: (v) => setCampo(campo, v),
+                      tamanho: config[`${id}Tamanho`] || tamanho, min: 10, max, onTamanho: (v) => setCampo(`${id}Tamanho`, v),
+                      familia: config[`${id}Familia`], onFamilia: (v) => setCampo(`${id}Familia`, v),
+                      cor: config[`${id}Cor`] || 'tema', onCor: (v) => setCampo(`${id}Cor`, v),
+                      bold: config[`${id}Bold`] ?? true, onBold: (v) => setCampo(`${id}Bold`, v),
+                      italico: config[`${id}Italico`], onItalico: (v) => setCampo(`${id}Italico`, v),
+                      caixa: config[`${id}Caixa`] ?? caixa, onCaixa: (v) => setCampo(`${id}Caixa`, v),
+                      abaixo
+                    });
+                    return (
+                      <>
+                        <EstiloLinhasTitulo
+                          linhas={[
+                            linha('soeuTitulo', 'opcaoIndividualTitulo', 'Botão', 'SÓ EU', 24, 40, false),
+                            linha('soeuCompl', 'opcaoIndividualSubtitulo', 'Ao lado', 'Vazio, não aparece no celular', 14, 30, false),
+                            linha('divisorQtd', 'divisorQtdTexto', 'Divisor', 'Vazio, fica só a linha', 12, 26, true, <div className="texto-abaixo">{espaco('divisorAntesEspaco', 'Espaço antes')}{espaco('divisorDepoisEspaco', 'Espaço depois')}</div>)
+                          ]}
+                        />
+                        {EfeitosBotao({
+                          titulo: 'Botão "Só eu"',
+                          descricao: 'Vale só para este botão. O botão Avançar e os outros não mudam.',
+                          topo: <div className="linha-efeito">{espaco('soeuAntesEspaco', 'Espaço antes')}{espaco('divisorAntesEspaco', 'Espaço depois')}</div>,
+                          ler: (k) => config[`soeu${k}`] ?? undefined,
+                          gravar: (k, v) => setCampo(`soeu${k}`, v),
+                          alturaPadrao: 96,
+                          alturaMax: 140,
+                          raioPadrao: 24,
+                          comLargura: true
+                        })}
+                      </>
+                    );
+                  })()}
 
                   <button
                     type="button"
