@@ -228,6 +228,9 @@ export const medidasCard = (valor, cantos) => {
 // TELA DE INÍCIO (CAPA): cada título é um card com espaço, altura e acabamento
 // ==========================================
 export const CAPA_ESPACO_PADRAO = 10;
+export const CAPA_LARGURA_MIN = 40;
+// Sem escolha do usuário, o canto é o do layout (a antiga "faixa" vira card de canto reto)
+export const raioCapa = (cfg = {}) => cfg.capaRaio ?? (cfg.capaFormato === 'faixa' ? 0 : null);
 const RGB_FUNDO = {
   escuro: '148, 163, 184', dourado: '251, 191, 36', verde: '16, 185, 129', azul: '14, 165, 233',
   roxo: '168, 85, 247', laranja: '249, 115, 22', rosa: '244, 63, 94'
@@ -270,7 +273,7 @@ export const permutar = (linhas, novaOrdem) => {
 export const textoCapa = (cfg = {}) => (cfg.capaSemTexto ? '' : cfg.capaTextoAbaixo || cfg.pergunta1TextoAbaixo || '');
 
 export const linhasCapa = (cfg = {}) => {
-  const ehCard = (cfg.capaFormato || 'card') === 'card';
+  const largura = Math.max(CAPA_LARGURA_MIN, Math.min(100, Number(cfg.capaLargura) || 100));
   const efeito = cfg.capaEfeito || 'alto_relevo';
   const base = ordemCapa(cfg).map((id) => {
     const l = LINHAS_CAPA.find((x) => x.id === id);
@@ -302,13 +305,15 @@ export const linhasCapa = (cfg = {}) => {
       alinhamento: cfg[`${l.id}Alinhamento`] || cfg.capaAlinhamento || 'center',
       espaco: Number(cfg[`${l.id}Espaco`] ?? CAPA_ESPACO_PADRAO),
       entrelinha: l.texto ? Math.max(1.12, 1.6 * aperto) : Math.max(1.05, 1.25 * aperto),
-      classeCaixa: !classes ? '' : ehCard ? `${cor} rounded-2xl` : `${cor} border-x-0 -mx-4 sm:-mx-6`,
+      classeCaixa: !classes ? '' : `${cor} rounded-2xl`,
       caixa: {
         ...faixaEstilo(fundo, pct),
         paddingLeft: classes ? 14 : 0,
         paddingRight: classes ? 14 : 0,
-        ...(classes && ehCard ? getEfeitoStyle(efeito, cfg.capaProfundidade || 5, RGB_FUNDO[fundo]) : {}),
-        ...fonteEBorda(cfg, l.id, Boolean(classes), !ehCard)
+        ...(classes ? getEfeitoStyle(efeito, cfg.capaProfundidade || 5, RGB_FUNDO[fundo]) : {}),
+        ...(classes && largura < 100 ? { width: `${largura}%`, alignSelf: { left: 'flex-start', right: 'flex-end' }[cfg[`${l.id}Alinhamento`] || cfg.capaAlinhamento] || 'center' } : {}),
+        ...(classes && raioCapa(cfg) !== null ? { borderRadius: `${raioCapa(cfg)}px` } : {}),
+        ...fonteEBorda(cfg, l.id, Boolean(classes), false)
       }
     };
   });

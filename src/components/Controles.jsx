@@ -315,7 +315,8 @@ export function LinhaEfeito({ rotulo, opcoes, valor, onChange, intensidade }) {
 }
 
 // Cabeçalho de seção em entalhe: nome da tela em amarelo pastel e, quando dá para excluir, a lixeira
-export function TopoPainel({ titulo, onExcluir, children }) {
+// slot = onde a lista de textos da tela põe os botões de adicionar
+export function TopoPainel({ titulo, onExcluir, slot, children }) {
   return (
     <div className="painel-topo">
       <div className="entalhe">
@@ -326,7 +327,10 @@ export function TopoPainel({ titulo, onExcluir, children }) {
           </button>
         )}
       </div>
-      {children && <div className="painel-topo-lado">{children}</div>}
+      <div className="painel-topo-lado">
+        {children}
+        {slot && <div ref={slot} className="painel-topo-acoes" />}
+      </div>
     </div>
   );
 }

@@ -68,6 +68,7 @@ const camposGerais = (t) => ({
   ...comPrefixo('comecar', BOTAO_VAZIO),
   setaCor: t.seta,
   capaEfeito: 'nenhum',
+  capaRaio: null,
   ...TEXTOS_CAPA.reduce((o, id) => ({ ...o, ...fb(id) }), {}),
   ...Object.fromEntries(TEXTOS_CAPA.flatMap((id) => [[`${id}Cor`, 'tema'], [`${id}Fundo`, 'tema']])),
   esperaLinha1Cor: 'tema', esperaLinha2Cor: 'tema', esperaLinha3Cor: 'tema',

@@ -230,16 +230,16 @@
 .entalhe::after { left: 100%; top: 0; background: radial-gradient(circle at 100% 100%, transparent 11.5px, #000 12px); }
 .entalhe-lixeira { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; color: #f87171; transition: background .15s, color .15s; }
 .entalhe-lixeira:hover { background: rgba(239, 68, 68, .22); color: #ff9d9d; }
-.painel-topo-lado { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 8px; }
+.painel-topo-lado { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding-top: 8px; }
+.painel-topo-acoes { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
+.painel-topo-acoes:empty { display: none; }
+.painel-topo-nome { font-size: 12px; font-weight: 600; color: #cbd5e1; white-space: nowrap; }
 .linha-efeito { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
 .linha-efeito > span { font-size: 11px; color: #94a3b8; }
 
 /* Cabeçalho da lista de textos: configuração dos títulos e botão de adicionar */
 .texto-topo { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 7px 8px; background: rgba(2, 6, 23, .5); border-bottom: 1px dashed #475569; }
-.texto-topo > * { order: 1; }
-.texto-topo > .texto-topo-largo { order: 3; width: 100%; }
-.texto-topo > .texto-topo-acoes { order: 2; }
-.texto-topo-acoes { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
+.texto-topo > * { width: 100%; }
 .texto-add { display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 11px 0 8px; border-radius: 9px; background: #f1f5f9; color: #0f172a; font-size: 12px; font-weight: 700; white-space: nowrap; transition: background .15s; }
 .texto-add:hover { background: #fff; }
 .texto-add svg { color: #059669; }

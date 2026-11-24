@@ -54,7 +54,7 @@ import {
 import GaleriaTemas from './GaleriaTemas';
 import { aplicarTema } from '../utils/temas';
 import { configSeta, CORES_SETA, DESENHOS_SETA } from '../utils/setas';
-import { LINHAS_CAPA, ordemCapa, permutar, reordenar, textoCapa, alturaFaixa, FAIXA_MAX, FAIXA_MIN, gravarFaixaPadrao, lerGeral, gravarHerdado, herdaEstilo, ligarHeranca, semCamposHerdados, telaP1Cantos, CORES_BOTAO, CORES_LINHA, CORES_TEXTO_BOTAO, CARD_ESPACO_PADRAO, raiosCard, linhasCapa, alturaCard, CAPA_ESPACO_PADRAO, CARD_ALTURA_MAX, CARD_ALTURA_MIN, espacos, continuaNaMesmaPagina, extrairEstilo, aplicarEstilo, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems, getEfeitoStyle, CORES_TEXTO_LINHAS, ALINHAMENTOS_TEXTO, FUNDOS_CAPTION } from '../utils/estilos';
+import { CAPA_LARGURA_MIN, raioCapa, LINHAS_CAPA, ordemCapa, permutar, reordenar, textoCapa, alturaFaixa, FAIXA_MAX, FAIXA_MIN, gravarFaixaPadrao, lerGeral, gravarHerdado, herdaEstilo, ligarHeranca, semCamposHerdados, telaP1Cantos, CORES_BOTAO, CORES_LINHA, CORES_TEXTO_BOTAO, CARD_ESPACO_PADRAO, raiosCard, linhasCapa, alturaCard, CAPA_ESPACO_PADRAO, CARD_ALTURA_MAX, CARD_ALTURA_MIN, espacos, continuaNaMesmaPagina, extrairEstilo, aplicarEstilo, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems, getEfeitoStyle, CORES_TEXTO_LINHAS, ALINHAMENTOS_TEXTO, FUNDOS_CAPTION } from '../utils/estilos';
 import ImportadorIA from './ImportadorIA';
 import IconeEspera, { ICONES_ESPERA } from './IconeEspera';
 import PreviewCelular from './PreviewCelular';
@@ -496,6 +496,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
   };
   const iconesEditorP1 = iconesDaTela((config.opcoesChegada || []).filter((o) => o.ativo !== false));
   const setCampo = (campo, valor) => setConfig((c) => ({ ...c, [campo]: valor }));
+  const [slotAcoes, setSlotAcoes] = useState(null); // linha do entalhe: botões de adicionar texto
 
   const BarraFormatacao = ({ ehP1, extraIndex }) => {
     const classe = 'px-2.5 py-1.5 rounded-lg text-xs text-slate-300 bg-slate-800/60 hover:bg-slate-700 hover:text-white transition disabled:opacity-40';
@@ -1349,7 +1350,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               {/* ====================================================== */}
               {activeTab === 'inicio' && (
                 <div className="painel-tela">
-                  <TopoPainel titulo="Boas-vindas" />
+                  <TopoPainel titulo="Boas-vindas" slot={setSlotAcoes} />
                   <Secao titulo="Ícone animado" descricao="Aparece no celular enquanto a pesquisa não foi liberada.">
                     <div className="grid grid-cols-5 gap-1.5">
                       {ICONES_ESPERA.map((ic) => {
@@ -1372,6 +1373,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                   </Secao>
                   <EstiloLinhasTitulo
                     key={activeTab}
+                    slotAcoes={slotAcoes}
                     onOrdem={(ids) => setConfig((c) => ({
                       ...c,
                       ...permutar(Object.fromEntries([['1', 'DENTRO DE INSTANTES', 'branco'], ['2', 'ESTARÁ LIBERADO', 'dourado'], ['3', 'PARA RESPONDER.', 'verde']].map(([n, texto, cor]) => [`esperaLinha${n}`, {
@@ -1496,20 +1498,28 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               {/* ====================================================== */}
               {activeTab === 'inicio_comecar' && (
                 <div className="painel-tela">
-                  <TopoPainel titulo="Início" />
+                  <TopoPainel titulo="Início" slot={setSlotAcoes}>
+                    {linhasCapa(config).some((l) => l.classeCaixa) && <span className="painel-topo-nome">Formato Fundo dos Cards</span>}
+                  </TopoPainel>
                   {/* Mesma ordem do celular: arraste para trocar */}
                   <EstiloLinhasTitulo
                     key={activeTab}
+                    slotAcoes={slotAcoes}
                     onOrdem={(ids) => setConfig((c) => ({ ...c, capaOrdem: reordenar(ordemCapa(c), ids) }))}
                     topo={linhasCapa(config).some((l) => l.classeCaixa) && (
                       <>
                         <div className="linha-efeito" title="Vale para os títulos que têm cor de fundo">
-                          <span>Formato</span>
-                          <Segmentos opcoes={[{ id: 'card', label: 'Card' }, { id: 'faixa', label: 'Faixa', dica: 'Faixa de ponta a ponta' }]} valor={config.capaFormato || 'card'} onChange={(v) => setCampo('capaFormato', v)} />
+                          <MiniSlider rotulo="Largura" valor={Number(config.capaLargura) || 100} min={CAPA_LARGURA_MIN} max={100} unidade="%" onChange={(v) => setCampo('capaLargura', v)} />
+                          <MiniSlider rotulo="Cantos" valor={raioCapa(config) ?? 16} min={0} max={40} onChange={(v) => setCampo('capaRaio', v)} />
+                          <MiniSlider
+                            rotulo="Espaço entre cards"
+                            valor={Number(config[`${linhasCapa(config)[0].id}Espaco`] ?? CAPA_ESPACO_PADRAO)}
+                            min={0}
+                            max={80}
+                            onChange={(v) => setConfig((c) => ({ ...c, ...Object.fromEntries(LINHAS_CAPA.map((l) => [`${l.id}Espaco`, v])) }))}
+                          />
                         </div>
-                        {(config.capaFormato || 'card') === 'card' && (
-                          <div className="texto-topo-largo"><LinhaEfeito rotulo="Efeito" opcoes={EFEITOS_CAPA} valor={config.capaEfeito || 'alto_relevo'} onChange={(v) => setCampo('capaEfeito', v)} intensidade={config.capaEfeito !== 'nenhum' && { valor: config.capaProfundidade || 5, onChange: (v) => setCampo('capaProfundidade', v) }} /></div>
-                        )}
+                        <LinhaEfeito rotulo="Efeito" opcoes={EFEITOS_CAPA} valor={config.capaEfeito || 'alto_relevo'} onChange={(v) => setCampo('capaEfeito', v)} intensidade={config.capaEfeito !== 'nenhum' && { valor: config.capaProfundidade || 5, onChange: (v) => setCampo('capaProfundidade', v) }} />
                       </>
                     )}
                     linhas={(() => {
@@ -1559,7 +1569,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               {/* ====================================================== */}
               {activeTab === 'tela_1' && (
                 <div className="painel-tela">
-                  <TopoPainel titulo="Tela 1" />
+                  <TopoPainel titulo="Tela 1" slot={setSlotAcoes} />
                   <SubAbas
                     valor={subAtualP1}
                     onChange={setSubTabTela1}
@@ -1576,6 +1586,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     <div className="space-y-2.5">
                       <EstiloLinhasTitulo
                         key={activeTab}
+                        slotAcoes={slotAcoes}
                         onOrdem={(ids) => setConfig((c) => ({
                           ...c,
                           ...permutar({
@@ -2019,11 +2030,12 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 return (
                   <div className="painel-tela">
                     {/* Barra Superior da Tela Extra */}
-                    <TopoPainel titulo={`Tela ${numTela}`} onExcluir={() => (membros.length > 1 ? excluirPagina(membros, numTela) : handleExcluirTela(extraIndex))}>
+                    <TopoPainel slot={setSlotAcoes} titulo={`Tela ${numTela}`} onExcluir={() => (membros.length > 1 ? excluirPagina(membros, numTela) : handleExcluirTela(extraIndex))}>
                       {/* Seletor Completo de Tipo da Tela Extra (10 Tipos Mundiais) */}
                       <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-bold text-slate-400">Tipo:</span>
                         <select
+                          aria-label="Tipo da tela"
+                          title="Tipo da tela"
                           value={telaAlvo.tipo || 'cards'}
                           onChange={(e) => {
                             const novoTipo = e.target.value;
@@ -2035,7 +2047,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                               ]);
                             }
                           }}
-                          className="bg-slate-900 border border-slate-700 focus:border-slate-300 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-200"
+                          className="w-[176px] bg-slate-900 border border-slate-700 focus:border-slate-300 rounded-xl px-2 py-1 text-xs font-semibold text-slate-200"
                         >
                           {TIPOS_PERGUNTA.map(tp => (
                             <option key={tp.id} value={tp.id}>{tp.label}</option>
@@ -2205,6 +2217,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         )}
                         <EstiloLinhasTitulo
                           key={activeTab}
+                          slotAcoes={slotAcoes}
                           onOrdem={(ids) => setConfig((c) => ({
                             ...c,
                             telasExtras: c.telasExtras.map((t, i) => {
@@ -2776,9 +2789,10 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               {/* ====================================================== */}
               {activeTab === 'fim' && (
                 <div className="painel-tela">
-                <TopoPainel titulo="Tela final" />
+                <TopoPainel titulo="Tela final" slot={setSlotAcoes} />
                 <EstiloLinhasTitulo
                   key={activeTab}
+                  slotAcoes={slotAcoes}
                   onOrdem={(ids) => setConfig((c) => ({ ...c, finalOrdem: reordenarFinal(c, ids) }))}
                   linhas={ordemFinal(config).map((id) => {
                     if (id === 'divisor') return { chave: id, rotulo: 'Linha divisória', separador: true, ligado: temDivisor(config), onLigado: (v) => setCampo('finalDivisor', v) };

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Eye, EyeOff, Plus, Trash2 } from 'lucide-react';
 import { alturaFaixa, CORES_LINHA, CORES_TEXTO_LINHAS, FAIXA_MAX, FAIXA_MIN, FUNDOS_CAPTION } from '../utils/estilos';
 import { Alinhamento, Alternar, BarraFormato, Cores, Deslizante, MiniSlider, QuestaoArrastavel, Secao, SeletorFonte } from './Controles';
@@ -12,10 +13,11 @@ import { Alinhamento, Alternar, BarraFormato, Cores, Deslizante, MiniSlider, Que
  *   bordaLargura, onBordaLargura, espaco, onEspaco, aoLado (do texto), extra (fim da barra) e abaixo = controles próprios da linha }
  * Altura fica no cartão do Fundo e largura no da Borda. onEspaco: distância ENTRE esta linha e a próxima.
  * onOrdem (opcional): liga o arrastar e soltar das linhas que têm "chave"; recebe as chaves visíveis na ordem nova.
+ * slotAcoes: elemento do cabeçalho (linha do entalhe) que recebe os botões de adicionar.
  * topo (opcional): configuração que vale para a lista, acima dos textos. removivel: mostra a lixeira na linha.
  * Linha { separador: true, ligado, onLigado } = linha divisória.
  */
-export default function EstiloLinhasTitulo({ linhas, onOrdem, topo = null }) {
+export default function EstiloLinhasTitulo({ linhas, onOrdem, topo = null, slotAcoes = null }) {
   // Só aparecem os textos que estão no celular. Os vazios ficam num botão "adicionar";
   // quem já foi aberto ou editado continua visível mesmo que o texto seja apagado.
   const [mantidas, setMantidas] = useState({});
@@ -44,22 +46,16 @@ export default function EstiloLinhasTitulo({ linhas, onOrdem, topo = null }) {
 
   return (
     <div className="texto-lista">
-      {(topo || vazias.length > 0) && (
-        <div className="texto-topo">
-          {topo}
-          <div className="texto-topo-acoes">
-            {vazias.map((l) => {
-              const principal = /\d$/.test(l.rotulo);
-              return (
-                <button key={idDe(l)} type="button" onClick={() => manter(l)} className={`texto-add ${principal ? '' : 'texto-add-2'}`}>
-                  <Plus className="w-4 h-4" strokeWidth={4} />
-                  <span>{principal ? `Add ${grupo(l)}` : l.rotulo}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      {slotAcoes && vazias.length > 0 && createPortal(vazias.map((l) => {
+        const principal = /\d$/.test(l.rotulo);
+        return (
+          <button key={idDe(l)} type="button" onClick={() => manter(l)} className={`texto-add ${principal ? '' : 'texto-add-2'}`}>
+            <Plus className="w-4 h-4" strokeWidth={4} />
+            <span>{principal ? `Add ${grupo(l)}` : l.rotulo}</span>
+          </button>
+        );
+      }), slotAcoes)}
+      {topo && <div className="texto-topo">{topo}</div>}
       {visiveis.map((l, i) => {
         if (l.separador) {
           return Item(l, i, (
