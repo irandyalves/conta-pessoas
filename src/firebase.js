@@ -233,7 +233,7 @@ export const BLANK_QUESTIONS_CONFIG = {
   finalTitulo2: 'PELA SUA PRESENÇA.',
   finalTitulo: 'MUITO OBRIGADO PELA SUA PRESENÇA.',
   finalTituloFonteTamanho: 26,
-  finalMensagem: 'será espetacular!',
+  finalMensagem: '',
   finalMensagemFonteTamanho: 16,
   finalStatus: 'REGISTRO CONCLUÍDO!',
   finalStatusFonteTamanho: 18,
@@ -346,7 +346,7 @@ export const DEFAULT_QUESTIONS_CONFIG = {
   finalTitulo2: 'PELA SUA PRESENÇA.',
   finalTitulo: 'MUITO OBRIGADO PELA SUA PRESENÇA.',
   finalTituloFonteTamanho: 26, // px
-  finalMensagem: 'será espetacular!',
+  finalMensagem: '',
   finalMensagemFonteTamanho: 16, // px
   finalStatus: 'REGISTRO CONCLUÍDO!',
   finalStatusFonteTamanho: 18, // px
@@ -841,10 +841,10 @@ export function normalizeQuestionsConfig(config) {
   merged.cardCorFonteSubtitulo = merged.cardCorFonteSubtitulo || 'cinza';
 
   // Garantir tela inicial (espera) sem "AVALIAÇÃO DE REAÇÃO" legado
-  merged.esperaLinha1 = (merged.esperaLinha1 || 'DENTRO DE INSTANTES').trim();
-  const rawEspera2 = (merged.esperaLinha2 || 'ESTARÁ LIBERADO').trim();
+  merged.esperaLinha1 = String(merged.esperaLinha1 ?? 'DENTRO DE INSTANTES').trim();
+  const rawEspera2 = String(merged.esperaLinha2 ?? 'ESTARÁ LIBERADO').trim();
   merged.esperaLinha2 = /avalia[cç][aã]o de rea[cç][aã]o/i.test(rawEspera2) ? 'ESTARÁ LIBERADO' : rawEspera2;
-  merged.esperaLinha3 = (merged.esperaLinha3 || 'PARA RESPONDER.').trim();
+  merged.esperaLinha3 = String(merged.esperaLinha3 ?? 'PARA RESPONDER.').trim();
   const baseEspera = Number(merged.esperaFonteTamanho) || 26;
   merged.esperaLinha1Tamanho = Number(merged.esperaLinha1Tamanho) || baseEspera;
   merged.esperaLinha2Tamanho = Number(merged.esperaLinha2Tamanho) || baseEspera;
@@ -868,9 +868,11 @@ export function normalizeQuestionsConfig(config) {
     merged.finalTitulo2 = (merged.finalTitulo2 || '').trim();
   }
   merged.finalTitulo = `${merged.finalTitulo1} ${merged.finalTitulo2}`.trim() || 'MUITO OBRIGADO PELA SUA PRESENÇA.';
-  merged.finalMensagem = (merged.finalMensagem || 'será espetacular!').trim();
-  merged.finalStatus = (merged.finalStatus || 'REGISTRO CONCLUÍDO!').trim();
-  merged.finalInstrucao = (merged.finalInstrucao || 'pode guardar seu celular').trim();
+  // Texto apagado pelo admin fica apagado (o antigo padrão "será espetacular!" também não volta mais)
+  merged.finalMensagem = String(merged.finalMensagem ?? '').trim();
+  if (/^ser[aá] espetacular\s*!*$/i.test(merged.finalMensagem)) merged.finalMensagem = '';
+  merged.finalStatus = String(merged.finalStatus ?? 'REGISTRO CONCLUÍDO!').trim();
+  merged.finalInstrucao = String(merged.finalInstrucao ?? 'pode guardar seu celular').trim();
 
   const baseFinal = Number(merged.finalFonteTamanho) || 26;
   merged.finalTituloFonteTamanho = Number(merged.finalTituloFonteTamanho) || baseFinal;

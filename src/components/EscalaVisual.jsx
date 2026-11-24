@@ -1,28 +1,24 @@
 import React from 'react';
+import Rosto, { Boneco, corHumor } from './Rosto';
 
 // 8 estilos de escala para telas do tipo "slider" (nota de X a Y).
 // O MESMO componente é usado no celular e no preview do editor (escala = zoom do preview).
 export const ESTILOS_ESCALA = [
   { id: 'slider', label: 'Slide clássico' },
   { id: 'numero', label: 'Número animado' },
-  { id: 'carinhas', label: 'Carinhas' },
+  { id: 'carinhas', label: 'Carinha viva' },
+  { id: 'boneco', label: 'Boneco' },
   { id: 'nps', label: 'Botões coloridos' },
   { id: 'estrelas', label: 'Estrelas' },
   { id: 'coracoes', label: 'Corações' },
   { id: 'termometro', label: 'Termômetro' },
-  { id: 'emojis', label: '5 emojis' }
+  { id: 'emojis', label: '5 carinhas' }
 ];
 
 // Estilos que mostram um valor inicial (o participante só arrasta)
-export const ESCALA_COM_VALOR_INICIAL = ['slider', 'numero', 'carinhas', 'termometro'];
+export const ESCALA_COM_VALOR_INICIAL = ['slider', 'numero', 'carinhas', 'boneco', 'termometro'];
 
-const CARAS = ['😡', '😟', '😕', '😐', '🙂', '😊', '😍'];
-const EMOJIS5 = ['😞', '😕', '😐', '🙂', '😍'];
-
-const corDoValor = (v, min, max) => {
-  const p = max > min ? (v - min) / (max - min) : 1;
-  return `hsl(${Math.round(p * 130)}, 85%, 55%)`;
-};
+const corDoValor = (v, min, max) => corHumor(max > min ? (v - min) / (max - min) : 1);
 
 export default function EscalaVisual({ tela, valor, onChange, escala = 1 }) {
   const min = Number(tela.sliderMin ?? 0);
@@ -55,8 +51,9 @@ export default function EscalaVisual({ tela, valor, onChange, escala = 1 }) {
       value={v}
       onChange={(e) => onChange(e.target.value)}
       onClick={(e) => e.stopPropagation()}
-      className={`w-full cursor-pointer ${classe}`}
-      style={{ accentColor: cor, height: px(10) }}
+      aria-label="Nota"
+      className={`es-range w-full cursor-pointer ${classe}`}
+      style={{ '--es-cor': cor, '--es-p': `${p * 100}%` }}
     />
   );
 
@@ -76,12 +73,13 @@ export default function EscalaVisual({ tela, valor, onChange, escala = 1 }) {
     );
   }
 
-  if (estilo === 'carinhas') {
-    const cara = CARAS[Math.min(CARAS.length - 1, Math.round(p * (CARAS.length - 1)))];
+  if (estilo === 'carinhas' || estilo === 'boneco') {
     return (
       <div className="space-y-2 text-center">
-        <div key={cara} className="leading-none animate-[esNum_.35s_ease-out]" style={{ fontSize: px(64) }}>{cara}</div>
-        <div className="font-black" style={{ fontSize: px(22), color: cor }}>{v}{unidade}</div>
+        <div className="flex justify-center">
+          {estilo === 'boneco' ? <Boneco p={p} tamanho={Math.round(170 * escala)} /> : <Rosto p={p} tamanho={Math.round(116 * escala)} />}
+        </div>
+        <div className="font-black tabular-nums" style={{ fontSize: px(26), color: cor }}>{v}{unidade}</div>
         {range()}
         {rotulos}
       </div>
@@ -165,21 +163,23 @@ export default function EscalaVisual({ tela, valor, onChange, escala = 1 }) {
   }
 
   if (estilo === 'emojis') {
-    const pontos = EMOJIS5.map((_, i) => Math.round(min + (i * (max - min)) / (EMOJIS5.length - 1)));
+    const pontos = [0, 1, 2, 3, 4].map((i) => Math.round(min + (i * (max - min)) / 4));
     return (
       <div className="space-y-2 text-center">
-        <div className="flex justify-between">
-          {EMOJIS5.map((em, i) => {
-            const ativo = temValor && Number(valor) === pontos[i];
+        <div className="flex justify-between items-center">
+          {pontos.map((pt, i) => {
+            const ativo = temValor && Number(valor) === pt;
             return (
               <button
-                key={em}
+                key={i}
                 type="button"
-                onClick={(e) => { e.stopPropagation(); onChange(String(pontos[i])); }}
-                className="leading-none rounded-full transition-all duration-200"
-                style={{ fontSize: px(ativo ? 46 : 34), filter: temValor && !ativo ? 'grayscale(1) opacity(.45)' : 'none', padding: px(4) }}
+                aria-label={`Nota ${pt}`}
+                aria-pressed={ativo}
+                onClick={(e) => { e.stopPropagation(); onChange(String(pt)); }}
+                className="rounded-full transition-transform duration-200 active:scale-90"
+                style={{ transform: ativo ? 'scale(1.25)' : 'none', padding: px(3) }}
               >
-                {em}
+                <Rosto p={ativo ? i / 4 : temValor ? 0.5 : i / 4} tamanho={Math.round(46 * escala)} apagado={temValor && !ativo} />
               </button>
             );
           })}

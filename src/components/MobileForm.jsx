@@ -40,7 +40,9 @@ import {
 } from '../firebase';
 import { componenteIcone, iconesDaTela } from '../utils/icones';
 import { configSeta } from '../utils/setas';
-import { corLinhaHex, lerGeral, caixaAlta, telaP1Cantos, estiloBotao, cantosCard, CARD_ESPACO_PADRAO, faixaEstilo, linhasCapa, medidasCard, espacos, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getEfeitoStyle, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems } from '../utils/estilos';
+import Rosto from './Rosto';
+import { carregarFonteTema, classeTema } from '../utils/temas';
+import { partesTitulo, subtituloRepeteLegenda, corLinhaHex, lerGeral, caixaAlta, telaP1Cantos, estiloBotao, cantosCard, CARD_ESPACO_PADRAO, faixaEstilo, linhasCapa, medidasCard, espacos, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getEfeitoStyle, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems } from '../utils/estilos';
 
 const DISPOSITIVO_BLOQUEADO_KEY = 'presenca_dispositivo_bloqueado_voto';
 const DISPOSITIVO_VOTO_TIME_KEY = 'presenca_dispositivo_hora_voto';
@@ -56,6 +58,7 @@ const COR_CLASSES = {
 
 const CARD_FUNDO_CLASSES = {
   // 6 Originais
+  tema: 't-fundo',
   escuro: 'bg-slate-900/90',
   gradiente: 'bg-gradient-to-r from-slate-950 via-slate-900 to-slate-850',
   vidro: 'bg-slate-900/50 backdrop-blur-md',
@@ -77,6 +80,7 @@ const CARD_FUNDO_CLASSES = {
 
 
 const CARD_FONTE_TITULO_CLASSES = {
+  tema: 't-cor',
   branco: 'text-white',
   dourado: 'text-amber-300',
   amarelo: 'text-yellow-300',
@@ -90,6 +94,7 @@ const CARD_FONTE_TITULO_CLASSES = {
 };
 
 const CARD_FONTE_SUBTITULO_CLASSES = {
+  tema: 't-cor',
   cinza: 'text-slate-400',
   cinza_claro: 'text-slate-300',
   branco_suave: 'text-white/80',
@@ -147,6 +152,23 @@ const lerProgresso = (eventoId) => {
   }
 };
 
+// Título com número da seção e pergunta separados (os layouts dão destaque a cada parte)
+function TituloRico({ texto }) {
+  const { numero, secao, questao } = partesTitulo(texto);
+  const corpo = secao
+    ? <><span className="t-secao">{secao}</span><span className="t-traco"> — </span><span className="t-questao">{questao}</span></>
+    : questao;
+  if (!numero) return corpo;
+  return <><span className="t-numero">{numero}</span><span className="t-ponto">. </span><span className="t-texto">{corpo}</span></>;
+}
+
+// Humor de uma coluna da grade: 0 (menor nota) a 1 (maior). NA e textos não têm rosto.
+const humorColuna = (col, cols) => {
+  const nums = cols.filter((c) => /^\d+([.,]\d+)?$/.test(String(c).trim()));
+  const i = nums.indexOf(col);
+  return i < 0 ? null : nums.length < 2 ? 1 : i / (nums.length - 1);
+};
+
 // Rodapé das telas sem botão Avançar: ← ANTERIOR • PRÓXIMA →
 // PRÓXIMA só aparece quando a página não é obrigatória (ou já foi respondida).
 function RodapeSetas({ onAnterior, onProxima, aceso, seta }) {
@@ -154,7 +176,7 @@ function RodapeSetas({ onAnterior, onProxima, aceso, seta }) {
   return (
     <>
       <div className="h-20" />
-      <div className="fixed bottom-0 inset-x-0 z-30 flex items-center justify-center gap-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent pointer-events-none">
+      <div className="t-rodape fixed bottom-0 inset-x-0 z-30 flex items-center justify-center gap-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent pointer-events-none">
         {onAnterior && <BotaoSeta seta={seta} lado="anterior" aceso={aceso === 'anterior'} onClick={onAnterior} className="w-24" />}
         {onAnterior && onProxima && <span className="w-1.5 h-1.5 rounded-full" style={{ background: seta.cor }} aria-hidden="true" />}
         {onProxima && <BotaoSeta seta={seta} lado="proxima" aceso={aceso === 'proxima'} onClick={onProxima} className="w-24" />}
@@ -608,7 +630,7 @@ export default function MobileForm({ preview = false }) {
     const selectedChecks = paraLista(valAtual);
 
     return (
-      <div ref={mostrarGaveta} className="p-4 rounded-2xl bg-slate-900/95 border-2 border-amber-500/50 shadow-xl space-y-3 animate-fade-in text-left">
+      <div ref={mostrarGaveta} className="t-gaveta p-4 rounded-2xl bg-slate-900/95 border-2 border-amber-500/50 shadow-xl space-y-3 animate-fade-in text-left">
         <div className="flex items-center justify-between gap-2">
           <p className="text-xs sm:text-sm font-black text-amber-300 flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
@@ -964,13 +986,18 @@ export default function MobileForm({ preview = false }) {
     enviarRegistro(registro);
   };
 
+  // Layout (tema) da página: o geral, ou o próprio da página que não herda
+  const temaAtual = lerGeral(questionsConfig, currentStep.startsWith('extra_') ? telasExtrasAtivas[parseInt(currentStep.split('_')[1], 10)] : null, '')('tema');
+  const temaCls = classeTema(temaAtual);
+  useEffect(() => { carregarFonteTema(temaAtual); }, [temaAtual]);
+
   // ==============================================================
   // ENVIANDO / ERRO NO ENVIO (o celular só trava depois que a resposta foi aceita)
   // ==============================================================
   if (enviando || erroEnvio) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-6 text-center select-none">
-        <div className="w-full max-w-sm bg-slate-900/95 border border-slate-800 rounded-3xl p-8 shadow-2xl space-y-5">
+      <div className={`min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-6 text-center select-none t-pagina ${temaCls}`}>
+        <div className="t-painel w-full max-w-sm bg-slate-900/95 border border-slate-800 rounded-3xl p-8 shadow-2xl space-y-5">
           {enviando ? (
             <>
               <div className="w-14 h-14 mx-auto rounded-full border-4 border-slate-700 border-t-amber-400 animate-spin" />
@@ -1006,8 +1033,8 @@ export default function MobileForm({ preview = false }) {
 
   if (isVotadoNesteEvento) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-6 text-center select-none fade-in">
-        <div className="w-full max-w-sm bg-slate-900/95 border border-slate-800/80 rounded-3xl p-8 shadow-2xl relative overflow-hidden space-y-6">
+      <div className={`min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-6 text-center select-none fade-in t-pagina ${temaCls}`}>
+        <div className="t-painel w-full max-w-sm bg-slate-900/95 border border-slate-800/80 rounded-3xl p-8 shadow-2xl relative overflow-hidden space-y-6">
           <div className="absolute -top-20 -right-20 w-44 h-44 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute -bottom-20 -left-20 w-44 h-44 bg-sky-500/15 rounded-full blur-3xl pointer-events-none" />
 
@@ -1044,13 +1071,13 @@ export default function MobileForm({ preview = false }) {
                 style={{ fontSize: `${questionsConfig.finalStatusFonteTamanho || 18}px` }}
                 className="font-black text-emerald-400 uppercase tracking-wide"
               >
-                {questionsConfig.finalStatus || 'REGISTRO CONCLUÍDO!'}
+                {questionsConfig.finalStatus ?? 'REGISTRO CONCLUÍDO!'}
               </p>
               <p 
                 style={{ fontSize: `${questionsConfig.finalInstrucaoFonteTamanho || 13}px` }}
                 className="font-bold text-slate-300"
               >
-                {questionsConfig.finalInstrucao || 'pode guardar seu celular'}
+                {questionsConfig.finalInstrucao ?? 'pode guardar seu celular'}
               </p>
               {envioPendente && (
                 <p className="text-[11px] text-amber-300/90 pt-1">
@@ -1069,12 +1096,12 @@ export default function MobileForm({ preview = false }) {
   // ==============================================================
   if (!sessaoAtiva) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-6 text-center select-none animate-fade-in relative overflow-hidden">
+      <div className={`min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-6 text-center select-none animate-fade-in relative overflow-hidden t-pagina ${temaCls}`}>
         {/* Luzes decorativas de fundo */}
         <div className="absolute -top-32 -right-32 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="w-full max-w-sm bg-slate-900/90 border border-slate-800 rounded-3xl p-8 sm:p-9 shadow-2xl relative space-y-7 flex flex-col items-center">
+        <div className="t-painel w-full max-w-sm bg-slate-900/90 border border-slate-800 rounded-3xl p-8 sm:p-9 shadow-2xl relative space-y-7 flex flex-col items-center">
           
           {/* ÍCONE ANIMADO ESCOLHIDO PELO ADMIN */}
           <IconeEspera tipo={questionsConfig.esperaIcone || 'lapis'} tamanho={128} />
@@ -1085,19 +1112,19 @@ export default function MobileForm({ preview = false }) {
               style={{ fontSize: `${questionsConfig.esperaLinha1Tamanho || questionsConfig.esperaFonteTamanho || 26}px` }}
               className={`font-black tracking-wide uppercase leading-tight drop-shadow-sm ${getCorTextoLinhaClass(questionsConfig.esperaLinha1Cor, 'text-white')}`}
             >
-              {questionsConfig.esperaLinha1 || 'DENTRO DE INSTANTES'}
+              {questionsConfig.esperaLinha1 ?? 'DENTRO DE INSTANTES'}
             </h2>
             <h2 
               style={{ fontSize: `${questionsConfig.esperaLinha2Tamanho || questionsConfig.esperaFonteTamanho || 26}px` }}
               className={`font-black tracking-wide uppercase leading-tight drop-shadow-sm ${getCorTextoLinhaClass(questionsConfig.esperaLinha2Cor, 'text-amber-300')}`}
             >
-              {questionsConfig.esperaLinha2 || 'ESTARÁ LIBERADO'}
+              {questionsConfig.esperaLinha2 ?? 'ESTARÁ LIBERADO'}
             </h2>
             <h2 
               style={{ fontSize: `${questionsConfig.esperaLinha3Tamanho || questionsConfig.esperaFonteTamanho || 26}px` }}
               className={`font-black tracking-wide uppercase leading-tight drop-shadow-sm ${getCorTextoLinhaClass(questionsConfig.esperaLinha3Cor, 'text-emerald-400')}`}
             >
-              {questionsConfig.esperaLinha3 || 'PARA RESPONDER.'}
+              {questionsConfig.esperaLinha3 ?? 'PARA RESPONDER.'}
             </h2>
           </div>
 
@@ -1116,6 +1143,9 @@ export default function MobileForm({ preview = false }) {
     );
   }
 
+  const etapas = telasExtrasAtivas.length + 1 + (questionsConfig?.mostrarTelaAcompanhantes !== false ? 1 : 0);
+  const progresso = (currentStep === 'p1' ? 1 : currentStep === 'acompanhantes' ? etapas : parseInt(currentStep.split('_')[1], 10) + 2) / Math.max(1, etapas + 1);
+
   // Cabeçalho preso no alto: só onde há título (não na capa nem em página com várias perguntas)
   const cabecalhoTravado = questionsConfig?.travarCabecalho !== false &&
     !(currentStep === 'p1' && questionsConfig?.mostrarBotaoComecar !== false && !jaClicouComecar) &&
@@ -1128,14 +1158,19 @@ export default function MobileForm({ preview = false }) {
   // FLUXO PRINCIPAL: TELAS 1, 2, 3, 4, 5
   // ==============================================================
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between p-4 sm:p-6 max-w-md mx-auto">
+    <div className={`min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between p-4 sm:p-6 max-w-md mx-auto t-pagina ${temaCls}`}>
       
       {/* ============================================================ */}
       {/* CABEÇALHO DA ETAPA ATUAL                                     */}
       {/* ============================================================ */}
+      {questionsConfig?.mostrarProgresso && !(currentStep === 'p1' && questionsConfig?.mostrarBotaoComecar !== false && !jaClicouComecar) && (
+        <div className="t-progresso" aria-hidden="true">
+          <i style={{ width: `${Math.round(progresso * 100)}%` }} />
+        </div>
+      )}
       <header
         ref={cabecalhoRef}
-        className={`text-center pb-2 ${cabecalhoTravado ? 'sticky top-0 z-20 bg-slate-950 -mx-4 px-4 -mt-4 pt-6 sm:-mx-6 sm:px-6 sm:-mt-6 sm:pt-8 shadow-lg shadow-slate-950/60' : 'w-full pt-2'}`}
+        className={`t-cabecalho text-center pb-2 ${cabecalhoTravado ? 'sticky top-0 z-20 bg-slate-950 -mx-4 px-4 -mt-4 pt-6 sm:-mx-6 sm:px-6 sm:-mt-6 sm:pt-8 shadow-lg shadow-slate-950/60' : 'w-full pt-2'}`}
       >
         {/* TÍTULO DA CAPA (QUANDO BOTÃO COMEÇAR ESTÁ ATIVO E AINDA NÃO CLICOU) */}
         {currentStep === 'p1' && questionsConfig.mostrarBotaoComecar !== false && !jaClicouComecar && (
@@ -1146,7 +1181,7 @@ export default function MobileForm({ preview = false }) {
                 <div
                   key={l.id}
                   style={{ ...l.caixa, marginBottom: i < todas.length - 1 ? l.espaco : 0 }}
-                  className={`${getAlinhamentoClass(l.alinhamento)} ${l.classeCaixa}`}
+                  className={`t-capa ${l.texto ? 't-capa-texto' : 't-titulo'} ${getAlinhamentoClass(l.alinhamento)} ${l.classeCaixa}`}
                 >
                   <Linha
                     style={{ fontSize: `${l.tamanho}px`, lineHeight: l.entrelinha }}
@@ -1164,13 +1199,13 @@ export default function MobileForm({ preview = false }) {
         {currentStep === 'p1' && (questionsConfig.mostrarBotaoComecar === false || jaClicouComecar) && (
           <div className="mt-2 pt-2 flex flex-col" style={{ gap: espacos(questionsConfig, true).sub, marginBottom: espacos(questionsConfig, true).cards }}>
             {(questionsConfig.pergunta1Titulo || questionsConfig.pergunta1Titulo2 || questionsConfig.pergunta1Titulo3) && (
-              <div style={{ gap: espacos(questionsConfig, true).tit, ...faixaEstilo(estiloLinhas(questionsConfig, 'pergunta1').tituloFundo, questionsConfig.pergunta1TituloFaixa ?? questionsConfig.faixaPadrao) }} className={`flex flex-col ${getAlinhamentoClass(estiloLinhas(questionsConfig, 'pergunta1').tituloAl)} ${getFaixaFundoClass(estiloLinhas(questionsConfig, 'pergunta1').tituloFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}>
+              <div style={{ gap: espacos(questionsConfig, true).tit, ...faixaEstilo(estiloLinhas(questionsConfig, 'pergunta1').tituloFundo, questionsConfig.pergunta1TituloFaixa ?? questionsConfig.faixaPadrao) }} className={`t-titulo flex flex-col ${getAlinhamentoClass(estiloLinhas(questionsConfig, 'pergunta1').tituloAl)} ${getFaixaFundoClass(estiloLinhas(questionsConfig, 'pergunta1').tituloFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}>
                 {questionsConfig.pergunta1Titulo && (
                   <h2 
                     style={{ fontSize: `${questionsConfig.pergunta1FonteTamanho || 22}px` }}
                     className={`${pesoFonte(questionsConfig.pergunta1TituloBold)} ${caixaAlta(questionsConfig.pergunta1TituloCaixa)} leading-tight ${getCorTextoLinhaClass(questionsConfig.pergunta1TituloCor, 'text-white')}`}
                   >
-                    {questionsConfig.pergunta1Titulo}
+                    <TituloRico texto={questionsConfig.pergunta1Titulo} />
                   </h2>
                 )}
                 {questionsConfig.pergunta1Titulo2 && (
@@ -1195,7 +1230,7 @@ export default function MobileForm({ preview = false }) {
             {questionsConfig.pergunta1TextoAbaixo && (
               <p
                 style={{ fontSize: `${questionsConfig.pergunta1TextoAbaixoTamanho || 14}px`, ...faixaEstilo(estiloLinhas(questionsConfig, 'pergunta1').subFundo, questionsConfig.pergunta1SubFaixa ?? questionsConfig.faixaPadrao) }}
-                className={`leading-relaxed whitespace-pre-line ${getAlinhamentoClass(estiloLinhas(questionsConfig, 'pergunta1').subAl)} ${getFaixaFundoClass(estiloLinhas(questionsConfig, 'pergunta1').subFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')} ${questionsConfig.pergunta1SubBold ? 'font-bold' : ''} ${caixaAlta(questionsConfig.pergunta1SubCaixa)} ${getCorTextoLinhaClass(questionsConfig.pergunta1TextoAbaixoCor, 'text-slate-300')}`}
+                className={`t-sub leading-relaxed whitespace-pre-line ${getAlinhamentoClass(estiloLinhas(questionsConfig, 'pergunta1').subAl)} ${getFaixaFundoClass(estiloLinhas(questionsConfig, 'pergunta1').subFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')} ${questionsConfig.pergunta1SubBold ? 'font-bold' : ''} ${caixaAlta(questionsConfig.pergunta1SubCaixa)} ${getCorTextoLinhaClass(questionsConfig.pergunta1TextoAbaixoCor, 'text-slate-300')}`}
               >
                 {questionsConfig.pergunta1TextoAbaixo}
               </p>
@@ -1213,9 +1248,9 @@ export default function MobileForm({ preview = false }) {
           const linha1 = tela.titulo1 || tela.titulo || `Pergunta da Tela ${idx + 2}`;
           return (
             <div className="mt-2 pt-2 border-t border-slate-800/60 flex flex-col" style={{ gap: espacos(tela).sub, marginBottom: espacos(tela).cards }}>
-              <div style={{ gap: espacos(tela).tit, ...faixaEstilo(estiloLinhas(tela).tituloFundo, tela.tituloFaixa ?? questionsConfig?.faixaPadrao) }} className={`flex flex-col ${getAlinhamentoClass(estiloLinhas(tela).tituloAl)} ${getFaixaFundoClass(estiloLinhas(tela).tituloFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}>
+              <div style={{ gap: espacos(tela).tit, ...faixaEstilo(estiloLinhas(tela).tituloFundo, tela.tituloFaixa ?? questionsConfig?.faixaPadrao) }} className={`t-titulo flex flex-col ${getAlinhamentoClass(estiloLinhas(tela).tituloAl)} ${getFaixaFundoClass(estiloLinhas(tela).tituloFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}>
               <h2 style={{ fontSize: `${tela.titulo1Tamanho || 20}px` }} className={`${pesoFonte(tela.tituloBold)} ${caixaAlta(tela.tituloCaixa)} leading-tight ${getCorTextoLinhaClass(tela.titulo1Cor, 'text-white')}`}>
-                {linha1}
+                <TituloRico texto={linha1} />
               </h2>
               {tela.titulo2 && (
                 <h2 style={{ fontSize: `${tela.titulo2Tamanho || 15}px` }} className={`${pesoFonte(tela.tituloBold)} ${caixaAlta(tela.tituloCaixa)} leading-tight ${getCorTextoLinhaClass(tela.titulo2Cor, 'text-amber-300')}`}>
@@ -1228,8 +1263,8 @@ export default function MobileForm({ preview = false }) {
                 </h2>
               )}
               </div>
-              {tela.subtitulo && (
-                <p style={{ fontSize: `${tela.subtituloTamanho || 13}px`, ...faixaEstilo(estiloLinhas(tela).subFundo, tela.subFaixa ?? questionsConfig?.faixaPadrao) }} className={`leading-snug ${getAlinhamentoClass(estiloLinhas(tela).subAl)} ${getFaixaFundoClass(estiloLinhas(tela).subFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')} ${tela.subBold ? 'font-bold' : ''} ${caixaAlta(tela.subCaixa)} ${getCorTextoLinhaClass(tela.subtituloCor, 'text-slate-300')}`}>
+              {tela.subtitulo && !subtituloRepeteLegenda(tela) && (
+                <p style={{ fontSize: `${tela.subtituloTamanho || 13}px`, ...faixaEstilo(estiloLinhas(tela).subFundo, tela.subFaixa ?? questionsConfig?.faixaPadrao) }} className={`t-sub leading-snug ${getAlinhamentoClass(estiloLinhas(tela).subAl)} ${getFaixaFundoClass(estiloLinhas(tela).subFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')} ${tela.subBold ? 'font-bold' : ''} ${caixaAlta(tela.subCaixa)} ${getCorTextoLinhaClass(tela.subtituloCor, 'text-slate-300')}`}>
                   {tela.subtitulo}
                 </p>
               )}
@@ -1277,7 +1312,7 @@ export default function MobileForm({ preview = false }) {
             {questionsConfig.mostrarBotaoComecar !== false && !jaClicouComecar ? (
               <>
               <div className="h-24" />
-              <div className="fixed bottom-0 inset-x-0 z-30 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent">
+              <div className="t-rodape fixed bottom-0 inset-x-0 z-30 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent">
                 {(() => {
                   const ler = (k) => questionsConfig?.[`comecar${k}`];
                   const st = estiloBotao(ler);
@@ -1293,12 +1328,12 @@ export default function MobileForm({ preview = false }) {
                     ...(ler('LinhaEspessura') !== undefined ? { padding: ler('LinhaEspessura') } : {}),
                     ...(st.boxShadow ? { boxShadow: st.boxShadow } : {})
                   }}
-                  className="relative max-w-md mx-auto block p-[2.5px] rounded-2xl overflow-hidden shadow-[0_0_28px_rgba(16,185,129,0.5)] active:scale-[0.98] transition-all group"
+                  className="t-comecar-borda relative max-w-md mx-auto block p-[2.5px] rounded-2xl overflow-hidden shadow-[0_0_28px_rgba(16,185,129,0.5)] active:scale-[0.98] transition-all group"
                 >
                   {/* Brilho suave girando no contorno (sentido horário) */}
                   {linha !== 'transparent' && (
                     <div
-                      className="absolute inset-[-200%] animate-spin"
+                      className="t-comecar-giro absolute inset-[-200%] animate-spin"
                       style={{
                         animationDuration: '3.5s',
                         background: linha
@@ -1316,7 +1351,7 @@ export default function MobileForm({ preview = false }) {
                       ...(st.fontSize ? { fontSize: st.fontSize } : {}),
                       ...(raio !== undefined ? { borderRadius: Math.max(0, raio - 2) } : {})
                     }}
-                    className="relative w-full py-4 px-6 rounded-[14px] bg-gradient-to-b from-emerald-500 to-emerald-700 text-white font-black text-base uppercase tracking-widest flex items-center justify-center gap-2.5"
+                    className="t-comecar relative w-full py-4 px-6 rounded-[14px] bg-gradient-to-b from-emerald-500 to-emerald-700 text-white font-black text-base uppercase tracking-widest flex items-center justify-center gap-2.5"
                   >
                     <Sparkles className="w-5 h-5 opacity-90 animate-pulse" />
                     <span>{questionsConfig.pergunta1BotaoComecarTexto || 'COMEÇAR'}</span>
@@ -1366,19 +1401,19 @@ export default function MobileForm({ preview = false }) {
                     const isGavetaAberta = isGavetaAbertaDe('p1', opcao);
 
                     return (
-                      <div key={opcao.id} className="space-y-2">
+                      <div key={opcao.id} className="t-linha space-y-2">
                         <button
                           type="button"
                           onClick={() => comFeedback(`p1_${opcao.id}`, () => handleSelectComoChegou(opcao), opcao.temGaveta)}
                           style={{ ...medidas.caixa, ...cardEfeitoInline }}
-                          className={`w-full text-left px-4 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-between group border border-white/15 ${cardFundoCls} ${
+                          className={`t-card w-full text-left px-4 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-between group border border-white/15 ${cardFundoCls} ${
                             isGavetaAberta ? 'border-amber-400/80 ring-1 ring-amber-400/40' : ''
                           } ${efeitoClique(`p1_${opcao.id}`)
                           }`}
                         >
                           <div className="flex items-center gap-4 pr-2 min-w-0">
                             {questionsConfig?.mostrarIconesCards !== false && (
-                              <div style={medidas.icone} className={`rounded-xl flex items-center justify-center shrink-0 border ${corCls}`}>
+                              <div style={medidas.icone} className={`t-icone rounded-xl flex items-center justify-center shrink-0 border ${corCls}`}>
                                 <IconComponent className="w-1/2 h-1/2" />
                               </div>
                             )}
@@ -1392,14 +1427,14 @@ export default function MobileForm({ preview = false }) {
                               {opcao.subtitulo && (
                                 <p 
                                   style={{ fontSize: `${questionsConfig.cardFonteSubtitulo || 12}px` }}
-                                  className={`mt-0.5 line-clamp-2 leading-snug ${cardFonteSubtituloCls}`}
+                                  className={`t-desc mt-0.5 line-clamp-2 leading-snug ${cardFonteSubtituloCls}`}
                                 >
                                   {opcao.subtitulo}
                                 </p>
                               )}
                             </div>
                           </div>
-                          <div className="w-7 h-7 rounded-full bg-slate-800/80 border border-slate-700/80 flex items-center justify-center shrink-0 text-slate-400 group-hover:text-amber-300 group-hover:border-amber-400/50 transition">
+                          <div className="t-ir w-7 h-7 rounded-full bg-slate-800/80 border border-slate-700/80 flex items-center justify-center shrink-0 text-slate-400 group-hover:text-amber-300 group-hover:border-amber-400/50 transition">
                             {opcao.temGaveta ? (
                               <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isGavetaAberta ? 'rotate-180 text-amber-400' : ''}`} />
                             ) : (
@@ -1537,8 +1572,8 @@ export default function MobileForm({ preview = false }) {
               <div key={tela.id} id={`campo_${tela.id}`} className={`scroll-mt-4 ${cabeTudo ? 'flex-1 flex flex-col' : ''}`}>
                 {mostrarTitulo && (
                   <div style={{ gap: espacos(tela).sub, marginBottom: cabeTudo ? Math.min(8, espacos(tela).cards) : espacos(tela).cards }} className={`flex flex-col ${primeira ? '' : `${cabeTudo ? 'pt-2' : 'pt-4'} border-t border-slate-800/60`} ${getAlinhamentoClass(estiloLinhas(tela).tituloAl)}`}>
-                    <h3 style={{ fontSize: `${tela.titulo1Tamanho || 18}px` }} className={`${pesoFonte(tela.tituloBold)} ${caixaAlta(tela.tituloCaixa)} leading-tight ${getCorTextoLinhaClass(tela.titulo1Cor, 'text-white')}`}>
-                      {[tela.titulo1 || tela.titulo, tela.titulo2, tela.titulo3].filter(Boolean).join(' ')}
+                    <h3 style={{ fontSize: `${tela.titulo1Tamanho || 18}px` }} className={`t-pergunta ${pesoFonte(tela.tituloBold)} ${caixaAlta(tela.tituloCaixa)} leading-tight ${getCorTextoLinhaClass(tela.titulo1Cor, 'text-white')}`}>
+                      <TituloRico texto={[tela.titulo1 || tela.titulo, tela.titulo2, tela.titulo3].filter(Boolean).join(' ')} />
                     </h3>
                     {tela.subtitulo && (
                       <p style={{ fontSize: `${tela.subtituloTamanho || 13}px` }} className={`leading-snug ${getAlinhamentoClass(estiloLinhas(tela).subAl)} ${tela.subBold ? 'font-bold' : ''} ${caixaAlta(tela.subCaixa)} ${getCorTextoLinhaClass(tela.subtituloCor, 'text-slate-300')}`}>
@@ -1556,7 +1591,7 @@ export default function MobileForm({ preview = false }) {
                       onChange={(e) => setTextos((prev) => ({ ...prev, [valKey]: e.target.value }))}
                       placeholder={tela.placeholder || 'Digite sua resposta aqui...'}
                       style={{ borderRadius: cantosCard(questionsConfig, tela) }}
-                      className={`w-full bg-slate-950 border ${bordaCampo} focus:border-amber-400 rounded-2xl ${cabeTudo ? 'flex-1 min-h-[52px] px-4 py-2.5' : 'p-4'} text-sm sm:text-base text-white placeholder-slate-500 focus:outline-none transition resize-none shadow-inner`}
+                      className={`t-campo w-full bg-slate-950 border ${bordaCampo} focus:border-amber-400 rounded-2xl ${cabeTudo ? 'flex-1 min-h-[52px] px-4 py-2.5' : 'p-4'} text-sm sm:text-base text-white placeholder-slate-500 focus:outline-none transition resize-none shadow-inner`}
                     />
                   )}
 
@@ -1567,7 +1602,7 @@ export default function MobileForm({ preview = false }) {
                       onChange={(e) => setTextos((prev) => ({ ...prev, [valKey]: e.target.value }))}
                       placeholder={tela.placeholder || 'Digite sua resposta curta...'}
                       style={{ borderRadius: cantosCard(questionsConfig, tela) }}
-                      className={`w-full bg-slate-950 border ${bordaCampo} focus:border-amber-400 rounded-2xl p-4 text-sm sm:text-base text-white placeholder-slate-500 focus:outline-none transition shadow-inner`}
+                      className={`t-campo w-full bg-slate-950 border ${bordaCampo} focus:border-amber-400 rounded-2xl p-4 text-sm sm:text-base text-white placeholder-slate-500 focus:outline-none transition shadow-inner`}
                     />
                   )}
 
@@ -1577,7 +1612,7 @@ export default function MobileForm({ preview = false }) {
                       value={valAtual}
                       onChange={(e) => setTextos((prev) => ({ ...prev, [valKey]: e.target.value }))}
                       style={{ borderRadius: cantosCard(questionsConfig, tela) }}
-                      className={`w-full bg-slate-950 border ${bordaCampo} focus:border-amber-400 rounded-2xl p-4 text-base text-white focus:outline-none`}
+                      className={`t-campo w-full bg-slate-950 border ${bordaCampo} focus:border-amber-400 rounded-2xl p-4 text-base text-white focus:outline-none`}
                     />
                   )}
 
@@ -1587,12 +1622,12 @@ export default function MobileForm({ preview = false }) {
                       value={valAtual}
                       onChange={(e) => setTextos((prev) => ({ ...prev, [valKey]: e.target.value }))}
                       style={{ borderRadius: cantosCard(questionsConfig, tela) }}
-                      className={`w-full bg-slate-950 border ${bordaCampo} focus:border-amber-400 rounded-2xl p-4 text-base text-white focus:outline-none`}
+                      className={`t-campo w-full bg-slate-950 border ${bordaCampo} focus:border-amber-400 rounded-2xl p-4 text-base text-white focus:outline-none`}
                     />
                   )}
 
                   {tela.tipo === 'slider' && (
-                    <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-4 text-center">
+                    <div className="t-caixa p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-4 text-center">
                       <EscalaVisual
                         tela={tela}
                         valor={valAtual}
@@ -1612,7 +1647,7 @@ export default function MobileForm({ preview = false }) {
                   )}
 
                   {tela.tipo === 'rating' && (
-                    <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-center gap-3">
+                    <div className="t-caixa p-4 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-center gap-3">
                       {[1, 2, 3, 4, 5].map((st) => {
                         const activeStars = parseInt(String(valAtual), 10) || 0;
                         return (
@@ -1634,7 +1669,7 @@ export default function MobileForm({ preview = false }) {
                       value={valAtual}
                       onChange={(e) => setTextos((prev) => ({ ...prev, [valKey]: e.target.value }))}
                       style={{ borderRadius: cantosCard(questionsConfig, tela) }}
-                      className={`w-full bg-slate-950 border ${bordaCampo} focus:border-amber-400 rounded-2xl p-4 text-sm sm:text-base font-bold text-white focus:outline-none`}
+                      className={`t-campo w-full bg-slate-950 border ${bordaCampo} focus:border-amber-400 rounded-2xl p-4 text-sm sm:text-base font-bold text-white focus:outline-none`}
                     >
                       <option value="">Toque para selecionar na lista...</option>
                       {opcoesAtivas.map((opt) => (
@@ -1649,11 +1684,11 @@ export default function MobileForm({ preview = false }) {
                         const isSel = valAtual === opt.titulo;
                         const isGavetaAberta = Boolean(opt.temGaveta && isSel);
                         return (
-                          <div key={opt.id} className="space-y-2">
+                          <div key={opt.id} className="t-linha space-y-2">
                             <label
                               onClick={() => setTextos((prev) => ({ ...prev, [valKey]: opt.titulo }))}
                               style={{ borderRadius: cantosCard(questionsConfig, tela) }}
-                              className={`flex items-center gap-3.5 p-4 rounded-2xl border cursor-pointer transition ${
+                              className={`t-opcao flex items-center gap-3.5 p-4 rounded-2xl border cursor-pointer transition ${
                                 isSel
                                   ? 'bg-amber-500/15 border-amber-400 text-white shadow-md'
                                   : 'bg-slate-950 border-slate-800 text-slate-200 hover:border-slate-700'
@@ -1683,10 +1718,10 @@ export default function MobileForm({ preview = false }) {
                       {opcoesAtivas.map((opt) => {
                         const isChecked = selectedChecks.includes(opt.titulo);
                         return (
-                          <div key={opt.id} className="space-y-2">
+                          <div key={opt.id} className="t-linha space-y-2">
                             <label
                               style={{ borderRadius: cantosCard(questionsConfig, tela) }}
-                              className={`flex items-center gap-3.5 p-4 rounded-2xl border cursor-pointer transition ${
+                              className={`t-opcao flex items-center gap-3.5 p-4 rounded-2xl border cursor-pointer transition ${
                                 isChecked
                                   ? 'bg-amber-500/15 border-amber-400 text-white shadow-md'
                                   : 'bg-slate-950 border-slate-800 text-slate-200 hover:border-slate-700'
@@ -1727,11 +1762,11 @@ export default function MobileForm({ preview = false }) {
                       {tela.legendaEscala && (
                         <p
                           style={{ fontSize: `${tela.escalaTamanho || 9}px`, ...faixaEstilo(tela.legendaFundo || 'escuro', tela.legendaFaixa) }}
-                          className={`text-center leading-snug ${tela.legendaBold ? 'font-bold' : ''} ${caixaAlta(tela.legendaCaixa)} ${getCorTextoLinhaClass(tela.legendaCor, 'text-slate-300')} ${getFaixaFundoClass(tela.legendaFundo || 'escuro', '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}
+                          className={`t-legenda text-center leading-snug ${tela.legendaBold ? 'font-bold' : ''} ${caixaAlta(tela.legendaCaixa)} ${getCorTextoLinhaClass(tela.legendaCor, 'text-slate-300')} ${getFaixaFundoClass(tela.legendaFundo || 'escuro', '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}
                         >
                           {parseScaleLegendItems(tela.legendaEscala).map((item, li) => (
-                            <span key={li}>
-                              {li > 0 && <span className="opacity-40"> · </span>}
+                            <span key={li} className="t-leg">
+                              {li > 0 && <span className="t-sep opacity-40"> · </span>}
                               {item.code && <strong className="text-amber-400 font-black">{item.code} </strong>}
                               {item.label}
                             </span>
@@ -1763,7 +1798,7 @@ export default function MobileForm({ preview = false }) {
                           <div
                             key={opt.id || oi}
                             style={faixaEstilo(tela.itemFundo || 'escuro', tela.itemFaixa)}
-                            className={`space-y-2 text-left border-y ${getFaixaFundoClass(tela.itemFundo || 'escuro', '-mx-4 px-4 sm:-mx-6 sm:px-6')} rounded-none`}
+                            className={`t-item space-y-2 text-left border-y ${getFaixaFundoClass(tela.itemFundo || 'escuro', '-mx-4 px-4 sm:-mx-6 sm:px-6')} rounded-none`}
                           >
                             <span
                               style={{ fontSize: `${tela.itemTamanho || 13}px` }}
@@ -1780,13 +1815,18 @@ export default function MobileForm({ preview = false }) {
                                     type="button"
                                     onClick={() => comFeedback(`gr_${itemKey}_${col}`, () => handleSelectGradeCol(col), true)}
                                     style={estiloBotao((k) => tela[`grade${k}`] ?? questionsConfig?.[`grade${k}`], isActive)}
-                                    className={`py-2.5 rounded-xl text-xs sm:text-sm font-black border transition-colors ${clicado === `gr_${itemKey}_${col}` ? 'efeito-acender' : ''} ${
+                                    className={`t-num ${isActive ? 't-num-on' : ''} py-2.5 rounded-xl text-xs sm:text-sm font-black border transition-colors ${clicado === `gr_${itemKey}_${col}` ? 'efeito-acender' : ''} ${
                                       isActive
                                         ? corGradeSelecionada(col, cols)
                                         : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-amber-400/60'
                                     }`}
                                   >
-                                    {col}
+                                    {(tela.gradeFormato ?? questionsConfig?.gradeFormato) === 'rostos' && humorColuna(col, cols) !== null ? (
+                                      <span className="flex flex-col items-center gap-0.5">
+                                        <Rosto p={humorColuna(col, cols)} tamanho={isActive ? 34 : 28} apagado={Boolean(currentItemVal) && !isActive} vivo={isActive} anel={isActive} />
+                                        <span className="text-[10px] leading-none">{col}</span>
+                                      </span>
+                                    ) : col}
                                   </button>
                                 );
                               })}
@@ -1825,7 +1865,7 @@ export default function MobileForm({ preview = false }) {
 
                 {/* Espaço para o rodapé fixo não cobrir o conteúdo */}
                 <div className={cabeTudo ? 'h-20 shrink-0' : 'h-28'} />
-                <div className="fixed bottom-0 inset-x-0 z-30 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent">
+                <div className="t-rodape fixed bottom-0 inset-x-0 z-30 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent">
                 <div className="max-w-md mx-auto">
                 <div className="flex items-center justify-between gap-2">
                 <BotaoSeta
@@ -1853,7 +1893,7 @@ export default function MobileForm({ preview = false }) {
                     avancarParaProxima(null);
                   })}
                   style={estiloBotao(lerGeral(questionsConfig, tela, 'avancar'), faltaObrigatoria)}
-                  className={`w-3/4 py-4 px-4 rounded-2xl font-black text-base border flex items-center justify-center gap-2 transition-colors ${faltaObrigatoria ? 'bg-red-900 border-red-800 text-white' : 'bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 shadow-xl shadow-amber-950/60 border-amber-300'} ${clicado === `avancar_${tela.id}` ? 'efeito-acender' : ''}`}
+                  className={`t-avancar ${faltaObrigatoria ? 't-falta' : ''} w-3/4 py-4 px-4 rounded-2xl font-black text-base border flex items-center justify-center gap-2 transition-colors ${faltaObrigatoria ? 'bg-red-900 border-red-800 text-white' : 'bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 shadow-xl shadow-amber-950/60 border-amber-300'} ${clicado === `avancar_${tela.id}` ? 'efeito-acender' : ''}`}
                 >
                   <span>{questionsConfig?.botaoAvancarTexto || 'Avançar'}</span>
                   <ChevronRight className="w-5 h-5" />
@@ -1904,19 +1944,19 @@ export default function MobileForm({ preview = false }) {
                   const isGavetaAberta = isGavetaAbertaDe(tela.id, opt);
 
                   return (
-                    <div key={opt.id} className="space-y-2">
+                    <div key={opt.id} className="t-linha space-y-2">
                       <button
                         type="button"
                         onClick={() => comFeedback(`ex_${tela.id}_${opt.id}`, () => handleSelectOpcaoExtra(idx, opt), opt.temGaveta)}
                         style={{ ...medidas.caixa, ...cardEfeitoInline }}
-                        className={`w-full text-left px-4 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-between group border border-white/15 ${cardFundoCls} ${
+                        className={`t-card w-full text-left px-4 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-between group border border-white/15 ${cardFundoCls} ${
                           isGavetaAberta ? 'border-amber-400/80 ring-1 ring-amber-400/40' : ''
                         } ${efeitoClique(`ex_${tela.id}_${opt.id}`)
                         }`}
                       >
                         <div className="flex items-center gap-4 pr-2 min-w-0">
                           {mostrarIcones && (
-                            <div style={medidas.icone} className={`rounded-xl flex items-center justify-center shrink-0 border ${corCls}`}>
+                            <div style={medidas.icone} className={`t-icone rounded-xl flex items-center justify-center shrink-0 border ${corCls}`}>
                               <IconComp className="w-1/2 h-1/2" />
                             </div>
                           )}
@@ -1930,14 +1970,14 @@ export default function MobileForm({ preview = false }) {
                             {opt.subtitulo && (
                               <p 
                                 style={{ fontSize: `${fonteSub}px` }}
-                                className={`mt-0.5 line-clamp-2 leading-snug ${cardFonteSubtituloCls}`}
+                                className={`t-desc mt-0.5 line-clamp-2 leading-snug ${cardFonteSubtituloCls}`}
                               >
                                 {opt.subtitulo}
                               </p>
                             )}
                           </div>
                         </div>
-                        <div className="w-7 h-7 rounded-full bg-slate-800/80 border border-slate-700/80 flex items-center justify-center shrink-0 text-slate-400 group-hover:text-amber-300 transition">
+                        <div className="t-ir w-7 h-7 rounded-full bg-slate-800/80 border border-slate-700/80 flex items-center justify-center shrink-0 text-slate-400 group-hover:text-amber-300 transition">
                           {opt.temGaveta ? (
                             <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isGavetaAberta ? 'rotate-180 text-amber-400' : ''}`} />
                           ) : (

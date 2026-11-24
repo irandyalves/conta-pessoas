@@ -1,0 +1,217 @@
+/* =====================================================================
+   LAYOUTS DO FORMULÁRIO. Cada tema define as tintas; a estrutura é comum.
+   Especificidade: .tema .t-x (2 classes) vence o Tailwind (1 classe) e
+   perde para ajustes manuais do editor (estilo inline).
+   ===================================================================== */
+
+/* Barra de progresso (todos os layouts) */
+.t-progresso { position: fixed; inset: 0 0 auto 0; height: 4px; z-index: 35; background: rgba(148, 163, 184, .18); }
+.t-progresso i { display: block; height: 100%; background: var(--acento, #fbbf24); transition: width .5s cubic-bezier(.2, .8, .2, 1); }
+
+/* ---------- estrutura comum ---------- */
+.tema { color: var(--tinta); font-family: var(--fonte-texto); }
+.tema.t-pagina { background: var(--fundo); }
+.tema .t-cabecalho { background: transparent; box-shadow: none; }
+.tema .t-cabecalho.sticky { background: var(--fundo-solido); }
+.tema .t-cabecalho > div { border-color: transparent; }
+.tema .t-cor { color: var(--tinta); }
+.tema .t-sub.t-cor, .tema .t-legenda.t-cor, .tema .t-card .t-desc.t-cor { color: var(--suave); }
+.tema .t-faixa { background: none; border: 0; box-shadow: none; }
+
+/* Título: número da seção em destaque, seção pequena, pergunta grande */
+.tema .t-titulo { font-family: var(--fonte-titulo); }
+.tema .t-titulo h2:has(.t-numero), .tema .t-pergunta:has(.t-numero) { display: flex; align-items: flex-start; gap: .6em; }
+.tema .t-ponto, .tema .t-traco { display: none; }
+.tema .t-texto { display: block; flex: 1; min-width: 0; align-self: center; }
+.tema .t-secao { display: block; font-size: .74em; line-height: 1.25; color: var(--suave); margin-bottom: .25em; font-weight: 500; }
+.tema .t-questao { display: block; }
+.tema .t-numero { flex: none; min-width: 1.9em; height: 1.9em; padding: 0 .4em; display: grid; place-items: center; background: var(--acento); color: var(--sobre-acento); border-radius: var(--raio-num, 50%); font-weight: 700; line-height: 1; }
+.tema .t-pergunta { font-family: var(--fonte-titulo); color: var(--tinta); }
+
+/* Legenda da escala: um selo por nota */
+.tema .t-legenda { display: flex; flex-wrap: wrap; justify-content: center; gap: .35em .9em; }
+.tema .t-legenda .t-sep { display: none; }
+.tema .t-legenda .t-leg { display: inline-flex; align-items: center; gap: .4em; }
+.tema .t-legenda strong { min-width: 1.7em; padding: 0 .3em; line-height: 1.7em; text-align: center; border-radius: .4em; background: var(--selo); color: var(--selo-tinta); }
+
+/* Cards de opção */
+.tema .t-card { border-color: var(--card-borda); color: var(--tinta); transition: transform .12s, background-color .2s, box-shadow .2s; }
+.tema .t-fundo { background: var(--card); }
+.tema .t-icone { background: var(--icone-fundo); border-color: transparent; color: var(--icone); }
+.tema .t-ir { background: none; border-color: var(--card-borda); color: var(--suave); }
+
+/* Grade de notas */
+.tema .t-item { border-color: var(--linha); }
+.tema .t-num:not(.t-num-on) { background: var(--num); border-color: var(--num-borda); color: var(--tinta); }
+.tema .t-num { border-radius: var(--raio-botao); }
+
+/* Campos */
+.tema .t-campo { background: var(--campo); color: var(--tinta); }
+.tema .t-campo:not(.border-rose-400\/50) { border-color: var(--campo-borda); }
+.tema .t-campo:focus { border-color: var(--acento); box-shadow: 0 0 0 3px color-mix(in srgb, var(--acento) 30%, transparent); }
+.tema .t-campo::placeholder { color: var(--suave); opacity: .75; }
+.tema .t-caixa { background: var(--card); border-color: var(--card-borda); }
+.tema .t-opcao:not(.border-amber-400) { background: var(--card); border-color: var(--card-borda); color: var(--tinta); }
+.tema .t-opcao.border-amber-400 { background: color-mix(in srgb, var(--acento) 18%, var(--fundo-solido)); border-color: var(--acento); color: var(--tinta); }
+
+/* Botões e rodapé */
+.tema .t-avancar:not(.t-falta), .tema .t-comecar { background: var(--acao); color: var(--sobre-acao); border-color: transparent; box-shadow: var(--acao-sombra, none); }
+.tema .t-avancar, .tema .t-comecar { font-family: var(--fonte-titulo); }
+.tema .t-comecar-borda { box-shadow: none; }
+.tema .t-comecar-giro { display: none; }
+.tema .t-rodape { background: linear-gradient(to top, var(--fundo-solido) 60%, transparent); }
+.tema .t-painel { background: var(--card); border-color: var(--card-borda); }
+.tema .t-painel h1, .tema .t-painel h2 { font-family: var(--fonte-titulo); }
+.tema .t-painel .text-white, .tema .t-painel .text-slate-300, .tema .t-painel .text-slate-400 { color: var(--tinta); }
+.tema .t-painel .text-amber-400, .tema .t-painel .text-emerald-400 { color: var(--destaque); }
+.tema .t-capa { border: 0; }
+
+/* =====================================================================
+   TRIBUNAL: papel de processo à noite. Fio duplo, serifa, faixa cor de vinho.
+   ===================================================================== */
+.tema-tribunal {
+  --fundo: #101b2c; --fundo-solido: #101b2c; --tinta: #f2efe8; --suave: #a9b4c4;
+  --acento: #8fc1ae; --sobre-acento: #10231c; --destaque: #8fc1ae;
+  --card: #17253a; --card-borda: #2c3d56; --icone-fundo: transparent; --icone: #8fc1ae;
+  --linha: #2c3d56; --num: transparent; --num-borda: #4a5c76; --campo: #0b1422; --campo-borda: #3a4c66;
+  --acao: #8c2438; --sobre-acao: #fdf4f2; --selo: #2c3d56; --selo-tinta: #f2efe8;
+  --raio-botao: 4px; --raio-num: 2px; --fonte-titulo: 'Spectral', Georgia, serif; --fonte-texto: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+}
+.tema-tribunal .t-titulo { padding-bottom: 12px !important; border-bottom: 3px double #4a5c76; }
+.tema-tribunal .t-numero { background: none; color: var(--acento); border: 1px solid var(--acento); }
+.tema-tribunal .t-card { border-left: 4px solid var(--acento); }
+.tema-tribunal .t-card:active { background: #8c2438; border-color: #8c2438; }
+.tema-tribunal .t-icone { width: 26px !important; }
+.tema-tribunal .t-icone svg { width: 22px; height: 22px; }
+.tema-tribunal .t-ir { border: 0; }
+.tema-tribunal .t-capa { border-radius: 0; }
+.tema-tribunal .t-capa.t-faixa { border-bottom: 3px double #4a5c76; padding-bottom: 14px !important; }
+.tema-tribunal .t-capa-texto.t-faixa { border: 0; background: #17253a; border-left: 4px solid #8c2438; padding: 14px !important; }
+
+/* =====================================================================
+   PAPEL: folha branca, tinta forte, marca-texto sob o título.
+   ===================================================================== */
+.tema-papel {
+  --fundo: #f4f7fb; --fundo-solido: #f4f7fb; --tinta: #14203a; --suave: #4c5a75;
+  --acento: #1b49d6; --sobre-acento: #fff; --destaque: #1b49d6;
+  --card: #fff; --card-borda: #c5cfdf; --icone-fundo: #e6ecfb; --icone: #1b49d6;
+  --linha: #d4dce8; --num: #fff; --num-borda: #8e9bb3; --campo: #fff; --campo-borda: #8e9bb3;
+  --acao: #1b49d6; --sobre-acao: #fff; --selo: #14203a; --selo-tinta: #fff;
+  --raio-botao: 10px; --raio-num: 8px; --fonte-titulo: 'Atkinson Hyperlegible', 'Segoe UI', sans-serif; --fonte-texto: 'Atkinson Hyperlegible', 'Segoe UI', sans-serif;
+}
+.tema-papel .t-questao, .tema-papel .t-titulo h2 .t-texto:not(:has(.t-questao)), .tema-papel .t-titulo h2:not(:has(.t-texto)) { text-decoration: underline; text-decoration-color: #ffd84d; text-decoration-thickness: .42em; text-underline-offset: -.18em; text-decoration-skip-ink: none; }
+.tema-papel .t-card { box-shadow: 0 2px 0 #c5cfdf; border-width: 1.5px; }
+.tema-papel .t-card:active { background: #fff6cf; border-color: #14203a; }
+.tema-papel .t-num:not(.t-num-on) { border-width: 1.5px; }
+.tema-papel .text-slate-400, .tema-papel .text-slate-300, .tema-papel .text-slate-200 { color: var(--suave); }
+.tema-papel .text-amber-300, .tema-papel .text-amber-400 { color: #8a5a00; }
+.tema-papel .t-gaveta { background: #fff; border-color: #1b49d6; }
+.tema-papel .t-gaveta :is(input, textarea, select, label, .bg-slate-950) { background: #fff; color: #14203a; }
+.tema-papel .t-capa-texto.t-faixa { background: #fff; border-radius: 10px; padding: 14px !important; }
+.tema-papel .t-painel { box-shadow: 0 2px 0 #c5cfdf; }
+
+/* =====================================================================
+   VITRAL: vidro colorido preso em chumbo; a luz entra por cima.
+   ===================================================================== */
+.tema-vitral {
+  --fundo: radial-gradient(120% 70% at 50% -10%, #5b4a86 0%, #251a45 38%, #0e0a1d 75%) #0e0a1d; --fundo-solido: #1c1436; --tinta: #fbf7ff; --suave: #cbbfe6;
+  --acento: #ffcf5c; --sobre-acento: #2a1a00; --destaque: #ffcf5c;
+  --card: #2f3f9e; --card-borda: #07050f; --icone-fundo: rgba(255, 255, 255, .16); --icone: #fff;
+  --linha: #07050f; --num: rgba(255, 255, 255, .1); --num-borda: #07050f; --campo: rgba(8, 5, 20, .55); --campo-borda: #6f5fa3;
+  --acao: linear-gradient(160deg, #ffe08a, #f2a81d); --sobre-acao: #2a1a00; --selo: #ffcf5c; --selo-tinta: #2a1a00;
+  --raio-botao: 12px; --raio-num: 50% 50% 8px 8px; --fonte-titulo: 'Marcellus', Georgia, serif; --fonte-texto: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+}
+.tema-vitral .t-fundo { background: linear-gradient(170deg, color-mix(in srgb, var(--vidro, #3552c8) 78%, #fff) 0%, var(--vidro, #3552c8) 45%, color-mix(in srgb, var(--vidro, #3552c8) 62%, #000) 100%); }
+.tema-vitral .t-card { border-width: 3px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35), 0 0 18px color-mix(in srgb, var(--vidro, #3552c8) 45%, transparent); }
+.tema-vitral .t-linha:nth-child(5n+1) { --vidro: #2f54c9; }
+.tema-vitral .t-linha:nth-child(5n+2) { --vidro: #a8233f; }
+.tema-vitral .t-linha:nth-child(5n+3) { --vidro: #137a5b; }
+.tema-vitral .t-linha:nth-child(5n+4) { --vidro: #6a35ad; }
+.tema-vitral .t-linha:nth-child(5n+5) { --vidro: #b0611a; }
+.tema-vitral .t-card:active { filter: brightness(1.35); }
+.tema-vitral .t-card .t-desc.t-cor { color: rgba(255, 255, 255, .82); }
+.tema-vitral .t-num:not(.t-num-on) { border-width: 2px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2); }
+.tema-vitral .t-num:nth-child(6n+1) { background-color: rgba(168, 35, 63, .55); }
+.tema-vitral .t-num:nth-child(6n+2):not(.t-num-on) { background: rgba(176, 97, 26, .55); }
+.tema-vitral .t-num:nth-child(6n+3):not(.t-num-on) { background: rgba(180, 142, 30, .5); }
+.tema-vitral .t-num:nth-child(6n+4):not(.t-num-on) { background: rgba(47, 84, 201, .6); }
+.tema-vitral .t-num:nth-child(6n+5):not(.t-num-on) { background: rgba(19, 122, 91, .6); }
+.tema-vitral .t-num:nth-child(6n+1):not(.t-num-on) { background: rgba(168, 35, 63, .55); }
+.tema-vitral .t-caixa, .tema-vitral .t-opcao:not(.border-amber-400), .tema-vitral .t-painel { background: rgba(20, 14, 44, .7); }
+.tema-vitral .t-capa.t-faixa { text-shadow: 0 0 22px rgba(255, 207, 92, .35); }
+.tema-vitral .t-capa-texto.t-faixa { background: rgba(8, 5, 20, .5); border: 3px solid #07050f; border-radius: 18px; padding: 14px !important; text-shadow: none; }
+
+/* =====================================================================
+   AURORA: luz que se move devagar atrás do vidro.
+   ===================================================================== */
+.tema-aurora {
+  --fundo: #07141f; --fundo-solido: #07141f; --tinta: #effaf8; --suave: #a3c3c9;
+  --acento: #5fe3c0; --sobre-acento: #04241c; --destaque: #5fe3c0;
+  --card: rgba(255, 255, 255, .075); --card-borda: rgba(255, 255, 255, .2); --icone-fundo: rgba(95, 227, 192, .16); --icone: #8ff0d6;
+  --linha: rgba(255, 255, 255, .12); --num: rgba(255, 255, 255, .08); --num-borda: rgba(255, 255, 255, .22); --campo: rgba(2, 10, 18, .55); --campo-borda: rgba(255, 255, 255, .24);
+  --acao: linear-gradient(100deg, #5fe3c0, #67a8ff); --sobre-acao: #04202a; --acao-sombra: 0 8px 30px rgba(95, 227, 192, .35); --selo: rgba(95, 227, 192, .2); --selo-tinta: #b6f7e5;
+  --raio-botao: 14px; --raio-num: 12px; --fonte-titulo: 'Sora', 'Segoe UI', sans-serif; --fonte-texto: 'Sora', 'Segoe UI', sans-serif;
+}
+.tema-aurora.t-pagina { position: relative; isolation: isolate; }
+.tema-aurora.t-pagina::before { content: ''; position: fixed; inset: -20%; z-index: -1; pointer-events: none; background: radial-gradient(45% 35% at 25% 25%, rgba(42, 196, 160, .5), transparent 70%), radial-gradient(45% 40% at 80% 35%, rgba(86, 92, 235, .5), transparent 70%), radial-gradient(50% 35% at 50% 90%, rgba(170, 70, 200, .35), transparent 70%); animation: temaAurora 18s ease-in-out infinite alternate; }
+@keyframes temaAurora { from { transform: translate3d(-6%, -4%, 0) rotate(-4deg) scale(1); } to { transform: translate3d(7%, 6%, 0) rotate(7deg) scale(1.15); } }
+.tema-aurora .t-cabecalho.sticky { background: rgba(7, 20, 31, .72); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.tema-aurora .t-rodape { background: linear-gradient(to top, rgba(7, 20, 31, .95) 55%, transparent); }
+.tema-aurora .t-card { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .28); }
+.tema-aurora .t-card:active { background: rgba(95, 227, 192, .28); border-color: #5fe3c0; box-shadow: 0 0 26px rgba(95, 227, 192, .45); }
+.tema-aurora .t-num:not(.t-num-on) { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2); }
+.tema-aurora .t-capa-texto.t-faixa { background: rgba(255, 255, 255, .075); border: 1px solid rgba(255, 255, 255, .2); border-radius: 22px; padding: 16px !important; }
+
+/* =====================================================================
+   TECLADO: teclas claras sobre base escura; o toque afunda.
+   ===================================================================== */
+.tema-teclado {
+  --fundo: #2a3140; --fundo-solido: #2a3140; --tinta: #f1f4f9; --suave: #b7c1d2;
+  --acento: #ff8a3c; --sobre-acento: #2b1200; --destaque: #ffb27d;
+  --card: #eef1f6; --card-borda: #eef1f6; --icone-fundo: #dbe1eb; --icone: #39445a;
+  --linha: rgba(255, 255, 255, .1); --num: #eef1f6; --num-borda: #eef1f6; --campo: #1c222e; --campo-borda: #48536a;
+  --acao: #ff8a3c; --sobre-acao: #2b1200; --acao-sombra: inset 0 2px 0 rgba(255, 255, 255, .45), 0 6px 0 #b8531a, 0 10px 16px rgba(0, 0, 0, .4); --selo: #eef1f6; --selo-tinta: #222a38;
+  --raio-botao: 12px; --raio-num: 10px; --fonte-titulo: 'Lexend', 'Segoe UI', sans-serif; --fonte-texto: 'Lexend', 'Segoe UI', sans-serif;
+}
+.tema-teclado .t-card { color: #222a38; box-shadow: inset 0 2px 0 #fff, 0 5px 0 #a5b0c2, 0 8px 12px rgba(0, 0, 0, .35); }
+.tema-teclado .t-card .t-cor { color: #222a38; }
+.tema-teclado .t-card .t-desc.t-cor { color: #55617a; }
+.tema-teclado .t-card:active { transform: translateY(5px); box-shadow: inset 0 2px 0 #fff, 0 0 0 #a5b0c2; }
+.tema-teclado .t-ir { border-color: transparent; color: #55617a; }
+.tema-teclado .t-num { border-width: 0; box-shadow: inset 0 2px 0 rgba(255, 255, 255, .6), 0 4px 0 rgba(0, 0, 0, .45); transition: transform .1s; }
+.tema-teclado .t-num:not(.t-num-on) { color: #222a38; box-shadow: inset 0 2px 0 #fff, 0 4px 0 #a5b0c2; }
+.tema-teclado .t-num:active, .tema-teclado .t-num-on { transform: translateY(3px); box-shadow: inset 0 2px 0 rgba(255, 255, 255, .4), 0 1px 0 rgba(0, 0, 0, .5); }
+.tema-teclado .t-avancar:active, .tema-teclado .t-comecar:active { transform: translateY(5px); box-shadow: inset 0 2px 0 rgba(255, 255, 255, .4), 0 1px 0 #b8531a; }
+.tema-teclado .t-comecar-borda { overflow: visible; padding-bottom: 8px; }
+.tema-teclado .t-numero { box-shadow: inset 0 2px 0 rgba(255, 255, 255, .45), 0 3px 0 #b8531a; }
+.tema-teclado .t-caixa, .tema-teclado .t-painel, .tema-teclado .t-opcao:not(.border-amber-400) { background: #1c222e; border-color: #48536a; color: var(--tinta); }
+.tema-teclado .t-capa-texto.t-faixa { background: #1c222e; border-radius: 14px; padding: 14px !important; box-shadow: inset 0 3px 8px rgba(0, 0, 0, .45); }
+
+/* =====================================================================
+   ROSTOS E BONECO
+   ===================================================================== */
+.rosto, .boneco { display: inline-block; will-change: transform; }
+.rosto-olhos { transform-box: fill-box; transform-origin: center; animation: rostoPisca 4.2s infinite; }
+@keyframes rostoPisca { 0%, 94%, 100% { transform: scaleY(1); } 97% { transform: scaleY(.1); } }
+.rosto-lagrima { animation: rostoLagrima 1.6s ease-in infinite; }
+@keyframes rostoLagrima { from { transform: translateY(0); } to { transform: translateY(14px); } }
+.boneco-corpo { transform-box: fill-box; transform-origin: 50% 100%; animation: bonecoRespira 2.6s ease-in-out infinite; }
+@keyframes bonecoRespira { 50% { transform: scale(1.015, .985); } }
+.boneco-festa .boneco-corpo { animation: bonecoPula .62s cubic-bezier(.3, .1, .3, 1) infinite alternate; }
+@keyframes bonecoPula { from { transform: scale(1.05, .94); } to { transform: translateY(-16px) scale(.97, 1.04); } }
+
+/* Barra das escalas: fácil de pegar com o dedo */
+.es-range { -webkit-appearance: none; appearance: none; height: 36px; background: transparent; touch-action: pan-y; }
+.es-range::-webkit-slider-runnable-track { height: 10px; border-radius: 10px; background: linear-gradient(to right, var(--es-cor) var(--es-p), rgba(148, 163, 184, .3) var(--es-p)); }
+.es-range::-moz-range-track { height: 10px; border-radius: 10px; background: linear-gradient(to right, var(--es-cor) var(--es-p), rgba(148, 163, 184, .3) var(--es-p)); }
+.es-range::-webkit-slider-thumb { -webkit-appearance: none; width: 30px; height: 30px; margin-top: -10px; border-radius: 50%; background: #fff; border: 5px solid var(--es-cor); box-shadow: 0 3px 10px rgba(0, 0, 0, .45); }
+.es-range::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: #fff; border: 5px solid var(--es-cor); }
+
+/* Miniatura dos layouts no editor */
+.tema-mini { border-radius: 14px; overflow: hidden; padding: 10px; text-align: left; position: relative; }
+.tema-mini.tema-aurora::before { position: absolute !important; }
+.tema-mini .t-card { border-style: solid; border-width: 1px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .tema-aurora.t-pagina::before, .rosto-olhos, .rosto-lagrima, .boneco-corpo, .boneco-festa .boneco-corpo { animation: none; }
+}

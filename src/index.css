@@ -109,3 +109,6 @@
 .questao-alvo-antes::before, .questao-alvo-depois::after { content: ''; position: absolute; left: 0; right: 0; height: 3px; background: #34d399; pointer-events: none; }
 .questao-alvo-antes::before { top: -2px; }
 .questao-alvo-depois::after { bottom: -2px; }
+
+/* Amostra "Do layout" nos seletores de cor do editor */
+.amostra-tema { background: conic-gradient(#8c2438, #ffcf5c, #5fe3c0, #1b49d6, #8c2438) !important; }

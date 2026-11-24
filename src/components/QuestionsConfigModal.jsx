@@ -51,6 +51,8 @@ import {
   saveEventTitle,
   DEFAULT_QUESTIONS_CONFIG 
 } from '../firebase';
+import GaleriaTemas from './GaleriaTemas';
+import { aplicarTema } from '../utils/temas';
 import { configSeta, CORES_SETA, DESENHOS_SETA } from '../utils/setas';
 import { alturaFaixa, FAIXA_MAX, FAIXA_MIN, gravarFaixaPadrao, lerGeral, gravarHerdado, herdaEstilo, ligarHeranca, semCamposHerdados, telaP1Cantos, CORES_BOTAO, CORES_LINHA, CORES_TEXTO_BOTAO, CARD_ESPACO_PADRAO, raiosCard, linhasCapa, alturaCard, CAPA_ESPACO_PADRAO, CARD_ALTURA_MAX, CARD_ALTURA_MIN, espacos, continuaNaMesmaPagina, extrairEstilo, aplicarEstilo, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems, getEfeitoStyle, CORES_TEXTO_LINHAS, ALINHAMENTOS_TEXTO, FUNDOS_CAPTION } from '../utils/estilos';
 import ImportadorIA from './ImportadorIA';
@@ -99,6 +101,7 @@ const CORES = [
 
 // OPÇÕES DE FUNDO DOS CARDS (16 CORES / DEGRADÊS)
 export const FUNDOS_CARDS = [
+  { id: 'tema', label: 'Do layout', classe: 'amostra-tema' },
   // 6 Originais
   { id: 'escuro', label: 'Slate Escuro', classe: 'bg-slate-900 border-slate-700' },
   { id: 'gradiente', label: 'Gradiente Noturno', classe: 'bg-gradient-to-r from-slate-950 via-slate-900 to-slate-800 border-slate-700' },
@@ -124,6 +127,7 @@ FUNDOS_CARDS.forEach((f) => { f.amostra = f.classe.replace(/\bborder-\S+/g, '');
 
 // OPÇÕES DE EFEITOS E ACABAMENTOS DOS CARDS (3D, VIDRO, ENTALHE, ALTO-RELEVO, ETC.)
 export const EFEITOS_CARDS = [
+  { id: 'tema', label: 'Do layout', desc: 'Acabamento do layout escolhido' },
   { id: 'padrao', label: 'Liso', desc: 'Borda sutil e limpa' },
   { id: 'efeito_3d', label: '3D', desc: 'Base tátil saliente com profundidade' },
   { id: 'vidro', label: 'Vidro', desc: 'Translúcido com blur e reflexo' },
@@ -132,7 +136,7 @@ export const EFEITOS_CARDS = [
   { id: 'glow', label: 'Brilho', desc: 'Iluminação de contorno' },
 ];
 
-const EFEITOS_CAPA = [{ id: 'nenhum', label: 'Nenhum' }, ...EFEITOS_CARDS.filter((e) => e.id !== 'padrao')];
+const EFEITOS_CAPA = [{ id: 'nenhum', label: 'Nenhum' }, ...EFEITOS_CARDS.filter((e) => e.id !== 'padrao' && e.id !== 'tema')];
 
 // Sub-abas de uma tela (Textos, Opções, Aparência)
 const rotuloPerguntas = (n) => <>Perguntas <strong className="font-bold text-amber-300">({n})</strong></>;
@@ -154,6 +158,7 @@ const SubAbas = ({ opcoes, valor, onChange }) => (
 
 // OPÇÕES DE CORES DA FONTE DO TÍTULO DOS CARDS (EM BOLINHAS)
 export const CORES_FONTE_TITULO = [
+  { id: 'tema', label: 'Do layout', classe: 't-cor', dot: 'amostra-tema' },
   { id: 'branco', label: 'Branco', classe: 'text-white', dot: 'bg-white' },
   { id: 'dourado', label: 'Dourado', classe: 'text-amber-300', dot: 'bg-amber-300' },
   { id: 'amarelo', label: 'Amarelo', classe: 'text-yellow-300', dot: 'bg-yellow-300' },
@@ -168,6 +173,7 @@ export const CORES_FONTE_TITULO = [
 
 // OPÇÕES DE CORES DA FONTE DO SUBTÍTULO DOS CARDS (EM BOLINHAS)
 export const CORES_FONTE_SUBTITULO = [
+  { id: 'tema', label: 'Do layout', classe: 't-cor', dot: 'amostra-tema' },
   { id: 'cinza', label: 'Cinza Médio', classe: 'text-slate-400', dot: 'bg-slate-400' },
   { id: 'cinza_claro', label: 'Cinza Claro', classe: 'text-slate-300', dot: 'bg-slate-300' },
   { id: 'branco_suave', label: 'Branco Suave', classe: 'text-white/80', dot: 'bg-slate-100' },
@@ -1405,6 +1411,21 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     <p className="text-xs text-slate-400 mt-0.5">O que você muda aqui vale para todas, menos nas páginas com "Herdar" desligado.</p>
                   </div>
 
+                  <Secao titulo="Layout pronto" descricao="Troca o visual de todas as páginas. Depois você ainda pode ajustar o que quiser.">
+                    <GaleriaTemas
+                      atual={config.tema}
+                      onEscolher={(id, nome) => mostrarConfirm(
+                        id === 'original' ? 'Voltar ao meu layout' : `Usar o layout ${nome}`,
+                        id === 'original'
+                          ? 'O visual volta a ser o que estava antes do primeiro layout pronto. Ajustes feitos depois dele serão perdidos.'
+                          : 'Cores, títulos, cards, notas e botões de todas as páginas passam a usar este layout. Seu visual atual fica guardado em "Meu layout". Páginas com "Herdar" desligado não mudam.',
+                        () => setConfig((c) => aplicarTema(c, id)),
+                        id === 'original' ? 'Voltar' : 'Usar layout'
+                      )}
+                    />
+                    <Chave rotulo="Barra de progresso" descricao="Linha fina no alto do celular mostrando quanto falta." valor={Boolean(config.mostrarProgresso)} onChange={(v) => setCampo('mostrarProgresso', v)} />
+                  </Secao>
+
                   <Secao titulo="Cabeçalho">
                     <Deslizante rotulo="Altura dos fundos" valor={alturaFaixa(config.faixaPadrao)} min={FAIXA_MIN} max={FAIXA_MAX} passo={5} unidade="%" onChange={(v) => setConfig((c) => gravarFaixaPadrao(c, v))} />
                     <Chave rotulo="Travar cabeçalho" descricao="O título fica preso no alto do celular enquanto a pessoa rola a página." valor={config.travarCabecalho !== false} onChange={(v) => setCampo('travarCabecalho', v)} />
@@ -2098,6 +2119,11 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
                     {subAtual === 'efeitos' && (
                       <div className="space-y-4">
+                        {telaAlvo.tipo === 'grade' && (
+                          <Secao titulo="Notas">
+                            <Segmentos rotulo="Mostrar" opcoes={[{ id: 'numeros', label: 'Números' }, { id: 'rostos', label: 'Carinhas' }]} valor={(telaAlvo.gradeFormato ?? config.gradeFormato) || 'numeros'} onChange={(v) => gravarEstilo(extraIndex, 'gradeFormato', v)} />
+                          </Secao>
+                        )}
                         {telaAlvo.tipo === 'grade' && EfeitosBotao({
                           titulo: 'Botões de resposta',
                           ler: (k) => telaAlvo[`grade${k}`] ?? config[`grade${k}`],
@@ -2650,7 +2676,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                   linhas={[
                     { rotulo: 'Título 1', texto: config.finalTitulo1 ?? 'MUITO OBRIGADO', onTexto: (v) => setConfig((c) => ({ ...c, finalTitulo1: v, finalTitulo: `${v} ${c.finalTitulo2 || ''}`.trim() })), tamanho: config.finalTituloFonteTamanho || config.finalFonteTamanho || 26, min: 16, max: 40, onTamanho: (v) => setConfig((c) => ({ ...c, finalTituloFonteTamanho: v, finalFonteTamanho: v })) },
                     { rotulo: 'Título 2', texto: config.finalTitulo2 ?? 'PELA SUA PRESENÇA.', onTexto: (v) => setConfig((c) => ({ ...c, finalTitulo2: v, finalTitulo: `${c.finalTitulo1 || ''} ${v}`.trim() })), tamanho: config.finalTituloFonteTamanho || config.finalFonteTamanho || 26, min: 16, max: 40, onTamanho: (v) => setConfig((c) => ({ ...c, finalTituloFonteTamanho: v, finalFonteTamanho: v })) },
-                    { rotulo: 'Mensagem', texto: config.finalMensagem ?? 'será espetacular!', onTexto: (v) => setCampo('finalMensagem', v), tamanho: config.finalMensagemFonteTamanho || 16, min: 12, max: 28, onTamanho: (v) => setCampo('finalMensagemFonteTamanho', v) },
+                    { rotulo: 'Mensagem', texto: config.finalMensagem ?? '', onTexto: (v) => setCampo('finalMensagem', v), tamanho: config.finalMensagemFonteTamanho || 16, min: 12, max: 28, onTamanho: (v) => setCampo('finalMensagemFonteTamanho', v) },
                     { rotulo: 'Conclusão', texto: config.finalStatus ?? 'REGISTRO CONCLUÍDO!', onTexto: (v) => setCampo('finalStatus', v), tamanho: config.finalStatusFonteTamanho || 18, min: 12, max: 28, onTamanho: (v) => setCampo('finalStatusFonteTamanho', v) },
                     { rotulo: 'Instrução', texto: config.finalInstrucao ?? 'pode guardar seu celular', onTexto: (v) => setCampo('finalInstrucao', v), tamanho: config.finalInstrucaoFonteTamanho || 13, min: 10, max: 22, onTamanho: (v) => setCampo('finalInstrucaoFonteTamanho', v) }
                   ]}

@@ -4,6 +4,7 @@
 // ==========================================
 
 export const CORES_TEXTO_LINHAS = [
+  { id: 'tema', label: 'Do layout', bg: 'amostra-tema', textClass: 't-cor' },
   { id: 'branco', label: 'Branco', bg: 'bg-white', textClass: 'text-white' },
   { id: 'dourado', label: 'Dourado', bg: 'bg-amber-400', textClass: 'text-amber-300' },
   { id: 'verde', label: 'Verde', bg: 'bg-emerald-400', textClass: 'text-emerald-400' },
@@ -29,6 +30,7 @@ export const getAlinhamentoClass = (alignId = 'center') => {
 };
 
 export const FUNDOS_CAPTION = [
+  { id: 'tema', label: 'Do layout', dot: 'amostra-tema', boxClass: 't-faixa' },
   { id: 'transparente', label: 'Sem Fundo', dot: 'bg-transparent border border-dashed border-slate-500', boxClass: '' },
   { id: 'escuro', label: 'Escuro', dot: 'bg-slate-900 border border-slate-700', boxClass: 'bg-slate-900/85 border border-slate-800 rounded-xl px-2.5 py-1.5 shadow-sm' },
   { id: 'dourado', label: 'Dourado', dot: 'bg-amber-500', boxClass: 'bg-amber-500/15 border border-amber-500/35 rounded-xl px-2.5 py-1.5 shadow-sm' },
@@ -64,6 +66,7 @@ export function getEfeitoStyle(efeito = 'padrao', profundidade = 5, rgb = '251, 
 
   switch (efeito) {
     case 'nenhum':
+    case 'tema': // o acabamento vem do layout (temas.css)
       return {};
     case 'efeito_3d':
       return {
@@ -147,10 +150,10 @@ export const estiloBotao = (ler, soForma = false) => {
   const usaEfeito = efeito && efeito !== 'nenhum';
   const { borderColor, ...fx } = usaEfeito ? getEfeitoStyle(efeito, ler('Profundidade') || 5, rgbDe(linha) || rgbDe(cor)) : {};
   const st = {};
-  if (ler('LinhaEspessura') !== undefined) st.borderWidth = `${ler('LinhaEspessura')}px`;
-  if (ler('Raio') !== undefined) st.borderRadius = `${ler('Raio')}px`;
-  if (ler('Fonte') !== undefined) st.fontSize = `${ler('Fonte')}px`;
-  if (ler('Altura') !== undefined) Object.assign(st, { height: `${ler('Altura')}px`, paddingTop: 0, paddingBottom: 0 });
+  if (ler('LinhaEspessura') != null) st.borderWidth = `${ler('LinhaEspessura')}px`;
+  if (ler('Raio') != null) st.borderRadius = `${ler('Raio')}px`;
+  if (ler('Fonte') != null) st.fontSize = `${ler('Fonte')}px`;
+  if (ler('Altura') != null) Object.assign(st, { height: `${ler('Altura')}px`, paddingTop: 0, paddingBottom: 0 });
   if (soForma) return st;
   Object.assign(st, fx);
   if (cor) st.background = efeito === 'vidro' && cor.startsWith('#') ? `${cor}99` : cor;
@@ -218,7 +221,7 @@ export const linhasCapa = (cfg = {}) => {
     const classes = getCaptionFundoClass(fundo);
     const pct = alturaFaixa(cfg[`${l.id}Altura`] ?? cfg.capaAltura ?? cfg.faixaPadrao);
     const aperto = Math.min(1, pct / 100); // abaixo de 100% as linhas do texto também se aproximam
-    const cor = classes.split(' ').filter((c) => /^(bg-|border)/.test(c)).join(' ');
+    const cor = classes.split(' ').filter((c) => /^(bg-|border|t-)/.test(c)).join(' ');
     return {
       id: l.id,
       conteudo: l.conteudo,
@@ -318,7 +321,7 @@ const MAPA_EXTRA = {
   espacoTitulos: 'espacoTitulos', espacoSub: 'espacoSub', espacoCards: 'espacoCards'
 };
 // Campos com o mesmo nome nos dois lugares
-const COMUNS = ['gradeEfeito', 'gradeProfundidade', 'gradeCor', 'gradeCorTexto', 'gradeLinha', 'gradeLinhaEspessura', 'gradeAltura', 'gradeRaio', 'cardAltura', 'cardEspaco', 'cardRaio', 'cardsPorTela', 'cardFundoEstilo', 'cardEfeitoEstilo', 'cardProfundidade', 'cardCorFonteTitulo',
+const COMUNS = ['gradeFormato', 'gradeEfeito', 'gradeProfundidade', 'gradeCor', 'gradeCorTexto', 'gradeLinha', 'gradeLinhaEspessura', 'gradeAltura', 'gradeRaio', 'cardAltura', 'cardEspaco', 'cardRaio', 'cardsPorTela', 'cardFundoEstilo', 'cardEfeitoEstilo', 'cardProfundidade', 'cardCorFonteTitulo',
   'cardCorFonteSubtitulo', 'cardFonteTitulo', 'cardFonteSubtitulo', 'escalaTamanho', 'legendaCor', 'legendaBold', 'legendaFundo',
   'itemTamanho', 'itemCor', 'itemBold', 'itemFundo', 'legendaFaixa', 'itemFaixa', 'legendaCaixa', 'itemCaixa'];
 
@@ -367,14 +370,14 @@ const PADROES_HERDADOS = {
   cardProfundidade: 5, cardCorFonteTitulo: 'branco', cardCorFonteSubtitulo: 'cinza', cardFonteTitulo: 16, cardFonteSubtitulo: 12,
   mostrarIcones: true, tituloFaixa: 100, subFaixa: 100,
   gradeEfeito: 'nenhum', gradeProfundidade: 5, gradeCor: 'padrao', gradeCorTexto: 'padrao', gradeLinha: 'padrao',
-  gradeLinhaEspessura: 1, gradeAltura: 38, gradeRaio: 12
+  gradeLinhaEspessura: 1, gradeAltura: 38, gradeRaio: 12, gradeFormato: 'numeros'
 };
 const CANTOS = { cardRaioEsq: 'p1RaioEsq', cardRaioDir: 'p1RaioDir' };
 const NOMES_P1 = { mostrarIcones: 'mostrarIconesCards', tituloFaixa: 'pergunta1TituloFaixa', subFaixa: 'pergunta1SubFaixa' };
 const noP1 = (campo) => NOMES_P1[campo] || campo;
 const ehFaixa = (campo) => campo === 'tituloFaixa' || campo === 'subFaixa';
 // Avançar e setas são de todas as páginas; a página que não herda guarda uma cópia própria
-const camposGerais = (cfg) => Object.fromEntries(Object.entries(cfg).filter(([k]) => /^(avancar|seta)[A-Z]/.test(k)));
+const camposGerais = (cfg) => Object.fromEntries(Object.entries(cfg).filter(([k]) => /^(avancar|seta)[A-Z]/.test(k) || k === 'tema'));
 export const lerGeral = (cfg, tela, prefixo) => (k) =>
   (tela?.herdarEstilo === false ? tela[`${prefixo}${k}`] : undefined) ?? cfg?.[`${prefixo}${k}`];
 
@@ -447,4 +450,24 @@ export const ligarHeranca = (cfg, origem, ligar) => {
     return { ...cfg, ...Object.fromEntries(Object.entries(copia).filter(([k]) => !k.startsWith('grade')).map(([k, v]) => [noP1(k), v])), herdarEstiloP1: true };
   }
   return trocarTela(cfg, origem, { ...copia, herdarEstilo: true });
+};
+
+// "7. Seção — Pergunta" => { numero: '7', secao: 'Seção', questao: 'Pergunta' }
+export const partesTitulo = (texto = '') => {
+  const m = /^\s*(\d{1,3})[.)]\s+([\s\S]+)$/.exec(texto);
+  const corpo = m ? m[2] : texto;
+  const corte = corpo.indexOf(' — ');
+  return {
+    numero: m ? m[1] : '',
+    secao: corte > 0 ? corpo.slice(0, corte) : '',
+    questao: corte > 0 ? corpo.slice(corte + 3) : corpo
+  };
+};
+
+// Subtítulo que só repete a legenda da escala ("1 = Péssimo; 2 = Ruim; ...") não precisa aparecer duas vezes
+export const subtituloRepeteLegenda = (tela) => {
+  if (tela?.tipo !== 'grade' || !tela.legendaEscala || !tela.subtitulo) return false;
+  const cod = (t) => parseScaleLegendItems(t).map((i) => i.code).filter(Boolean).join('|');
+  const a = cod(tela.subtitulo);
+  return a.split('|').length >= 3 && a === cod(tela.legendaEscala);
 };
