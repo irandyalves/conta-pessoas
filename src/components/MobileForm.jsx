@@ -107,6 +107,7 @@ const CARD_FONTE_SUBTITULO_CLASSES = {
 };
 
 const BTN_QTD_CLASSES = {
+  tema: 't-num border',
   slate: 'bg-gradient-to-b from-slate-800 via-slate-850 to-slate-900 border-slate-700/80 border-b-slate-950 text-slate-100 shadow-black/50',
   esmeralda: 'bg-gradient-to-b from-emerald-600 via-emerald-700 to-emerald-800 border-emerald-500/60 border-b-emerald-950 text-white shadow-emerald-950/60',
   azul: 'bg-gradient-to-b from-blue-600 via-blue-700 to-blue-800 border-blue-500/60 border-b-blue-950 text-white shadow-blue-950/60',
@@ -120,6 +121,7 @@ const BTN_QTD_CLASSES = {
 };
 
 const BTN_NUM_CLASSES = {
+  tema: 't-herda',
   branco: 'text-white',
   dourado: 'text-amber-300',
   amarelo: 'text-yellow-300',
@@ -131,6 +133,7 @@ const BTN_NUM_CLASSES = {
 };
 
 const BTN_DESC_CLASSES = {
+  tema: 't-herda opacity-75',
   branco_80: 'text-white/80',
   branco_puro: 'text-white',
   dourado: 'text-amber-300',
@@ -1280,7 +1283,7 @@ export default function MobileForm({ preview = false }) {
           <div className="mt-2 pt-2 border-t border-slate-800/60">
             <h2 
               style={{ fontSize: `${questionsConfig.pergunta2FonteTamanho || 22}px`, ...fonteEBorda(questionsConfig, 'pergunta2', false) }}
-              className="font-black text-white leading-tight whitespace-pre-line"
+              className="t-pergunta t-cor font-black text-white leading-tight whitespace-pre-line"
             >
               {questionsConfig.pergunta2Titulo2 ? (
                 <>
@@ -1292,7 +1295,7 @@ export default function MobileForm({ preview = false }) {
               )}
             </h2>
             {questionsConfig.pergunta2Subtitulo && (
-              <p className="text-xs sm:text-sm text-slate-400 mt-1">
+              <p className="t-sub t-cor text-xs sm:text-sm text-slate-400 mt-1">
                 {questionsConfig.pergunta2Subtitulo}
               </p>
             )}
@@ -2029,10 +2032,10 @@ export default function MobileForm({ preview = false }) {
             {/* Opção em Destaque: SÓ EU (BOTÃO 3D TÁTIL) */}
             <button
               onClick={() => comFeedback('qtd_1', () => handleSelectQtd(1))}
-              className={`${efeitoClique('qtd_1')} w-full p-5 sm:p-6 min-h-[96px] rounded-3xl border border-emerald-500/30 border-b-[6px] border-b-emerald-950 bg-gradient-to-b from-emerald-600 via-emerald-700 to-emerald-800 active:translate-y-1.5 active:border-b-2 active:shadow-md transition-all flex items-center justify-between shadow-xl shadow-emerald-950/60`}
+              className={`${efeitoClique('qtd_1')} t-avancar t-soeu w-full p-5 sm:p-6 min-h-[96px] rounded-3xl border border-emerald-500/30 border-b-[6px] border-b-emerald-950 bg-gradient-to-b from-emerald-600 via-emerald-700 to-emerald-800 active:translate-y-1.5 active:border-b-2 active:shadow-md transition-all flex items-center justify-between shadow-xl shadow-emerald-950/60`}
             >
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-emerald-900/60 border border-emerald-400/40 flex items-center justify-center text-emerald-200 p-2.5 shadow-inner">
+                <div className="t-selo w-14 h-14 rounded-2xl bg-emerald-900/60 border border-emerald-400/40 flex items-center justify-center text-emerald-200 p-2.5 shadow-inner">
                   <User className="w-8 h-8 drop-shadow" />
                 </div>
                 <div className="text-left">
@@ -2044,7 +2047,7 @@ export default function MobileForm({ preview = false }) {
                   </h3>
                 </div>
               </div>
-              <div className="w-12 h-12 rounded-2xl bg-emerald-950/70 border-2 border-emerald-400/50 flex items-center justify-center text-emerald-300 font-black text-2xl shadow-inner">
+              <div className="t-selo w-12 h-12 rounded-2xl bg-emerald-950/70 border-2 border-emerald-400/50 flex items-center justify-center text-emerald-300 font-black text-2xl shadow-inner">
                 1
               </div>
             </button>
@@ -2052,7 +2055,7 @@ export default function MobileForm({ preview = false }) {
             {/* Divisor */}
             <div className="relative flex py-6 my-2 items-center">
               <div className="flex-grow border-t border-slate-800/80"></div>
-              <span className="flex-shrink mx-3 text-xs sm:text-sm font-black text-amber-300 uppercase tracking-wider text-center">
+              <span className="t-cor flex-shrink mx-3 text-xs sm:text-sm font-black text-amber-300 uppercase tracking-wider text-center">
                 {questionsConfig.divisorQtdTexto || 'Quantas pessoas vieram com você?'}
               </span>
               <div className="flex-grow border-t border-slate-800/80"></div>

@@ -193,6 +193,7 @@ export const CORES_FONTE_SUBTITULO = [
 
 // 10 OPÇÕES DE CORES EM BOLINHAS PARA OS BOTÕES NUMÉRICOS (TELA 2)
 export const CORES_BOTAO_QTD = [
+  { id: 'tema', label: 'Do layout', dot: 'amostra-tema', classe: 't-num', simClass: 't-num' },
   { id: 'slate', label: 'Grafite', hex: '#475569', dot: 'bg-slate-600', classe: 'bg-gradient-to-b from-slate-800 via-slate-800 to-slate-900 border-slate-700/80 border-b-slate-950 text-slate-100', simClass: 'bg-slate-800 border-slate-700 border-b-slate-950' },
   { id: 'esmeralda', label: 'Esmeralda', hex: '#10b981', dot: 'bg-emerald-500', classe: 'bg-gradient-to-b from-emerald-600 via-emerald-700 to-emerald-800 border-emerald-500/60 border-b-emerald-950 text-white', simClass: 'bg-emerald-700 border-emerald-600 border-b-emerald-950' },
   { id: 'azul', label: 'Azul Real', hex: '#3b82f6', dot: 'bg-blue-600', classe: 'bg-gradient-to-b from-blue-600 via-blue-700 to-blue-800 border-blue-500/60 border-b-blue-950 text-white', simClass: 'bg-blue-700 border-blue-600 border-b-blue-950' },
@@ -207,6 +208,7 @@ export const CORES_BOTAO_QTD = [
 
 // OPÇÕES DE CORES DA FONTE DO NÚMERO (TELA 2)
 export const CORES_NUMERO_QTD = [
+  { id: 'tema', label: 'Do layout', dot: 'amostra-tema', classe: 't-cor' },
   { id: 'branco', label: 'Branco Puro', hex: '#ffffff', dot: 'bg-white', classe: 'text-white' },
   { id: 'dourado', label: 'Dourado', hex: '#fcd34d', dot: 'bg-amber-300', classe: 'text-amber-300' },
   { id: 'amarelo', label: 'Amarelo', hex: '#fde047', dot: 'bg-yellow-300', classe: 'text-yellow-300' },
@@ -219,6 +221,7 @@ export const CORES_NUMERO_QTD = [
 
 // OPÇÕES DE CORES DA DESCRIÇÃO ("PESSOAS") (TELA 2)
 export const CORES_DESCRICAO_QTD = [
+  { id: 'tema', label: 'Do layout', classe: 't-cor' },
   { id: 'branco_80', label: 'Branco 80%', classe: 'text-white/80' },
   { id: 'branco_puro', label: 'Branco Puro', classe: 'text-white' },
   { id: 'dourado', label: 'Dourado', classe: 'text-amber-300' },
@@ -1427,7 +1430,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     <p className="text-xs text-slate-400 mt-0.5">O que você muda aqui vale para todas, menos nas páginas com "Herdar" desligado.</p>
                   </div>
 
-                  <Secao titulo="Layout pronto" descricao="Clique e troca só o visual (cores, fundos, efeitos). Textos, fontes e tamanhos ficam, e cada layout guarda as próprias cores.">
+                  <Secao titulo="Layout pronto" descricao="Clique e troca cores, fontes, fundos e efeitos. Textos, tamanhos, alturas e espaçamento ficam, e cada layout guarda os próprios ajustes.">
                     <GaleriaTemas
                       atual={config.tema}
                       onEscolher={(id) => setConfig((c) => aplicarTema(c, id))}

@@ -1,8 +1,8 @@
 // ==========================================
 // LAYOUTS PRONTOS (presets) DO FORMULÁRIO
 // O desenho de cada layout está em src/temas.css (classe .tema-<id>).
-// Trocar de layout muda só o visual (cores, fundos, efeitos, cantos, espaço).
-// Fontes, bordas dos títulos, alturas, tamanhos e textos são do usuário: nunca mudam.
+// Trocar de layout muda só o visual (cores, fontes, fundos, bordas, efeitos, cantos).
+// Textos, tamanhos, alturas e espaçamento são do usuário: nunca mudam.
 // Cada layout guarda os próprios ajustes de visual: voltar a ele traz tudo de volta.
 // ==========================================
 export const TEMAS = [
@@ -68,15 +68,17 @@ const camposGerais = (t) => ({
   capaEfeito: 'nenhum',
   ...['capaTitulo1', 'capaTitulo2', 'capaTitulo3', 'capaTextoAbaixo'].reduce((o, id) => ({ ...o, ...fb(id) }), {}),
   ...Object.fromEntries(['capaTitulo1', 'capaTitulo2', 'capaTitulo3', 'capaTextoAbaixo'].flatMap((id) => [[`${id}Cor`, 'tema'], [`${id}Fundo`, 'tema']])),
-  esperaLinha1Cor: 'tema', esperaLinha2Cor: 'tema', esperaLinha3Cor: 'tema'
+  esperaLinha1Cor: 'tema', esperaLinha2Cor: 'tema', esperaLinha3Cor: 'tema',
+  ...Object.fromEntries(['esperaLinha1', 'esperaLinha2', 'esperaLinha3', 'pergunta2', 'finalTitulo', 'finalMensagem', 'finalStatus', 'finalInstrucao'].map((id) => [`${id}Familia`, 'padrao'])),
+  btnQtdCor: 'tema', btnQtdCorNumero: 'tema', btnQtdCorDescricao: 'tema', btnQtdEfeito: 'tema'
 });
 
-// Do usuário, não do layout: a troca não mexe nestes campos
-const doUsuario = (k) => /Familia$|Altura$/.test(k) || (/Borda(Largura)?$/.test(k) && !k.startsWith('card'));
+// Do usuário, não do layout: textos, tamanhos, alturas e espaçamento. A troca não mexe nestes campos.
+const doUsuario = (k) => /Altura$|Espaco$/.test(k);
 const filtrar = (o, f) => Object.fromEntries(Object.entries(o || {}).filter(([k, v]) => f(k, v)));
 const doLayout = (campos) => filtrar(campos, (k) => !doUsuario(k));
-const vazio = (v) => v === undefined || v === null || v === 'padrao';
-const guardar = (obj, campos) => Object.fromEntries(Object.keys(campos).map((k) => [k, obj[k] === undefined ? null : obj[k]]));
+const valor = (v) => (v === undefined ? null : v);
+const guardar = (obj, campos) => Object.fromEntries(Object.keys(campos).map((k) => [k, valor(obj[k])]));
 const herda = (tela) => tela?.herdarEstilo !== false;
 
 const visualGeral = (cfg, t) => doLayout({ ...camposGerais(t), ...(cfg.herdarEstiloP1 === false ? {} : camposP1(t)) });
@@ -95,28 +97,40 @@ const tirarFoto = (cfg, id) => {
     return t ? filtrar(tudo, (k, v) => v !== campos[k]) : tudo; // layout pronto: só o que foi mexido
   };
   return JSON.stringify({
+    v: 2,
     cfg: foto(cfg, visualGeral(cfg, base)),
     telas: Object.fromEntries((cfg.telasExtras || []).filter((x) => x?.id && herda(x)).map((x) => [x.id, foto(x, visualTela(base))]))
   });
 };
 
-// Formato antigo (layoutSalvo): vira a foto do "Meu layout" e devolve as fontes/bordas/alturas que a troca tinha apagado
-const migrar = (cfg) => {
-  const antigo = cfg.layoutSalvo;
-  if (!antigo) return cfg;
-  const recuperar = (obj, salvo) => filtrar(salvo, (k, v) => doUsuario(k) && !vazio(v) && vazio(obj[k]));
+// Formatos antigos da foto do "Meu layout" (layoutSalvo e v1), com um layout pronto em uso:
+// - altura e espaço que a troca tinha mudado voltam ao que o usuário definiu;
+// - campo de visual que a foto não tinha (a troca não mexia nele) é do "Meu layout": vai para a foto.
+const migrar = (cfg, t) => {
+  const antigo = cfg.layoutSalvo || lerSalvo(cfg, 'original');
+  if (!t || !antigo || antigo.v === 2) return cfg;
+  const separar = (obj, salvo, campos) => {
+    const s = salvo || {};
+    const devolver = filtrar(s, (k, v) => (/Altura$/.test(k) && v != null && obj[k] == null) || (k === 'cardEspaco' && obj[k] === t.espaco));
+    const faltam = Object.keys(campos).filter((k) => !(k in s));
+    return {
+      atual: { ...obj, ...devolver, ...Object.fromEntries(faltam.map((k) => [k, campos[k]])) },
+      foto: { ...doLayout(s), ...Object.fromEntries(faltam.map((k) => [k, valor(obj[k])])) }
+    };
+  };
+  const geral = separar(cfg, antigo.cfg, visualGeral(cfg, t));
+  const telas = { ...antigo.telas };
+  const telasExtras = (cfg.telasExtras || []).map((x) => {
+    if (!herda(x) || !telas[x?.id]) return x;
+    const r = separar(x, telas[x.id], visualTela(t));
+    telas[x.id] = r.foto;
+    return r.atual;
+  });
   return {
-    ...cfg,
-    ...recuperar(cfg, antigo.cfg),
-    telasExtras: (cfg.telasExtras || []).map((x) => (herda(x) ? { ...x, ...recuperar(x, antigo.telas?.[x?.id]) } : x)),
+    ...geral.atual,
+    telasExtras,
     layoutSalvo: null,
-    layoutsSalvos: {
-      ...cfg.layoutsSalvos,
-      original: JSON.stringify({
-        cfg: doLayout(antigo.cfg),
-        telas: Object.fromEntries(Object.entries(antigo.telas || {}).map(([k, v]) => [k, doLayout(v)]))
-      })
-    }
+    layoutsSalvos: { ...cfg.layoutsSalvos, original: JSON.stringify({ v: 2, cfg: geral.foto, telas }) }
   };
 };
 
@@ -125,24 +139,26 @@ export const aplicarTema = (cfgAtual, id) => {
   const para = temaPorId(id) ? id : 'original';
   if (de === para) return cfgAtual;
 
-  const cfg = migrar(cfgAtual);
+  const cfg = migrar(cfgAtual, temaPorId(de));
   const t = temaPorId(para);
   const salvo = lerSalvo(cfg, para) || {};
   const layoutsSalvos = { ...cfg.layoutsSalvos, [de]: tirarFoto(cfg, de) };
+  const camposDaTela = visualTela(t || TEMAS[0]);
+  const geral = t ? visualGeral(cfg, t) : {};
 
   // "Meu layout" em página criada depois: segue o visual de outra página guardada
   const modelo = Object.values(salvo.telas || {})[0] || {};
-  const semTema = (x) => Object.fromEntries(Object.keys(visualTela(TEMAS[0])).filter((k) => x[k] === 'tema').map((k) => [k, null]));
+  const semTema = (x) => Object.fromEntries(Object.keys(camposDaTela).filter((k) => x[k] === 'tema').map((k) => [k, null]));
   const visualDaTela = (x) => {
     const guardado = salvo.telas?.[x?.id];
-    if (t) return { ...visualTela(t), ...guardado };
-    return guardado || { ...semTema(x), ...modelo };
+    const base = t ? camposDaTela : guardado ? {} : semTema(x);
+    return { ...base, ...filtrar(guardado || (t ? {} : modelo), (k) => k in camposDaTela) };
   };
-  const geral = t ? visualGeral(cfg, t) : null;
 
   return {
     ...cfg,
-    ...(t ? { ...geral, ...filtrar(salvo.cfg, (k) => k in geral) } : salvo.cfg),
+    ...geral,
+    ...(t ? filtrar(salvo.cfg, (k) => k in geral) : doLayout(salvo.cfg)),
     tema: para,
     ...(t ? { mostrarProgresso: cfg.mostrarProgresso ?? true } : {}),
     layoutsSalvos,

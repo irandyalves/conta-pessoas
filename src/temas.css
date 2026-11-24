@@ -59,6 +59,9 @@
 .tema .t-avancar, .tema .t-comecar { font-family: var(--fonte-titulo); }
 .tema .t-comecar-borda { box-shadow: none; }
 .tema .t-comecar-giro { display: none; }
+/* Tela "quantas pessoas": botão Só eu */
+.tema .t-soeu :is(h3, span, svg, div), .tema .t-num .t-herda { color: inherit !important; filter: none; }
+.tema .t-soeu .t-selo { background: rgba(0, 0, 0, .14); border-color: currentColor; }
 .tema .t-rodape { background: linear-gradient(to top, var(--fundo-solido) 60%, transparent); }
 .tema .t-painel { background: var(--card); border-color: var(--card-borda); }
 .tema .t-painel h1, .tema .t-painel h2 { font-family: var(--fonte-titulo); }
