@@ -1,3 +1,4 @@
+import { LADOS_BORDA, bordaQueSome } from '../utils/estilos';
 import React, { useEffect, useState } from 'react';
 import { AlignLeft, AlignCenter, AlignRight, ChevronDown, GripVertical, Eye, EyeOff, ALargeSmall, MoveVertical, PenLine, Trash2 } from 'lucide-react';
 import { carregarFontes, familiaCss, FONTES, fontePorId } from '../utils/fontes';
@@ -71,6 +72,27 @@ export function MiniSlider({ rotulo, icone, valor, min, max, passo = 1, unidade 
       />
       <span className={`text-[11px] tabular-nums text-slate-200 ${!Icone ? 'w-9' : passo < 1 ? 'w-7' : 'w-5'}`}>{valor}{Icone ? '' : unidade}</span>
     </label>
+  );
+}
+
+// Largura da borda e o lado em que ela some (cartão da cor "Borda")
+export function AjustesBorda({ largura, onLargura, max = 10, lado, onLado, cor }) {
+  return (
+    <div className="flex flex-col gap-2">
+      <MiniSlider rotulo="Largura" valor={largura} min={0} max={max} passo={0.5} onChange={onLargura} />
+      {onLado && (
+        <div className="flex items-center gap-1" role="group" aria-label="Lado em que a borda some">
+          {LADOS_BORDA.map((l) => {
+            const ativo = (lado || 'inteira') === l.id;
+            return (
+              <button key={l.id} type="button" aria-pressed={ativo} title={l.label} aria-label={l.label} onClick={() => onLado(l.id)} className={`w-9 h-7 rounded-md flex items-center justify-center transition ${ativo ? 'bg-slate-600' : 'hover:bg-slate-700'}`}>
+                <span className="block w-6 h-4 rounded-[5px] border border-white" style={bordaQueSome(l.id, cor, 1.5) || undefined} />
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 

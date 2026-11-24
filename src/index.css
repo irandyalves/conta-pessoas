@@ -147,7 +147,7 @@
 .aviso-desce span { display: block; font-size: 13px; color: #6b3a42; margin-top: 2px; }
 @keyframes avisoDesce { from { translate: -50% -140%; opacity: 0; } }
 
-/* ===== Barra de progresso: 5 estilos ===== */
+/* ===== Barra de progresso: 6 estilos ===== */
 .t-progresso-blocos { display: flex; gap: 3px; padding: 0 3px; background: none !important; top: 3px !important; }
 .t-progresso-blocos b { flex: 1; border-radius: 99px; background: rgba(148, 163, 184, .28); transition: background .4s; }
 .t-progresso-degrade i, .t-progresso-brilho i, .t-progresso-marcador i { border-radius: 0 99px 99px 0; }
@@ -157,9 +157,21 @@
 .t-progresso.t-progresso-demo { position: relative !important; inset: auto !important; top: auto !important; width: 100%; border-radius: 99px; z-index: 0; }
 .t-progresso-demo i { border-radius: 99px; }
 .t-progresso-demo em { top: -5px; border-radius: 99px; }
+.t-progresso-cometa { top: 6px !important; left: 8px !important; right: 8px !important; border-radius: 99px; background: rgba(148, 163, 184, .14) !important; }
+.t-progresso-cometa.t-progresso-demo { left: 0 !important; right: 0 !important; }
+.t-progresso-cometa i { position: relative; border-radius: 99px; filter: drop-shadow(0 0 5px var(--agora)); }
+/* faíscas correndo pela cauda em direção à cabeça */
+.t-progresso-cometa s { position: absolute; inset: -2px 0; border-radius: 99px; background: radial-gradient(circle 1.4px at 12px 50%, #fff 0 60%, transparent), radial-gradient(circle 1px at 44px 28%, rgba(255, 255, 255, .85) 0 60%, transparent), radial-gradient(circle 1px at 66px 74%, rgba(255, 255, 255, .7) 0 60%, transparent); background-size: 84px 100%; -webkit-mask: linear-gradient(90deg, transparent, #000 45%); mask: linear-gradient(90deg, transparent, #000 45%); animation: cometaFaiscas 1.5s linear infinite; }
+.t-progresso-cometa em { position: absolute; right: 0; top: 50%; width: var(--cabeca); height: var(--cabeca); transform: translateY(-50%); border-radius: 50%; background: radial-gradient(circle, #fff 0 26%, var(--agora) 52%, transparent 72%); }
+.t-progresso-cometa em::before { content: ''; position: absolute; inset: -3px; border-radius: 50%; background: conic-gradient(var(--c1), transparent 35%, var(--c2) 60%, transparent 90%, var(--c1)); -webkit-mask: radial-gradient(closest-side, transparent 72%, #000 76%); mask: radial-gradient(closest-side, transparent 72%, #000 76%); animation: cometaGira 1.6s linear infinite; }
+.t-progresso-cometa em::after { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 1px solid var(--agora); animation: cometaOnda 1.9s ease-out infinite; }
+@keyframes cometaFaiscas { to { background-position-x: 84px; } }
+@keyframes cometaGira { to { transform: rotate(1turn); } }
+@keyframes cometaOnda { from { transform: scale(.8); opacity: .9; } to { transform: scale(2.1); opacity: 0; } }
 @keyframes progressoLuz { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
 @media (prefers-reduced-motion: reduce) {
-  .nota-viva, .nota-viva::after, .item-falta, .campo-erro, .aviso-desce, .t-progresso-brilho i::after { animation: none; }
+  .nota-viva, .nota-viva::after, .item-falta, .campo-erro, .aviso-desce, .t-progresso-brilho i::after, .t-progresso-cometa s, .t-progresso-cometa em::before, .t-progresso-cometa em::after { animation: none; }
+  .giro-versoes { transition: none !important; }
 }
 
 /* ===== PADRÃO DE FORMATAÇÃO DO EDITOR ===== */
@@ -267,3 +279,9 @@
   --luz-lado: rgba(52, 211, 153, .55);
   outline: none;
 }
+
+/* Borda que some em um lado: só o contorno (máscara), por cima de qualquer fundo, sem mexer nos cantos */
+:where([style*='--borda-cor']) { position: relative; }
+[style*='--borda-cor']::before { content: ''; position: absolute; inset: var(--borda-fora); padding: var(--borda-p); border-radius: inherit; pointer-events: none; background: linear-gradient(var(--borda-dir), var(--borda-cor) 12%, transparent 92%); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
+
+.giro-versoes { transition: transform cubic-bezier(.3, .7, .2, 1); }

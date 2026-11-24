@@ -148,7 +148,36 @@ const hexDe = (lista, id) => (id && id !== 'padrao' ? lista.find((c) => c.id ===
 const rgbDe = (hex) => (/^#[0-9a-f]{6}$/i.test(hex || '') ? [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(', ') : undefined);
 
 export const corLinhaHex = (id) => hexDe(CORES_LINHA, id);
-// Fonte e borda de um título, subtítulo ou card. Campos: <prefixo>Familia, Borda, BordaLargura.
+// Borda que vai afinando e some em um lado (o desenho fica em index.css, no ::before de quem tem --borda-cor)
+export const LADOS_BORDA = [
+  { id: 'inteira', label: 'Borda inteira' },
+  { id: 'baixo', label: 'Some para baixo', dir: 'to bottom' },
+  { id: 'cima', label: 'Some para cima', dir: 'to top' },
+  { id: 'direita', label: 'Some para a direita', dir: 'to right' },
+  { id: 'esquerda', label: 'Some para a esquerda', dir: 'to left' }
+];
+export const bordaQueSome = (lado, cor, largura = 1, faixa = false) => {
+  const dir = LADOS_BORDA.find((l) => l.id === lado)?.dir;
+  const w = Number(largura);
+  if (!dir || cor === 'transparent' || !(w > 0)) return null;
+  const fino = Math.max(0.6, w * 0.55);
+  const vertical = lado === 'baixo' || lado === 'cima';
+  const lados = {
+    cima: lado === 'cima' ? 0 : vertical ? w : fino,
+    baixo: lado === 'baixo' ? 0 : vertical ? w : fino,
+    esquerda: faixa || lado === 'esquerda' ? 0 : vertical ? fino : w,
+    direita: faixa || lado === 'direita' ? 0 : vertical ? fino : w
+  };
+  if (faixa && !vertical) { lados.cima = w; lados.baixo = w; }
+  return {
+    borderColor: 'transparent',
+    '--borda-cor': cor || 'rgba(255, 255, 255, .7)',
+    '--borda-dir': dir,
+    '--borda-fora': faixa ? `-${w}px 0` : `-${w}px`,
+    '--borda-p': `${lados.cima}px ${lados.direita}px ${lados.baixo}px ${lados.esquerda}px`
+  };
+};
+// Fonte e borda de um título, subtítulo ou card. Campos: <prefixo>Familia, Borda, BordaLargura, BordaLado.
 // faixa = fundo de ponta a ponta (borda só em cima e embaixo)
 export const fonteEBorda = (obj, prefixo, temFundo = true, faixa = true) => {
   const st = {};
@@ -157,12 +186,14 @@ export const fonteEBorda = (obj, prefixo, temFundo = true, faixa = true) => {
   if (obj?.[`${prefixo}Italico`]) st.fontStyle = 'italic';
   const cor = hexDe(CORES_LINHA, obj?.[`${prefixo}Borda`]);
   const largura = obj?.[`${prefixo}BordaLargura`];
-  if (temFundo && (cor || largura != null)) {
+  const some = temFundo ? bordaQueSome(obj?.[`${prefixo}BordaLado`], cor, largura ?? 1, faixa) : null;
+  if (temFundo && (cor || largura != null || some)) {
     const w = `${largura ?? 1}px`;
     st.borderStyle = 'solid';
     if (faixa) Object.assign(st, { borderTopWidth: w, borderBottomWidth: w, borderLeftWidth: 0, borderRightWidth: 0 });
     else st.borderWidth = w;
     if (cor) st.borderColor = cor;
+    if (some) Object.assign(st, some, { backgroundOrigin: 'border-box' });
   }
   return st;
 };
@@ -187,6 +218,8 @@ export const estiloBotao = (ler, soForma = false) => {
   else if (efeito === 'vidro') st.opacity = 0.95;
   if (linha || borderColor) st.borderColor = linha || borderColor;
   if (texto) st.color = texto;
+  const some = bordaQueSome(ler('LinhaLado'), linha || borderColor, ler('LinhaEspessura') ?? 1);
+  if (some) Object.assign(st, some, { borderWidth: `${ler('LinhaEspessura') ?? 1}px`, borderStyle: 'solid' });
   return st;
 };
 
@@ -373,7 +406,7 @@ export const corGradeSelecionada = (col, cols = []) => {
 // ==========================================
 const MAPA_P1 = {
   tituloTamanho: 'pergunta1FonteTamanho', tituloCor: 'pergunta1TituloCor', tituloBold: 'pergunta1TituloBold',
-  tituloFaixa: 'pergunta1TituloFaixa', subFaixa: 'pergunta1SubFaixa', tituloCaixa: 'pergunta1TituloCaixa', tituloFamilia: 'pergunta1TituloFamilia', tituloBorda: 'pergunta1TituloBorda', tituloBordaLargura: 'pergunta1TituloBordaLargura', subFamilia: 'pergunta1SubFamilia', subBorda: 'pergunta1SubBorda', subBordaLargura: 'pergunta1SubBordaLargura', subCaixa: 'pergunta1SubCaixa', tituloItalico: 'pergunta1TituloItalico', subItalico: 'pergunta1SubItalico',
+  tituloFaixa: 'pergunta1TituloFaixa', subFaixa: 'pergunta1SubFaixa', tituloCaixa: 'pergunta1TituloCaixa', tituloFamilia: 'pergunta1TituloFamilia', tituloBorda: 'pergunta1TituloBorda', tituloBordaLargura: 'pergunta1TituloBordaLargura', tituloBordaLado: 'pergunta1TituloBordaLado', subBordaLado: 'pergunta1SubBordaLado', subFamilia: 'pergunta1SubFamilia', subBorda: 'pergunta1SubBorda', subBordaLargura: 'pergunta1SubBordaLargura', subCaixa: 'pergunta1SubCaixa', tituloItalico: 'pergunta1TituloItalico', subItalico: 'pergunta1SubItalico',
   tituloAlinhamento: 'pergunta1TituloAlinhamento', tituloFundo: 'pergunta1TituloFundo',
   subTamanho: 'pergunta1TextoAbaixoTamanho', subCor: 'pergunta1TextoAbaixoCor', subBold: 'pergunta1SubBold',
   subAlinhamento: 'pergunta1SubAlinhamento', subFundo: 'pergunta1SubFundo',
@@ -382,7 +415,7 @@ const MAPA_P1 = {
 };
 const MAPA_EXTRA = {
   tituloTamanho: 'titulo1Tamanho', tituloCor: 'titulo1Cor', tituloBold: 'tituloBold',
-  tituloFaixa: 'tituloFaixa', subFaixa: 'subFaixa', tituloCaixa: 'tituloCaixa', tituloFamilia: 'tituloFamilia', tituloBorda: 'tituloBorda', tituloBordaLargura: 'tituloBordaLargura', subFamilia: 'subFamilia', subBorda: 'subBorda', subBordaLargura: 'subBordaLargura', subCaixa: 'subCaixa', tituloItalico: 'tituloItalico', subItalico: 'subItalico',
+  tituloFaixa: 'tituloFaixa', subFaixa: 'subFaixa', tituloCaixa: 'tituloCaixa', tituloFamilia: 'tituloFamilia', tituloBorda: 'tituloBorda', tituloBordaLargura: 'tituloBordaLargura', tituloBordaLado: 'tituloBordaLado', subBordaLado: 'subBordaLado', subFamilia: 'subFamilia', subBorda: 'subBorda', subBordaLargura: 'subBordaLargura', subCaixa: 'subCaixa', tituloItalico: 'tituloItalico', subItalico: 'subItalico',
   tituloAlinhamento: 'tituloAlinhamento', tituloFundo: 'tituloFundo',
   subTamanho: 'subtituloTamanho', subCor: 'subtituloCor', subBold: 'subBold',
   subAlinhamento: 'subAlinhamento', subFundo: 'subFundo',
@@ -390,7 +423,7 @@ const MAPA_EXTRA = {
   espacoTitulos: 'espacoTitulos', espacoSub: 'espacoSub', espacoCards: 'espacoCards'
 };
 // Campos com o mesmo nome nos dois lugares
-const COMUNS = ['cardItalico', 'gradeItalico', 'legendaItalico', 'itemItalico', 'instrucaoItalico', 'cardFamilia', 'cardBorda', 'cardBordaLargura', 'gradeFamilia', 'legendaFamilia', 'legendaBorda', 'legendaBordaLargura', 'itemFamilia', 'itemBorda', 'itemBordaLargura', 'gradeFormato', 'gradeEfeito', 'gradeProfundidade', 'gradeCor', 'gradeCorTexto', 'gradeLinha', 'gradeLinhaEspessura', 'gradeAltura', 'gradeRaio', 'cardAltura', 'cardEspaco', 'cardRaio', 'cardsPorTela', 'cardFundoEstilo', 'cardEfeitoEstilo', 'cardProfundidade', 'cardCorFonteTitulo',
+const COMUNS = ['cardBordaLado', 'legendaBordaLado', 'itemBordaLado', 'instrucaoBordaLado', 'gradeLinhaLado', 'cardItalico', 'gradeItalico', 'legendaItalico', 'itemItalico', 'instrucaoItalico', 'cardFamilia', 'cardBorda', 'cardBordaLargura', 'gradeFamilia', 'legendaFamilia', 'legendaBorda', 'legendaBordaLargura', 'itemFamilia', 'itemBorda', 'itemBordaLargura', 'gradeFormato', 'gradeEfeito', 'gradeProfundidade', 'gradeCor', 'gradeCorTexto', 'gradeLinha', 'gradeLinhaEspessura', 'gradeAltura', 'gradeRaio', 'cardAltura', 'cardEspaco', 'cardRaio', 'cardsPorTela', 'cardFundoEstilo', 'cardEfeitoEstilo', 'cardProfundidade', 'cardCorFonteTitulo',
   'cardCorFonteSubtitulo', 'cardFonteTitulo', 'cardFonteSubtitulo', 'escalaTamanho', 'legendaCor', 'legendaBold', 'legendaFundo', 'legendaAlinhamento', 'legendaColunas', 'legendaIcones', 'instrucaoTamanho', 'instrucaoCor', 'instrucaoBold', 'instrucaoCaixa', 'instrucaoFamilia', 'instrucaoBorda', 'instrucaoBordaLargura', 'instrucaoAlinhamento', 'instrucaoFundo', 'instrucaoAltura', 'instrucaoEspaco', 'instrucaoPosicao',
   'itemTamanho', 'itemCor', 'itemBold', 'itemFundo', 'legendaFaixa', 'itemFaixa', 'legendaCaixa', 'itemCaixa'];
 
@@ -437,10 +470,10 @@ export const espacos = (cfg = {}, ehP1 = false, escala = 1) => {
 const PADROES_HERDADOS = {
   cardAltura: 82, cardEspaco: CARD_ESPACO_PADRAO, cardsPorTela: 4, cardFundoEstilo: 'escuro', cardEfeitoEstilo: 'padrao',
   cardProfundidade: 5, cardCorFonteTitulo: 'branco', cardCorFonteSubtitulo: 'cinza', cardFonteTitulo: 16, cardFonteSubtitulo: 12,
-  cardFamilia: 'padrao', cardItalico: false, gradeItalico: false, cardBorda: 'padrao', cardBordaLargura: null, gradeFamilia: 'padrao',
+  cardFamilia: 'padrao', cardItalico: false, gradeItalico: false, cardBorda: 'padrao', cardBordaLargura: null, cardBordaLado: 'inteira', gradeFamilia: 'padrao',
   mostrarIcones: true, tituloFaixa: 100, subFaixa: 100,
   gradeEfeito: 'nenhum', gradeProfundidade: 5, gradeCor: 'padrao', gradeCorTexto: 'padrao', gradeLinha: 'padrao',
-  gradeLinhaEspessura: 1, gradeAltura: 38, gradeRaio: 12, gradeFormato: 'numeros'
+  gradeLinhaEspessura: 1, gradeLinhaLado: 'inteira', gradeAltura: 38, gradeRaio: 12, gradeFormato: 'numeros'
 };
 const CANTOS = { cardRaioEsq: 'p1RaioEsq', cardRaioDir: 'p1RaioDir' };
 const NOMES_P1 = { mostrarIcones: 'mostrarIconesCards', tituloFaixa: 'pergunta1TituloFaixa', subFaixa: 'pergunta1SubFaixa' };

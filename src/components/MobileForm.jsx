@@ -2073,7 +2073,7 @@ export default function MobileForm({ preview = false }) {
                       <button
                         type="button"
                         onClick={() => comFeedback(`ex_${tela.id}_${opt.id}`, () => handleSelectOpcaoExtra(idx, opt), opt.temGaveta)}
-                        style={{ ...medidas.caixa, ...cardEfeitoInline, ...fonteEBorda({ cardFamilia: tela.cardFamilia ?? questionsConfig?.cardFamilia, cardItalico: tela.cardItalico ?? questionsConfig?.cardItalico, cardBorda: tela.cardBorda ?? questionsConfig?.cardBorda, cardBordaLargura: tela.cardBordaLargura ?? questionsConfig?.cardBordaLargura }, 'card', true, false) }}
+                        style={{ ...medidas.caixa, ...cardEfeitoInline, ...fonteEBorda({ cardFamilia: tela.cardFamilia ?? questionsConfig?.cardFamilia, cardItalico: tela.cardItalico ?? questionsConfig?.cardItalico, cardBorda: tela.cardBorda ?? questionsConfig?.cardBorda, cardBordaLargura: tela.cardBordaLargura ?? questionsConfig?.cardBordaLargura, cardBordaLado: tela.cardBordaLado ?? questionsConfig?.cardBordaLado }, 'card', true, false) }}
                         className={`t-card w-full text-left px-4 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-between group border border-white/15 ${cardFundoCls} ${
                           isGavetaAberta ? 'border-amber-400/80 ring-1 ring-amber-400/40' : ''
                         } ${efeitoClique(`ex_${tela.id}_${opt.id}`)

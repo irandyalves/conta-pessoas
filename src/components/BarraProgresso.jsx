@@ -1,12 +1,13 @@
 import React from 'react';
 
-// Barra de progresso do celular: 5 estilos. O editor mostra as mesmas barras em miniatura.
+// Barra de progresso do celular: 6 estilos. O editor mostra as mesmas barras em miniatura.
 export const ESTILOS_PROGRESSO = [
   { id: 'degrade', nome: 'Degradê', detalhe: 'Começa numa cor e termina em outra' },
   { id: 'cor', nome: 'Cor única', detalhe: 'Simples, uma cor só' },
   { id: 'blocos', nome: 'Blocos', detalhe: 'Um bloco por página' },
   { id: 'brilho', nome: 'Brilho', detalhe: 'Luz correndo pela barra' },
-  { id: 'marcador', nome: 'Marcador', detalhe: 'Bolinha com a porcentagem' }
+  { id: 'marcador', nome: 'Marcador', detalhe: 'Bolinha com a porcentagem' },
+  { id: 'cometa', nome: 'Cometa', detalhe: 'Cauda de luz com faíscas' }
 ];
 export const CORES_PROGRESSO = [
   { id: 'vermelho', label: 'Vermelho', hex: '#f5142f' },
@@ -20,7 +21,7 @@ export const CORES_PROGRESSO = [
   { id: 'branco', label: 'Branco', hex: '#ffffff' }
 ];
 export const CORES_PROGRESSO_LAYOUT = [{ id: 'layout', label: 'Do layout', hex: 'conic-gradient(#8c2438, #ffcf5c, #5fe3c0, #1b49d6, #8c2438)' }, ...CORES_PROGRESSO];
-export const usaDuasCores = (estilo) => ['degrade', 'blocos', 'marcador'].includes(estilo);
+export const usaDuasCores = (estilo) => ['degrade', 'blocos', 'marcador', 'cometa'].includes(estilo);
 
 const hexDe = (id, padrao) => CORES_PROGRESSO.find((c) => c.id === id)?.hex || padrao;
 
@@ -60,6 +61,15 @@ export default function BarraProgresso({ config = {}, valor = 0, etapas = 5, dem
     );
   }
   const atual = corEntre(c1, c2, p);
+  if (estilo === 'cometa') {
+    // a cabeça cresce com a altura; a cauda nasce transparente e chega acesa nela
+    const cabeca = Math.max(10, altura * 2 + 4);
+    return (
+      <div className={raiz} style={{ height: altura, '--c1': c1, '--c2': c2, '--agora': atual, '--cabeca': `${cabeca}px` }} {...acess}>
+        <i style={{ width: `max(${cabeca}px, ${pct})`, background: `linear-gradient(90deg, transparent, ${corEntre(c1, c2, 0)} 22%, ${corEntre(c1, c2, p * 0.6)} 60%, ${atual})` }}><s /><em /></i>
+      </div>
+    );
+  }
   const fundo = usaDuasCores(estilo)
     ? `linear-gradient(90deg, ${[0, 0.25, 0.5, 0.75, 1].map((k) => corEntre(c1, c2, p * k)).join(', ')})`
     : unica;

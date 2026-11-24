@@ -34,10 +34,10 @@ export const carregarFonteTema = (id) => {
   document.head.appendChild(l);
 };
 
-const BOTAO_VAZIO = { Familia: 'padrao', Efeito: 'nenhum', Cor: 'padrao', CorTexto: 'padrao', Linha: 'padrao', LinhaEspessura: null, Altura: null, Raio: null };
+const BOTAO_VAZIO = { Familia: 'padrao', Efeito: 'nenhum', Cor: 'padrao', CorTexto: 'padrao', Linha: 'padrao', LinhaEspessura: null, LinhaLado: 'inteira', Altura: null, Raio: null };
 const comPrefixo = (p, o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [p + k, v]));
 
-const fb = (p) => ({ [`${p}Familia`]: 'padrao', [`${p}Borda`]: 'padrao', [`${p}BordaLargura`]: null });
+const fb = (p) => ({ [`${p}Familia`]: 'padrao', [`${p}Borda`]: 'padrao', [`${p}BordaLargura`]: null, [`${p}BordaLado`]: 'inteira' });
 const CARDS = { ...fb('card'), cardFundoEstilo: 'tema', cardEfeitoEstilo: 'tema', cardCorFonteTitulo: 'tema', cardCorFonteSubtitulo: 'tema' };
 
 const camposTela = (t) => ({
@@ -73,7 +73,7 @@ const camposGerais = (t) => ({
   ...Object.fromEntries(TEXTOS_CAPA.flatMap((id) => [[`${id}Cor`, 'tema'], [`${id}Fundo`, 'tema']])),
   esperaLinha1Cor: 'tema', esperaLinha2Cor: 'tema', esperaLinha3Cor: 'tema',
   ...Object.fromEntries(['esperaLinha1', 'esperaLinha2', 'esperaLinha3', 'pergunta2', 'finalTitulo', 'finalTitulo1', 'finalTitulo2', 'finalMensagem', 'finalStatus', 'finalInstrucao'].map((id) => [`${id}Familia`, 'padrao'])),
-  ...Object.fromEntries(['finalTitulo1', 'finalTitulo2', 'finalMensagem', 'finalStatus', 'finalInstrucao'].flatMap((id) => [[`${id}Cor`, 'tema'], [`${id}Fundo`, 'transparente'], [`${id}Borda`, 'padrao'], [`${id}BordaLargura`, null]])),
+  ...Object.fromEntries(['finalTitulo1', 'finalTitulo2', 'finalMensagem', 'finalStatus', 'finalInstrucao'].flatMap((id) => [[`${id}Cor`, 'tema'], [`${id}Fundo`, 'transparente'], [`${id}Borda`, 'padrao'], [`${id}BordaLargura`, null], [`${id}BordaLado`, 'inteira']])),
   btnQtdCor: 'tema', btnQtdCorNumero: 'tema', btnQtdCorDescricao: 'tema', btnQtdEfeito: 'tema'
 });
 

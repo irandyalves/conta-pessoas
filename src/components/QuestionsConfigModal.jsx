@@ -54,7 +54,7 @@ import {
 import GaleriaTemas from './GaleriaTemas';
 import { aplicarTema } from '../utils/temas';
 import { configSeta, CORES_SETA, DESENHOS_SETA } from '../utils/setas';
-import { CAPA_LARGURA_MIN, raioCapa, LINHAS_CAPA, ordemCapa, permutar, reordenar, textoCapa, alturaFaixa, FAIXA_MAX, FAIXA_MIN, gravarFaixaPadrao, lerGeral, gravarHerdado, herdaEstilo, ligarHeranca, semCamposHerdados, telaP1Cantos, CORES_BOTAO, CORES_LINHA, CORES_TEXTO_BOTAO, CARD_ESPACO_PADRAO, raiosCard, linhasCapa, alturaCard, CAPA_ESPACO_PADRAO, CARD_ALTURA_MAX, CARD_ALTURA_MIN, espacos, continuaNaMesmaPagina, extrairEstilo, aplicarEstilo, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems, getEfeitoStyle, CORES_TEXTO_LINHAS, ALINHAMENTOS_TEXTO, FUNDOS_CAPTION } from '../utils/estilos';
+import { corLinhaHex, CAPA_LARGURA_MIN, raioCapa, LINHAS_CAPA, ordemCapa, permutar, reordenar, textoCapa, alturaFaixa, FAIXA_MAX, FAIXA_MIN, gravarFaixaPadrao, lerGeral, gravarHerdado, herdaEstilo, ligarHeranca, semCamposHerdados, telaP1Cantos, CORES_BOTAO, CORES_LINHA, CORES_TEXTO_BOTAO, CARD_ESPACO_PADRAO, raiosCard, linhasCapa, alturaCard, CAPA_ESPACO_PADRAO, CARD_ALTURA_MAX, CARD_ALTURA_MIN, espacos, continuaNaMesmaPagina, extrairEstilo, aplicarEstilo, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems, getEfeitoStyle, CORES_TEXTO_LINHAS, ALINHAMENTOS_TEXTO, FUNDOS_CAPTION } from '../utils/estilos';
 import ImportadorIA from './ImportadorIA';
 import RecuperarVersao from './RecuperarVersao';
 import { juntarComAnterior, telaAnterior } from '../utils/juntarTelas';
@@ -68,7 +68,7 @@ import BarraProgresso, { CORES_PROGRESSO, CORES_PROGRESSO_LAYOUT, ESTILOS_PROGRE
 import { ArrowLeft, Columns2, History, Redo2, Rows3, Smile as IconeRosto, Undo2, WrapText } from 'lucide-react';
 import EscalaVisual, { ESTILOS_ESCALA, INSTRUCAO_PADRAO, instrucaoDaEscala } from './EscalaVisual';
 import EstiloLinhasTitulo, { ControleEspacos } from './EstiloLinhasTitulo';
-import { LinhaEfeito, TopoPainel, Alternar, BarraFormato, BotaoObrigatorio, OlhoTela, Campo, Chave, Cores, Deslizante, Lista, MiniSlider, QuestaoArrastavel, Secao, Segmentos, SeletorFonte, SeletorIcone } from './Controles';
+import { AjustesBorda, LinhaEfeito, TopoPainel, Alternar, BarraFormato, BotaoObrigatorio, OlhoTela, Campo, Chave, Cores, Deslizante, Lista, MiniSlider, QuestaoArrastavel, Secao, Segmentos, SeletorFonte, SeletorIcone } from './Controles';
 import { ICONES_CARDS, iconesDaTela } from '../utils/icones';
 import { PRESETS_PESQUISAS } from '../utils/presets';
 
@@ -144,12 +144,13 @@ export const EFEITOS_CARDS = [
   { id: 'glow', label: 'Brilho', desc: 'Iluminação de contorno' },
 ];
 
-// Fonte e borda de uma linha de texto (ler/gravar recebem 'Familia', 'Borda' ou 'BordaLargura')
+// Fonte e borda de uma linha de texto (ler/gravar recebem 'Familia', 'Borda', 'BordaLargura' ou 'BordaLado')
 const fonteBordaLinha = (ler, gravar) => ({
   familia: ler('Familia'), onFamilia: (v) => gravar('Familia', v),
   italico: ler('Italico'), onItalico: (v) => gravar('Italico', v),
   borda: ler('Borda'), onBorda: (v) => gravar('Borda', v),
-  bordaLargura: ler('BordaLargura'), onBordaLargura: (v) => gravar('BordaLargura', v)
+  bordaLargura: ler('BordaLargura'), onBordaLargura: (v) => gravar('BordaLargura', v),
+  bordaLado: ler('BordaLado'), onBordaLado: (v) => gravar('BordaLado', v)
 });
 
 const EFEITOS_CAPA = [{ id: 'nenhum', label: 'Nenhum' }, ...EFEITOS_CARDS.filter((e) => e.id !== 'padrao' && e.id !== 'tema')];
@@ -166,6 +167,25 @@ const SubAbas = ({ opcoes, valor, onChange, lateral = null }) => (
     {lateral && <div className="sub-abas-lateral">{lateral}</div>}
   </div>
 );
+
+// Relógio das versões: o mouse entrou, volta meia-volta no tempo; saiu, gira para a frente até parar em pé
+function BotaoVersoes({ onClick }) {
+  const [angulo, setAngulo] = useState(0);
+  const base = useRef(0);
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title="Recuperar versão da última hora"
+      aria-label="Recuperar versão da última hora"
+      onMouseEnter={() => setAngulo(base.current - 180)}
+      onMouseLeave={() => { base.current += 360; setAngulo(base.current); }}
+      className="w-8 h-8 rounded-lg flex items-center justify-center text-amber-400 hover:bg-slate-700 transition-colors"
+    >
+      <History className="giro-versoes w-4 h-4" style={{ transform: `rotate(${angulo}deg)`, transitionDuration: angulo === base.current ? '.9s' : '.45s' }} />
+    </button>
+  );
+}
 
 // Aba do alto: borda verde fininha na que está aberta
 const Aba = ({ ativa, oculta = false, onClick, olho = null, titulo, children }) => {
@@ -591,7 +611,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
           {fontePadrao && <MiniSlider rotulo="Tamanho do texto" icone="tamanho" valor={ler('Fonte') ?? fontePadrao} min={11} max={32} onChange={(v) => gravar('Fonte', v)} />}
           <Cores rotulo="Texto" opcoes={CORES_TEXTO_BOTAO} campo="hex" valor={ler('CorTexto') || 'padrao'} onChange={(v) => gravar('CorTexto', v)} />
           <Cores rotulo="Fundo" opcoes={CORES_BOTAO} campo="hex" valor={ler('Cor') || 'padrao'} onChange={(v) => gravar('Cor', v)} />
-          <Cores rotulo="Borda" opcoes={CORES_LINHA} campo="hex" valor={ler('Linha') || 'padrao'} onChange={(v) => gravar('Linha', v)} lateral={<MiniSlider rotulo="Largura" valor={ler('LinhaEspessura') ?? espessuraPadrao} min={0} max={6} passo={0.5} onChange={(v) => gravar('LinhaEspessura', v)} />} />
+          <Cores rotulo="Borda" opcoes={CORES_LINHA} campo="hex" valor={ler('Linha') || 'padrao'} onChange={(v) => gravar('Linha', v)} lateral={<AjustesBorda largura={ler('LinhaEspessura') ?? espessuraPadrao} max={6} onLargura={(v) => gravar('LinhaEspessura', v)} lado={ler('LinhaLado')} onLado={comLargura ? undefined : (v) => gravar('LinhaLado', v)} cor={corLinhaHex(ler('Linha'))} />} />
           <Alternar rotulo={<em>I</em>} nome="Itálico" valor={ler('Italico')} onChange={(v) => gravar('Italico', v)} />
         </BarraFormato>
         <LinhaEfeito rotulo="Efeito" opcoes={EFEITOS_CAPA} valor={efeito} onChange={(v) => gravar('Efeito', v)} intensidade={efeito !== 'nenhum' && { valor: ler('Profundidade') || 5, onChange: (v) => gravar('Profundidade', v) }} />
@@ -660,7 +680,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
           <MiniSlider rotulo="Tamanho do título" icone="tamanho" valor={ler('cardFonteTitulo') || 16} min={12} max={24} onChange={(v) => gravar('cardFonteTitulo', v)} />
           <Cores rotulo="Título" opcoes={CORES_FONTE_TITULO} campo="dot" valor={ler('cardCorFonteTitulo') || 'branco'} onChange={(v) => gravar('cardCorFonteTitulo', v)} />
           <Cores rotulo="Fundo" opcoes={FUNDOS_CARDS} campo="amostra" quadrado valor={ler('cardFundoEstilo') || 'escuro'} onChange={(v) => gravar('cardFundoEstilo', v)} />
-          <Cores rotulo="Borda" opcoes={CORES_LINHA} campo="hex" valor={ler('cardBorda') || 'padrao'} onChange={(v) => gravar('cardBorda', v)} lateral={<MiniSlider rotulo="Largura" valor={ler('cardBordaLargura') ?? 1} min={0} max={10} passo={0.5} onChange={(v) => gravar('cardBordaLargura', v)} />} />
+          <Cores rotulo="Borda" opcoes={CORES_LINHA} campo="hex" valor={ler('cardBorda') || 'padrao'} onChange={(v) => gravar('cardBorda', v)} lateral={<AjustesBorda largura={ler('cardBordaLargura') ?? 1} onLargura={(v) => gravar('cardBordaLargura', v)} lado={ler('cardBordaLado')} onLado={(v) => gravar('cardBordaLado', v)} cor={corLinhaHex(ler('cardBorda'))} />} />
           <Alternar rotulo={<em>I</em>} nome="Itálico" valor={ler('cardItalico')} onChange={(v) => gravar('cardItalico', v)} />
           {temDescricao && <MiniSlider rotulo="Tamanho da descrição" icone="tamanho" valor={ler('cardFonteSubtitulo') || 12} min={9} max={18} onChange={(v) => gravar('cardFonteSubtitulo', v)} />}
           {temDescricao && <Cores rotulo="Descrição" opcoes={CORES_FONTE_SUBTITULO} campo="dot" valor={ler('cardCorFonteSubtitulo') || 'cinza'} onChange={(v) => gravar('cardCorFonteSubtitulo', v)} />}
@@ -1267,11 +1287,12 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-0.5 mr-1">
-              {[[desfazer, podeDesfazer, 'Desfazer (Ctrl+Z)', Undo2], [refazer, podeRefazer, 'Refazer (Ctrl+Y)', Redo2], [() => setShowRecuperar(true), true, 'Recuperar versão da última hora', History]].map(([acao, pode, nome, Icone]) => (
+              {[[desfazer, podeDesfazer, 'Desfazer (Ctrl+Z)', Undo2], [refazer, podeRefazer, 'Refazer (Ctrl+Y)', Redo2]].map(([acao, pode, nome, Icone]) => (
                 <button key={nome} type="button" onClick={acao} disabled={!pode} title={nome} aria-label={nome} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-200 hover:bg-slate-700 disabled:opacity-30 disabled:hover:bg-transparent transition">
                   <Icone className="w-4 h-4" />
                 </button>
               ))}
+              <BotaoVersoes onClick={() => setShowRecuperar(true)} />
             </div>
 
             {/* Botão Modelos Prontos */}
@@ -2872,6 +2893,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       faixa: e.altura, onFaixa: (v) => setCampo(`${l.id}Altura`, v),
                       borda: config[`${l.id}Borda`], onBorda: (v) => setCampo(`${l.id}Borda`, v),
                       bordaLargura: config[`${l.id}BordaLargura`], onBordaLargura: (v) => setCampo(`${l.id}BordaLargura`, v),
+                      bordaLado: config[`${l.id}BordaLado`], onBordaLado: (v) => setCampo(`${l.id}BordaLado`, v),
                       espaco: e.espaco,
                       onEspaco: linhasFinais(config).slice(0, -1).some((x) => x.id === id) ? (v) => setCampo(`${l.id}Espaco`, v) : undefined,
                       italico: config[`${l.id}Italico`], onItalico: (v) => setCampo(`${l.id}Italico`, v),

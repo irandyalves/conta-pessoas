@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
+import { corLinhaHex } from '../utils/estilos';
+import { AjustesBorda } from './Controles';
 import { Eye, EyeOff, Plus, Trash2 } from 'lucide-react';
 import { alturaFaixa, CORES_LINHA, CORES_TEXTO_LINHAS, FAIXA_MAX, FAIXA_MIN, FUNDOS_CAPTION } from '../utils/estilos';
 import { Alinhamento, Alternar, BarraFormato, Cores, MiniSlider, QuestaoArrastavel, SeletorFonte } from './Controles';
@@ -10,7 +12,7 @@ import { Alinhamento, Alternar, BarraFormato, Cores, MiniSlider, QuestaoArrastav
  * Cada linha mostra só os controles cujo "on..." foi informado:
  * { rotulo, texto?, onTexto?, multilinha?, tamanho, min, max, onTamanho, familia, onFamilia, cor, onCor, bold, onBold,
  *   italico, onItalico, caixa, onCaixa, alinhamento, onAlinhamento, fundo, onFundo, faixa, onFaixa, borda, onBorda,
- *   bordaLargura, onBordaLargura, espaco, onEspaco, aoLado (do texto), extra (fim da barra) e abaixo = controles próprios da linha }
+ *   bordaLargura, onBordaLargura, bordaLado, onBordaLado, espaco, onEspaco, aoLado (do texto), extra (fim da barra) e abaixo = controles próprios da linha }
  * Altura fica no cartão do Fundo e largura no da Borda. onEspaco: distância ENTRE esta linha e a próxima.
  * onOrdem (opcional): liga o arrastar e soltar das linhas que têm "chave"; recebe as chaves visíveis na ordem nova.
  * slotAcoes: elemento do cabeçalho (linha do entalhe) que recebe os botões de adicionar.
@@ -86,7 +88,7 @@ export default function EstiloLinhasTitulo({ linhas, onOrdem, topo = null, slotA
                 <Cores
                   rotulo="Borda" opcoes={CORES_LINHA} campo="hex" valor={l.borda || 'padrao'} onChange={l.onBorda}
                   desativado={temFundo ? '' : 'Escolha um fundo para poder usar a borda'}
-                  lateral={<MiniSlider rotulo="Largura" valor={l.bordaLargura ?? 1} min={0} max={10} passo={0.5} onChange={l.onBordaLargura} />}
+                  lateral={<AjustesBorda largura={l.bordaLargura ?? 1} onLargura={l.onBordaLargura} lado={l.bordaLado} onLado={l.onBordaLado} cor={corLinhaHex(l.borda)} />}
                 />
               )}
               {l.onAlinhamento && <Alinhamento valor={l.alinhamento} onChange={l.onAlinhamento} />}
