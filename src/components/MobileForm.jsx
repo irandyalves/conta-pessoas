@@ -1150,7 +1150,7 @@ export default function MobileForm({ preview = false }) {
                 >
                   <Linha
                     style={{ fontSize: `${l.tamanho}px`, lineHeight: l.entrelinha }}
-                    className={`${pesoFonte(l.bold, !l.texto)} ${caixaAlta(l.caixa)} whitespace-pre-line ${getCorTextoLinhaClass(l.cor)}`}
+                    className={`${pesoFonte(l.bold, !l.texto)} ${caixaAlta(l.maiusculas)} whitespace-pre-line ${getCorTextoLinhaClass(l.cor)}`}
                   >
                     {l.conteudo}
                   </Linha>

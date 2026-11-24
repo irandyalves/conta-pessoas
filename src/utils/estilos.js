@@ -226,7 +226,7 @@ export const linhasCapa = (cfg = {}) => {
       tamanho: Number(cfg[`${l.id}Tamanho`]) || l.tamanho,
       cor: cfg[`${l.id}Cor`] || l.cor,
       bold: cfg[`${l.id}Bold`],
-      caixa: cfg[`${l.id}Caixa`],
+      maiusculas: cfg[`${l.id}Caixa`] === true,
       alinhamento: cfg[`${l.id}Alinhamento`] || cfg.capaAlinhamento || 'center',
       espaco: Number(cfg[`${l.id}Espaco`] ?? CAPA_ESPACO_PADRAO),
       entrelinha: l.texto ? Math.max(1.12, 1.6 * aperto) : Math.max(1.05, 1.25 * aperto),
