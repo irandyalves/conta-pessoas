@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   Church, 
   Users, 
@@ -504,6 +504,30 @@ export default function MobileForm({ preview = false }) {
     (p1SlideIndex + 1) * cardsPorTela
   );
 
+  // Ao abrir uma subpergunta (ex.: "Outro") perto do rodapé, a tela sobe sozinha até ela ficar visível
+  const cabecalhoRef = useRef(null);
+  const ultimoToqueRef = useRef(0);
+  const trocaTelaRef = useRef(0);
+  useEffect(() => { trocaTelaRef.current = Date.now(); }, [currentStep, jaClicouComecar]);
+  useEffect(() => {
+    const aoTocar = () => { ultimoToqueRef.current = Date.now(); };
+    window.addEventListener('pointerdown', aoTocar, true);
+    return () => window.removeEventListener('pointerdown', aoTocar, true);
+  }, []);
+  const mostrarGaveta = useCallback((el) => {
+    if (!el) return;
+    const agora = Date.now();
+    // só quando a pessoa acabou de tocar (não ao entrar na tela com a resposta já aberta)
+    if (agora - ultimoToqueRef.current > 1500 || agora - trocaTelaRef.current < 700) return;
+    setTimeout(() => {
+      const bloco = (el.parentElement || el).getBoundingClientRect();
+      const topo = cabecalhoRef.current && getComputedStyle(cabecalhoRef.current).position === 'sticky' ? cabecalhoRef.current.offsetHeight : 0;
+      const rodape = 100;
+      const subir = Math.min(el.getBoundingClientRect().bottom + rodape - window.innerHeight, bloco.top - topo - 10);
+      if (subir > 4) window.scrollBy({ top: subir, behavior: 'smooth' });
+    }, 60);
+  }, []);
+
   // Telas extras ativas configuradas pelo admin
   const telasExtrasAtivas = (questionsConfig?.telasExtras || []).filter((t) => t.ativa !== false);
 
@@ -566,7 +590,7 @@ export default function MobileForm({ preview = false }) {
     const selectedChecks = paraLista(valAtual);
 
     return (
-      <div className="p-4 rounded-2xl bg-slate-900/95 border-2 border-amber-500/50 shadow-xl space-y-3 animate-fade-in text-left">
+      <div ref={mostrarGaveta} className="p-4 rounded-2xl bg-slate-900/95 border-2 border-amber-500/50 shadow-xl space-y-3 animate-fade-in text-left">
         <div className="flex items-center justify-between gap-2">
           <p className="text-xs sm:text-sm font-black text-amber-300 flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
@@ -1073,6 +1097,14 @@ export default function MobileForm({ preview = false }) {
     );
   }
 
+  // Cabeçalho preso no alto: só onde há título (não na capa nem em página com várias perguntas)
+  const cabecalhoTravado = questionsConfig?.travarCabecalho !== false &&
+    !(currentStep === 'p1' && questionsConfig?.mostrarBotaoComecar !== false && !jaClicouComecar) &&
+    !(currentStep.startsWith('extra_') && (() => {
+      const i = parseInt(currentStep.split('_')[1], 10);
+      return continuaNaMesmaPagina(telasExtrasAtivas[i], telasExtrasAtivas[i + 1]);
+    })());
+
   // ==============================================================
   // FLUXO PRINCIPAL: TELAS 1, 2, 3, 4, 5
   // ==============================================================
@@ -1082,7 +1114,10 @@ export default function MobileForm({ preview = false }) {
       {/* ============================================================ */}
       {/* CABEÇALHO DA ETAPA ATUAL                                     */}
       {/* ============================================================ */}
-      <header className="w-full pt-2 pb-2 text-center">
+      <header
+        ref={cabecalhoRef}
+        className={`text-center pb-2 ${cabecalhoTravado ? 'sticky top-0 z-20 bg-slate-950 -mx-4 px-4 -mt-4 pt-6 sm:-mx-6 sm:px-6 sm:-mt-6 sm:pt-8 shadow-lg shadow-slate-950/60' : 'w-full pt-2'}`}
+      >
         {/* TÍTULO DA CAPA (QUANDO BOTÃO COMEÇAR ESTÁ ATIVO E AINDA NÃO CLICOU) */}
         {currentStep === 'p1' && questionsConfig.mostrarBotaoComecar !== false && !jaClicouComecar && (
           <div className="mt-2 pt-3 flex flex-col">

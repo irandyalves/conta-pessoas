@@ -1417,6 +1417,20 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       <Campo rotulo="Texto do botão" valor={config.pergunta1BotaoComecarTexto ?? 'COMEÇAR'} onChange={(v) => setCampo('pergunta1BotaoComecarTexto', v)} placeholder="COMEÇAR" />
                     )}
                   </Secao>
+
+                  <Secao titulo="Todas as páginas">
+                    <Chave rotulo="Travar cabeçalho" descricao="O título fica preso no alto do celular enquanto a pessoa rola a página." valor={config.travarCabecalho !== false} onChange={(v) => setCampo('travarCabecalho', v)} />
+                  </Secao>
+
+                  {EfeitosBotao({
+                    titulo: 'Botão Avançar',
+                    descricao: 'Vale para todas as páginas.',
+                    ler: (k) => config[`avancar${k}`],
+                    gravar: (k, v) => setCampo(`avancar${k}`, v),
+                    alturaPadrao: 58,
+                    alturaMax: 80,
+                    raioPadrao: 16
+                  })}
                 </div>
               )}
 
@@ -1429,7 +1443,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     valor={subAtualP1}
                     onChange={setSubTabTela1}
                     opcoes={[
-                      { id: 'pergunta', label: 'Textos' },
+                      { id: 'pergunta', label: 'Títulos' },
                       { id: 'opcoes', label: rotuloPerguntas(cardsAtivosP1.length) },
                       ...(cardsAtivosP1.length > 0 ? [{ id: 'aparencia', label: 'Aparência dos cards' }] : [])
                     ]}
@@ -1860,15 +1874,15 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 const membros = posLigada < 0 ? [extraIndex] : telasLigadas.slice(iniGrupo, fimGrupo + 1).map((t) => (config.telasExtras || []).indexOf(t));
                 const ehTexto = ['texto', 'texto_curto'].includes(telaAlvo.tipo);
                 const temLista = emGrupo || ehTexto;
-                const temBotaoAvancar = !ehCards;
+                const temEfeitos = telaAlvo.tipo === 'grade';
                 const temAparencia = ehCards && cardsAtivos.length > 0;
                 // Data, hora e estrelas não têm nada para ajustar no campo
                 const semCampo = ehTexto || ['data', 'hora', 'rating'].includes(telaAlvo.tipo);
                 const subAtual = (() => {
                   if (subTabExtra === 'opcoes' && semCampo) return temLista ? 'lista' : 'pergunta';
                   if (subTabExtra === 'lista' && !temLista) return semCampo ? 'pergunta' : 'opcoes';
-                  if (subTabExtra === 'aparencia' && !temAparencia) return temBotaoAvancar ? 'efeitos' : 'pergunta';
-                  if (subTabExtra === 'efeitos' && !temBotaoAvancar) return temAparencia ? 'aparencia' : 'pergunta';
+                  if (subTabExtra === 'aparencia' && !temAparencia) return temEfeitos ? 'efeitos' : 'pergunta';
+                  if (subTabExtra === 'efeitos' && !temEfeitos) return temAparencia ? 'aparencia' : 'pergunta';
                   return subTabExtra;
                 })();
 
@@ -1921,7 +1935,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       onChange={setSubTabExtra}
                       opcoes={[
                         ...(temLista ? [{ id: 'lista', label: rotuloPerguntas(membros.length) }] : []),
-                        { id: 'pergunta', label: 'Textos' },
+                        { id: 'pergunta', label: 'Títulos' },
                         ...(semCampo ? [] : [{
                           id: 'opcoes',
                           label: ['texto', 'texto_curto', 'data', 'hora', 'slider', 'rating'].includes(telaAlvo.tipo)
@@ -1929,7 +1943,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             : temLista ? `Itens da Tela ${numTela} (${cardsAtivos.length})` : rotuloPerguntas(cardsAtivos.length)
                         }]),
                         ...(temAparencia ? [{ id: 'aparencia', label: 'Aparência dos cards' }] : []),
-                        ...(temBotaoAvancar ? [{ id: 'efeitos', label: 'Efeitos' }] : [])
+                        ...(temEfeitos ? [{ id: 'efeitos', label: 'Efeitos' }] : [])
                       ]}
                     />
 
@@ -2016,15 +2030,6 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                           alturaPadrao: 38,
                           alturaMax: 72,
                           raioPadrao: 12
-                        })}
-                        {EfeitosBotao({
-                          titulo: 'Botão Avançar',
-                          descricao: 'Vale para todas as páginas.',
-                          ler: (k) => config[`avancar${k}`],
-                          gravar: (k, v) => setCampo(`avancar${k}`, v),
-                          alturaPadrao: 58,
-                          alturaMax: 80,
-                          raioPadrao: 16
                         })}
                         {BarraFormatacao({ ehP1: false, extraIndex })}
                       </div>
@@ -2575,7 +2580,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     valor={subTabTela2}
                     onChange={setSubTabTela2}
                     opcoes={[
-                      { id: 'pergunta', label: 'Textos' },
+                      { id: 'pergunta', label: 'Títulos' },
                       { id: 'botoes', label: 'Botões de quantidade' },
                       { id: 'individual', label: 'Botão "Só eu"' }
                     ]}
