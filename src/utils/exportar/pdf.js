@@ -245,6 +245,8 @@ export function gerarPdf({ presencas, config, titulo, periodo, fontes }) {
       if (!p.respondentes) {
         fonte(9.5, false, COR.suave);
         blocos(p, [{ h: 5, desenhar: () => { fonte(9.5, false, COR.suave); escrever(['Nenhuma resposta nesta pergunta.'], M.e, y, 9.5); } }]);
+      } else if (p.pessoal) {
+        blocos(p, [{ h: 5, desenhar: () => { fonte(9.5, false, COR.suave); escrever(['Dados pessoais não entram no PDF. Estão na planilha, na aba Respostas.'], M.e, y, 9.5); } }]);
       } else if (p.tipo === 'grade') desenharGrade(p);
       else if (p.tipo === 'texto') desenharTextos(p);
       else blocos(p, linhasBarras(p));

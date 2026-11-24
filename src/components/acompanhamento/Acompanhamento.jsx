@@ -54,7 +54,7 @@ const VARIANTES = {
   rosca: { nome: 'Rosca', Icone: Donut }
 };
 
-function Palco({ pergunta: p, modo, variante, novosIds, onFalha3D }) {
+function Palco({ pergunta: p, cheia, modo, variante, novosIds, onFalha3D }) {
   const [destaque, setDestaque] = useState(null);
   useEffect(() => setDestaque(null), [p.id]);
   const itens = useMemo(() => (p.opcoes ? itensDe(p) : []), [p]);
@@ -73,6 +73,7 @@ function Palco({ pergunta: p, modo, variante, novosIds, onFalha3D }) {
     return { tipo: 'colunas', itens: itens.map((i, k) => ({ ...i, rotulo: String(i.n), curto: numerado ? String(k + 1) : '' })) };
   }, [p, modo, variante, itens, numerado]);
 
+  if (p.pessoal && cheia) return <p className="ac-vazio">Dados pessoais não aparecem em tela cheia.<br />Saia da tela cheia ou baixe a planilha para ver.</p>;
   if (p.tipo === 'texto') return <Comentarios pergunta={p} novosIds={novosIds} />;
   if (!p.respondentes) return <p className="ac-vazio">Ninguém respondeu esta pergunta ainda.<br />O gráfico se monta sozinho com a primeira resposta.</p>;
 
@@ -178,9 +179,12 @@ export default function Acompanhamento({ presencas, config, titulo, periodo, ses
   useEffect(() => { const t = setInterval(() => setAgora(Date.now()), 1000); return () => clearInterval(t); }, []);
   useEffect(() => {
     if (!girando || perguntas.length < 2) return undefined;
-    const t = setTimeout(() => ir(pos + 1), GIRO_MS);
+    // nome, e-mail e telefone ficam fora do giro
+    let passo = 1;
+    while (passo < perguntas.length && perguntas[(pos + passo) % perguntas.length].pessoal) passo++;
+    const t = setTimeout(() => ir(pos + passo), GIRO_MS);
     return () => clearTimeout(t);
-  }, [girando, pos, ir, perguntas.length]);
+  }, [girando, pos, ir, perguntas]);
   useEffect(() => {
     const f = () => setCheia(document.fullscreenElement === raiz.current);
     document.addEventListener('fullscreenchange', f);
@@ -272,7 +276,7 @@ export default function Acompanhamento({ presencas, config, titulo, periodo, ses
             </div>
             {girando && <span className="ac-giro" key={`${p.id}-giro`} style={{ animationDuration: `${GIRO_MS}ms` }} />}
             <div className="ac-palco-area" key={`${p.id}-${modoReal}-${varReal}`}>
-              <Palco pergunta={p} modo={modoReal} variante={varReal} novosIds={novosIds} onFalha3D={() => setSem3D(true)} />
+              <Palco pergunta={p} cheia={cheia} modo={modoReal} variante={varReal} novosIds={novosIds} onFalha3D={() => setSem3D(true)} />
             </div>
           </div>
 
@@ -284,7 +288,7 @@ export default function Acompanhamento({ presencas, config, titulo, periodo, ses
                   <li key={item.id} className={novosIds.has(item.id) ? 'ac-novo' : ''}>
                     <time>{fmtHora(item.criadoEm)}</time>
                     <span>{resumoDe(item)}</span>
-                    {(item.respostas || []).some((r) => perguntas.some((x) => x.id === r?.telaId && x.tipo === 'texto')) && <MessageSquareText size={14} aria-label="Com comentário" />}
+                    {(item.respostas || []).some((r) => perguntas.some((x) => x.id === r?.telaId && x.tipo === 'texto' && !x.pessoal)) && <MessageSquareText size={14} aria-label="Com comentário" />}
                   </li>
                 ))}
               </ol>

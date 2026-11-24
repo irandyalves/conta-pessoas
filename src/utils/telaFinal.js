@@ -79,6 +79,7 @@ export function nomeParaCampo(titulo, campos = []) {
   let base = nomeLimpo(titulo).replace(/\s*\(.*\)\s*$/, '') || 'Campo';
   if (/e-?mail/i.test(base)) base = 'E-mail';
   else if (/\bnome\b/i.test(base)) base = 'Nome';
+  else if (/telefone|celular|whats/i.test(base)) base = 'Telefone';
   else if (base.length > 24) base = `${base.slice(0, 24).replace(/\s+\S*$/, '')}`;
   let nome = base;
   for (let n = 2; campos.some((c) => c.nome.toLowerCase() === nome.toLowerCase()); n++) nome = `${base} ${n}`;
@@ -116,4 +117,4 @@ export function preencher(texto, campos, valorDe) {
 }
 
 // O que aparece na prévia do editor, onde ninguém respondeu
-export const exemploDe = (campo) => (/e-?mail/i.test(campo.nome) ? 'nome@email.com' : /nome/i.test(campo.nome) ? 'Maria Silva' : campo.nome);
+export const exemploDe = (campo) => (/e-?mail/i.test(campo.nome) ? 'nome@email.com' : /nome/i.test(campo.nome) ? 'Maria Silva' : /telefone/i.test(campo.nome) ? '(61) 99999-9999' : campo.nome);

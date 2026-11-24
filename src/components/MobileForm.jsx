@@ -45,6 +45,7 @@ import { configSeta } from '../utils/setas';
 import Rosto from './Rosto';
 import BarraProgresso from './BarraProgresso';
 import TelaFinal from './TelaFinal';
+import { atributosCampo, erroDeFormato, mascaraTelefone, mensagemFalta, usaMaiusculas, valorGravado } from '../utils/campoTexto';
 import { camposDoTexto, exemploDe, linhasFinais } from '../utils/telaFinal';
 import { carregarFonteTema, classeTema } from '../utils/temas';
 import { carregarFontes, fontesEmUso } from '../utils/fontes';
@@ -1599,7 +1600,11 @@ export default function MobileForm({ preview = false }) {
             const opcoesAtivas = (tela.opcoes || []).filter(o => o.ativo !== false);
             const selectedChecks = paraLista(valAtual);
             // Obrigatória e ainda sem resposta: borda vermelha suave
-            const bordaCampo = tela.obrigatorio && !temValor(valAtual) ? 'border-rose-400/50' : 'border-slate-700';
+            // some sozinho assim que o campo fica certo
+            const erroCampo = campoObrigatorioErro === tela.id
+              ? erroDeFormato(tela, valAtual) || (temValor(valAtual) ? '' : mensagemFalta(tela, [tela.titulo1 || tela.titulo, tela.titulo2].filter(Boolean).join(' ')))
+              : '';
+            const bordaCampo = erroCampo ? 'campo-erro' : tela.obrigatorio && !temValor(valAtual) ? 'border-rose-400/50' : 'border-slate-700';
             const defaultSliderVal = Math.round(((tela.sliderMin ?? 0) + (tela.sliderMax ?? 10)) / 2);
             return (
               <div key={tela.id} id={`campo_${tela.id}`} className={`scroll-mt-4 ${cabeTudo ? 'flex-1 flex flex-col' : ''}`}>
@@ -1624,18 +1629,28 @@ export default function MobileForm({ preview = false }) {
                       onChange={(e) => setTextos((prev) => ({ ...prev, [valKey]: e.target.value }))}
                       placeholder={tela.placeholder || 'Digite sua resposta aqui...'}
                       style={{ borderRadius: cantosCard(questionsConfig, tela) }}
-                      className={`t-campo w-full bg-slate-950 border ${bordaCampo} focus:border-amber-400 rounded-2xl ${cabeTudo ? 'flex-1 min-h-[52px] px-4 py-2.5' : 'p-4'} text-sm sm:text-base text-white placeholder-slate-500 focus:outline-none transition resize-none shadow-inner`}
+                      className={`t-campo w-full bg-slate-950 border ${bordaCampo} focus:border-amber-400 rounded-2xl ${usaMaiusculas(tela) ? 'uppercase placeholder:normal-case' : ''} ${cabeTudo ? 'flex-1 min-h-[52px] px-4 py-2.5' : 'p-4'} text-sm sm:text-base text-white placeholder-slate-500 focus:outline-none transition resize-none shadow-inner`}
                     />
                   )}
 
                   {tela.tipo === 'texto_curto' && (
                     <input
-                      type="text"
+                      {...atributosCampo(tela)}
                       value={valAtual}
-                      onChange={(e) => setTextos((prev) => ({ ...prev, [valKey]: e.target.value }))}
+                      aria-invalid={Boolean(erroCampo)}
+                      aria-describedby={erroCampo ? `erro_${tela.id}` : undefined}
+                      onChange={(e) => {
+                        const el = e.currentTarget;
+                        // a máscara só entra digitando no fim: corrigir no meio não faz o cursor pular
+                        const noFim = el.selectionStart === el.value.length;
+                        const apagando = el.value.length < String(valAtual).length;
+                        const v = tela.formatoCampo === 'telefone' && noFim && !apagando ? mascaraTelefone(el.value) : el.value;
+                        setTextos((prev) => ({ ...prev, [valKey]: v }));
+                      }}
+                      onBlur={() => { if (tela.formatoCampo) setTextos((prev) => ({ ...prev, [valKey]: valorGravado(tela, prev[valKey] ?? '') })); }}
                       placeholder={tela.placeholder || 'Digite sua resposta curta...'}
                       style={{ borderRadius: cantosCard(questionsConfig, tela) }}
-                      className={`t-campo w-full bg-slate-950 border ${bordaCampo} focus:border-amber-400 rounded-2xl p-4 text-sm sm:text-base text-white placeholder-slate-500 focus:outline-none transition shadow-inner`}
+                      className={`${usaMaiusculas(tela) ? 'uppercase placeholder:normal-case' : ''} t-campo w-full bg-slate-950 border ${bordaCampo} focus:border-amber-400 rounded-2xl p-4 text-sm sm:text-base text-white placeholder-slate-500 focus:outline-none transition shadow-inner`}
                     />
                   )}
 
@@ -1864,11 +1879,11 @@ export default function MobileForm({ preview = false }) {
                     </div>
                   )}
                 </div>
-                {campoObrigatorioErro === tela.id && (
-                  <div className="mt-3 p-3 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-300 text-xs font-bold flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
-                    <span>Por favor, preencha ou selecione uma resposta antes de continuar.</span>
-                  </div>
+                {erroCampo && (
+                  <p id={`erro_${tela.id}`} role="alert" className="campo-erro-msg">
+                    <AlertTriangle className="w-4 h-4" aria-hidden="true" />
+                    <span>{erroCampo}</span>
+                  </p>
                 )}
               </div>
             );
@@ -1878,12 +1893,13 @@ export default function MobileForm({ preview = false }) {
               const v = dissertativaTextos[t.id] ?? '';
               const dsv = Math.round(((t.sliderMin ?? 0) + (t.sliderMax ?? 10)) / 2);
               // só os estilos que já mostram um valor (slide, número, carinhas, termômetro) gravam o valor do meio se não tocar
-              return t.tipo === 'slider' && v === '' && ESCALA_COM_VALOR_INICIAL.includes(t.estiloEscala || 'slider') ? `${dsv}${t.sliderUnidade || ''}` : v;
+              return t.tipo === 'slider' && v === '' && ESCALA_COM_VALOR_INICIAL.includes(t.estiloEscala || 'slider') ? `${dsv}${t.sliderUnidade || ''}` : valorGravado(t, v);
             };
 
             // Grade obrigatória só está respondida com TODOS os itens marcados
             const itensFaltando = (t) => (t.tipo !== 'grade' ? [] : (t.opcoes || []).filter((o) => o.ativo !== false).map((_, i) => i).filter((i) => !temValor(dissertativaTextos[`${t.id}__item_${i}`])));
-            const faltaResposta = (t) => t.obrigatorio && (t.tipo === 'grade' ? itensFaltando(t).length > 0 : !temValor(valorFinal(t)));
+            const faltaResposta = (t) => Boolean(erroDeFormato(t, dissertativaTextos[t.id])) ||
+              (t.obrigatorio && (t.tipo === 'grade' ? itensFaltando(t).length > 0 : !temValor(valorFinal(t))));
             const faltaObrigatoria = grupo.some(faltaResposta);
 
             return (
@@ -1918,9 +1934,10 @@ export default function MobileForm({ preview = false }) {
                 />
                 <button
                   type="button"
-                  onClick={() => comFeedback(`avancar_${tela.id}`, () => {
-                    // Valida TODAS as perguntas desta página (estrelas não tocadas não viram "5 estrelas")
+                  onClick={() => {
+                    // Valida TODAS as perguntas desta página, NA HORA do toque: só assim o celular aceita pôr o cursor no campo
                     const faltando = grupo.find(faltaResposta);
+                    if (faltando) { try { navigator.vibrate?.(45); } catch (e) {} }
                     if (faltando?.tipo === 'grade') {
                       const itens = itensFaltando(faltando);
                       setCampoObrigatorioErro(null);
@@ -1930,16 +1947,20 @@ export default function MobileForm({ preview = false }) {
                     }
                     if (faltando) {
                       setCampoObrigatorioErro(faltando.id);
-                      document.getElementById(`campo_${faltando.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      const bloco = document.getElementById(`campo_${faltando.id}`);
+                      bloco?.querySelector('input, textarea, select, button')?.focus({ preventScroll: true });
+                      bloco?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                       return;
                     }
-                    setTextos((prev) => {
-                      const novo = { ...prev };
-                      grupo.forEach((t) => { novo[t.id] = valorFinal(t); });
-                      return novo;
+                    comFeedback(`avancar_${tela.id}`, () => {
+                      setTextos((prev) => {
+                        const novo = { ...prev };
+                        grupo.forEach((t) => { novo[t.id] = valorFinal(t); });
+                        return novo;
+                      });
+                      avancarParaProxima(null);
                     });
-                    avancarParaProxima(null);
-                  })}
+                  }}
                   style={estiloBotao(lerGeral(questionsConfig, tela, 'avancar'), faltaObrigatoria)}
                   className={`t-avancar ${faltaObrigatoria ? 't-falta' : ''} w-3/4 py-4 px-4 rounded-2xl font-black text-base border flex items-center justify-center gap-2 transition-colors ${faltaObrigatoria ? 'bg-red-900 border-red-800 text-white' : 'bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 shadow-xl shadow-amber-950/60 border-amber-300'} ${clicado === `avancar_${tela.id}` ? 'efeito-acender' : ''}`}
                 >

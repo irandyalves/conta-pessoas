@@ -39,6 +39,7 @@ const plural = (n, um, varios) => `${n} ${n === 1 ? um : varios}`;
 
 export function destaqueDe(p) {
   if (!p.respondentes) return 'Sem respostas';
+  if (p.pessoal) return plural(p.textos.length, 'preenchido', 'preenchidos') + ' (na aba Respostas)';
   if (p.tipo === 'texto') return plural(p.textos.length, 'comentário', 'comentários');
   if (p.tipo === 'grade') return p.media !== null ? `Média geral ${fmtNum(p.media)}` : `${p.itens.length} itens`;
   if (p.tipo === 'nota') return p.media !== null ? `Média ${fmtNum(p.media)}${p.unidadeMedia ? ` ${p.unidadeMedia}` : ''}` : '';
@@ -121,7 +122,7 @@ export function montarPlanilha({ presencas, config, titulo, periodo }, comGrafic
   }
 
   // ---------- Comentários ----------
-  const textos = dados.perguntas.filter((p) => p.tipo === 'texto' && p.textos.length);
+  const textos = dados.perguntas.filter((p) => p.tipo === 'texto' && !p.pessoal && p.textos.length);
   if (textos.length) {
     const aba = { nome: 'Comentários', larguras: [46, 90, 13, 10], linhas: [], mesclas: [], congelar: 1, filtro: true, paisagem: true, repetir: 1 };
     aba.linhas.push({ cels: [c('Pergunta', 'cabecalhoEsq'), c('Comentário', 'cabecalhoEsq'), c('Data', 'cabecalho'), c('Hora', 'cabecalho')] });

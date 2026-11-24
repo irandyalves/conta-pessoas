@@ -4,6 +4,7 @@
 // para os gráficos, o PDF e as planilhas. Tudo sai daqui: tela e arquivos sempre batem.
 // ==========================================
 import { parseScaleLegendItems } from './estilos';
+import { ehDadoPessoal } from './campoTexto';
 
 export const limpar = (t) => String(t ?? '').replace(/\s+/g, ' ').trim();
 const TIPOS_ESCOLHA = ['cards', 'dropdown', 'radio'];
@@ -236,7 +237,7 @@ export function consolidar(presencas = [], config = null) {
     else if (tipo === 'rating') perguntas.push(montar(base, 'nota', entradas, { min: 1, max: 5, passo: 1, unidade: (v) => (v === 1 ? ' estrela' : ' estrelas') }));
     else if (tipo === 'slider') perguntas.push(montar(base, 'nota', entradas, { min: Number(t.sliderMin ?? 0), max: Number(t.sliderMax ?? 10), passo: Number(t.sliderStep) || 1, unidade: limpar(t.sliderUnidade) }));
     else if (tipo === 'data' || tipo === 'hora') perguntas.push(montar(base, 'valor', entradas));
-    else perguntas.push(montar(base, 'texto', entradas));
+    else perguntas.push({ ...montar(base, 'texto', entradas), pessoal: ehDadoPessoal(t, base.titulo) });
     addGavetas(t.id, t.opcoes);
   });
 

@@ -59,6 +59,7 @@ import ImportadorIA from './ImportadorIA';
 import IconeEspera, { ICONES_ESPERA } from './IconeEspera';
 import PreviewCelular from './PreviewCelular';
 import CamposFinais from './CamposFinais';
+import { FORMATOS_CAMPO, formatoPorId } from '../utils/campoTexto';
 import { chaveTamanho, estiloLinhaFinal, LINHAS_FINAL } from '../utils/telaFinal';
 import BarraProgresso, { CORES_PROGRESSO, CORES_PROGRESSO_LAYOUT, ESTILOS_PROGRESSO, usaDuasCores } from './BarraProgresso';
 import { Columns2, Rows3, Smile as IconeRosto, WrapText } from 'lucide-react';
@@ -513,23 +514,30 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
     indices.forEach((i, k) => { telas[i] = ordem[k]; });
     return { ...c, telasExtras: comPagina(telas, indices, primeira) };
   });
-  const adicionarPergunta = (depoisDe) => setConfig((c) => {
+  const adicionarPergunta = (depoisDe, formato = '') => setConfig((c) => {
     const base = c.telasExtras[depoisDe];
+    const f = formatoPorId(formato);
     const nova = {
       ...base,
       id: `tela_${Date.now()}`,
-      tipo: 'texto',
-      titulo: 'Nova pergunta',
-      titulo1: 'Nova pergunta',
+      tipo: formato ? 'texto_curto' : 'texto',
+      titulo: f.titulo || 'Nova pergunta',
+      titulo1: f.titulo || 'Nova pergunta',
       titulo2: '',
       titulo3: '',
       subtitulo: '',
+      placeholder: f.dica || '',
+      formatoCampo: formato,
+      maiusculas: false,
       opcoes: [],
       obrigatorio: false,
       ativa: true,
       mesmaPagina: true
     };
     const telas = [...c.telasExtras];
+    // a pergunta seguinte que já estava nesta página continua nela
+    const seguinte = telas[depoisDe + 1];
+    if (seguinte && continuaNaMesmaPagina(base, seguinte)) telas[depoisDe + 1] = { ...seguinte, mesmaPagina: true };
     telas.splice(depoisDe + 1, 0, nova);
     return { ...c, telasExtras: telas };
   });
@@ -2101,8 +2109,19 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
                     {subAtual === 'lista' && (
                       <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-semibold text-slate-200">{rotuloPerguntas(membros.length)} nesta página</span>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-xs font-semibold text-slate-200 mr-auto">{rotuloPerguntas(membros.length)} nesta página</span>
+                          {FORMATOS_CAMPO.filter((f) => f.id).map((f) => (
+                            <button
+                              key={f.id}
+                              type="button"
+                              title={`Coloca o campo ${f.label} nesta mesma página`}
+                              onClick={() => adicionarPergunta(membros[membros.length - 1], f.id)}
+                              className="px-2.5 py-1.5 rounded-xl text-xs font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 hover:text-white transition flex items-center gap-1"
+                            >
+                              <Plus className="w-3.5 h-3.5" /> {f.label}
+                            </button>
+                          ))}
                           <button
                             type="button"
                             onClick={() => adicionarPergunta(membros[membros.length - 1])}
@@ -2137,6 +2156,21 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                     <option value="texto">Campo longo</option>
                                     <option value="texto_curto">Campo de uma linha</option>
                                   </select>
+                                  {['texto', 'texto_curto'].includes(t.tipo) && (
+                                    <select
+                                      value={t.formatoCampo || ''}
+                                      aria-label="Formato da resposta"
+                                      title="Formato da resposta"
+                                      onChange={(e) => {
+                                        const f = e.target.value;
+                                        set('formatoCampo')(f);
+                                        if (f) set('tipo')('texto_curto');
+                                      }}
+                                      className="bg-slate-950/60 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-200"
+                                    >
+                                      {FORMATOS_CAMPO.map((f) => <option key={f.id} value={f.id}>{f.label}</option>)}
+                                    </select>
+                                  )}
                                   <button
                                     type="button"
                                     onClick={() => { setActiveTab(`extra_${iTela}`); setSubTabExtra('pergunta'); }}
@@ -2160,6 +2194,9 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                 />
                                 {['texto', 'texto_curto'].includes(t.tipo) && (
                                   <Campo rotulo="Dica dentro do campo" valor={t.placeholder} onChange={set('placeholder')} placeholder="Digite sua resposta aqui..." />
+                                )}
+                                {['texto', 'texto_curto'].includes(t.tipo) && !['email', 'telefone'].includes(t.formatoCampo) && (
+                                  <Chave rotulo={t.formatoCampo === 'nome' ? 'Nome sempre em MAIÚSCULAS' : 'Resposta sempre em MAIÚSCULAS'} descricao="Mesmo que a pessoa digite em minúsculas, aparece e fica gravado em maiúsculas." valor={Boolean(t.maiusculas)} onChange={set('maiusculas')} />
                                 )}
                                 {t.tipo === 'texto' && membros.length === 1 && (
                                   <Deslizante rotulo="Altura do campo" valor={t.linhas || 4} min={2} max={10} unidade=" linhas" onChange={set('linhas')} />
