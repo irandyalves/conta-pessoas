@@ -1,5 +1,5 @@
 import React from 'react';
-import { caixaAlta, corTextoHex, getAlinhamentoClass } from '../utils/estilos';
+import { caixaAlta, corTextoHex, faixaEstilo, fonteEBorda, getAlinhamentoClass, getCaptionFundoClass } from '../utils/estilos';
 import { familiaCss } from '../utils/fontes';
 import { chaveCampo, linhasFinais, preencher } from '../utils/telaFinal';
 
@@ -12,6 +12,7 @@ export default function TelaFinal({ config, valorDe, children }) {
         const Tag = l.h1 ? 'h1' : 'p';
         const partes = preencher(l.texto, campos, valorDe);
         if (!partes.length) return null;
+        const fundo = getCaptionFundoClass(l.fundo);
         return (
           <React.Fragment key={l.id}>
             {l.divisor && <div className="border-t border-slate-800/80" style={{ marginTop: l.antes / 2 }} aria-hidden="true" />}
@@ -19,12 +20,14 @@ export default function TelaFinal({ config, valorDe, children }) {
               style={{
                 marginTop: l.divisor ? l.antes / 2 : l.antes,
                 fontSize: `${l.tamanho}px`,
+                ...faixaEstilo(l.fundo, l.altura),
+                ...fonteEBorda(config, l.id, Boolean(fundo), false),
                 fontFamily: familiaCss(l.familia),
                 color: corTextoHex(l.cor),
                 fontWeight: l.bold ? undefined : 400,
                 overflowWrap: 'anywhere'
               }}
-              className={`${l.cls} whitespace-pre-line ${getAlinhamentoClass(l.alinhamento)} ${l.caixa ? 'uppercase' : caixaAlta(l.caixa)}`}
+              className={`${l.cls} ${fundo} whitespace-pre-line ${getAlinhamentoClass(l.alinhamento)} ${l.caixa ? 'uppercase' : caixaAlta(l.caixa)}`}
             >
               {partes.map((p, i) => {
                 if (typeof p === 'string') return p;

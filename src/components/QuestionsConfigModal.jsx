@@ -2766,6 +2766,10 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       bold: e.bold, onBold: (v) => setCampo(`${l.id}Bold`, v),
                       caixa: e.caixa, onCaixa: (v) => setCampo(`${l.id}Caixa`, v),
                       alinhamento: e.alinhamento, onAlinhamento: (v) => setCampo(`${l.id}Alinhamento`, v),
+                      fundo: e.fundo, onFundo: (v) => setCampo(`${l.id}Fundo`, v),
+                      faixa: e.altura, onFaixa: (v) => setCampo(`${l.id}Altura`, v),
+                      borda: config[`${l.id}Borda`], onBorda: (v) => setCampo(`${l.id}Borda`, v),
+                      bordaLargura: config[`${l.id}BordaLargura`], onBordaLargura: (v) => setCampo(`${l.id}BordaLargura`, v),
                       espaco: e.espaco,
                       onEspaco: i < LINHAS_FINAL.length - 1 && LINHAS_FINAL.slice(i + 1).some((x) => String(estiloLinhaFinal(config, x).texto || '').trim()) ? (v) => setCampo(`${l.id}Espaco`, v) : undefined,
                       abaixo: <CamposFinais config={config} linha={l.id} texto={e.texto} tamanhoLinha={e.tamanho} min={l.min} max={l.max} onTexto={onTexto} setConfig={setConfig} />

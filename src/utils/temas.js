@@ -70,7 +70,7 @@ const camposGerais = (t) => ({
   ...Object.fromEntries(['capaTitulo1', 'capaTitulo2', 'capaTitulo3', 'capaTextoAbaixo'].flatMap((id) => [[`${id}Cor`, 'tema'], [`${id}Fundo`, 'tema']])),
   esperaLinha1Cor: 'tema', esperaLinha2Cor: 'tema', esperaLinha3Cor: 'tema',
   ...Object.fromEntries(['esperaLinha1', 'esperaLinha2', 'esperaLinha3', 'pergunta2', 'finalTitulo', 'finalTitulo1', 'finalTitulo2', 'finalMensagem', 'finalStatus', 'finalInstrucao'].map((id) => [`${id}Familia`, 'padrao'])),
-  ...Object.fromEntries(['finalTitulo1', 'finalTitulo2', 'finalMensagem', 'finalStatus', 'finalInstrucao'].map((id) => [`${id}Cor`, 'tema'])),
+  ...Object.fromEntries(['finalTitulo1', 'finalTitulo2', 'finalMensagem', 'finalStatus', 'finalInstrucao'].flatMap((id) => [[`${id}Cor`, 'tema'], [`${id}Fundo`, 'transparente'], [`${id}Borda`, 'padrao'], [`${id}BordaLargura`, null]])),
   btnQtdCor: 'tema', btnQtdCorNumero: 'tema', btnQtdCorDescricao: 'tema', btnQtdEfeito: 'tema'
 });
 

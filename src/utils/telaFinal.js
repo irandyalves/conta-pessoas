@@ -35,6 +35,8 @@ export function estiloLinhaFinal(cfg = {}, l) {
     bold: cfg[`${l.id}Bold`] ?? true,
     caixa: cfg[`${l.id}Caixa`] ?? Boolean(l.caixa),
     alinhamento: cfg[`${l.id}Alinhamento`] || 'center',
+    fundo: cfg[`${l.id}Fundo`] || 'transparente',
+    altura: cfg[`${l.id}Altura`],
     espaco: Number(cfg[`${l.id}Espaco`] ?? espacoPadrao(cfg, l))
   };
 }
