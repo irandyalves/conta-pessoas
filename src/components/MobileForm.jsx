@@ -10,6 +10,7 @@ import {
   ChevronRight,
   ChevronLeft,
   ArrowLeft,
+  ArrowRight,
   ChevronDown,
   Sparkles,
   TreePine,
@@ -147,21 +148,28 @@ const lerProgresso = (eventoId) => {
   }
 };
 
-// Rodapé das telas sem botão Avançar: seta e ANTERIOR centralizados embaixo
-function RodapeAnterior({ onClick, aceso }) {
+// Rodapé das telas sem botão Avançar: ← ANTERIOR • PRÓXIMA →
+// PRÓXIMA só aparece quando a página não é obrigatória (ou já foi respondida).
+function RodapeSetas({ onAnterior, onProxima, aceso }) {
+  if (!onAnterior && !onProxima) return null;
+  const seta = (chave, Icone, texto, nome, onClick) => (
+    <button
+      type="button"
+      aria-label={nome}
+      onClick={onClick}
+      className={`pointer-events-auto w-24 h-14 rounded-2xl flex flex-col items-center justify-center gap-0.5 text-white ${aceso === chave ? 'efeito-acender' : ''}`}
+    >
+      <Icone className="w-6 h-6" strokeWidth={2.75} />
+      <span className="text-[10px] font-light tracking-wide leading-none">{texto}</span>
+    </button>
+  );
   return (
     <>
       <div className="h-20" />
-      <div className="fixed bottom-0 inset-x-0 z-30 flex justify-center pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent pointer-events-none">
-        <button
-          type="button"
-          aria-label="Voltar à pergunta anterior"
-          onClick={onClick}
-          className={`pointer-events-auto h-14 px-6 rounded-2xl flex flex-col items-center justify-center gap-0.5 text-white ${aceso ? 'efeito-acender' : ''}`}
-        >
-          <ArrowLeft className="w-6 h-6" strokeWidth={2.75} />
-          <span className="text-[10px] font-light tracking-wide leading-none">ANTERIOR</span>
-        </button>
+      <div className="fixed bottom-0 inset-x-0 z-30 flex items-center justify-center gap-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent pointer-events-none">
+        {onAnterior && seta('anterior', ArrowLeft, 'ANTERIOR', 'Voltar à pergunta anterior', onAnterior)}
+        {onAnterior && onProxima && <span className="w-1.5 h-1.5 rounded-full bg-white" aria-hidden="true" />}
+        {onProxima && seta('proxima', ArrowRight, 'PRÓXIMA', 'Ir para a próxima pergunta', onProxima)}
       </div>
     </>
   );
@@ -732,6 +740,14 @@ export default function MobileForm({ preview = false }) {
     }
   };
 
+  // PRÓXIMA na Tela 1: segue sem gravar resposta (mantém a que já tiver sido dada)
+  const pularP1 = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (telasExtrasAtivas.length > 0) setCurrentStep('extra_0');
+    else if (questionsConfig?.mostrarTelaAcompanhantes !== false) setCurrentStep('acompanhantes');
+    else handleSelectQtd(1);
+  };
+
   // Avançar após selecionar um card na Pergunta 1
   const handleSelectComoChegou = (opcao) => {
     setMotivo(opcao.titulo);
@@ -776,7 +792,7 @@ export default function MobileForm({ preview = false }) {
     } else if (questionsConfig?.mostrarTelaAcompanhantes !== false) {
       setCurrentStep('acompanhantes');
     } else {
-      handleSelectQtd(1, motivoRef.current || opcao.titulo);
+      handleSelectQtd(1, motivoRef.current || (cardsAtivosP1.length > 0 ? null : opcao.titulo));
     }
   };
 
@@ -793,7 +809,7 @@ export default function MobileForm({ preview = false }) {
     } else if (questionsConfig?.mostrarTelaAcompanhantes !== false) {
       setCurrentStep('acompanhantes');
     } else {
-      handleSelectQtd(1, motivoRef.current || opcao.titulo);
+      handleSelectQtd(1, motivoRef.current || (cardsAtivosP1.length > 0 ? null : opcao.titulo));
     }
   };
 
@@ -894,7 +910,8 @@ export default function MobileForm({ preview = false }) {
     const motivo = overrideComoChegou || motivoRef.current || comoChegou || '';
     const montadas = montarRespostas(motivo);
     const registro = {
-      comoChegou: motivo || questionsConfig?.pergunta1Titulo || 'Participante',
+      // Tela 1 pulada (PRÓXIMA) não pode virar resposta
+      comoChegou: motivo || (cardsAtivosP1.length > 0 ? 'Não respondeu' : questionsConfig?.pergunta1Titulo) || 'Participante',
       qtdPessoas: qtd,
       evento: eventoTitulo,
       ...montadas,
@@ -1354,6 +1371,17 @@ export default function MobileForm({ preview = false }) {
                     </button>
                   </div>
                 )}
+
+                {cardsAtivosP1.length > 0 && (
+                  <RodapeSetas
+                    aceso={clicado === 'voltar_p1' ? 'anterior' : clicado === 'proxima_p1' ? 'proxima' : ''}
+                    onAnterior={questionsConfig.mostrarBotaoComecar !== false ? () => comFeedback('voltar_p1', () => setJaClicouComecar(false)) : null}
+                    onProxima={!questionsConfig.pergunta1Obrigatoria || temValor(comoChegou) ? () => comFeedback('proxima_p1', () => {
+                      if (p1SlideIndex < totalSlidesP1 - 1) setP1SlideIndex(p1SlideIndex + 1);
+                      else pularP1();
+                    }) : null}
+                  />
+                )}
               </>
             )}
           </div>
@@ -1384,7 +1412,7 @@ export default function MobileForm({ preview = false }) {
             } else if (questionsConfig?.mostrarTelaAcompanhantes !== false) {
               setCurrentStep('acompanhantes');
             } else {
-              handleSelectQtd(1, motivoRef.current || 'Participante');
+              handleSelectQtd(1, motivoRef.current || (cardsAtivosP1.length > 0 ? null : 'Participante'));
             }
           };
 
@@ -1412,16 +1440,20 @@ export default function MobileForm({ preview = false }) {
 
           // 1. TEXTO LONGO, TEXTO CURTO, DATA, HORA, SLIDER, RATING, DROPDOWN, RADIO, CHECKBOX, GRADE
           if (['texto', 'texto_curto', 'data', 'hora', 'slider', 'rating', 'dropdown', 'radio', 'checkbox', 'grade'].includes(tela.tipo)) {
+            // Várias perguntas de campo longo: os campos dividem a altura da tela para caber tudo na mesma página
+            const cabeTudo = grupo.length > 1 && grupo.every((t) => t.tipo === 'texto');
             const renderCampoTela = (tela, mostrarTitulo, primeira) => {
             const valKey = tela.id;
             const valAtual = dissertativaTextos[valKey] ?? '';
             const opcoesAtivas = (tela.opcoes || []).filter(o => o.ativo !== false);
             const selectedChecks = paraLista(valAtual);
+            // Obrigatória e ainda sem resposta: borda vermelha suave
+            const bordaCampo = tela.obrigatorio && !temValor(valAtual) ? 'border-rose-400/50' : 'border-slate-700';
             const defaultSliderVal = Math.round(((tela.sliderMin ?? 0) + (tela.sliderMax ?? 10)) / 2);
             return (
-              <div key={tela.id} id={`campo_${tela.id}`} className="scroll-mt-4">
+              <div key={tela.id} id={`campo_${tela.id}`} className={`scroll-mt-4 ${cabeTudo ? 'flex-1 flex flex-col' : ''}`}>
                 {mostrarTitulo && (
-                  <div style={{ gap: espacos(tela).sub, marginBottom: espacos(tela).cards }} className={`flex flex-col ${primeira ? '' : 'pt-4 border-t border-slate-800/60'} ${getAlinhamentoClass(estiloLinhas(tela).tituloAl)}`}>
+                  <div style={{ gap: espacos(tela).sub, marginBottom: cabeTudo ? Math.min(8, espacos(tela).cards) : espacos(tela).cards }} className={`flex flex-col ${primeira ? '' : `${cabeTudo ? 'pt-2' : 'pt-4'} border-t border-slate-800/60`} ${getAlinhamentoClass(estiloLinhas(tela).tituloAl)}`}>
                     <h3 style={{ fontSize: `${tela.titulo1Tamanho || 18}px` }} className={`${pesoFonte(tela.tituloBold)} leading-tight ${getCorTextoLinhaClass(tela.titulo1Cor, 'text-white')}`}>
                       {[tela.titulo1 || tela.titulo, tela.titulo2, tela.titulo3].filter(Boolean).join(' ')}
                     </h3>
@@ -1432,15 +1464,16 @@ export default function MobileForm({ preview = false }) {
                     )}
                   </div>
                 )}
-                <div className="space-y-4">
+                <div className={cabeTudo ? 'flex-1 flex flex-col' : 'space-y-4'}>
                   {tela.tipo === 'texto' && (
                     <textarea
-                      rows={tela.linhas || 4}
+                      rows={cabeTudo ? 1 : tela.linhas || 4}
+                      onInput={cabeTudo ? (e) => { const el = e.currentTarget; if (el.scrollHeight > el.clientHeight) el.style.minHeight = `${el.scrollHeight + 2}px`; } : undefined}
                       value={valAtual}
                       onChange={(e) => setTextos((prev) => ({ ...prev, [valKey]: e.target.value }))}
                       placeholder={tela.placeholder || 'Digite sua resposta aqui...'}
                       style={{ borderRadius: cantosCard(questionsConfig, tela) }}
-                      className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-2xl p-4 text-sm sm:text-base text-white placeholder-slate-500 focus:outline-none transition resize-none shadow-inner"
+                      className={`w-full bg-slate-950 border ${bordaCampo} focus:border-amber-400 rounded-2xl ${cabeTudo ? 'flex-1 min-h-[52px] px-4 py-2.5' : 'p-4'} text-sm sm:text-base text-white placeholder-slate-500 focus:outline-none transition resize-none shadow-inner`}
                     />
                   )}
 
@@ -1451,7 +1484,7 @@ export default function MobileForm({ preview = false }) {
                       onChange={(e) => setTextos((prev) => ({ ...prev, [valKey]: e.target.value }))}
                       placeholder={tela.placeholder || 'Digite sua resposta curta...'}
                       style={{ borderRadius: cantosCard(questionsConfig, tela) }}
-                      className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-2xl p-4 text-sm sm:text-base text-white placeholder-slate-500 focus:outline-none transition shadow-inner"
+                      className={`w-full bg-slate-950 border ${bordaCampo} focus:border-amber-400 rounded-2xl p-4 text-sm sm:text-base text-white placeholder-slate-500 focus:outline-none transition shadow-inner`}
                     />
                   )}
 
@@ -1461,7 +1494,7 @@ export default function MobileForm({ preview = false }) {
                       value={valAtual}
                       onChange={(e) => setTextos((prev) => ({ ...prev, [valKey]: e.target.value }))}
                       style={{ borderRadius: cantosCard(questionsConfig, tela) }}
-                      className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-2xl p-4 text-base text-white focus:outline-none"
+                      className={`w-full bg-slate-950 border ${bordaCampo} focus:border-amber-400 rounded-2xl p-4 text-base text-white focus:outline-none`}
                     />
                   )}
 
@@ -1471,7 +1504,7 @@ export default function MobileForm({ preview = false }) {
                       value={valAtual}
                       onChange={(e) => setTextos((prev) => ({ ...prev, [valKey]: e.target.value }))}
                       style={{ borderRadius: cantosCard(questionsConfig, tela) }}
-                      className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-2xl p-4 text-base text-white focus:outline-none"
+                      className={`w-full bg-slate-950 border ${bordaCampo} focus:border-amber-400 rounded-2xl p-4 text-base text-white focus:outline-none`}
                     />
                   )}
 
@@ -1518,7 +1551,7 @@ export default function MobileForm({ preview = false }) {
                       value={valAtual}
                       onChange={(e) => setTextos((prev) => ({ ...prev, [valKey]: e.target.value }))}
                       style={{ borderRadius: cantosCard(questionsConfig, tela) }}
-                      className="w-full bg-slate-950 border border-amber-500/50 focus:border-amber-400 rounded-2xl p-4 text-sm sm:text-base font-bold text-white focus:outline-none"
+                      className={`w-full bg-slate-950 border ${bordaCampo} focus:border-amber-400 rounded-2xl p-4 text-sm sm:text-base font-bold text-white focus:outline-none`}
                     >
                       <option value="">Toque para selecionar na lista...</option>
                       {opcoesAtivas.map((opt) => (
@@ -1697,12 +1730,17 @@ export default function MobileForm({ preview = false }) {
               return t.tipo === 'slider' && v === '' && ESCALA_COM_VALOR_INICIAL.includes(t.estiloEscala || 'slider') ? `${dsv}${t.sliderUnidade || ''}` : v;
             };
 
+            const faltaObrigatoria = grupo.some((t) => t.obrigatorio && !temValor(valorFinal(t)));
+
             return (
-              <div className="space-y-4 fade-in py-2">
+              <div
+                className={`fade-in ${cabeTudo ? 'flex flex-col gap-2' : 'space-y-4 py-2'}`}
+                style={cabeTudo ? { minHeight: 'calc(100dvh - 80px)' } : undefined}
+              >
                 {grupo.map((t, gi) => renderCampoTela(t, grupo.length > 1, gi === 0))}
 
                 {/* Espaço para o rodapé fixo não cobrir o conteúdo */}
-                <div className="h-28" />
+                <div className={cabeTudo ? 'h-20 shrink-0' : 'h-28'} />
                 <div className="fixed bottom-0 inset-x-0 z-30 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent">
                 <div className="max-w-md mx-auto">
                 <div className="flex items-center justify-between gap-2">
@@ -1732,7 +1770,7 @@ export default function MobileForm({ preview = false }) {
                     });
                     avancarParaProxima(null);
                   })}
-                  className={`w-3/4 py-4 px-4 rounded-2xl font-black text-base bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 shadow-xl shadow-amber-950/60 border border-amber-300 flex items-center justify-center gap-2 ${clicado === `avancar_${tela.id}` ? 'efeito-acender' : ''}`}
+                  className={`w-3/4 py-4 px-4 rounded-2xl font-black text-base border flex items-center justify-center gap-2 transition-colors ${faltaObrigatoria ? 'bg-red-900 border-red-800 text-white' : 'bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 shadow-xl shadow-amber-950/60 border-amber-300'} ${clicado === `avancar_${tela.id}` ? 'efeito-acender' : ''}`}
                 >
                   <span>{tela.botaoTexto || 'Avançar'}</span>
                   <ChevronRight className="w-5 h-5" />
@@ -1843,7 +1881,14 @@ export default function MobileForm({ preview = false }) {
                 </div>
               )}
 
-              <RodapeAnterior aceso={clicado === `voltar_${tela.id}`} onClick={() => comFeedback(`voltar_${tela.id}`, voltarParaAnterior)} />
+              <RodapeSetas
+                aceso={clicado === `voltar_${tela.id}` ? 'anterior' : clicado === `proxima_${tela.id}` ? 'proxima' : ''}
+                onAnterior={() => comFeedback(`voltar_${tela.id}`, voltarParaAnterior)}
+                onProxima={!tela.obrigatorio || temValor(respostasExtras[tela.id]) ? () => comFeedback(`proxima_${tela.id}`, () => {
+                  if (paginaAtual < totalPaginas - 1) setExtraSlideIndex(paginaAtual + 1);
+                  else avancarParaProxima(null);
+                }) : null}
+              />
             </div>
           );
         })()}
@@ -1954,9 +1999,9 @@ export default function MobileForm({ preview = false }) {
             )}
 
             {/* Botão Voltar */}
-            <RodapeAnterior
-              aceso={clicado === 'voltar_acomp'}
-              onClick={() => comFeedback('voltar_acomp', () => {
+            <RodapeSetas
+              aceso={clicado === 'voltar_acomp' ? 'anterior' : ''}
+              onAnterior={() => comFeedback('voltar_acomp', () => {
                 let alvo = telasExtrasAtivas.length - 1;
                 while (alvo > 0 && continuaNaMesmaPagina(telasExtrasAtivas[alvo - 1], telasExtrasAtivas[alvo])) alvo--;
                 setCurrentStep(alvo >= 0 ? `extra_${alvo}` : 'p1');

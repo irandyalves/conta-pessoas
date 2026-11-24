@@ -264,3 +264,17 @@ export function QuestaoArrastavel({ lista, indice, total, onMover, className = '
     </div>
   );
 }
+
+// Pergunta obrigatória ou opcional. Vermelho fosco = obrigatória.
+export function BotaoObrigatorio({ valor, onChange }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={Boolean(valor)}
+      onClick={() => onChange(!valor)}
+      className={`px-3 py-1.5 rounded-lg text-xs transition ${valor ? 'bg-red-900 text-white font-semibold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
+    >
+      {valor ? 'Resposta obrigatória' : 'Resposta opcional'}
+    </button>
+  );
+}

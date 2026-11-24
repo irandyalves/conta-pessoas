@@ -57,7 +57,7 @@ import IconeEspera, { ICONES_ESPERA } from './IconeEspera';
 import PreviewCelular from './PreviewCelular';
 import EscalaVisual, { ESTILOS_ESCALA } from './EscalaVisual';
 import EstiloLinhasTitulo, { ControleEspacos } from './EstiloLinhasTitulo';
-import { Campo, Chave, Cores, Deslizante, Lista, QuestaoArrastavel, Secao, Segmentos, SeletorIcone } from './Controles';
+import { BotaoObrigatorio, Campo, Chave, Cores, Deslizante, Lista, QuestaoArrastavel, Secao, Segmentos, SeletorIcone } from './Controles';
 import { ICONES_CARDS, iconesDaTela } from '../utils/icones';
 import { PRESETS_PESQUISAS } from '../utils/presets';
 
@@ -1325,6 +1325,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     ]}
                   />
 
+                  {cardsAtivosP1.length > 0 && <BotaoObrigatorio valor={config.pergunta1Obrigatoria} onChange={(v) => setCampo('pergunta1Obrigatoria', v)} />}
+
                   {subAtualP1 === 'pergunta' && (
                     <div className="space-y-4">
                       <EstiloLinhasTitulo
@@ -1802,6 +1804,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       ]}
                     />
 
+                    <BotaoObrigatorio valor={telaAlvo.obrigatorio} onChange={(v) => handleUpdateTelaProp(extraIndex, 'obrigatorio', v)} />
+
                     {subAtual === 'pergunta' && (
                       <div className="space-y-4">
                         <EstiloLinhasTitulo
@@ -1970,7 +1974,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2 border-t border-slate-800">
-                          {telaAlvo.tipo === 'texto' && (
+                          {telaAlvo.tipo === 'texto' && !emGrupo && (
                             <div className="flex items-center justify-between text-xs bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
                               <span className="text-slate-300 font-bold">Altura (Linhas):</span>
                               <div className="flex items-center gap-1">
@@ -1990,20 +1994,6 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             </div>
                           )}
 
-                          <div className="flex items-center justify-between text-xs bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
-                            <span className="text-slate-300 font-bold">Obrigatoriedade:</span>
-                            <button
-                              type="button"
-                              onClick={() => handleUpdateTelaProp(extraIndex, 'obrigatorio', !telaAlvo.obrigatorio)}
-                              className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
-                                telaAlvo.obrigatorio
-                                  ? 'bg-slate-100 text-slate-900 border border-slate-100'
-                                  : 'bg-slate-700/40 text-slate-200 border border-slate-700'
-                              }`}
-                            >
-                              {telaAlvo.obrigatorio ? 'Obrigatório' : 'Opcional'}
-                            </button>
-                          </div>
                         </div>
                       </div>
                     ) : (
