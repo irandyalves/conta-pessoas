@@ -32,3 +32,6 @@ dist-ssr
 .firebase/
 firebase-debug.log*
 firestore-debug.log*
+
+# Cópias de segurança das perguntas (só neste computador)
+recuperacao-*.json

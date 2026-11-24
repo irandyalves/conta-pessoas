@@ -56,13 +56,16 @@ import { aplicarTema } from '../utils/temas';
 import { configSeta, CORES_SETA, DESENHOS_SETA } from '../utils/setas';
 import { CAPA_LARGURA_MIN, raioCapa, LINHAS_CAPA, ordemCapa, permutar, reordenar, textoCapa, alturaFaixa, FAIXA_MAX, FAIXA_MIN, gravarFaixaPadrao, lerGeral, gravarHerdado, herdaEstilo, ligarHeranca, semCamposHerdados, telaP1Cantos, CORES_BOTAO, CORES_LINHA, CORES_TEXTO_BOTAO, CARD_ESPACO_PADRAO, raiosCard, linhasCapa, alturaCard, CAPA_ESPACO_PADRAO, CARD_ALTURA_MAX, CARD_ALTURA_MIN, espacos, continuaNaMesmaPagina, extrairEstilo, aplicarEstilo, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems, getEfeitoStyle, CORES_TEXTO_LINHAS, ALINHAMENTOS_TEXTO, FUNDOS_CAPTION } from '../utils/estilos';
 import ImportadorIA from './ImportadorIA';
+import RecuperarVersao from './RecuperarVersao';
+import { juntarComAnterior, telaAnterior } from '../utils/juntarTelas';
+import useDesfazer from '../utils/useDesfazer';
 import IconeEspera, { ICONES_ESPERA } from './IconeEspera';
 import PreviewCelular from './PreviewCelular';
 import CamposFinais, { InserirCampo } from './CamposFinais';
 import { FORMATOS_CAMPO, formatoPorId } from '../utils/campoTexto';
 import { chaveTamanho, estiloLinhaFinal, linhaFinal, linhasFinais, ordemFinal, reordenarFinal, temDivisor } from '../utils/telaFinal';
 import BarraProgresso, { CORES_PROGRESSO, CORES_PROGRESSO_LAYOUT, ESTILOS_PROGRESSO, usaDuasCores } from './BarraProgresso';
-import { Columns2, Rows3, Smile as IconeRosto, WrapText } from 'lucide-react';
+import { ArrowLeft, Columns2, History, Redo2, Rows3, Smile as IconeRosto, Undo2, WrapText } from 'lucide-react';
 import EscalaVisual, { ESTILOS_ESCALA, INSTRUCAO_PADRAO, instrucaoDaEscala } from './EscalaVisual';
 import EstiloLinhasTitulo, { ControleEspacos } from './EstiloLinhasTitulo';
 import { LinhaEfeito, TopoPainel, Alternar, BarraFormato, BotaoObrigatorio, OlhoTela, Campo, Chave, Cores, Deslizante, Lista, MiniSlider, QuestaoArrastavel, Secao, Segmentos, SeletorFonte, SeletorIcone } from './Controles';
@@ -345,6 +348,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
   // Modais de Modelos Prontos e Importação de Arquivos / Formulários
   const [showPresetsModal, setShowPresetsModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showRecuperar, setShowRecuperar] = useState(false);
 
   // Splitter / Linha Editável para redimensionar colunas (Configurações vs Celulares)
   const [splitPercent, setSplitPercent] = useState(() => {
@@ -462,6 +466,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
     // eventTitle fora das dependências: mudar o título não pode apagar edições não salvas
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, inline, activeEventId]);
+
+  const { desfazer, refazer, podeDesfazer, podeRefazer } = useDesfazer({ config, setConfig, baseRef: configBaseRef, aba: activeTab, setAba: setActiveTab, ativo: isOpen || inline });
 
   // Fora do mapa das telas extras não há grupo (evita erro nas telas Acompanhantes/Fim)
   const grupoPreview = [];
@@ -854,6 +860,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
       telasExtras: [novaTela, ...(prev.telasExtras || [])]
     }));
     setActiveTab('extra_0');
+    setSubTabExtra('opcoes');
   };
 
   const handleDividirParaNovaTelaExtra = (extraIndex, splitOptIndex) => {
@@ -878,6 +885,28 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
     telas.splice(extraIndex + 1, 0, novaTela);
     setConfig((prev) => ({ ...prev, telasExtras: telas }));
     setActiveTab(`extra_${extraIndex + 1}`);
+    setSubTabExtra('opcoes');
+  };
+
+  // Contrário do divisor: as opções voltam para a tela anterior
+  const handleJuntarComAnterior = (extraIndex) => {
+    const ant = telaAnterior(config, extraIndex);
+    if (!ant) return;
+    const tela = config.telasExtras[extraIndex];
+    const juntar = () => {
+      setConfig((c) => juntarComAnterior(c, extraIndex));
+      setActiveTab(ant.aba);
+      setSubTabTela1('opcoes');
+      setSubTabExtra('opcoes');
+    };
+    const nome = String(tela.titulo1 || tela.titulo || '').trim();
+    if (nome === ant.titulo.trim()) { juntar(); return; }
+    mostrarConfirm(
+      'Voltar para a tela anterior',
+      `As ${(tela.opcoes || []).length} opções de "${nome}" vão para o fim de "${ant.titulo}" e o título desta tela deixa de existir.`,
+      juntar,
+      'Voltar opções'
+    );
   };
 
   // ============================================================
@@ -1237,6 +1266,14 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
           </div>
 
           <div className="flex items-center gap-2">
+            <div className="flex items-center gap-0.5 mr-1">
+              {[[desfazer, podeDesfazer, 'Desfazer (Ctrl+Z)', Undo2], [refazer, podeRefazer, 'Refazer (Ctrl+Y)', Redo2], [() => setShowRecuperar(true), true, 'Recuperar versão da última hora', History]].map(([acao, pode, nome, Icone]) => (
+                <button key={nome} type="button" onClick={acao} disabled={!pode} title={nome} aria-label={nome} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-200 hover:bg-slate-700 disabled:opacity-30 disabled:hover:bg-transparent transition">
+                  <Icone className="w-4 h-4" />
+                </button>
+              ))}
+            </div>
+
             {/* Botão Modelos Prontos */}
             <button
               type="button"
@@ -2541,6 +2578,18 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                         <span>{isAtivo ? 'Visível' : 'Oculto'}</span>
                                       </button>
 
+                                      {optIdx === 0 && telaAnterior(config, extraIndex) && (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleJuntarComAnterior(extraIndex)}
+                                          title="Estas opções voltam para o fim da tela anterior e esta tela deixa de existir"
+                                          className="px-2 py-0.5 rounded-lg bg-slate-700/40 hover:bg-slate-700 border border-slate-700 text-slate-200 text-[11px] font-bold flex items-center gap-1 transition"
+                                        >
+                                          <ArrowLeft className="w-3 h-3" />
+                                          <span>Voltar para a Tela {extraIndex === 0 ? 1 : numeroDaTela(extraIndex - 1)}</span>
+                                        </button>
+                                      )}
+
                                       {optIdx > 0 && (
                                         <button
                                           type="button"
@@ -3198,6 +3247,19 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
         {/* ============================================================ */}
         {/* MODAL 3: IMPORTADOR INTELIGENTE (.PDF / .PPTX / .DOCX / TXT)  */}
         {/* ============================================================ */}
+        {showRecuperar && (
+          <RecuperarVersao
+            eventId={activeEventId}
+            config={config}
+            onFechar={() => setShowRecuperar(false)}
+            onRecuperar={(cfg) => {
+              setConfig(cfg);
+              setActiveTab('inicio');
+              setShowRecuperar(false);
+            }}
+          />
+        )}
+
         {showImportModal && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fade-in overflow-y-auto">
             <div className="bg-slate-900 border border-slate-700 rounded-3xl p-5 max-w-2xl w-full shadow-2xl space-y-4 my-auto max-h-[92vh] overflow-y-auto custom-scrollbar">
