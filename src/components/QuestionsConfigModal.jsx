@@ -65,7 +65,7 @@ import BarraProgresso, { CORES_PROGRESSO, CORES_PROGRESSO_LAYOUT, ESTILOS_PROGRE
 import { Columns2, Rows3, Smile as IconeRosto, WrapText } from 'lucide-react';
 import EscalaVisual, { ESTILOS_ESCALA, INSTRUCAO_PADRAO, instrucaoDaEscala } from './EscalaVisual';
 import EstiloLinhasTitulo, { ControleEspacos } from './EstiloLinhasTitulo';
-import { BotaoObrigatorio, Campo, Chave, Cores, Deslizante, Lista, MiniSlider, QuestaoArrastavel, Secao, Segmentos, SeletorFonte, SeletorIcone } from './Controles';
+import { BotaoObrigatorio, OlhoTela, Campo, Chave, Cores, Deslizante, Lista, MiniSlider, QuestaoArrastavel, Secao, Segmentos, SeletorFonte, SeletorIcone } from './Controles';
 import { ICONES_CARDS, iconesDaTela } from '../utils/icones';
 import { PRESETS_PESQUISAS } from '../utils/presets';
 
@@ -531,7 +531,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
       maiusculas: false,
       opcoes: [],
       obrigatorio: false,
-      ativa: true,
+      ativa: base.ativa !== false,
       mesmaPagina: true
     };
     const telas = [...c.telasExtras];
@@ -715,20 +715,40 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
   const paginasExtras = [];
   {
     let anterior = null;
+    let anteriorOculta = null; // perguntas da mesma página, quando ela está oculta
     (config.telasExtras || []).forEach((t, i) => {
       if (!t) return;
       const ativa = t.ativa !== false;
-      if (ativa && anterior && continuaNaMesmaPagina(anterior.tela, t)) {
-        anterior.pagina.membros.push(i);
-        anterior = { tela: t, pagina: anterior.pagina };
-        return;
-      }
-      const pagina = { membros: [i], numero: paginasExtras.length + 2 };
-      paginasExtras.push(pagina);
-      if (ativa) anterior = { tela: t, pagina };
+      const base = ativa ? anterior : anteriorOculta;
+      const junta = Boolean(base) && (ativa || base.i === i - 1) && continuaNaMesmaPagina(base.tela, t);
+      const pagina = junta ? base.pagina : { membros: [], numero: paginasExtras.length + 2, oculta: !ativa };
+      if (!junta) paginasExtras.push(pagina);
+      pagina.membros.push(i);
+      if (ativa) { anterior = { tela: t, pagina }; anteriorOculta = null; } else anteriorOculta = { tela: t, pagina, i };
     });
   }
   const numeroDaTela = (i) => paginasExtras.find((pg) => pg.membros.includes(i))?.numero ?? i + 2;
+  // OLHO: tela oculta não faz parte da pesquisa (o celular pula), mas nada dela é apagado
+  const telaOculta = (chave) => {
+    if (chave === 'tela_1') return Boolean(config.p1Oculta);
+    if (chave === 'inicio_comecar') return config.mostrarBotaoComecar === false;
+    if (chave === 'acompanhantes') return config.mostrarTelaAcompanhantes === false;
+    const m = /^extra_(\d+)$/.exec(chave || '');
+    return m ? config.telasExtras?.[Number(m[1])]?.ativa === false : false;
+  };
+  const alternarTela = (chave, membros = []) => setConfig((c) => {
+    if (chave === 'tela_1') return { ...c, p1Oculta: !c.p1Oculta };
+    if (chave === 'inicio_comecar') return { ...c, mostrarBotaoComecar: c.mostrarBotaoComecar === false };
+    if (chave === 'acompanhantes') return { ...c, mostrarTelaAcompanhantes: c.mostrarTelaAcompanhantes === false };
+    const ocultar = membros.some((i) => c.telasExtras[i]?.ativa !== false);
+    // a página seguinte continua sendo outra página, mesmo com esta oculta
+    const seguinte = ocultar ? c.telasExtras.findIndex((t, i) => i > Math.max(...membros) && t && t.ativa !== false) : -1;
+    return { ...c, telasExtras: c.telasExtras.map((t, i) => (membros.includes(i) ? { ...t, ativa: !ocultar } : i === seguinte ? { ...t, mesmaPagina: false } : t)) };
+  });
+  const membrosDaAba = (chave) => {
+    const m = /^extra_(\d+)$/.exec(chave || '');
+    return m ? paginasExtras.find((pg) => pg.membros.includes(Number(m[1])))?.membros || [] : [];
+  };
   const abrirPagina = (membros) => {
     setActiveTab(`extra_${membros[0]}`);
     if (membros.length > 1) setSubTabExtra('lista');
@@ -1278,12 +1298,13 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               </button>
 
               {/* Início (Capa / Botão COMEÇAR) */}
+              <div className="flex items-start">
               <button
                 type="button"
                 onClick={() => {
                   setActiveTab('inicio_comecar');
                 }}
-                className={`pb-2.5 px-3 text-xs sm:text-sm font-bold border-b-2 transition flex items-center gap-1.5 whitespace-nowrap ${
+                className={`${telaOculta('inicio_comecar') ? 'line-through opacity-60' : ''} pb-2.5 pl-3 pr-1 text-xs sm:text-sm font-bold border-b-2 transition flex items-center gap-1.5 whitespace-nowrap ${
                   activeTab === 'inicio_comecar'
                     ? 'border-slate-200 text-slate-200'
                     : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -1291,14 +1312,17 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               >
                 <span>Início</span>
               </button>
+              <OlhoTela oculta={telaOculta('inicio_comecar')} rotulo="o Início" onClick={() => alternarTela('inicio_comecar')} className="mt-0.5" />
+              </div>
 
               {/* Tela 1 (Perguntas / Cards) */}
+              <div className="flex items-start">
               <button
                 type="button"
                 onClick={() => {
                   setActiveTab('tela_1');
                 }}
-                className={`pb-2.5 px-3 text-xs sm:text-sm font-bold border-b-2 transition flex items-center gap-1.5 whitespace-nowrap ${
+                className={`${telaOculta('tela_1') ? 'line-through opacity-60' : ''} pb-2.5 pl-3 pr-1 text-xs sm:text-sm font-bold border-b-2 transition flex items-center gap-1.5 whitespace-nowrap ${
                   activeTab === 'tela_1'
                     ? 'border-slate-200 text-slate-200'
                     : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -1309,6 +1333,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                   {cardsAtivosP1.length}
                 </span>
               </button>
+              <OlhoTela oculta={telaOculta('tela_1')} rotulo="a Tela 1" onClick={() => alternarTela('tela_1')} className="mt-0.5" />
+              </div>
 
               {/* Telas Extras Criadas Dinamicamente (Tela 2, Tela 3, etc. conforme ordem real) */}
               {paginasExtras.map(({ membros, numero: numTela }) => {
@@ -1316,12 +1342,13 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 const tela = config.telasExtras[idx];
                 const tabKey = `extra_${idx}`;
                 const cardsAtivos = (tela.opcoes || []).filter(o => o.ativo !== false).length;
+                const oculta = telaOculta(tabKey);
                 return (
+                  <div key={tela.id || idx} className="flex items-start">
                   <button
-                    key={tela.id || idx}
                     type="button"
                     onClick={() => abrirPagina(membros)}
-                    className={`pb-2.5 px-3 text-xs sm:text-sm font-bold border-b-2 transition flex items-center gap-1.5 whitespace-nowrap ${
+                    className={`${oculta ? 'line-through opacity-60' : ''} pb-2.5 pl-3 pr-1 text-xs sm:text-sm font-bold border-b-2 transition flex items-center gap-1.5 whitespace-nowrap ${
                       membros.some((m) => activeTab === `extra_${m}`)
                         ? 'border-slate-200 text-slate-200'
                         : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -1334,37 +1361,28 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       </span>
                     )}
                   </button>
+                  <OlhoTela oculta={oculta} rotulo={`a Tela ${numTela}`} onClick={() => alternarTela(tabKey, membros)} className="mt-0.5" />
+                  </div>
                 );
               })}
 
               {/* Tela Acompanhantes (Opcional - se ativa aparece na sequência, ou pode ser ativada) */}
-              {config.mostrarTelaAcompanhantes !== false ? (
+              <div className="flex items-start">
                 <button
                   type="button"
                   onClick={() => setActiveTab('acompanhantes')}
-                  className={`pb-2.5 px-3 text-xs sm:text-sm font-bold border-b-2 transition flex items-center gap-1.5 whitespace-nowrap ${
+                  title="Contagem de pessoas no grupo"
+                  className={`${telaOculta('acompanhantes') ? 'line-through opacity-60' : ''} pb-2.5 pl-3 pr-1 text-xs sm:text-sm font-bold border-b-2 transition flex items-center gap-1.5 whitespace-nowrap ${
                     activeTab === 'acompanhantes'
                       ? 'border-slate-200 text-slate-200'
                       : 'border-transparent text-slate-400 hover:text-slate-200'
                   }`}
                 >
                   <Users className="w-4 h-4" />
-                  <span>Tela {paginasExtras.length + 2}</span>
+                  <span>{telaOculta('acompanhantes') ? 'Acompanhantes' : `Tela ${paginasExtras.length + 2}`}</span>
                 </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setConfig(prev => ({ ...prev, mostrarTelaAcompanhantes: true }));
-                    setActiveTab('acompanhantes');
-                  }}
-                  title="Ativar tela de contagem de acompanhantes/grupo"
-                  className="pb-2.5 px-2.5 text-[11px] font-bold border-b-2 border-transparent text-slate-500 hover:text-white transition flex items-center gap-1 whitespace-nowrap"
-                >
-                  <Users className="w-3.5 h-3.5" />
-                  <span>+ Acompanhantes</span>
-                </button>
-              )}
+                <OlhoTela oculta={telaOculta('acompanhantes')} rotulo="a tela de acompanhantes" onClick={() => alternarTela('acompanhantes')} className="mt-0.5" />
+              </div>
 
               {/* Fim */}
               <button
@@ -1395,6 +1413,14 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
             {/* CONTEÚDO ROLÁVEL DA ESQUERDA */}
             <div ref={configColRef} className="flex-1 min-h-0 overflow-y-auto p-3 space-y-3 text-left custom-scrollbar">
               
+              {telaOculta(activeTab) && (
+                <div className="flex flex-wrap items-center gap-3 px-3 py-2.5 rounded-xl bg-rose-500/10 text-xs text-rose-200">
+                  <EyeOff className="w-4 h-4 shrink-0" />
+                  <span className="flex-1 min-w-[160px]">Tela oculta: não faz parte da pesquisa. O celular pula direto para a próxima.</span>
+                  <button type="button" onClick={() => alternarTela(activeTab, membrosDaAba(activeTab))} className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-900 font-bold hover:bg-white transition">Mostrar tela</button>
+                </div>
+              )}
+
               {/* ====================================================== */}
               {/* ABA: BOAS-VINDAS (ESPERA / START DO ADMIN)             */}
               {/* ====================================================== */}
@@ -2019,13 +2045,13 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 // Página com várias perguntas: no celular cada uma é pergunta simples, sem faixa de título
                 const telasLigadas = (config.telasExtras || []).filter((t) => t && t.ativa !== false);
                 const posLigada = telasLigadas.indexOf(telaAlvo);
-                const emGrupo = posLigada >= 0 && (continuaNaMesmaPagina(telasLigadas[posLigada - 1], telaAlvo) || continuaNaMesmaPagina(telaAlvo, telasLigadas[posLigada + 1]));
+                const emGrupo = posLigada < 0 ? membrosDaAba(`extra_${extraIndex}`).length > 1 : (continuaNaMesmaPagina(telasLigadas[posLigada - 1], telaAlvo) || continuaNaMesmaPagina(telaAlvo, telasLigadas[posLigada + 1]));
                 // Perguntas que aparecem juntas nesta página (índices reais em telasExtras)
                 let iniGrupo = posLigada;
                 let fimGrupo = posLigada;
                 while (iniGrupo > 0 && continuaNaMesmaPagina(telasLigadas[iniGrupo - 1], telasLigadas[iniGrupo])) iniGrupo--;
                 while (fimGrupo >= 0 && fimGrupo + 1 < telasLigadas.length && continuaNaMesmaPagina(telasLigadas[fimGrupo], telasLigadas[fimGrupo + 1])) fimGrupo++;
-                const membros = posLigada < 0 ? [extraIndex] : telasLigadas.slice(iniGrupo, fimGrupo + 1).map((t) => (config.telasExtras || []).indexOf(t));
+                const membros = posLigada < 0 ? membrosDaAba(`extra_${extraIndex}`) : telasLigadas.slice(iniGrupo, fimGrupo + 1).map((t) => (config.telasExtras || []).indexOf(t));
                 const ehTexto = ['texto', 'texto_curto'].includes(telaAlvo.tipo);
                 const temLista = emGrupo || ehTexto;
                 const propria = telaAlvo.herdarEstilo === false;
@@ -2888,14 +2914,11 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
                   <button
                     type="button"
-                    onClick={() => {
-                      setCampo('mostrarTelaAcompanhantes', false);
-                      setActiveTab('tela_1');
-                    }}
+                    onClick={() => alternarTela('acompanhantes')}
                     className="text-xs text-slate-400 hover:text-white flex items-center gap-1.5"
                   >
                     <EyeOff className="w-3.5 h-3.5" />
-                    <span>Não usar esta tela neste evento</span>
+                    <span>{telaOculta('acompanhantes') ? 'Usar esta tela neste evento' : 'Não usar esta tela neste evento'}</span>
                   </button>
                 </div>
               )}
@@ -2952,29 +2975,50 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
             <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 pb-6 place-items-center mt-1">
               {(() => {
                 // Mesma sequência de telas que o celular percorre
-                const telas = [];
-                telas.push({ chave: 'inicio', passo: 'espera', rotulo: 'Espera (pesquisa não liberada)' });
-                if (config.mostrarBotaoComecar !== false) telas.push({ chave: 'inicio_comecar', passo: 'comecar', rotulo: 'Início (botão Começar)' });
-                telas.push({ chave: 'tela_1', passo: 'tela_1', rotulo: 'Tela 1' });
-
                 const todas = config.telasExtras || [];
                 const ativas = todas.map((t, i) => ({ t, i })).filter(({ t }) => t && t.ativa !== false);
-                ativas.forEach(({ t, i }, ai) => {
+                const telas = [
+                  { chave: 'inicio', passo: 'espera', rotulo: 'Espera (pesquisa não liberada)', fixa: true },
+                  { chave: 'inicio_comecar', passo: 'comecar', rotulo: 'Início (botão Começar)' },
+                  { chave: 'tela_1', passo: 'tela_1', rotulo: 'Tela 1' },
                   // Telas que "continuam na mesma página" aparecem dentro do celular anterior (igual ao aparelho)
-                  if (ai > 0 && continuaNaMesmaPagina(ativas[ai - 1].t, t)) return;
-                  const membros = [i];
-                  for (let k = ai + 1; k < ativas.length && continuaNaMesmaPagina(ativas[k - 1].t, ativas[k].t); k++) membros.push(ativas[k].i);
-                  telas.push({ chave: `extra_${i}`, membros: membros.map((m) => `extra_${m}`), passo: `extra_${ai}`, indices: membros, rotulo: `Tela ${numeroDaTela(i)}` });
-                });
-                if (config.mostrarTelaAcompanhantes !== false) telas.push({ chave: 'acompanhantes', passo: 'acompanhantes', rotulo: 'Acompanhantes' });
-                telas.push({ chave: 'fim', passo: 'final', rotulo: 'Tela final' });
-
-                const desativadas = todas.map((t, i) => ({ t, i })).filter(({ t }) => t && t.ativa === false);
+                  ...paginasExtras.map(({ membros, numero }) => ({
+                    chave: `extra_${membros[0]}`,
+                    membros: membros.map((m) => `extra_${m}`),
+                    passo: `extra_${ativas.findIndex(({ i }) => i === membros[0])}`,
+                    indices: membros,
+                    rotulo: `Tela ${numero}`
+                  })),
+                  { chave: 'acompanhantes', passo: 'acompanhantes', rotulo: 'Acompanhantes' },
+                  { chave: 'fim', passo: 'final', rotulo: 'Tela final', fixa: true }
+                ].map((t) => ({ ...t, oculta: telaOculta(t.chave) }));
 
                 return (
                   <>
-                    {telas.map((tl) => (
+                    {telas.map((tl) => {
+                      const olho = tl.fixa ? null : <OlhoTela oculta={tl.oculta} rotulo={tl.rotulo} onClick={() => alternarTela(tl.chave, tl.indices)} />;
+                      if (tl.oculta) {
+                        const sel = (tl.membros || [tl.chave]).includes(activeTab);
+                        return (
+                          <div key={`prev_off_${tl.chave}`} data-preview="1" className="w-full flex flex-col items-center gap-1.5 p-0.5">
+                            <button
+                              type="button"
+                              onClick={() => (tl.indices ? abrirPagina(tl.indices) : setActiveTab(tl.chave))}
+                              className={`w-full max-w-[260px] aspect-[9/16] rounded-3xl border border-dashed flex flex-col items-center justify-center gap-3 p-4 text-center text-xs transition ${sel ? 'border-slate-200 text-slate-200' : 'border-slate-700 text-slate-500 hover:border-slate-500 hover:text-slate-300'}`}
+                            >
+                              <EyeOff className="w-8 h-8" />
+                              <span>Oculta: o celular pula esta tela</span>
+                            </button>
+                            <span className="flex items-center gap-1">
+                              <span className={`text-xs line-through ${sel ? 'text-white font-semibold' : 'text-slate-500'}`}>{tl.rotulo}</span>
+                              {olho}
+                            </span>
+                          </div>
+                        );
+                      }
+                      return (
                       <PreviewCelular
+                        acao={olho}
                         key={`prev_${tl.chave}`}
                         config={config}
                         titulo={eventoTitulo}
@@ -2987,24 +3031,12 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         onNavegar={(passo) => {
                           const m = /^extra_(\d+)$/.exec(passo);
                           const chaveReal = m && ativas[Number(m[1])] ? `extra_${ativas[Number(m[1])].i}` : null;
-                          const alvo = telas.find((t) => t.passo === passo) || telas.find((t) => chaveReal && (t.membros || []).includes(chaveReal));
+                          const alvo = telas.find((t) => t.passo === passo && !t.oculta) || telas.find((t) => chaveReal && (t.membros || []).includes(chaveReal));
                           if (alvo) { if (alvo.indices) abrirPagina(alvo.indices); else setActiveTab(alvo.chave); }
                         }}
                       />
-                    ))}
-                    {desativadas.map(({ i }) => (
-                      <button
-                        key={`prev_off_${i}`}
-                        type="button"
-                        data-preview="1"
-                        onClick={() => setActiveTab(`extra_${i}`)}
-                        className={`w-full max-w-[260px] aspect-[9/16] rounded-2xl border border-dashed flex items-center justify-center p-4 text-center text-xs ${
-                          activeTab === `extra_${i}` ? 'border-slate-200 text-slate-200' : 'border-slate-700 text-slate-500'
-                        }`}
-                      >
-                        Tela {numeroDaTela(i)} está desativada e não aparece no celular
-                      </button>
-                    ))}
+                      );
+                    })}
                   </>
                 );
               })()}

@@ -597,7 +597,9 @@ export default function MobileForm({ preview = false }) {
 
   // Lista de cards ativos da Pergunta 1
   const todosCardsP1 = questionsConfig?.opcoesChegada || DEFAULT_QUESTIONS_CONFIG.opcoesChegada;
-  const cardsAtivosP1 = todosCardsP1.filter((c) => c.ativo !== false);
+  // Tela 1 oculta pelo olho do editor: não aparece e não vira resposta
+  const p1Oculta = Boolean(questionsConfig?.p1Oculta) && !preview;
+  const cardsAtivosP1 = p1Oculta ? [] : todosCardsP1.filter((c) => c.ativo !== false);
   const iconesP1 = iconesDaTela(cardsAtivosP1);
   const cardsPorTela = Number(questionsConfig?.cardsPorTela) || 4;
   
@@ -634,6 +636,25 @@ export default function MobileForm({ preview = false }) {
 
   // Telas extras ativas configuradas pelo admin
   const telasExtrasAtivas = (questionsConfig?.telasExtras || []).filter((t) => t.ativa !== false);
+
+  // Se o admin ocultar ou mostrar telas no meio da pesquisa, a pessoa continua na mesma pergunta
+  const idsTelas = telasExtrasAtivas.map((t) => t.id).join('|');
+  const telaAtualRef = useRef({ ids: '', id: null });
+  useEffect(() => {
+    if (preview) return;
+    const i = currentStep.startsWith('extra_') ? parseInt(currentStep.split('_')[1], 10) : -1;
+    const antes = telaAtualRef.current;
+    if (i >= 0 && antes.id && antes.ids && antes.ids !== idsTelas) {
+      const novo = telasExtrasAtivas.findIndex((t) => t.id === antes.id);
+      if (novo >= 0 && novo !== i) {
+        telaAtualRef.current = { ids: idsTelas, id: antes.id };
+        setCurrentStep(`extra_${novo}`);
+        return;
+      }
+    }
+    telaAtualRef.current = { ids: idsTelas, id: i >= 0 ? telasExtrasAtivas[i]?.id || null : null };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preview, currentStep, idsTelas]);
 
   // Se o admin remover a tela em que a pessoa estava, vai para a última tela que ainda existe
   // (espera um pouco: ao atualizar, a configuração do evento chega logo depois)
@@ -881,6 +902,14 @@ export default function MobileForm({ preview = false }) {
       handleSelectQtd(1, finalMotivo);
     }
   };
+
+  // Tela 1 oculta: quem cairia nela vai direto para a próxima (nunca envia sozinho)
+  const podePular = telasExtrasAtivas.length > 0 || questionsConfig?.mostrarTelaAcompanhantes !== false;
+  const naTela1 = currentStep === 'p1' && (questionsConfig?.mostrarBotaoComecar === false || jaClicouComecar);
+  useEffect(() => {
+    if (p1Oculta && naTela1 && podePular && sessaoAtiva && !dispositivoBloqueado) avancarDeP1();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [p1Oculta, naTela1, podePular, sessaoAtiva, dispositivoBloqueado]);
 
   // PRÓXIMA na Tela 1: segue sem gravar resposta (mantém a que já tiver sido dada)
   const pularP1 = () => {
@@ -1200,7 +1229,7 @@ export default function MobileForm({ preview = false }) {
     );
   }
 
-  const etapas = telasExtrasAtivas.length + 1 + (questionsConfig?.mostrarTelaAcompanhantes !== false ? 1 : 0);
+  const etapas = telasExtrasAtivas.length + (p1Oculta ? 0 : 1) + (questionsConfig?.mostrarTelaAcompanhantes !== false ? 1 : 0);
   const progresso = (currentStep === 'p1' ? 1 : currentStep === 'acompanhantes' ? etapas : parseInt(currentStep.split('_')[1], 10) + 2) / Math.max(1, etapas + 1);
 
   // Cabeçalho preso no alto: só onde há título (não na capa nem em página com várias perguntas)
@@ -1592,6 +1621,7 @@ export default function MobileForm({ preview = false }) {
 
           const voltarParaAnterior = () => {
             if (idx === 0) {
+              if (p1Oculta) setJaClicouComecar(false);
               setCurrentStep('p1');
             } else {
               // volta para o INÍCIO da página anterior
@@ -2224,6 +2254,7 @@ export default function MobileForm({ preview = false }) {
               onAnterior={() => comFeedback('voltar_acomp', () => {
                 let alvo = telasExtrasAtivas.length - 1;
                 while (alvo > 0 && continuaNaMesmaPagina(telasExtrasAtivas[alvo - 1], telasExtrasAtivas[alvo])) alvo--;
+                if (alvo < 0 && p1Oculta) setJaClicouComecar(false);
                 setCurrentStep(alvo >= 0 ? `extra_${alvo}` : 'p1');
               })}
             />

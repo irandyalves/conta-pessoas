@@ -162,13 +162,14 @@ export function consolidar(presencas = [], config = null) {
   const cfg = config || {};
   const itens = [...presencas].sort((a, b) => String(a.criadoEm || '').localeCompare(String(b.criadoEm || '')));
   const cardsP1 = (cfg.opcoesChegada || []).filter((o) => o?.ativo !== false && limpar(o?.titulo));
-  const telas = (cfg.telasExtras || []).filter((t) => t && t.ativa !== false);
+  // telas ocultas só entram se já tinham respostas (nada do que foi respondido se perde)
+  const telas = (cfg.telasExtras || []).filter(Boolean);
   const tituloP1 = [cfg.pergunta1Titulo, cfg.pergunta1Titulo2].filter(Boolean).join(' ') || 'Tela 1';
 
   // rótulo gravado => tela (para registros antigos, sem telaId)
   const usados = { [limpar(tituloP1)]: 1 };
   const porRotulo = {};
-  telas.forEach((t, i) => {
+  [...telas.filter((t) => t.ativa !== false), ...telas.filter((t) => t.ativa === false)].forEach((t, i) => {
     const r = limpar(tituloTela(t, i));
     usados[r] = (usados[r] || 0) + 1;
     porRotulo[usados[r] > 1 ? `${r} (${usados[r]})` : r] = t.id;
@@ -221,13 +222,15 @@ export function consolidar(presencas = [], config = null) {
 
   if (cardsP1.length) {
     const ignorar = new Set(['Não respondeu', 'Participante', limpar(tituloP1), limpar(cfg.pergunta1Titulo), '']);
-    const entradas = itens.filter((i) => !ignorar.has(limpar(i.comoChegou))).map((item) => ({ item, resposta: item.comoChegou }));
+    const entradas = itens.filter((i) => !ignorar.has(limpar(i.comoChegou)) && (!cfg.p1Oculta || cardsP1.some((o) => limpar(o.titulo) === limpar(i.comoChegou)))).map((item) => ({ item, resposta: item.comoChegou }));
     perguntas.push(montar({ id: 'p1', titulo: limpar(tituloP1) }, 'escolha', entradas, { nomes: cardsP1.map((o) => limpar(o.titulo)) }));
+    if (cfg.p1Oculta && !perguntas[0].respondentes) perguntas.pop();
     addGavetas('p1', cfg.opcoesChegada);
   }
 
   telas.forEach((t, i) => {
     const entradas = principais[t.id] || [];
+    if (t.ativa === false && !entradas.length) return;
     const nomes = (t.opcoes || []).filter((o) => o?.ativo !== false).map((o) => limpar(o?.titulo)).filter(Boolean);
     const base = { id: t.id, titulo: limpar(tituloTela(t, i)), detalhe: limpar(t.subtitulo) };
     const tipo = t.tipo || 'cards';
@@ -247,7 +250,7 @@ export function consolidar(presencas = [], config = null) {
   });
 
   const pessoas = itens.reduce((a, i) => a + (Number(i.qtdPessoas) || 1), 0);
-  if (cfg.mostrarTelaAcompanhantes !== false && itens.some((i) => Number(i.qtdPessoas) > 1)) {
+  if (itens.some((i) => Number(i.qtdPessoas) > 1)) {
     const mapa = contar(itens.map((i) => Number(i.qtdPessoas) || 1));
     perguntas.push({
       id: 'grupo', tipo: 'nota', titulo: limpar([cfg.pergunta2Titulo, cfg.pergunta2Titulo2].filter(Boolean).join(' ')) || 'Pessoas por grupo',

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { AlignLeft, AlignCenter, AlignRight, ChevronDown, GripVertical } from 'lucide-react';
+import { AlignLeft, AlignCenter, AlignRight, ChevronDown, GripVertical, Eye, EyeOff } from 'lucide-react';
 import { carregarFontes, familiaCss, FONTES, fontePorId } from '../utils/fontes';
 
 // =====================================================================
@@ -335,6 +335,21 @@ export function BotaoObrigatorio({ valor, onChange }) {
       className={`px-3 py-1.5 rounded-lg text-xs transition ${valor ? 'bg-red-900 text-white font-semibold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
     >
       {valor ? 'Resposta obrigatória' : 'Resposta opcional'}
+    </button>
+  );
+}
+
+// Olho: mostra ou oculta uma tela da pesquisa
+export function OlhoTela({ oculta, rotulo, onClick, className = '' }) {
+  const Icone = oculta ? EyeOff : Eye;
+  const nome = oculta ? `Mostrar ${rotulo} na pesquisa` : `Ocultar ${rotulo}: a pesquisa pula esta tela`;
+  return (
+    <button
+      type="button" title={nome} aria-label={nome} aria-pressed={oculta}
+      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      className={`p-1 rounded-md transition ${oculta ? 'text-rose-300 bg-rose-500/15 hover:bg-rose-500/30' : 'text-slate-500 hover:text-white hover:bg-slate-800'} ${className}`}
+    >
+      <Icone className="w-4 h-4" />
     </button>
   );
 }

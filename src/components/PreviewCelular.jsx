@@ -16,7 +16,8 @@ export default function PreviewCelular({
   selecionado = false,
   onSelecionar,
   onNavegar,
-  rotulo = ''
+  rotulo = '',
+  acao = null
 }) {
   const caixaRef = useRef(null);
   const frameRef = useRef(null);
@@ -117,7 +118,10 @@ export default function PreviewCelular({
         </div>
       </div>
       {rotulo && (
-        <span className={`text-xs ${selecionado ? 'text-white font-semibold' : 'text-slate-400'}`}>{rotulo}</span>
+        <span className="flex items-center gap-1">
+          <span className={`text-xs ${selecionado ? 'text-white font-semibold' : 'text-slate-400'}`}>{rotulo}</span>
+          {acao}
+        </span>
       )}
     </div>
   );
