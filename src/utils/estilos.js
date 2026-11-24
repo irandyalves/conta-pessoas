@@ -342,7 +342,7 @@ const MAPA_EXTRA = {
 };
 // Campos com o mesmo nome nos dois lugares
 const COMUNS = ['cardFamilia', 'cardBorda', 'cardBordaLargura', 'gradeFamilia', 'legendaFamilia', 'legendaBorda', 'legendaBordaLargura', 'itemFamilia', 'itemBorda', 'itemBordaLargura', 'gradeFormato', 'gradeEfeito', 'gradeProfundidade', 'gradeCor', 'gradeCorTexto', 'gradeLinha', 'gradeLinhaEspessura', 'gradeAltura', 'gradeRaio', 'cardAltura', 'cardEspaco', 'cardRaio', 'cardsPorTela', 'cardFundoEstilo', 'cardEfeitoEstilo', 'cardProfundidade', 'cardCorFonteTitulo',
-  'cardCorFonteSubtitulo', 'cardFonteTitulo', 'cardFonteSubtitulo', 'escalaTamanho', 'legendaCor', 'legendaBold', 'legendaFundo', 'legendaAlinhamento', 'legendaColunas', 'legendaIcones',
+  'cardCorFonteSubtitulo', 'cardFonteTitulo', 'cardFonteSubtitulo', 'escalaTamanho', 'legendaCor', 'legendaBold', 'legendaFundo', 'legendaAlinhamento', 'legendaColunas', 'legendaIcones', 'instrucaoTamanho', 'instrucaoCor', 'instrucaoBold', 'instrucaoCaixa', 'instrucaoFamilia', 'instrucaoBorda', 'instrucaoBordaLargura', 'instrucaoAlinhamento', 'instrucaoFundo', 'instrucaoAltura', 'instrucaoEspaco', 'instrucaoPosicao',
   'itemTamanho', 'itemCor', 'itemBold', 'itemFundo', 'legendaFaixa', 'itemFaixa', 'legendaCaixa', 'itemCaixa'];
 
 export function extrairEstilo(origem, ehP1) {

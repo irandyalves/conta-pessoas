@@ -63,7 +63,7 @@ import { FORMATOS_CAMPO, formatoPorId } from '../utils/campoTexto';
 import { chaveTamanho, estiloLinhaFinal, LINHAS_FINAL } from '../utils/telaFinal';
 import BarraProgresso, { CORES_PROGRESSO, CORES_PROGRESSO_LAYOUT, ESTILOS_PROGRESSO, usaDuasCores } from './BarraProgresso';
 import { Columns2, Rows3, Smile as IconeRosto, WrapText } from 'lucide-react';
-import EscalaVisual, { ESTILOS_ESCALA } from './EscalaVisual';
+import EscalaVisual, { ESTILOS_ESCALA, INSTRUCAO_PADRAO, instrucaoDaEscala } from './EscalaVisual';
 import EstiloLinhasTitulo, { ControleEspacos } from './EstiloLinhasTitulo';
 import { BotaoObrigatorio, Campo, Chave, Cores, Deslizante, Lista, MiniSlider, QuestaoArrastavel, Secao, Segmentos, SeletorFonte, SeletorIcone } from './Controles';
 import { ICONES_CARDS, iconesDaTela } from '../utils/icones';
@@ -2257,6 +2257,24 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                               { rotulo: 'Título 2', texto: telaAlvo.titulo2 ?? '', onTexto: (v) => { set('titulo2')(v); set('titulo')(`${telaAlvo.titulo1 || telaAlvo.titulo || ''} ${v}`.trim()); }, tamanho: telaAlvo.titulo2Tamanho || 15, min: 11, max: 36, onTamanho: set('titulo2Tamanho'), cor: telaAlvo.titulo2Cor || 'dourado', onCor: set('titulo2Cor') },
                               { rotulo: 'Título 3', texto: telaAlvo.titulo3 ?? '', onTexto: set('titulo3'), tamanho: telaAlvo.titulo3Tamanho || 14, min: 11, max: 36, onTamanho: set('titulo3Tamanho'), cor: telaAlvo.titulo3Cor || 'verde', onCor: set('titulo3Cor') },
                               { rotulo: 'Texto abaixo', texto: telaAlvo.subtitulo ?? '', onTexto: set('subtitulo'), multilinha: true, tamanho: telaAlvo.subtituloTamanho || 12, min: 9, max: 26, onTamanho: set('subtituloTamanho'), cor: telaAlvo.subtituloCor || 'cinza', onCor: set('subtituloCor'), bold: Boolean(telaAlvo.subBold), onBold: set('subBold'), caixa: telaAlvo.subCaixa, onCaixa: set('subCaixa'), ...fonteBordaLinha((k) => telaAlvo[`sub${k}`], (k, v) => handleUpdateTelaProp(extraIndex, `sub${k}`, v)), alinhamento: e.subAl, onAlinhamento: set('subAlinhamento'), fundo: e.subFundo, onFundo: set('subFundo'), faixa: telaAlvo.subFaixa ?? config.faixaPadrao, onFaixa: (v) => gravarEstilo(extraIndex, 'subFaixa', v) },
+                              ...(telaAlvo.tipo === 'slider' ? [
+                                {
+                                  rotulo: 'Instrução', texto: instrucaoDaEscala(telaAlvo), onTexto: set('sliderInstrucao'), multilinha: true, placeholder: INSTRUCAO_PADRAO,
+                                  tamanho: telaAlvo.instrucaoTamanho || 14, min: 9, max: 28, onTamanho: set('instrucaoTamanho'),
+                                  cor: telaAlvo.instrucaoCor || 'tema', onCor: set('instrucaoCor'),
+                                  bold: Boolean(telaAlvo.instrucaoBold), onBold: set('instrucaoBold'), caixa: telaAlvo.instrucaoCaixa, onCaixa: set('instrucaoCaixa'),
+                                  ...fonteBordaLinha((k) => telaAlvo[`instrucao${k}`], (k, v) => handleUpdateTelaProp(extraIndex, `instrucao${k}`, v)),
+                                  alinhamento: telaAlvo.instrucaoAlinhamento || 'center', onAlinhamento: set('instrucaoAlinhamento'),
+                                  fundo: telaAlvo.instrucaoFundo || 'transparente', onFundo: set('instrucaoFundo'), faixa: telaAlvo.instrucaoAltura, onFaixa: set('instrucaoAltura'),
+                                  abaixo: (
+                                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+                                      <Segmentos rotulo="Posição" opcoes={[{ id: 'acima', label: 'Acima da escala' }, { id: 'abaixo', label: 'Abaixo da escala' }]} valor={telaAlvo.instrucaoPosicao || 'acima'} onChange={set('instrucaoPosicao')} />
+                                      <MiniSlider rotulo="Espaço" valor={Number(telaAlvo.instrucaoEspaco ?? 16)} min={0} max={60} onChange={set('instrucaoEspaco')} />
+                                      <button type="button" onClick={() => set('sliderInstrucao')(INSTRUCAO_PADRAO)} className="px-2 py-1 rounded-md text-[11px] font-semibold bg-slate-950/60 text-slate-200 hover:bg-slate-800 hover:text-white transition">Usar texto sugerido</button>
+                                    </div>
+                                  )
+                                }
+                              ] : []),
                               ...(telaAlvo.tipo === 'grade' ? [
                                 { rotulo: 'Legenda', texto: telaAlvo.legendaEscala ?? '', onTexto: set('legendaEscala'), placeholder: '1 = Péssimo; 5 = Ótimo; NA = Não se aplica', tamanho: telaAlvo.escalaTamanho || 9, min: 7, max: 18, onTamanho: set('escalaTamanho'), cor: telaAlvo.legendaCor || 'cinza', onCor: set('legendaCor'), alinhamento: telaAlvo.legendaAlinhamento || 'center', onAlinhamento: set('legendaAlinhamento'),
                                   extra: (

@@ -21,6 +21,14 @@ export const ESTILOS_ESCALA = [
 
 // Estilos que mostram um valor inicial (o participante só arrasta)
 export const ESCALA_COM_VALOR_INICIAL = ['slider', 'numero', 'carinhas', 'boneco', 'coruja', 'gato', 'robo', 'termometro'];
+
+// Instrução da escala. Sem nada configurado, só aparece nas perguntas de satisfação com escala de arrastar.
+export const INSTRUCAO_PADRAO = 'De acordo com o seu grau de satisfação, arraste para a direita ou para a esquerda.';
+export const instrucaoDaEscala = (tela) => {
+  if (tela?.sliderInstrucao !== undefined && tela?.sliderInstrucao !== null) return tela.sliderInstrucao;
+  const titulo = [tela?.titulo, tela?.titulo1, tela?.titulo2, tela?.titulo3].filter(Boolean).join(' ');
+  return ESCALA_COM_VALOR_INICIAL.includes(tela?.estiloEscala || 'slider') && /satisfa/i.test(titulo) ? INSTRUCAO_PADRAO : '';
+};
 const AVATARES = { boneco: Boneco, coruja: Coruja, gato: Gato, robo: Robo };
 
 const corDoValor = (v, min, max) => corHumor(max > min ? (v - min) / (max - min) : 1);

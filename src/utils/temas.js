@@ -44,7 +44,8 @@ const camposTela = (t) => ({
   ...CARDS,
   cardEspaco: t.espaco,
   ...comPrefixo('grade', BOTAO_VAZIO),
-  ...fb('titulo'), ...fb('sub'), ...fb('legenda'), ...fb('item'),
+  ...fb('titulo'), ...fb('sub'), ...fb('legenda'), ...fb('item'), ...fb('instrucao'),
+  instrucaoCor: 'tema', instrucaoFundo: 'transparente',
   tituloFundo: 'tema', titulo1Cor: 'tema', titulo2Cor: 'tema', titulo3Cor: 'tema',
   subFundo: 'tema', subtituloCor: 'tema',
   legendaFundo: 'tema', legendaCor: 'tema', itemFundo: 'tema', itemCor: 'tema'
@@ -155,7 +156,7 @@ export const aplicarTema = (cfgAtual, id) => {
   const semTema = (x) => Object.fromEntries(Object.keys(camposDaTela).filter((k) => x[k] === 'tema').map((k) => [k, null]));
   const visualDaTela = (x) => {
     const guardado = salvo.telas?.[x?.id];
-    const base = t ? camposDaTela : guardado ? {} : semTema(x);
+    const base = t ? camposDaTela : guardado ? Object.fromEntries(Object.keys(camposDaTela).map((k) => [k, null])) : semTema(x);
     return { ...base, ...filtrar(guardado || (t ? {} : modelo), (k) => k in camposDaTela) };
   };
 

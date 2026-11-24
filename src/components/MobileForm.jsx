@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import IconeEspera from './IconeEspera';
-import EscalaVisual, { ESCALA_COM_VALOR_INICIAL } from './EscalaVisual';
+import EscalaVisual, { ESCALA_COM_VALOR_INICIAL, instrucaoDaEscala } from './EscalaVisual';
 import { 
   registrarPresenca, 
   escutarTituloEvento, 
@@ -49,7 +49,7 @@ import { atributosCampo, erroDeFormato, mascaraTelefone, mensagemFalta, usaMaius
 import { camposDoTexto, exemploDe, linhasFinais } from '../utils/telaFinal';
 import { carregarFonteTema, classeTema } from '../utils/temas';
 import { carregarFontes, fontesEmUso } from '../utils/fontes';
-import { fonteEBorda, partesTitulo, subtituloRepeteLegenda, corLinhaHex, lerGeral, caixaAlta, telaP1Cantos, estiloBotao, cantosCard, CARD_ESPACO_PADRAO, faixaEstilo, linhasCapa, medidasCard, espacos, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getEfeitoStyle, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems } from '../utils/estilos';
+import { fonteEBorda, partesTitulo, subtituloRepeteLegenda, corLinhaHex, corTextoHex, lerGeral, caixaAlta, telaP1Cantos, estiloBotao, cantosCard, CARD_ESPACO_PADRAO, faixaEstilo, linhasCapa, medidasCard, espacos, getFaixaFundoClass, estiloLinhas, pesoFonte, corGradeSelecionada, getEfeitoStyle, getCorTextoLinhaClass, getAlinhamentoClass, getCaptionFundoClass, parseScaleLegendItems } from '../utils/estilos';
 
 const DISPOSITIVO_BLOQUEADO_KEY = 'presenca_dispositivo_bloqueado_voto';
 const DISPOSITIVO_VOTO_TIME_KEY = 'presenca_dispositivo_hora_voto';
@@ -183,6 +183,28 @@ const humorColuna = (col, cols) => {
   const i = nums.indexOf(col);
   return i < 0 ? null : nums.length < 2 ? 1 : i / (nums.length - 1);
 };
+
+// Instrução da escala ("arraste para a direita ou para a esquerda")
+function InstrucaoEscala({ tela, posicao }) {
+  const texto = instrucaoDaEscala(tela);
+  if (!String(texto || '').trim() || (tela.instrucaoPosicao || 'acima') !== posicao) return null;
+  const fundo = tela.instrucaoFundo || 'transparente';
+  const espaco = Number(tela.instrucaoEspaco ?? 16);
+  return (
+    <p
+      style={{
+        fontSize: `${tela.instrucaoTamanho || 14}px`,
+        ...faixaEstilo(fundo, tela.instrucaoAltura),
+        ...fonteEBorda(tela, 'instrucao', fundo !== 'transparente', false),
+        color: corTextoHex(tela.instrucaoCor),
+        [posicao === 'acima' ? 'marginBottom' : 'marginTop']: espaco
+      }}
+      className={`t-cor text-slate-200 leading-snug whitespace-pre-line ${getFaixaFundoClass(fundo, 'rounded-xl')} ${tela.instrucaoBold ? 'font-bold' : 'font-medium'} ${caixaAlta(tela.instrucaoCaixa)} ${getAlinhamentoClass(tela.instrucaoAlinhamento || 'center')}`}
+    >
+      {texto}
+    </p>
+  );
+}
 
 // Legenda da grade: alinhamento, 1 ou 2 colunas (ou corrida) e ícones opcionais
 function LegendaGrade({ tela, className, style }) {
@@ -1676,11 +1698,15 @@ export default function MobileForm({ preview = false }) {
 
                   {tela.tipo === 'slider' && (
                     <div className="t-caixa p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-4 text-center">
-                      <EscalaVisual
-                        tela={tela}
-                        valor={valAtual}
-                        onChange={(v) => setTextos((prev) => ({ ...prev, [valKey]: v }))}
-                      />
+                      <div>
+                        <InstrucaoEscala tela={tela} posicao="acima" />
+                        <EscalaVisual
+                          tela={tela}
+                          valor={valAtual}
+                          onChange={(v) => setTextos((prev) => ({ ...prev, [valKey]: v }))}
+                        />
+                        <InstrucaoEscala tela={tela} posicao="abaixo" />
+                      </div>
                       {tela.legendaEscala && (
                         <div className="flex flex-wrap items-center justify-center gap-1.5 pt-1">
                           {parseScaleLegendItems(tela.legendaEscala).map((item, li) => (
