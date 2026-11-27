@@ -293,3 +293,7 @@ button.texto-lixeira:hover { background: rgba(239, 68, 68, .28); color: #fecaca;
 [style*='--borda-cor']::before { content: ''; position: absolute; inset: var(--borda-fora); padding: var(--borda-p); border-radius: inherit; pointer-events: none; background: linear-gradient(var(--borda-dir), var(--borda-cor) 12%, transparent 92%); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
 
 .giro-versoes { transition: transform cubic-bezier(.3, .7, .2, 1); }
+
+/* Gaveta de ajustes do "Como responder": desce de cima para baixo */
+@keyframes gavetaDesce { from { opacity: 0; transform: translateY(-10px) scaleY(.96); } to { opacity: 1; transform: none; } }
+.gaveta-tipo { transform-origin: top; animation: gavetaDesce .22s ease-out; }

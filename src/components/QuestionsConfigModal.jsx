@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  X, 
+  X, Settings,
   Save, 
   RotateCcw, 
   ListOrdered, 
@@ -115,29 +115,66 @@ const GRUPOS_RESPOSTA = [
   { grupo: 'Data', tipos: [['data', 'Data'], ['hora', 'Hora']] }
 ];
 
-function TipoResposta({ valor, onChange }) {
+// configurar(id): conteúdo da gaveta de ajustes do tipo escolhido (null = sem engrenagem)
+function TipoResposta({ valor, onChange, configurar = null }) {
+  const [aberta, setAberta] = useState(false);
+  const caixaRef = useRef(null);
+  const conteudo = configurar ? configurar(valor) : null;
+  useEffect(() => {
+    if (!aberta) return undefined;
+    const fora = (e) => { if (caixaRef.current && !caixaRef.current.contains(e.target)) setAberta(false); };
+    const esc = (e) => { if (e.key === 'Escape') setAberta(false); };
+    document.addEventListener('mousedown', fora);
+    document.addEventListener('keydown', esc);
+    return () => { document.removeEventListener('mousedown', fora); document.removeEventListener('keydown', esc); };
+  }, [aberta]);
   return (
-    <section className="rounded-lg bg-slate-800/40 px-3 py-2.5 mb-2.5">
+    <section ref={caixaRef} className="relative rounded-lg bg-slate-800/40 px-3 py-2.5 mb-2.5">
       <h3 className="text-xs font-semibold text-slate-100 mb-2">Como responder</h3>
       <div className="flex flex-wrap gap-x-4 gap-y-2">
         {GRUPOS_RESPOSTA.map(({ grupo, tipos }) => (
           <div key={grupo} className="flex items-center gap-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 w-12">{grupo}</span>
-            {tipos.map(([id, rotulo]) => (
-              <button
-                key={id}
-                type="button"
-                aria-pressed={valor === id}
-                title={TIPOS_PERGUNTA.find((t) => t.id === id)?.desc}
-                onClick={() => valor !== id && onChange(id)}
-                className={`px-2.5 h-7 rounded-md text-[11px] font-semibold transition ${valor === id ? 'bg-slate-100 text-slate-900' : 'bg-slate-950/60 text-slate-300 hover:text-white hover:bg-slate-800'}`}
-              >
-                {rotulo}
-              </button>
-            ))}
+            {grupo !== 'Escolha' && <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 w-12">{grupo}</span>}
+            {tipos.map(([id, rotulo]) => {
+              const sel = valor === id;
+              const comEngrenagem = sel && conteudo;
+              return (
+                <span key={id} className={`inline-flex items-center h-7 transition ${sel ? 'bg-slate-100 text-slate-900 rounded-full shadow' : 'rounded-md'} ${comEngrenagem && aberta ? 'ring-2 ring-amber-300' : ''}`}>
+                  <button
+                    type="button"
+                    aria-pressed={sel}
+                    title={TIPOS_PERGUNTA.find((t) => t.id === id)?.desc}
+                    onClick={() => (sel ? (conteudo && setAberta((a) => !a)) : onChange(id))}
+                    className={`h-7 text-[11px] font-semibold transition ${sel ? `${comEngrenagem ? 'pl-3 pr-1.5' : 'px-3'}` : 'px-2.5 rounded-md bg-slate-950/60 text-slate-300 hover:text-white hover:bg-slate-800'}`}
+                  >
+                    {rotulo}
+                  </button>
+                  {comEngrenagem && (
+                    <button
+                      type="button"
+                      title={`Configurar ${rotulo}`}
+                      aria-label={`Configurar ${rotulo}`}
+                      aria-expanded={aberta}
+                      onClick={() => setAberta((a) => !a)}
+                      className="h-7 pl-0.5 pr-2.5 flex items-center text-slate-600 hover:text-slate-900"
+                    >
+                      <Settings className={`w-3.5 h-3.5 transition-transform duration-300 ${aberta ? 'rotate-90' : ''}`} />
+                    </button>
+                  )}
+                </span>
+              );
+            })}
           </div>
         ))}
       </div>
+      {aberta && conteudo && (
+        <div className="gaveta-tipo absolute left-0 right-0 top-full mt-1.5 z-50 rounded-2xl border border-slate-600 bg-slate-900 shadow-2xl shadow-black/60 p-3 max-h-[70vh] overflow-y-auto">
+          <div className="flex justify-end -mb-6 relative z-10">
+            <button type="button" onClick={() => setAberta(false)} aria-label="Fechar" className="p-1 rounded-md text-slate-400 hover:text-white hover:bg-slate-800"><X className="w-4 h-4" /></button>
+          </div>
+          {conteudo}
+        </div>
+      )}
     </section>
   );
 }
@@ -737,12 +774,12 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
   };
 
   // Aparência dos cards de opção: a mesma para a Tela 1 e para as telas extras
-  const AparenciaCards = ({ ler, gravar, campoIcones, porPagina, opcoes, raios }) => {
+  const AparenciaCards = ({ ler, gravar, campoIcones, porPagina, opcoes, raios, prefixo = null }) => {
     // Só mostra ajuste do que aparece no celular (ex.: sem descrição nos cards, nada de descrição aqui)
     const temDescricao = opcoes.some((o) => String(o.subtitulo || '').trim());
     return (
     <>
-      <Secao titulo="Texto e cores">
+      <Secao titulo={prefixo ? <>{prefixo} <span className="text-amber-300 mx-1">•</span> Texto e cores</> : 'Texto e cores'}>
         <BarraFormato>
           <SeletorFonte rotulo="" valor={ler('cardFamilia')} onChange={(v) => gravar('cardFamilia', v)} />
           <MiniSlider rotulo="Tamanho do título" icone="tamanho" valor={ler('cardFonteTitulo') || 16} min={12} max={24} onChange={(v) => gravar('cardFonteTitulo', v)} />
@@ -1862,7 +1899,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       <div className="bloco-pergunta space-y-2.5">
                         <LinhasPergunta
                           key="perg_p1"
-                          cabecalho={<span className="text-xs font-semibold text-amber-200">Pergunta</span>}
+                          cabecalho={<span className="text-xs font-semibold text-amber-200">Título da Pergunta</span>}
                           linhas={[
                             { chave: 'pergunta', rotulo: 'Pergunta', fixa: true, removivel: false, multilinha: true, placeholder: 'Ex: Como você ficou sabendo da vigília?', texto: config.pergunta1Pergunta ?? '', onTexto: (v) => setCampo('pergunta1Pergunta', v), tamanho: config.pergunta1PerguntaTamanho || 18, min: 11, max: 36, onTamanho: (v) => setCampo('pergunta1PerguntaTamanho', v), cor: config.pergunta1PerguntaCor || 'branco', onCor: (v) => setCampo('pergunta1PerguntaCor', v), bold: config.pergunta1PerguntaBold !== false, onBold: (v) => setCampo('pergunta1PerguntaBold', v), caixa: config.pergunta1PerguntaCaixa, onCaixa: (v) => setCampo('pergunta1PerguntaCaixa', v), alinhamento: config.pergunta1PerguntaAlinhamento || 'center', onAlinhamento: (v) => setCampo('pergunta1PerguntaAlinhamento', v) },
                             { chave: 'apoio', rotulo: 'Texto de apoio', multilinha: true, texto: config.pergunta1Apoio ?? '', onTexto: (v) => setCampo('pergunta1Apoio', v), tamanho: config.pergunta1ApoioTamanho || 13, min: 9, max: 26, onTamanho: (v) => setCampo('pergunta1ApoioTamanho', v), cor: config.pergunta1ApoioCor || 'cinza', onCor: (v) => setCampo('pergunta1ApoioCor', v), bold: Boolean(config.pergunta1ApoioBold), onBold: (v) => setCampo('pergunta1ApoioBold', v), alinhamento: config.pergunta1ApoioAlinhamento || 'center', onAlinhamento: (v) => setCampo('pergunta1ApoioAlinhamento', v) }
@@ -2580,10 +2617,10 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         />
                         </div>
                         {juntos && (
-                          <div className="bloco-pergunta space-y-2.5">
+                          <div className="bloco-pergunta space-y-2.5 ml-[2ch]">
                             <LinhasPergunta
                               key={`perg_${telaAlvo.id || extraIndex}`}
-                              cabecalho={<span className="text-xs font-semibold text-amber-200">Pergunta</span>}
+                              cabecalho={<span className="text-xs font-semibold text-amber-200">Título da Pergunta</span>}
                               linhas={linhasDe(telaAlvo, extraIndex, 'pergunta', true)}
                               espacoResposta={(
                                 <>
@@ -2594,19 +2631,20 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             />
                           </div>
                         )}
-                        {juntos && <TipoResposta valor={telaAlvo.tipo || 'cards'} onChange={(v) => trocarTipoExtra(extraIndex, v)} />}
-                        {juntos && ehCards && (
-                          <div className="bloco-pergunta space-y-2.5">
-                            <span className="text-xs font-semibold text-slate-100">Aparência dos cards</span>
-                            {AparenciaCards({
+                        {juntos && (
+                          <TipoResposta
+                            valor={telaAlvo.tipo || 'cards'}
+                            onChange={(v) => trocarTipoExtra(extraIndex, v)}
+                            configurar={(tipo) => (tipo === 'cards' ? AparenciaCards({
                               ler: (k) => telaAlvo[k] ?? config[k],
                               gravar: (k, v) => gravarEstilo(extraIndex, k, v),
                               raios: raiosCard(config, telaAlvo),
                               campoIcones: 'mostrarIcones',
                               porPagina: limitCards,
-                              opcoes: cardsAtivos
-                            })}
-                          </div>
+                              opcoes: cardsAtivos,
+                              prefixo: 'Aparência dos cards'
+                            }) : null)}
+                          />
                         )}
                         {extraIndex > 0 && TIPOS_CAMPO_PAGINA.includes(telaAlvo.tipo) && TIPOS_CAMPO_PAGINA.includes((config.telasExtras || [])[extraIndex - 1]?.tipo) && (
                           <Secao>
