@@ -2373,7 +2373,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 const ehEscolha = ["cards", "radio", "checkbox", "dropdown"].includes(telaAlvo.tipo || "cards");
                 const subAtual = (() => {
                   if (subTabExtra === 'opcoes' && (semCampo || juntos)) return temLista ? 'lista' : 'pergunta';
-                  if (subTabExtra === 'lista' && !temLista) return semCampo ? 'pergunta' : 'opcoes';
+                  if (subTabExtra === 'lista' && !temLista) return 'pergunta';
                   if (subTabExtra === 'aparencia' && !temAparencia) return temEfeitos ? 'efeitos' : 'pergunta';
                   if (subTabExtra === 'efeitos' && !temEfeitos) return temAparencia ? 'aparencia' : 'pergunta';
                   return subTabExtra;
@@ -3007,7 +3007,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
                                   <div className={`grid grid-cols-1 gap-2 ${telaAlvo.tipo === 'grade' ? '' : 'sm:grid-cols-[3fr_1fr]'}`}>
                                     <div>
-                                      <label className="text-[11px] font-bold text-slate-400 block mb-0.5">{ehEscolha ? (ehCards ? `Card ${optIdx + 1}` : `Opção ${optIdx + 1}`) : "Título"}</label>
+                                      <label className="text-[11px] font-bold text-slate-400 block mb-0.5">{ehEscolha ? `Resposta ${optIdx + 1}` : "Título"}</label>
                                       <div className="flex items-center gap-1.5">
                                       {ehCards && (
                                         <SeletorIcone
