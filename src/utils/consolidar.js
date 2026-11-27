@@ -164,7 +164,7 @@ export function consolidar(presencas = [], config = null) {
   const cardsP1 = (cfg.opcoesChegada || []).filter((o) => o?.ativo !== false && limpar(o?.titulo));
   // telas ocultas só entram se já tinham respostas (nada do que foi respondido se perde)
   const telas = (cfg.telasExtras || []).filter(Boolean);
-  const tituloP1 = [cfg.pergunta1Titulo, cfg.pergunta1Titulo2].filter(Boolean).join(' ') || 'Tela 1';
+  const tituloP1 = cfg.pergunta1Pergunta || [cfg.pergunta1Titulo, cfg.pergunta1Titulo2].filter(Boolean).join(' ') || 'Tela 1';
 
   // rótulo gravado => tela (para registros antigos, sem telaId)
   const usados = { [limpar(tituloP1)]: 1 };
@@ -221,7 +221,7 @@ export function consolidar(presencas = [], config = null) {
   };
 
   if (cardsP1.length) {
-    const ignorar = new Set(['Não respondeu', 'Participante', limpar(tituloP1), limpar(cfg.pergunta1Titulo), '']);
+    const ignorar = new Set(['Não respondeu', 'Participante', limpar(tituloP1), limpar(cfg.pergunta1Titulo), limpar(cfg.pergunta1Pergunta), '']);
     const entradas = itens.filter((i) => !ignorar.has(limpar(i.comoChegou)) && (!cfg.p1Oculta || cardsP1.some((o) => limpar(o.titulo) === limpar(i.comoChegou)))).map((item) => ({ item, resposta: item.comoChegou }));
     perguntas.push(montar({ id: 'p1', titulo: limpar(tituloP1) }, 'escolha', entradas, { nomes: cardsP1.map((o) => limpar(o.titulo)) }));
     if (cfg.p1Oculta && !perguntas[0].respondentes) perguntas.pop();

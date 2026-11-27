@@ -4,7 +4,7 @@ const COM_OPCOES = ['cards', 'grade', 'radio', 'checkbox', 'dropdown'];
 export function telaAnterior(config, i) {
   const tela = config.telasExtras?.[i];
   if (!tela || !COM_OPCOES.includes(tela.tipo)) return null;
-  if (i === 0) return tela.tipo === 'cards' && (config.opcoesChegada || []).length > 0 ? { aba: 'tela_1', titulo: config.pergunta1Titulo || '' } : null;
+  if (i === 0) return tela.tipo === 'cards' && (config.opcoesChegada || []).length > 0 ? { aba: 'tela_1', titulo: config.pergunta1Pergunta || config.pergunta1Titulo || '' } : null;
   const ant = config.telasExtras[i - 1];
   return ant?.tipo === tela.tipo ? { aba: `extra_${i - 1}`, titulo: ant.titulo1 || ant.titulo || '' } : null;
 }

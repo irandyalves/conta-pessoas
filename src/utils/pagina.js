@@ -138,3 +138,31 @@ export function padraoPergunta(t) {
   out.titulos = [...acima, ...(t.titulos || []), ...abaixo];
   return out;
 }
+
+// Tela 1 no padrão de pergunta: títulos separados em pergunta1Titulos (mesmo formato de tela.titulos).
+// Título 1/2/3, títulos a mais e "Texto abaixo" viram títulos; com a pergunta vazia, o "Texto abaixo" vira a pergunta.
+export function padraoTela1(c) {
+  if (!c) return c;
+  const sobra = limpo(c.pergunta1Titulo) || limpo(c.pergunta1Titulo2) || limpo(c.pergunta1Titulo3) || limpo(c.pergunta1TextoAbaixo) || (c.pergunta1TitulosMais || []).some((x) => limpo(x?.texto));
+  if (Array.isArray(c.pergunta1Titulos) && !sobra) return c;
+  const comum = {
+    bold: c.pergunta1TituloBold !== false, caixa: c.pergunta1TituloCaixa, alinhamento: c.pergunta1TituloAlinhamento || 'center',
+    familia: c.pergunta1TituloFamilia, italico: c.pergunta1TituloItalico
+  };
+  const acima = [];
+  if (limpo(c.pergunta1Titulo)) acima.push(novoTitulo({ ...comum, texto: limpo(c.pergunta1Titulo), tamanho: c.pergunta1FonteTamanho || 18, cor: c.pergunta1TituloCor || 'branco', fundo: c.pergunta1TituloFundo || 'transparente', faixa: c.pergunta1TituloFaixa, borda: c.pergunta1TituloBorda, bordaLargura: c.pergunta1TituloBordaLargura, bordaLado: c.pergunta1TituloBordaLado }));
+  if (limpo(c.pergunta1Titulo2)) acima.push(novoTitulo({ ...comum, texto: limpo(c.pergunta1Titulo2), tamanho: c.pergunta1Titulo2Tamanho || 16, cor: c.pergunta1Titulo2Cor || 'dourado' }));
+  if (limpo(c.pergunta1Titulo3)) acima.push(novoTitulo({ ...comum, texto: limpo(c.pergunta1Titulo3), tamanho: c.pergunta1Titulo3Tamanho || 15, cor: c.pergunta1Titulo3Cor || 'verde' }));
+  (c.pergunta1TitulosMais || []).forEach((x) => { if (limpo(x?.texto)) acima.push(novoTitulo({ ...comum, texto: limpo(x.texto), tamanho: x.tamanho || 14, cor: x.cor || 'branco' })); });
+  const out = { ...c, pergunta1Titulo: '', pergunta1Titulo2: '', pergunta1Titulo3: '', pergunta1TitulosMais: [], pergunta1TextoAbaixo: '' };
+  const abaixoTxt = String(c.pergunta1TextoAbaixo ?? '').trim();
+  if (abaixoTxt) {
+    if (!limpo(c.pergunta1Pergunta)) {
+      Object.assign(out, { pergunta1Pergunta: abaixoTxt, pergunta1PerguntaTamanho: c.pergunta1PerguntaTamanho || 18 });
+    } else {
+      acima.push(novoTitulo({ texto: abaixoTxt, tamanho: c.pergunta1TextoAbaixoTamanho || 14, cor: c.pergunta1TextoAbaixoCor || 'cinza', bold: Boolean(c.pergunta1SubBold), caixa: c.pergunta1SubCaixa, alinhamento: c.pergunta1SubAlinhamento || 'center', fundo: c.pergunta1SubFundo || 'transparente' }));
+    }
+  }
+  out.pergunta1Titulos = [...acima, ...(c.pergunta1Titulos || [])];
+  return out;
+}

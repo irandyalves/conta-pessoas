@@ -354,7 +354,7 @@ export default function DashboardView({ onChangeView }) {
       });
     });
 
-    const tituloP1 = questionsConfig?.pergunta1Titulo || 'Como Chegou';
+    const tituloP1 = questionsConfig?.pergunta1Pergunta || questionsConfig?.pergunta1Titulo || 'Como Chegou';
     const headers = [
       'Evento',
       'Data',

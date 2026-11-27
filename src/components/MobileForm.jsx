@@ -1376,6 +1376,7 @@ export default function MobileForm({ preview = false }) {
         {/* TÍTULO DA ETAPA ATUAL: TELA 1 */}
         {currentStep === 'p1' && (questionsConfig.mostrarBotaoComecar === false || jaClicouComecar) && (
           <div className="mt-2 pt-2 flex flex-col" style={{ gap: espacos(questionsConfig, true).sub, marginBottom: espacos(questionsConfig, true).cards }}>
+            {(questionsConfig.pergunta1Titulos || []).some((x) => !x.abaixo && String(x.texto || '').trim()) && <div className="flex flex-col"><TitulosSoltos lista={(questionsConfig.pergunta1Titulos || []).filter((x) => !x.abaixo)} /></div>}
             {(questionsConfig.pergunta1Titulo || questionsConfig.pergunta1Titulo2 || questionsConfig.pergunta1Titulo3 || titulosMaisAtivos(questionsConfig.pergunta1TitulosMais).length > 0) && (
               <div style={{ gap: espacos(questionsConfig, true).tit, ...faixaEstilo(estiloLinhas(questionsConfig, 'pergunta1').tituloFundo, questionsConfig.pergunta1TituloFaixa ?? questionsConfig.faixaPadrao), ...fonteEBorda(questionsConfig, 'pergunta1Titulo', estiloLinhas(questionsConfig, 'pergunta1').tituloFundo !== 'transparente') }} className={`t-titulo flex flex-col ${getAlinhamentoClass(estiloLinhas(questionsConfig, 'pergunta1').tituloAl)} ${getFaixaFundoClass(estiloLinhas(questionsConfig, 'pergunta1').tituloFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}>
                 {questionsConfig.pergunta1Titulo && (
@@ -1574,6 +1575,7 @@ export default function MobileForm({ preview = false }) {
               <>
                 {/* SE DESABILITADO (COMEÇA DIRETO) OU JÁ CLICOU EM COMEÇAR: MOSTRA AS PERGUNTAS/OPÇÕES */}
                 <BlocoPergunta tela={perguntaTela1(questionsConfig)} />
+                {(questionsConfig.pergunta1Titulos || []).some((x) => x.abaixo && String(x.texto || '').trim()) && <div className="flex flex-col"><TitulosSoltos lista={(questionsConfig.pergunta1Titulos || []).filter((x) => x.abaixo)} /></div>}
                 {totalSlidesP1 > 1 && (
                   <div className="flex items-center justify-between px-1 text-xs">
                     <span className="font-bold text-amber-300">

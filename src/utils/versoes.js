@@ -53,7 +53,7 @@ export async function abrirArquivo(arquivo) {
 // O que mudou entre a versão e o que está no editor
 export function diferencas(versao, atual) {
   const telas = (c) => [
-    { id: 'p1', nome: c.pergunta1Titulo || 'Tela 1', opcoes: c.opcoesChegada || [] },
+    { id: 'p1', nome: c.pergunta1Pergunta || c.pergunta1Titulo || 'Tela 1', opcoes: c.opcoesChegada || [] },
     ...(c.telasExtras || []).map((t) => ({ id: t.id, nome: t.titulo1 || t.titulo, opcoes: t.opcoes || [] }))
   ];
   const a = telas(versao);

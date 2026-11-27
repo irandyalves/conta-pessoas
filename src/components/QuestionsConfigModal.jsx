@@ -58,7 +58,7 @@ import { corLinhaHex, soComuns, CAPA_LARGURA_MIN, raioCapa, LINHAS_CAPA, ordemCa
 import ImportadorIA from './ImportadorIA';
 import RecuperarVersao from './RecuperarVersao';
 import { juntarComAnterior, telaAnterior } from '../utils/juntarTelas';
-import { aplicarNaPagina, chavePagina, comEstiloPagina, paginaDe, primeiraDaPagina, semPagina, temTituloPagina, transferirPagina, tituloParaPergunta, padraoPergunta, novoTitulo } from '../utils/pagina';
+import { aplicarNaPagina, chavePagina, comEstiloPagina, paginaDe, primeiraDaPagina, semPagina, temTituloPagina, transferirPagina, tituloParaPergunta, padraoPergunta, padraoTela1, novoTitulo } from '../utils/pagina';
 import LinhasPergunta from './LinhasPergunta';
 import useDesfazer from '../utils/useDesfazer';
 import IconeEspera, { ICONES_ESPERA } from './IconeEspera';
@@ -807,6 +807,13 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
     </>
     );
   };
+
+  // Tela 1 aberta: títulos antigos viram títulos separados (uma vez)
+  useEffect(() => {
+    if (activeTab !== 'tela_1') return;
+    setConfig((c) => { const novo = padraoTela1(c); return novo === c ? c : novo; });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
 
   // Pergunta sozinha na página com o texto só no título da página: vira a própria pergunta
   useEffect(() => {
@@ -1905,24 +1912,38 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         entreTitulos={<MiniSlider rotulo="Entre títulos" valor={espacos(config, true).tit} min={0} max={40} onChange={(v) => setCampo('pergunta1EspacoTitulos', v)} />}
                         ateTexto={<MiniSlider rotulo="Até o texto" valor={espacos(config, true).sub} min={0} max={60} onChange={(v) => setCampo('pergunta1EspacoSub', v)} />}
                         espacoResposta={<EspacoAte rotulo="Espaço para o primeiro card" valor={espacos(config, true).cards} onChange={(v) => setCampo('pergunta1EspacoCards', v)} />}
-                        onOrdem={(ids) => setConfig((c) => ({
-                          ...c,
-                          ...permutar({
-                            p1a: { pergunta1Titulo: c.pergunta1Titulo ?? '', pergunta1FonteTamanho: c.pergunta1FonteTamanho || 18, pergunta1TituloCor: c.pergunta1TituloCor || 'branco' },
-                            p1b: { pergunta1Titulo2: c.pergunta1Titulo2 ?? '', pergunta1Titulo2Tamanho: c.pergunta1Titulo2Tamanho || 16, pergunta1Titulo2Cor: c.pergunta1Titulo2Cor || 'dourado' },
-                            p1c: { pergunta1Titulo3: c.pergunta1Titulo3 ?? '', pergunta1Titulo3Tamanho: c.pergunta1Titulo3Tamanho || 15, pergunta1Titulo3Cor: c.pergunta1Titulo3Cor || 'verde' }
-                          }, ids)
-                        }))}
+                        onOrdem={(ids) => setConfig((c) => {
+                          const iPerg = ids.indexOf('pergunta1');
+                          const lista = c.pergunta1Titulos || [];
+                          return { ...c, pergunta1Titulos: ids.filter((id) => id.startsWith('t_')).map((id) => { const x = lista.find((y) => `t_${y.id}` === id); return x && { ...x, abaixo: ids.indexOf(id) > iPerg }; }).filter(Boolean) };
+                        })}
+                        fim={(
+                          <button type="button" onClick={() => setConfig((c) => ({ ...c, pergunta1Titulos: [novoTitulo(), ...(c.pergunta1Titulos || [])] }))} className="texto-add">
+                            <Plus className="w-4 h-4" strokeWidth={4} /><span>Add Título</span>
+                          </button>
+                        )}
                         linhas={(() => {
-                          const e = estiloLinhas(config, 'pergunta1');
+                          const titulos = config.pergunta1Titulos || [];
+                          const gravarT = (fn) => setConfig((c) => ({ ...c, pergunta1Titulos: fn(c.pergunta1Titulos || []) }));
+                          const linhaTit = (x) => {
+                            const on = (k) => (v) => gravarT((l) => l.map((y) => (y.id === x.id ? { ...y, [k]: v } : y)));
+                            return {
+                              chave: `t_${x.id}`, rotulo: 'Título 1', numerar: true, fixa: true, multilinha: true,
+                              texto: x.texto ?? '', onTexto: on('texto'), placeholder: 'Digite o título',
+                              tamanho: x.tamanho || 18, min: 9, max: 36, onTamanho: on('tamanho'), cor: x.cor || 'branco', onCor: on('cor'),
+                              bold: x.bold !== false, onBold: on('bold'), caixa: x.caixa, onCaixa: on('caixa'),
+                              familia: x.familia, onFamilia: on('familia'), italico: x.italico, onItalico: on('italico'),
+                              borda: x.borda, onBorda: on('borda'), bordaLargura: x.bordaLargura, onBordaLargura: on('bordaLargura'), bordaLado: x.bordaLado, onBordaLado: on('bordaLado'),
+                              alinhamento: x.alinhamento || 'center', onAlinhamento: on('alinhamento'), fundo: x.fundo || 'transparente', onFundo: on('fundo'), faixa: x.faixa, onFaixa: on('faixa'),
+                              espaco: x.espaco ?? 12, onEspaco: on('espaco'),
+                              onRemover: () => gravarT((l) => l.filter((y) => y.id !== x.id))
+                            };
+                          };
                           return [
-                            { chave: 'p1a', rotulo: 'Título 1', texto: config.pergunta1Titulo ?? '', onTexto: (v) => setCampo('pergunta1Titulo', v), tamanho: config.pergunta1FonteTamanho || 18, min: 12, max: 36, onTamanho: (v) => setCampo('pergunta1FonteTamanho', v), cor: config.pergunta1TituloCor || 'branco', onCor: (v) => setCampo('pergunta1TituloCor', v), bold: config.pergunta1TituloBold !== false, onBold: (v) => setCampo('pergunta1TituloBold', v), caixa: config.pergunta1TituloCaixa, onCaixa: (v) => setCampo('pergunta1TituloCaixa', v), ...fonteBordaLinha((k) => config[`pergunta1Titulo${k}`], (k, v) => setCampo(`pergunta1Titulo${k}`, v)), alinhamento: e.tituloAl, onAlinhamento: (v) => setCampo('pergunta1TituloAlinhamento', v), fundo: e.tituloFundo, onFundo: (v) => setCampo('pergunta1TituloFundo', v), faixa: config.pergunta1TituloFaixa ?? config.faixaPadrao, onFaixa: (v) => gravarEstilo('p1', 'tituloFaixa', v) },
-                            { chave: 'p1b', rotulo: 'Título 2', texto: config.pergunta1Titulo2 ?? '', onTexto: (v) => setCampo('pergunta1Titulo2', v), tamanho: config.pergunta1Titulo2Tamanho || 16, min: 10, max: 32, onTamanho: (v) => setCampo('pergunta1Titulo2Tamanho', v), cor: config.pergunta1Titulo2Cor || 'dourado', onCor: (v) => setCampo('pergunta1Titulo2Cor', v) },
-                            { chave: 'p1c', rotulo: 'Título 3', texto: config.pergunta1Titulo3 ?? '', onTexto: (v) => setCampo('pergunta1Titulo3', v), tamanho: config.pergunta1Titulo3Tamanho || 15, min: 10, max: 30, onTamanho: (v) => setCampo('pergunta1Titulo3Tamanho', v), cor: config.pergunta1Titulo3Cor || 'verde', onCor: (v) => setCampo('pergunta1Titulo3Cor', v) },
-                            ...linhasTitulosMais(config.pergunta1TitulosMais, (v) => setCampo('pergunta1TitulosMais', v)),
-                            { rotulo: 'Texto abaixo', texto: config.pergunta1TextoAbaixo ?? '', onTexto: (v) => setCampo('pergunta1TextoAbaixo', v), multilinha: true, tamanho: config.pergunta1TextoAbaixoTamanho || 14, min: 9, max: 26, onTamanho: (v) => setCampo('pergunta1TextoAbaixoTamanho', v), cor: config.pergunta1TextoAbaixoCor || 'cinza', onCor: (v) => setCampo('pergunta1TextoAbaixoCor', v), bold: Boolean(config.pergunta1SubBold), onBold: (v) => setCampo('pergunta1SubBold', v), caixa: config.pergunta1SubCaixa, onCaixa: (v) => setCampo('pergunta1SubCaixa', v), ...fonteBordaLinha((k) => config[`pergunta1Sub${k}`], (k, v) => setCampo(`pergunta1Sub${k}`, v)), alinhamento: e.subAl, onAlinhamento: (v) => setCampo('pergunta1SubAlinhamento', v), fundo: e.subFundo, onFundo: (v) => setCampo('pergunta1SubFundo', v), faixa: config.pergunta1SubFaixa ?? config.faixaPadrao, onFaixa: (v) => gravarEstilo('p1', 'subFaixa', v) },
-                            { rotulo: 'Título da Pergunta', fixa: true, removivel: false, multilinha: true, placeholder: 'Ex: Como você ficou sabendo da vigília?', texto: config.pergunta1Pergunta ?? '', onTexto: (v) => setCampo('pergunta1Pergunta', v), tamanho: config.pergunta1PerguntaTamanho || 18, min: 11, max: 36, onTamanho: (v) => setCampo('pergunta1PerguntaTamanho', v), cor: config.pergunta1PerguntaCor || 'branco', onCor: (v) => setCampo('pergunta1PerguntaCor', v), bold: config.pergunta1PerguntaBold !== false, onBold: (v) => setCampo('pergunta1PerguntaBold', v), caixa: config.pergunta1PerguntaCaixa, onCaixa: (v) => setCampo('pergunta1PerguntaCaixa', v), alinhamento: config.pergunta1PerguntaAlinhamento || 'center', onAlinhamento: (v) => setCampo('pergunta1PerguntaAlinhamento', v) },
+                            ...titulos.filter((x) => !x.abaixo).map(linhaTit),
+                            { chave: 'pergunta1', rotulo: 'Título da Pergunta', fixa: true, removivel: false, multilinha: true, placeholder: 'Ex: Como você ficou sabendo da vigília?', texto: config.pergunta1Pergunta ?? '', onTexto: (v) => setCampo('pergunta1Pergunta', v), tamanho: config.pergunta1PerguntaTamanho || 18, min: 11, max: 36, onTamanho: (v) => setCampo('pergunta1PerguntaTamanho', v), cor: config.pergunta1PerguntaCor || 'branco', onCor: (v) => setCampo('pergunta1PerguntaCor', v), bold: config.pergunta1PerguntaBold !== false, onBold: (v) => setCampo('pergunta1PerguntaBold', v), caixa: config.pergunta1PerguntaCaixa, onCaixa: (v) => setCampo('pergunta1PerguntaCaixa', v), alinhamento: config.pergunta1PerguntaAlinhamento || 'center', onAlinhamento: (v) => setCampo('pergunta1PerguntaAlinhamento', v) },
                             { rotulo: 'Texto de apoio', multilinha: true, texto: config.pergunta1Apoio ?? '', onTexto: (v) => setCampo('pergunta1Apoio', v), tamanho: config.pergunta1ApoioTamanho || 13, min: 9, max: 26, onTamanho: (v) => setCampo('pergunta1ApoioTamanho', v), cor: config.pergunta1ApoioCor || 'cinza', onCor: (v) => setCampo('pergunta1ApoioCor', v), bold: Boolean(config.pergunta1ApoioBold), onBold: (v) => setCampo('pergunta1ApoioBold', v), alinhamento: config.pergunta1ApoioAlinhamento || 'center', onAlinhamento: (v) => setCampo('pergunta1ApoioAlinhamento', v) }
+                            ,...titulos.filter((x) => x.abaixo).map(linhaTit)
                           ];
                         })()}
                       />
@@ -2741,7 +2762,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         {telaAlvo.tipo === 'slider' && (
                           <div className="space-y-2">
                             <span className="text-[11px] font-semibold text-slate-200 block">Estilo da escala</span>
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
                               {ESTILOS_ESCALA.map((es) => {
                                 const sel = (telaAlvo.estiloEscala || 'slider') === es.id;
                                 return (
@@ -2749,12 +2770,12 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                     key={es.id}
                                     type="button"
                                     onClick={() => handleUpdateTelaProp(extraIndex, 'estiloEscala', es.id)}
-                                    className={`p-2 rounded-xl border text-left transition ${sel ? 'bg-slate-700/40 border-slate-200' : 'bg-slate-950 border-slate-800 hover:border-slate-600'}`}
+                                    className={`p-1.5 rounded-lg border text-left transition ${sel ? 'bg-slate-700/40 border-slate-200' : 'bg-slate-950 border-slate-800 hover:border-slate-600'}`}
                                   >
-                                    <div className="pointer-events-none h-[86px] overflow-hidden flex items-center">
-                                      <div className="w-full"><EscalaVisual tela={{ ...telaAlvo, estiloEscala: es.id }} mini escala={0.45} valor={String(Math.round(((telaAlvo.sliderMin ?? 0) + (telaAlvo.sliderMax ?? 10)) * (es.id === 'carinhas' || ['boneco', 'coruja', 'gato', 'robo'].includes(es.id) ? 0.8 : 0.7)))} onChange={() => {}} /></div>
+                                    <div className="pointer-events-none h-[56px] overflow-hidden flex items-center">
+                                      <div className="w-full"><EscalaVisual tela={{ ...telaAlvo, estiloEscala: es.id }} mini escala={0.3} valor={String(Math.round(((telaAlvo.sliderMin ?? 0) + (telaAlvo.sliderMax ?? 10)) * (es.id === 'carinhas' || ['boneco', 'coruja', 'gato', 'robo'].includes(es.id) ? 0.8 : 0.7)))} onChange={() => {}} /></div>
                                     </div>
-                                    <span className={`block text-[11px] font-bold mt-1 ${sel ? 'text-slate-200' : 'text-slate-400'}`}>{es.label}</span>
+                                    <span className={`block text-[10px] font-bold mt-0.5 truncate ${sel ? 'text-slate-200' : 'text-slate-400'}`}>{es.label}</span>
                                   </button>
                                 );
                               })}

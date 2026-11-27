@@ -97,7 +97,7 @@ export function origensDeCampo(cfg = {}) {
     if (o?.ativo !== false && o?.temGaveta) out.push({ origem: `gaveta|${dono}::${o.id}`, titulo: `${pai} › ${o.titulo}`, texto: true });
   });
   if (!cfg.p1Oculta && (cfg.opcoesChegada || []).some((o) => o?.ativo !== false)) {
-    const t = nomeLimpo([cfg.pergunta1Titulo, cfg.pergunta1Titulo2].filter(Boolean).join(' ')) || 'Tela 1';
+    const t = nomeLimpo(cfg.pergunta1Pergunta || [cfg.pergunta1Titulo, cfg.pergunta1Titulo2].filter(Boolean).join(' ')) || 'Tela 1';
     out.push({ origem: 'p1', titulo: t, texto: false });
     gavetas('p1', cfg.opcoesChegada, t);
   }
