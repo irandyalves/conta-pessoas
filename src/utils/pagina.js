@@ -12,17 +12,19 @@ const ESTILOS = [
   'subtituloTamanho', 'subtituloCor', 'subBold', 'subCaixa', 'subFamilia', 'subItalico', 'subAlinhamento', 'subFundo', 'subBorda', 'subBordaLargura', 'subBordaLado',
   'espacoTitulos', 'espacoSub', 'espacoCards'
 ];
-export const chavePagina = (k) => (TEXTOS.includes(k) || ESTILOS.includes(k) ? `pag_${k}` : k);
+// titulosMais: títulos além do 3º ({ texto, tamanho, cor }), quantos quiser
+export const chavePagina = (k) => (TEXTOS.includes(k) || ESTILOS.includes(k) || k === 'titulosMais' ? `pag_${k}` : k);
 const ehTexto = (t) => ['texto', 'texto_curto'].includes(t?.tipo);
 const limpo = (v) => String(v ?? '').replace(/\s+/g, ' ').trim();
 
-export const temTituloPagina = (t) => TEXTOS.some((k) => limpo(t?.[`pag_${k}`]));
+export const temTituloPagina = (t) => TEXTOS.some((k) => limpo(t?.[`pag_${k}`])) || (t?.pag_titulosMais || []).some((x) => limpo(x?.texto));
 
 // A tela vista como título da página: os campos pag_ no lugar dos da pergunta
 export function paginaDe(t = {}) {
   const out = { ...t };
   TEXTOS.forEach((k) => { out[k] = t[`pag_${k}`] ?? ''; });
   ESTILOS.forEach((k) => { out[k] = t[`pag_${k}`] ?? t[k]; });
+  out.titulosMais = t.pag_titulosMais || [];
   out.titulo = limpo(`${out.titulo1} ${out.titulo2}`);
   return out;
 }

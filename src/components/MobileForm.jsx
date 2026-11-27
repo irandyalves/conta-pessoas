@@ -180,6 +180,16 @@ function TituloRico({ texto }) {
 }
 
 // Humor de uma coluna da grade: 0 (menor nota) a 1 (maior). NA e textos não têm rosto.
+// Títulos 4, 5, 6... (seguem negrito, maiúsculas, fundo e borda do bloco de títulos)
+const titulosMaisAtivos = (lista) => (Array.isArray(lista) ? lista : []).filter((x) => String(x?.texto || '').trim());
+function TitulosMais({ lista, bold, caixa }) {
+  return titulosMaisAtivos(lista).map((x, i) => (
+    <h2 key={i} style={{ fontSize: `${x.tamanho || 14}px` }} className={`${pesoFonte(bold)} ${caixaAlta(caixa)} leading-tight whitespace-pre-line ${getCorTextoLinhaClass(x.cor, 'text-white')}`}>
+      {x.texto}
+    </h2>
+  ));
+}
+
 // A pergunta (com texto de apoio) entre os títulos da tela e as opções
 function BlocoPergunta({ tela }) {
   const texto = [tela.titulo1 || tela.titulo, tela.titulo2, tela.titulo3].filter(Boolean).join(' ');
@@ -1319,7 +1329,7 @@ export default function MobileForm({ preview = false }) {
         {/* TÍTULO DA ETAPA ATUAL: TELA 1 */}
         {currentStep === 'p1' && (questionsConfig.mostrarBotaoComecar === false || jaClicouComecar) && (
           <div className="mt-2 pt-2 flex flex-col" style={{ gap: espacos(questionsConfig, true).sub, marginBottom: espacos(questionsConfig, true).cards }}>
-            {(questionsConfig.pergunta1Titulo || questionsConfig.pergunta1Titulo2 || questionsConfig.pergunta1Titulo3) && (
+            {(questionsConfig.pergunta1Titulo || questionsConfig.pergunta1Titulo2 || questionsConfig.pergunta1Titulo3 || titulosMaisAtivos(questionsConfig.pergunta1TitulosMais).length > 0) && (
               <div style={{ gap: espacos(questionsConfig, true).tit, ...faixaEstilo(estiloLinhas(questionsConfig, 'pergunta1').tituloFundo, questionsConfig.pergunta1TituloFaixa ?? questionsConfig.faixaPadrao), ...fonteEBorda(questionsConfig, 'pergunta1Titulo', estiloLinhas(questionsConfig, 'pergunta1').tituloFundo !== 'transparente') }} className={`t-titulo flex flex-col ${getAlinhamentoClass(estiloLinhas(questionsConfig, 'pergunta1').tituloAl)} ${getFaixaFundoClass(estiloLinhas(questionsConfig, 'pergunta1').tituloFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}>
                 {questionsConfig.pergunta1Titulo && (
                   <h2 
@@ -1345,6 +1355,7 @@ export default function MobileForm({ preview = false }) {
                     {questionsConfig.pergunta1Titulo3}
                   </h2>
                 )}
+                <TitulosMais lista={questionsConfig.pergunta1TitulosMais} bold={questionsConfig.pergunta1TituloBold} caixa={questionsConfig.pergunta1TituloCaixa} />
               </div>
             )}
             {/* SUBTÍTULO DA TELA 1 (alinhamento, tamanho e fundo próprios — igual ao preview) */}
@@ -1371,7 +1382,7 @@ export default function MobileForm({ preview = false }) {
           const linha1 = tela.titulo1 || (temPagina ? '' : tela.titulo || `Pergunta da Tela ${idx + 2}`);
           return (
             <div className="mt-2 pt-2 border-t border-slate-800/60 flex flex-col" style={{ gap: espacos(tela).sub, marginBottom: espacos(tela).cards }}>
-              {(linha1 || tela.titulo2 || tela.titulo3) && (
+              {(linha1 || tela.titulo2 || tela.titulo3 || titulosMaisAtivos(tela.titulosMais).length > 0) && (
               <div style={{ gap: espacos(tela).tit, ...faixaEstilo(estiloLinhas(tela).tituloFundo, tela.tituloFaixa ?? questionsConfig?.faixaPadrao), ...fonteEBorda(tela, 'titulo', estiloLinhas(tela).tituloFundo !== 'transparente') }} className={`t-titulo flex flex-col ${getAlinhamentoClass(estiloLinhas(tela).tituloAl)} ${getFaixaFundoClass(estiloLinhas(tela).tituloFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}>
               {linha1 && (
               <h2 style={{ fontSize: `${tela.titulo1Tamanho || 20}px` }} className={`${pesoFonte(tela.tituloBold)} ${caixaAlta(tela.tituloCaixa)} leading-tight ${getCorTextoLinhaClass(tela.titulo1Cor, 'text-white')}`}>
@@ -1388,6 +1399,7 @@ export default function MobileForm({ preview = false }) {
                   {tela.titulo3}
                 </h2>
               )}
+              <TitulosMais lista={tela.titulosMais} bold={tela.tituloBold} caixa={tela.tituloCaixa} />
               </div>
               )}
               {tela.subtitulo && !subtituloRepeteLegenda(tela) && (

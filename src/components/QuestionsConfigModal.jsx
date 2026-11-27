@@ -89,6 +89,24 @@ export const TIPOS_PERGUNTA = [
   { id: 'hora', label: '⏰ Hora (Relógio)', short: 'Hora', desc: 'Seletor de horário (hora:minuto)' }
 ];
 
+// Títulos 4, 5, 6...: lista { texto, tamanho, cor }; a última linha vazia é a vaga do "Add Título"
+function linhasTitulosMais(lista, gravar) {
+  const arr = Array.isArray(lista) ? lista : [];
+  const mudar = (i, k, v) => {
+    const novo = [...arr];
+    while (novo.length <= i) novo.push({ texto: '' });
+    novo[i] = { ...novo[i], [k]: v };
+    gravar(novo);
+  };
+  return [...arr, { texto: '' }].map((t, i) => ({
+    rotulo: `Título ${i + 4}`,
+    texto: t.texto ?? '',
+    onTexto: (v) => mudar(i, 'texto', v),
+    tamanho: t.tamanho || 14, min: 10, max: 36, onTamanho: (v) => mudar(i, 'tamanho', v),
+    cor: t.cor || 'branco', onCor: (v) => mudar(i, 'cor', v)
+  }));
+}
+
 // "Como responder": os tipos agrupados, na ordem em que se pensa a pergunta
 const GRUPOS_RESPOSTA = [
   { grupo: 'Escolha', tipos: [['cards', 'Cards'], ['radio', 'Uma opção'], ['checkbox', 'Várias opções'], ['dropdown', 'Lista']] },
@@ -1033,6 +1051,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
     if (String(config.pergunta1Pergunta || '').trim()) {
       Object.assign(nova, {
         pag_titulo1: nova.titulo1, pag_titulo2: nova.titulo2, pag_titulo3: nova.titulo3, pag_subtitulo: nova.subtitulo,
+        pag_titulosMais: config.pergunta1TitulosMais || [],
         titulo1: config.pergunta1Pergunta, titulo2: '', titulo3: '', titulo: config.pergunta1Pergunta,
         subtitulo: config.pergunta1Apoio || '',
         titulo1Tamanho: config.pergunta1PerguntaTamanho || 18, titulo1Cor: config.pergunta1PerguntaCor || 'branco'
@@ -1834,6 +1853,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             { chave: 'p1a', rotulo: 'Título 1', texto: config.pergunta1Titulo ?? '', onTexto: (v) => setCampo('pergunta1Titulo', v), tamanho: config.pergunta1FonteTamanho || 18, min: 12, max: 36, onTamanho: (v) => setCampo('pergunta1FonteTamanho', v), cor: config.pergunta1TituloCor || 'branco', onCor: (v) => setCampo('pergunta1TituloCor', v), bold: config.pergunta1TituloBold !== false, onBold: (v) => setCampo('pergunta1TituloBold', v), caixa: config.pergunta1TituloCaixa, onCaixa: (v) => setCampo('pergunta1TituloCaixa', v), ...fonteBordaLinha((k) => config[`pergunta1Titulo${k}`], (k, v) => setCampo(`pergunta1Titulo${k}`, v)), alinhamento: e.tituloAl, onAlinhamento: (v) => setCampo('pergunta1TituloAlinhamento', v), fundo: e.tituloFundo, onFundo: (v) => setCampo('pergunta1TituloFundo', v), faixa: config.pergunta1TituloFaixa ?? config.faixaPadrao, onFaixa: (v) => gravarEstilo('p1', 'tituloFaixa', v) },
                             { chave: 'p1b', rotulo: 'Título 2', texto: config.pergunta1Titulo2 ?? '', onTexto: (v) => setCampo('pergunta1Titulo2', v), tamanho: config.pergunta1Titulo2Tamanho || 16, min: 10, max: 32, onTamanho: (v) => setCampo('pergunta1Titulo2Tamanho', v), cor: config.pergunta1Titulo2Cor || 'dourado', onCor: (v) => setCampo('pergunta1Titulo2Cor', v) },
                             { chave: 'p1c', rotulo: 'Título 3', texto: config.pergunta1Titulo3 ?? '', onTexto: (v) => setCampo('pergunta1Titulo3', v), tamanho: config.pergunta1Titulo3Tamanho || 15, min: 10, max: 30, onTamanho: (v) => setCampo('pergunta1Titulo3Tamanho', v), cor: config.pergunta1Titulo3Cor || 'verde', onCor: (v) => setCampo('pergunta1Titulo3Cor', v) },
+                            ...linhasTitulosMais(config.pergunta1TitulosMais, (v) => setCampo('pergunta1TitulosMais', v)),
                             { rotulo: 'Texto abaixo', texto: config.pergunta1TextoAbaixo ?? '', onTexto: (v) => setCampo('pergunta1TextoAbaixo', v), multilinha: true, tamanho: config.pergunta1TextoAbaixoTamanho || 14, min: 9, max: 26, onTamanho: (v) => setCampo('pergunta1TextoAbaixoTamanho', v), cor: config.pergunta1TextoAbaixoCor || 'cinza', onCor: (v) => setCampo('pergunta1TextoAbaixoCor', v), bold: Boolean(config.pergunta1SubBold), onBold: (v) => setCampo('pergunta1SubBold', v), caixa: config.pergunta1SubCaixa, onCaixa: (v) => setCampo('pergunta1SubCaixa', v), ...fonteBordaLinha((k) => config[`pergunta1Sub${k}`], (k, v) => setCampo(`pergunta1Sub${k}`, v)), alinhamento: e.subAl, onAlinhamento: (v) => setCampo('pergunta1SubAlinhamento', v), fundo: e.subFundo, onFundo: (v) => setCampo('pergunta1SubFundo', v), faixa: config.pergunta1SubFaixa ?? config.faixaPadrao, onFaixa: (v) => gravarEstilo('p1', 'subFaixa', v) }
                           ];
                         })()}
@@ -2333,7 +2353,10 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                 { rotulo: 'Itens da grade', texto: cardsAtivos.map((o) => o.titulo).join(', '), tamanho: telaAlvo.itemTamanho || 12, min: 8, max: 20, onTamanho: set('itemTamanho'), cor: telaAlvo.itemCor || 'branco', onCor: set('itemCor'), bold: telaAlvo.itemBold !== false, onBold: set('itemBold'), caixa: telaAlvo.itemCaixa, onCaixa: set('itemCaixa'), ...fonteBordaLinha((k) => telaAlvo[`item${k}`], (k, v) => gravarProp(`item${k}`, v)), fundo: telaAlvo.itemFundo || 'escuro', onFundo: set('itemFundo'), faixa: telaAlvo.itemFaixa, onFaixa: set('itemFaixa') }
                               ] : [])
                             ];
-                            if (modo === 'pagina') return linhasTela.slice(0, 4).map((l) => ({ ...l, removivel: true }));
+                            if (modo === 'pagina') {
+                              const pag = linhasTela.slice(0, 4).map((l) => ({ ...l, removivel: true }));
+                              return [...pag.slice(0, 3), ...linhasTitulosMais(telaAlvo.titulosMais, (v) => gravarProp('titulosMais', v)), pag[3]];
+                            }
                             if (modo !== 'pergunta') return linhasTela;
                             const semFundo = semFaixa ? { onFundo: undefined, onFaixa: undefined } : {};
                             return linhasTela.map((l) => {
