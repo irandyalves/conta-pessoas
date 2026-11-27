@@ -65,7 +65,7 @@ import IconeEspera, { ICONES_ESPERA } from './IconeEspera';
 import PreviewCelular from './PreviewCelular';
 import CamposFinais, { InserirCampo } from './CamposFinais';
 import { FORMATOS_CAMPO, formatoPorId } from '../utils/campoTexto';
-import { chaveTamanho, estiloLinhaFinal, linhaFinal, linhasFinais, ordemFinal, reordenarFinal, temDivisor } from '../utils/telaFinal';
+import { chaveTamanho, estiloIconeFinal, estiloLinhaFinal, linhaFinal, linhasFinais, ordemFinal, reordenarFinal, temDivisor } from '../utils/telaFinal';
 import BarraProgresso, { CORES_PROGRESSO, CORES_PROGRESSO_LAYOUT, ESTILOS_PROGRESSO, usaDuasCores } from './BarraProgresso';
 import { ArrowLeft, Columns2, History, Redo2, Rows3, Smile as IconeRosto, Undo2, WrapText } from 'lucide-react';
 import EscalaVisual, { ESTILOS_ESCALA, INSTRUCAO_PADRAO, instrucaoDaEscala } from './EscalaVisual';
@@ -3238,6 +3238,22 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                   onOrdem={(ids) => setConfig((c) => ({ ...c, finalOrdem: reordenarFinal(c, ids) }))}
                   linhas={ordemFinal(config).map((id) => {
                     if (id === 'divisor') return { chave: id, rotulo: 'Linha divisória', separador: true, ligado: temDivisor(config), onLigado: (v) => setCampo('finalDivisor', v) };
+                    if (id === 'icone') {
+                      const ic = estiloIconeFinal(config);
+                      return {
+                        chave: id, rotulo: 'Ícone', texto: config.finalIcone || '', onTexto: (v) => setCampo('finalIcone', v),
+                        tamanho: ic.tamanho, min: 20, max: 140, onTamanho: (v) => setCampo('finalIconeTamanho', v),
+                        cor: ic.cor, onCor: (v) => setCampo('finalIconeCor', v),
+                        alinhamento: ic.alinhamento, onAlinhamento: (v) => setCampo('finalIconeAlinhamento', v),
+                        espaco: ic.espaco, onEspaco: (v) => setCampo('finalIconeEspaco', v),
+                        corpo: (
+                          <>
+                            <SeletorIcone compacto opcoes={ICONES_CARDS} atual={config.finalIcone} manual={Boolean(config.finalIcone)} onChange={(v) => setCampo('finalIcone', v || 'Sparkles')} />
+                            <span className="text-[11px] text-slate-400">{config.finalIcone ? 'Clique no ícone para trocar. Arraste a linha para mudar a posição.' : 'Clique para escolher o ícone'}</span>
+                          </>
+                        )
+                      };
+                    }
                     const l = linhaFinal(id);
                     const e = estiloLinhaFinal(config, l);
                     const onTexto = (v) => setConfig((c) => {
@@ -3311,7 +3327,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         <div className="bloco-pergunta space-y-2.5">
                           <LinhasPergunta
                             key="acomp_soeu"
-                            cabecalho={<span className="entalhe-pergunta">Botão <strong>Só eu</strong></span>}
+                            cabecalho={<span className="entalhe-pergunta">Botão principal</span>}
                             linhas={[
                               linha('soeuTitulo', 'opcaoIndividualTitulo', 'Texto do botão', 'SÓ EU', 24, 40, false),
                               linha('soeuCompl', 'opcaoIndividualSubtitulo', 'Ao lado', 'Vazio, não aparece no celular', 14, 30, false)

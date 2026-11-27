@@ -16,10 +16,13 @@ export const LINHAS_FINAL = [
 const ehTitulo = (id) => id === 'finalTitulo1' || id === 'finalTitulo2';
 
 // Ordem dos itens da tela final (o usuário arrasta). 'divisor' = a linha entre os blocos.
-const ORDEM_PADRAO = ['finalTitulo1', 'finalTitulo2', 'finalMensagem', 'divisor', 'finalStatus', 'finalInstrucao'];
+// 'icone' = ícone opcional (config.finalIcone), arrastável como as linhas
+const ORDEM_PADRAO = ['icone', 'finalTitulo1', 'finalTitulo2', 'finalMensagem', 'divisor', 'finalStatus', 'finalInstrucao'];
 export function ordemFinal(cfg = {}) {
   const salva = (Array.isArray(cfg.finalOrdem) ? cfg.finalOrdem : []).filter((id, i, l) => ORDEM_PADRAO.includes(id) && l.indexOf(id) === i);
-  return salva.length ? [...salva, ...ORDEM_PADRAO.filter((id) => !salva.includes(id))] : ORDEM_PADRAO;
+  if (!salva.length) return ORDEM_PADRAO;
+  // Ordem salva antes do ícone existir: ele entra no topo
+  return [...(salva.includes('icone') ? [] : ['icone']), ...salva, ...ORDEM_PADRAO.filter((id) => id !== 'icone' && !salva.includes(id))];
 }
 export const linhaFinal = (id) => LINHAS_FINAL.find((l) => l.id === id);
 export const temDivisor = (cfg) => cfg?.finalDivisor !== false;
@@ -33,7 +36,7 @@ export function reordenarFinal(cfg, visiveis) {
 function espacoPadrao(cfg, l) {
   const ordem = ordemFinal(cfg);
   const resto = ordem.slice(ordem.indexOf(l.id) + 1);
-  const prox = resto.findIndex((id) => id !== 'divisor' && String(cfg[id] ?? linhaFinal(id).padrao).trim());
+  const prox = resto.findIndex((id) => (id === 'icone' ? Boolean(cfg.finalIcone) : id !== 'divisor' && String(cfg[id] ?? linhaFinal(id).padrao).trim()));
   const div = resto.indexOf('divisor');
   return temDivisor(cfg) && div >= 0 && prox > div ? 44 : Math.min(l.espaco, 12);
 }
@@ -57,12 +60,23 @@ export function estiloLinhaFinal(cfg = {}, l) {
 }
 export const chaveTamanho = (l) => (ehTitulo(l.id) ? `${l.id}Tamanho` : `${l.id}FonteTamanho`);
 
+export const estiloIconeFinal = (cfg = {}) => ({
+  id: 'icone', icone: cfg.finalIcone, tamanho: Number(cfg.finalIconeTamanho) || 56, cor: cfg.finalIconeCor || 'tema',
+  alinhamento: cfg.finalIconeAlinhamento || 'center', espaco: Number(cfg.finalIconeEspaco ?? 12)
+});
+
 // Linhas que aparecem no celular, na ordem escolhida, com o espaço antes de cada uma
 export function linhasFinais(cfg = {}) {
   const out = [];
   let divisor = false;
   ordemFinal(cfg).forEach((id) => {
     if (id === 'divisor') { divisor = out.length > 0 && temDivisor(cfg); return; }
+    if (id === 'icone') {
+      if (!cfg.finalIcone) return;
+      out.push({ ...estiloIconeFinal(cfg), antes: out.length ? out[out.length - 1].espaco : 0, divisor });
+      divisor = false;
+      return;
+    }
     const l = linhaFinal(id);
     const e = estiloLinhaFinal(cfg, l);
     if (!String(e.texto || '').trim()) return;

@@ -2,6 +2,7 @@ import React from 'react';
 import { caixaAlta, corTextoHex, faixaEstilo, fonteEBorda, getAlinhamentoClass, getCaptionFundoClass } from '../utils/estilos';
 import { familiaCss } from '../utils/fontes';
 import { chaveCampo, linhasFinais, preencher } from '../utils/telaFinal';
+import { componenteIcone } from '../utils/icones';
 
 // Textos da tela final (celular e prévia). valorDe(campo) devolve o que a pessoa respondeu.
 export default function TelaFinal({ config, valorDe, children }) {
@@ -9,6 +10,17 @@ export default function TelaFinal({ config, valorDe, children }) {
   return (
     <div className="relative">
       {linhasFinais(config).map((l) => {
+        if (l.icone) {
+          const Icone = componenteIcone(l.icone);
+          return (
+            <React.Fragment key="icone">
+              {l.divisor && <div className="border-t border-slate-800/80" style={{ marginTop: l.antes / 2 }} aria-hidden="true" />}
+              <div style={{ marginTop: l.divisor ? l.antes / 2 : l.antes, display: 'flex', justifyContent: { left: 'flex-start', right: 'flex-end' }[l.alinhamento] || 'center', color: corTextoHex(l.cor) }} className="text-amber-400" aria-hidden="true">
+                <Icone style={{ width: l.tamanho, height: l.tamanho }} strokeWidth={1.75} />
+              </div>
+            </React.Fragment>
+          );
+        }
         const Tag = l.h1 ? 'h1' : 'p';
         const partes = preencher(l.texto, campos, valorDe);
         if (!partes.length) return null;

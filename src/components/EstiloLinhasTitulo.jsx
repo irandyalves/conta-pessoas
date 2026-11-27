@@ -124,7 +124,7 @@ export default function EstiloLinhasTitulo({ linhas, onOrdem, topo = null, slotA
               {l.onNome
                 ? <textarea rows={2} spellCheck={false} aria-label={`Nome de ${l.rotulo}`} title="Clique para renomear" value={l.nome ?? l.rotulo} onChange={(e) => l.onNome(e.target.value)} onBlur={(e) => { if (!e.target.value.trim()) l.onNome(''); }} className="texto-nome texto-nome-editavel" />
                 : <span className="texto-nome">{l.rotulo}</span>}
-              {!l.onTexto
+              {l.corpo ? <div className="flex-1 min-w-0 flex items-center gap-2">{l.corpo}</div> : !l.onTexto
                 ? <span className="flex-1 min-w-0 truncate text-[13px] text-slate-300 py-[5px]" title={l.texto}>{l.texto}</span>
                 : l.multilinha
                   ? <textarea rows={1} aria-label={l.rotulo} value={l.texto ?? ''} placeholder={l.placeholder || 'Vazio, não aparece no celular'} onChange={editar} className="texto-campo texto-campo-cresce" />
