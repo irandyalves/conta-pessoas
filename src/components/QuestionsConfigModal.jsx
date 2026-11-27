@@ -254,11 +254,13 @@ const EFEITOS_CAPA = [{ id: 'nenhum', label: 'Nenhum' }, ...EFEITOS_CARDS.filter
 const rotuloPerguntas = (n) => <>Perguntas <strong className="font-bold text-amber-300">({n})</strong></>;
 const SubAbas = ({ opcoes, valor, onChange, lateral = null }) => (
   <div className="sub-abas">
-    <div className="sub-abas-lista">
-      {opcoes.map((o) => (
-        <button key={o.id} type="button" aria-pressed={valor === o.id} onClick={() => onChange(o.id)}>{o.label}</button>
-      ))}
-    </div>
+    {opcoes.length > 1 ? (
+      <div className="sub-abas-lista">
+        {opcoes.map((o) => (
+          <button key={o.id} type="button" aria-pressed={valor === o.id} onClick={() => onChange(o.id)}>{o.label}</button>
+        ))}
+      </div>
+    ) : <div className="flex-1" />}
     {lateral && <div className="sub-abas-lateral">{lateral}</div>}
   </div>
 );
@@ -2357,7 +2359,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             const set = (k) => (v) => gravarProp(k, v);
                             const linhasTela = [
                               { chave: 'titulo1', removivel: false, rotulo: 'Título 1', texto: telaAlvo.titulo1 ?? telaAlvo.titulo ?? '', onTexto: (v) => { set('titulo1')(v); set('titulo')(`${v} ${telaAlvo.titulo2 || ''}`.trim()); }, tamanho: telaAlvo.titulo1Tamanho || 18, min: 11, max: 36, onTamanho: set('titulo1Tamanho'), cor: telaAlvo.titulo1Cor || 'branco', onCor: set('titulo1Cor'), bold: telaAlvo.tituloBold !== false, onBold: set('tituloBold'), caixa: telaAlvo.tituloCaixa, onCaixa: set('tituloCaixa'), ...fonteBordaLinha((k) => telaAlvo[`titulo${k}`], (k, v) => gravarProp(`titulo${k}`, v)), alinhamento: e.tituloAl, onAlinhamento: set('tituloAlinhamento'), fundo: e.tituloFundo, onFundo: set('tituloFundo'), faixa: telaAlvo.tituloFaixa ?? config.faixaPadrao, onFaixa: (v) => gravarEstilo(extraIndex, 'tituloFaixa', v) },
-                              { chave: 'titulo2', rotulo: 'Título 2', texto: telaAlvo.titulo2 ?? '', onTexto: (v) => { set('titulo2')(v); set('titulo')(`${telaAlvo.titulo1 || telaAlvo.titulo || ''} ${v}`.trim()); }, tamanho: telaAlvo.titulo2Tamanho || 15, min: 11, max: 36, onTamanho: set('titulo2Tamanho'), cor: telaAlvo.titulo2Cor || 'dourado', onCor: set('titulo2Cor') },
+                              { chave: 'titulo2', rotulo: 'Título 2', texto: telaAlvo.titulo2 ?? '', onTexto: (v) => { set('titulo2')(v); set('titulo')(`${telaAlvo.titulo1 ?? telaAlvo.titulo ?? ''} ${v}`.trim()); }, tamanho: telaAlvo.titulo2Tamanho || 15, min: 11, max: 36, onTamanho: set('titulo2Tamanho'), cor: telaAlvo.titulo2Cor || 'dourado', onCor: set('titulo2Cor') },
                               { chave: 'titulo3', rotulo: 'Título 3', texto: telaAlvo.titulo3 ?? '', onTexto: set('titulo3'), tamanho: telaAlvo.titulo3Tamanho || 14, min: 11, max: 36, onTamanho: set('titulo3Tamanho'), cor: telaAlvo.titulo3Cor || 'verde', onCor: set('titulo3Cor') },
                               { rotulo: 'Texto abaixo', texto: telaAlvo.subtitulo ?? '', onTexto: set('subtitulo'), multilinha: true, tamanho: telaAlvo.subtituloTamanho || 12, min: 9, max: 26, onTamanho: set('subtituloTamanho'), cor: telaAlvo.subtituloCor || 'cinza', onCor: set('subtituloCor'), bold: Boolean(telaAlvo.subBold), onBold: set('subBold'), caixa: telaAlvo.subCaixa, onCaixa: set('subCaixa'), ...fonteBordaLinha((k) => telaAlvo[`sub${k}`], (k, v) => gravarProp(`sub${k}`, v)), alinhamento: e.subAl, onAlinhamento: set('subAlinhamento'), fundo: e.subFundo, onFundo: set('subFundo'), faixa: telaAlvo.subFaixa ?? config.faixaPadrao, onFaixa: (v) => gravarEstilo(extraIndex, 'subFaixa', v) },
                               ...(telaAlvo.tipo === 'slider' ? [
@@ -2595,7 +2597,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         <div className={juntos ? 'bloco-pergunta space-y-2.5' : 'contents'}>
                         <CompTitulo
                           key={activeTab}
-                          cabecalho={unico ? <span className="text-xs font-semibold text-amber-200">Pergunta</span> : <span className="text-xs font-semibold text-sky-200">Título <span className="font-normal text-slate-500">(acima da pergunta)</span></span>}
+                          cabecalho={unico ? <span className="text-[15.5px] font-bold text-emerald-400">Pergunta {numTela}</span> : <span className="text-xs font-semibold text-sky-200">Título <span className="font-normal text-slate-500">(acima da pergunta)</span></span>}
                           topo={(
                             <>
                               <ControleEspacos
@@ -3004,7 +3006,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                   <div className={['cards', 'radio', 'checkbox'].includes(telaAlvo.tipo || 'cards') ? '' : 'hidden'}>
 
                                     {opcao.temGaveta && (
-                                      <div className="mt-2 p-2.5 rounded-lg bg-slate-900/95 border border-slate-700 space-y-2 animate-fade-in">
+                                      <div className={`${ehCards ? 'ml-[36px]' : ''} p-2.5 rounded-lg bg-slate-900/95 border border-slate-700 space-y-2 animate-fade-in`}>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                           <div>
                                             <label className="text-[11px] font-bold text-slate-200 block mb-0.5">

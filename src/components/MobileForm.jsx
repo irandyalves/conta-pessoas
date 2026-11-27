@@ -192,7 +192,7 @@ function TitulosMais({ lista, bold, caixa }) {
 
 // A pergunta (com texto de apoio) entre os títulos da tela e as opções
 function BlocoPergunta({ tela }) {
-  const texto = [tela.titulo1 || tela.titulo, tela.titulo2, tela.titulo3].filter(Boolean).join(' ');
+  const texto = [tela.titulo1 ?? tela.titulo, tela.titulo2, tela.titulo3].filter(Boolean).join(' ');
   if (!texto && !tela.subtitulo) return null;
   return (
     <div style={{ gap: espacos(tela).sub, marginBottom: espacos(tela).cards }} className={`flex flex-col ${getAlinhamentoClass(estiloLinhas(tela).tituloAl)}`}>
@@ -1379,7 +1379,7 @@ export default function MobileForm({ preview = false }) {
           // Página com várias perguntas e sem título próprio: a primeira também é pergunta, não título
           if (!temPagina && continuaNaMesmaPagina(perguntaAtual, telasExtrasAtivas[idx + 1])) return null;
           const tela = temPagina ? paginaDe(perguntaAtual) : perguntaAtual;
-          const linha1 = tela.titulo1 || (temPagina ? '' : tela.titulo || `Pergunta da Tela ${idx + 2}`);
+          const linha1 = tela.titulo1 ?? (temPagina ? '' : tela.titulo || `Pergunta da Tela ${idx + 2}`);
           return (
             <div className="mt-2 pt-2 border-t border-slate-800/60 flex flex-col" style={{ gap: espacos(tela).sub, marginBottom: espacos(tela).cards }}>
               {(linha1 || tela.titulo2 || tela.titulo3 || titulosMaisAtivos(tela.titulosMais).length > 0) && (
@@ -1734,7 +1734,7 @@ export default function MobileForm({ preview = false }) {
                 {mostrarTitulo && (
                   <div style={{ gap: espacos(tela).sub, marginBottom: cabeTudo ? Math.min(8, espacos(tela).cards) : espacos(tela).cards }} className={`flex flex-col ${primeira ? '' : `${cabeTudo ? 'pt-2' : 'pt-4'} border-t border-slate-800/60`} ${getAlinhamentoClass(estiloLinhas(tela).tituloAl)}`}>
                     <h3 style={{ fontSize: `${tela.titulo1Tamanho || 18}px`, ...fonteEBorda(tela, 'titulo', false) }} className={`t-pergunta ${pesoFonte(tela.tituloBold)} ${caixaAlta(tela.tituloCaixa)} leading-tight ${getCorTextoLinhaClass(tela.titulo1Cor, 'text-white')}`}>
-                      <TituloRico texto={[tela.titulo1 || tela.titulo, tela.titulo2, tela.titulo3].filter(Boolean).join(' ')} />
+                      <TituloRico texto={[tela.titulo1 ?? tela.titulo, tela.titulo2, tela.titulo3].filter(Boolean).join(' ')} />
                     </h3>
                     {tela.subtitulo && (
                       <p style={{ fontSize: `${tela.subtituloTamanho || 13}px`, ...fonteEBorda(tela, 'sub', false) }} className={`leading-snug ${getAlinhamentoClass(estiloLinhas(tela).subAl)} ${tela.subBold ? 'font-bold' : ''} ${caixaAlta(tela.subCaixa)} ${getCorTextoLinhaClass(tela.subtituloCor, 'text-slate-300')}`}>
