@@ -1351,7 +1351,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
         subtitulo: '',
         ativo: true,
         icone: 'Sparkles',
-        cor: 'emerald'
+        cor: (() => { const ult = (telaAlvo.opcoes || []).slice(-1)[0]?.cor; const livres = CORES.map((c) => c.id).filter((id) => id !== ult); return livres[Math.floor(Math.random() * livres.length)]; })()
       };
       novasTelas[extraIndex] = {
         ...telaAlvo,
@@ -2848,7 +2848,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         <div className="space-y-2.5">
                           <div className="flex items-center justify-between">
                             <span className="text-xs font-bold text-slate-300">
-                              {ehEscolha ? <>Opções de resposta <strong className="font-bold text-amber-300">({telaAlvo.opcoes?.length || 0})</strong></> : rotuloPerguntas(telaAlvo.opcoes?.length || 0)}
+                              {ehEscolha ? <>Respostas <strong className="font-bold text-amber-300">({telaAlvo.opcoes?.length || 0})</strong></> : rotuloPerguntas(telaAlvo.opcoes?.length || 0)}
                             </span>
 
                             <button
@@ -2857,7 +2857,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                               className="px-3 py-1 bg-slate-100 hover:bg-white text-slate-900 font-bold text-xs rounded-lg shadow active:scale-95 transition flex items-center gap-1.5"
                             >
                               <Plus className="w-4 h-4 text-emerald-600" strokeWidth={4} />
-                              <span>{ehEscolha ? (ehCards ? "Add card" : "Add opção") : "Add Questões"}</span>
+                              <span>{ehEscolha ? 'Add opções' : 'Add Questões'}</span>
                             </button>
                           </div>
 
@@ -2917,68 +2917,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                       )}
                                     </div>
 
-                                    <div className="flex items-center gap-2">
-                                      {ehCards && (
-                                        <SeletorIcone
-                                          opcoes={ICONES_CARDS}
-                                          atual={iconesEditorTela[opcao.id]}
-                                          manual={Boolean(opcao.iconeManual)}
-                                          onChange={(id) => {
-                                            if (id) handleUpdateCardExtra(extraIndex, optIdx, 'icone', id);
-                                            handleUpdateCardExtra(extraIndex, optIdx, 'iconeManual', Boolean(id));
-                                          }}
-                                        />
-                                      )}
-
-                                      <div className={ehCards ? 'flex items-center gap-1' : 'hidden'}>
-                                        {CORES.map(c => (
-                                          <button
-                                            key={c.id}
-                                            type="button"
-                                            onClick={() => handleUpdateCardExtra(extraIndex, optIdx, 'cor', c.id)}
-                                            className={`w-3.5 h-3.5 rounded-full ${c.bg} ${
-                                              (opcao.cor || 'emerald') === c.id ? 'ring-2 ring-white scale-110' : 'opacity-40 hover:opacity-100'
-                                            }`}
-                                            title={c.label}
-                                          />
-                                        ))}
-                                      </div>
-
-                                      <button
-                                        type="button"
-                                        onClick={() => handleExcluirCardExtra(extraIndex, optIdx)}
-                                        className="p-1 text-slate-500 hover:text-red-400 transition"
-                                      >
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                      </button>
-                                    </div>
-                                  </div>
-
-                                  <div className={`grid grid-cols-1 gap-2 ${telaAlvo.tipo === 'grade' ? '' : 'sm:grid-cols-2'}`}>
-                                    <div>
-                                      <label className="text-[11px] font-bold text-slate-400 block mb-0.5">{ehEscolha ? (ehCards ? `Card ${optIdx + 1}` : `Opção ${optIdx + 1}`) : "Título"}</label>
-                                      <input
-                                        type="text"
-                                        value={opcao.titulo || ''}
-                                        onChange={(e) => handleUpdateCardExtra(extraIndex, optIdx, 'titulo', e.target.value)}
-                                        placeholder={ehEscolha ? "Ex: Internet, Amigos..." : "Ex: Sim, é minha primeira vez!"}
-                                        className="w-full bg-slate-900 border border-slate-700 focus:border-slate-300 rounded-lg px-2.5 py-1 text-xs font-bold text-white shadow-inner"
-                                      />
-                                    </div>
-                                    <div className={telaAlvo.tipo === 'grade' ? 'hidden' : ''}>
-                                      <label className="text-[11px] font-bold text-slate-400 block mb-0.5">Descrição (opcional)</label>
-                                      <input
-                                        type="text"
-                                        value={opcao.subtitulo || ''}
-                                        onChange={(e) => handleUpdateCardExtra(extraIndex, optIdx, 'subtitulo', e.target.value)}
-                                        placeholder="Ex: Detalhe complementar"
-                                        className="w-full bg-slate-900 border border-slate-700 focus:border-slate-300 rounded-lg px-2.5 py-1 text-xs text-slate-300 shadow-inner"
-                                      />
-                                    </div>
-                                  </div>
-
-                                  {/* CONFIGURAÇÃO DE GAVETA CONDICIONAL MULTI-COMPONENTE NA OPÇÃO EXTRA */}
-                                  <div className={['cards', 'radio', 'checkbox'].includes(telaAlvo.tipo || 'cards') ? '' : 'hidden'}>
+                                    <div className="flex items-center gap-3">
+                                      {['cards', 'radio', 'checkbox'].includes(telaAlvo.tipo || 'cards') && (
                                     <label className="flex items-center gap-2 cursor-pointer select-none">
                                       <input
                                         type="checkbox"
@@ -3009,9 +2949,59 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                         className="w-3.5 h-3.5 rounded border-slate-700 bg-slate-900 text-slate-200 focus:ring-slate-200"
                                       />
                                       <span className={`text-[11px] font-bold ${opcao.temGaveta ? 'text-slate-200' : 'text-slate-400'}`}>
-                                        Abrir uma subpergunta ao escolher esta opção
+                                        Abrir subpergunta
                                       </span>
                                     </label>
+                                      )}
+                                      <button
+                                        type="button"
+                                        onClick={() => handleExcluirCardExtra(extraIndex, optIdx)}
+                                        className="p-1 text-slate-500 hover:text-red-400 transition"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                  </div>
+
+                                  <div className={`grid grid-cols-1 gap-2 ${telaAlvo.tipo === 'grade' ? '' : 'sm:grid-cols-[3fr_1fr]'}`}>
+                                    <div>
+                                      <label className="text-[11px] font-bold text-slate-400 block mb-0.5">{ehEscolha ? (ehCards ? `Card ${optIdx + 1}` : `Opção ${optIdx + 1}`) : "Título"}</label>
+                                      <div className="flex items-center gap-1.5">
+                                      {ehCards && (
+                                        <SeletorIcone
+                                          compacto
+                                          opcoes={ICONES_CARDS}
+                                          atual={iconesEditorTela[opcao.id]}
+                                          manual={Boolean(opcao.iconeManual)}
+                                          onChange={(id) => {
+                                            if (id) handleUpdateCardExtra(extraIndex, optIdx, 'icone', id);
+                                            handleUpdateCardExtra(extraIndex, optIdx, 'iconeManual', Boolean(id));
+                                          }}
+                                        />
+                                      )}
+                                      <input
+                                        type="text"
+                                        value={opcao.titulo || ''}
+                                        onChange={(e) => handleUpdateCardExtra(extraIndex, optIdx, 'titulo', e.target.value)}
+                                        placeholder={ehEscolha ? "Ex: Internet, Amigos..." : "Ex: Sim, é minha primeira vez!"}
+                                        className="w-full bg-slate-900 border border-slate-700 focus:border-slate-300 rounded-lg px-2.5 py-1 text-xs font-bold text-white shadow-inner"
+                                      />
+                                      </div>
+                                    </div>
+                                    <div className={telaAlvo.tipo === 'grade' ? 'hidden' : ''}>
+                                      <label className="text-[11px] font-bold text-slate-400 block mb-0.5">Descrição (opcional)</label>
+                                      <input
+                                        type="text"
+                                        value={opcao.subtitulo || ''}
+                                        onChange={(e) => handleUpdateCardExtra(extraIndex, optIdx, 'subtitulo', e.target.value)}
+                                        placeholder="Ex: Detalhe complementar"
+                                        className="w-full bg-slate-900 border border-slate-700 focus:border-slate-300 rounded-lg px-2.5 py-1 text-xs text-slate-300 shadow-inner"
+                                      />
+                                    </div>
+                                  </div>
+
+                                  {/* CONFIGURAÇÃO DE GAVETA CONDICIONAL MULTI-COMPONENTE NA OPÇÃO EXTRA */}
+                                  <div className={['cards', 'radio', 'checkbox'].includes(telaAlvo.tipo || 'cards') ? '' : 'hidden'}>
 
                                     {opcao.temGaveta && (
                                       <div className="mt-2 p-2.5 rounded-lg bg-slate-900/95 border border-slate-700 space-y-2 animate-fade-in">

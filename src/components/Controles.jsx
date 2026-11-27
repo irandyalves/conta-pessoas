@@ -214,22 +214,22 @@ export function Alternar({ rotulo, nome, valor, onChange }) {
 }
 
 // Escolha do ícone de um card, vendo os desenhos. "Automático" escolhe pelo texto da opção.
-export function SeletorIcone({ opcoes, atual, manual, onChange }) {
+export function SeletorIcone({ opcoes, atual, manual, onChange, compacto = false }) {
   const [aberto, setAberto] = useState(false);
   const Atual = (opcoes.find((o) => o.id === atual) || opcoes[0]).icon;
   const escolher = (id) => { onChange(id); setAberto(false); };
   return (
     <div className="relative">
       <button type="button" aria-expanded={aberto} title="Trocar ícone" onClick={() => setAberto(!aberto)}
-        className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-200">
+        className={compacto ? 'h-[26px] w-[30px] flex items-center justify-center rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200' : 'flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-200'}>
         <Atual className="w-4 h-4" />
-        <span>{manual ? 'Ícone' : 'Automático'}</span>
-        <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+        {!compacto && <span>{manual ? 'Ícone' : 'Automático'}</span>}
+        {!compacto && <ChevronDown className="w-3.5 h-3.5 text-slate-400" />}
       </button>
       {aberto && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setAberto(false)} />
-          <div className="absolute right-0 top-full mt-1 z-50 w-72 rounded-xl bg-slate-800 border border-slate-700 shadow-2xl p-2">
+          <div className={`absolute ${compacto ? 'left-0' : 'right-0'} top-full mt-1 z-50 w-72 rounded-xl bg-slate-800 border border-slate-700 shadow-2xl p-2`}>
             <button type="button" onClick={() => escolher(null)} className={`w-full text-left px-2.5 py-2 rounded-lg text-xs mb-1 ${manual ? 'text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-900 font-semibold'}`}>
               Automático, pelo texto da opção
             </button>
