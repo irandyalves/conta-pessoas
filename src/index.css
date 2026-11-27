@@ -105,8 +105,8 @@
 
 /* Lista de questões: degradê intercalado (ímpar clareia para a direita, par escurece). Mude só a intensidade. */
 .editor { --questao: .15; }
-.questao { position: relative; background: linear-gradient(to right, rgba(0, 0, 0, var(--questao)), rgba(255, 255, 255, var(--questao))); cursor: grab; }
-.questao-par { background: linear-gradient(to left, rgba(0, 0, 0, var(--questao)), rgba(255, 255, 255, var(--questao))); }
+.questao { position: relative; background: transparent; cursor: grab; }
+.questao-par { background: transparent; }
 .questao:active { cursor: grabbing; }
 .questao input, .questao textarea { cursor: text; }
 .questao button, .questao select, .questao label { cursor: pointer; }
