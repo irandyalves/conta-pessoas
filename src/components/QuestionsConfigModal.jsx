@@ -2274,11 +2274,13 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 const temLista = emGrupo || ehTexto;
                 const propria = telaAlvo.herdarEstilo === false;
                 const temEfeitos = telaAlvo.tipo === 'grade' || propria;
-                const temAparencia = ehCards && cardsAtivos.length > 0;
+                const temAparencia = ehCards && cardsAtivos.length > 0 && temLista;
                 // Data, hora e estrelas não têm nada para ajustar no campo
                 const semCampo = ehTexto || ['data', 'hora', 'rating'].includes(telaAlvo.tipo);
                 // Pergunta sozinha na página: título e resposta/opções na mesma sub-aba
                 const juntos = !temLista;
+                const CompTitulo = juntos ? LinhasPergunta : EstiloLinhasTitulo;
+                const ehEscolha = ["cards", "radio", "checkbox", "dropdown"].includes(telaAlvo.tipo || "cards");
                 const subAtual = (() => {
                   if (subTabExtra === 'opcoes' && (semCampo || juntos)) return temLista ? 'lista' : 'pergunta';
                   if (subTabExtra === 'lista' && !temLista) return semCampo ? 'pergunta' : 'opcoes';
@@ -2537,8 +2539,11 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
                     {subAtual === 'pergunta' && (
                       <div className="space-y-2.5">
-                        <EstiloLinhasTitulo
+                        {juntos && BarraFormatacao({ ehP1: false, extraIndex: iTitulo })}
+                        <div className={juntos ? 'bloco-pergunta space-y-2.5' : 'contents'}>
+                        <CompTitulo
                           key={activeTab}
+                          cabecalho={<span className="text-xs font-semibold text-sky-200">Título <span className="font-normal text-slate-500">(acima da pergunta)</span></span>}
                           topo={(
                             <>
                               <ControleEspacos
@@ -2547,10 +2552,10 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                 subtitulo={alvoTitulo.subtitulo}
                                 onChange={(k, v) => gravarTexto(iTitulo, modoTitulo, { tit: 'espacoTitulos', sub: 'espacoSub' }[k], v)}
                               />
-                              {BarraFormatacao({ ehP1: false, extraIndex: iTitulo })}
+                              {!juntos && BarraFormatacao({ ehP1: false, extraIndex: iTitulo })}
                             </>
                           )}
-                          espacoResposta={temLista && !temTituloPagina(config.telasExtras[iTitulo]) ? null : <EspacoAte rotulo={ehCards ? 'Espaço para o primeiro card' : temLista ? 'Espaço para a primeira pergunta' : 'Espaço para a resposta'} valor={espacos(alvoTitulo, false).cards} onChange={(v) => gravarTexto(iTitulo, modoTitulo, 'espacoCards', v)} />}
+                          espacoResposta={(temLista || juntos) && !temTituloPagina(config.telasExtras[iTitulo]) ? null : <EspacoAte rotulo={juntos ? 'Espaço até a pergunta' : ehCards ? 'Espaço para o primeiro card' : temLista ? 'Espaço para a primeira pergunta' : 'Espaço para a resposta'} valor={espacos(alvoTitulo, false).cards} onChange={(v) => gravarTexto(iTitulo, modoTitulo, 'espacoCards', v)} />}
                           slotAcoes={slotAcoes}
                           onOrdem={(ids) => setConfig((c) => ({
                             ...c,
@@ -2573,6 +2578,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                           }))}
                           linhas={linhasDe(alvoTitulo, iTitulo, modoTitulo)}
                         />
+                        </div>
                         {juntos && (
                           <div className="bloco-pergunta space-y-2.5">
                             <LinhasPergunta
@@ -2586,7 +2592,20 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                 </>
                               )}
                             />
-                            <TipoResposta valor={telaAlvo.tipo || 'cards'} onChange={(v) => trocarTipoExtra(extraIndex, v)} />
+                          </div>
+                        )}
+                        {juntos && <TipoResposta valor={telaAlvo.tipo || 'cards'} onChange={(v) => trocarTipoExtra(extraIndex, v)} />}
+                        {juntos && ehCards && (
+                          <div className="bloco-pergunta space-y-2.5">
+                            <span className="text-xs font-semibold text-slate-100">Aparência dos cards</span>
+                            {AparenciaCards({
+                              ler: (k) => telaAlvo[k] ?? config[k],
+                              gravar: (k, v) => gravarEstilo(extraIndex, k, v),
+                              raios: raiosCard(config, telaAlvo),
+                              campoIcones: 'mostrarIcones',
+                              porPagina: limitCards,
+                              opcoes: cardsAtivos
+                            })}
                           </div>
                         )}
                         {extraIndex > 0 && TIPOS_CAMPO_PAGINA.includes(telaAlvo.tipo) && TIPOS_CAMPO_PAGINA.includes((config.telasExtras || [])[extraIndex - 1]?.tipo) && (
@@ -2773,7 +2792,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         <div className="space-y-2.5">
                           <div className="flex items-center justify-between">
                             <span className="text-xs font-bold text-slate-300">
-                              {rotuloPerguntas(telaAlvo.opcoes?.length || 0)}
+                              {ehEscolha ? <>Opções de resposta <strong className="font-bold text-amber-300">({telaAlvo.opcoes?.length || 0})</strong></> : rotuloPerguntas(telaAlvo.opcoes?.length || 0)}
                             </span>
 
                             <button
@@ -2782,7 +2801,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                               className="px-3 py-1 bg-slate-100 hover:bg-white text-slate-900 font-bold text-xs rounded-lg shadow active:scale-95 transition flex items-center gap-1.5"
                             >
                               <Plus className="w-4 h-4 text-emerald-600" strokeWidth={4} />
-                              <span>Add Questões</span>
+                              <span>{ehEscolha ? (ehCards ? "Add card" : "Add opção") : "Add Questões"}</span>
                             </button>
                           </div>
 
@@ -2881,12 +2900,12 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
                                   <div className={`grid grid-cols-1 gap-2 ${telaAlvo.tipo === 'grade' ? '' : 'sm:grid-cols-2'}`}>
                                     <div>
-                                      <label className="text-[11px] font-bold text-slate-400 block mb-0.5">Título</label>
+                                      <label className="text-[11px] font-bold text-slate-400 block mb-0.5">{ehEscolha ? (ehCards ? `Card ${optIdx + 1}` : `Opção ${optIdx + 1}`) : "Título"}</label>
                                       <input
                                         type="text"
                                         value={opcao.titulo || ''}
                                         onChange={(e) => handleUpdateCardExtra(extraIndex, optIdx, 'titulo', e.target.value)}
-                                        placeholder="Ex: Sim, é minha primeira vez!"
+                                        placeholder={ehEscolha ? "Ex: Internet, Amigos..." : "Ex: Sim, é minha primeira vez!"}
                                         className="w-full bg-slate-900 border border-slate-700 focus:border-slate-300 rounded-lg px-2.5 py-1 text-xs font-bold text-white shadow-inner"
                                       />
                                     </div>
