@@ -89,6 +89,41 @@ export const TIPOS_PERGUNTA = [
   { id: 'hora', label: '⏰ Hora (Relógio)', short: 'Hora', desc: 'Seletor de horário (hora:minuto)' }
 ];
 
+// "Como responder": os tipos agrupados, na ordem em que se pensa a pergunta
+const GRUPOS_RESPOSTA = [
+  { grupo: 'Escolha', tipos: [['cards', 'Cards'], ['radio', 'Uma opção'], ['checkbox', 'Várias opções'], ['dropdown', 'Lista']] },
+  { grupo: 'Texto', tipos: [['texto_curto', 'Curto'], ['texto', 'Longo']] },
+  { grupo: 'Nota', tipos: [['slider', 'Escala'], ['rating', 'Estrelas'], ['grade', 'Grade']] },
+  { grupo: 'Data', tipos: [['data', 'Data'], ['hora', 'Hora']] }
+];
+
+function TipoResposta({ valor, onChange }) {
+  return (
+    <section className="rounded-lg bg-slate-800/40 px-3 py-2.5 mb-2.5">
+      <h3 className="text-xs font-semibold text-slate-100 mb-2">Como responder</h3>
+      <div className="flex flex-wrap gap-x-4 gap-y-2">
+        {GRUPOS_RESPOSTA.map(({ grupo, tipos }) => (
+          <div key={grupo} className="flex items-center gap-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 w-12">{grupo}</span>
+            {tipos.map(([id, rotulo]) => (
+              <button
+                key={id}
+                type="button"
+                aria-pressed={valor === id}
+                title={TIPOS_PERGUNTA.find((t) => t.id === id)?.desc}
+                onClick={() => valor !== id && onChange(id)}
+                className={`px-2.5 h-7 rounded-md text-[11px] font-semibold transition ${valor === id ? 'bg-slate-100 text-slate-900' : 'bg-slate-950/60 text-slate-300 hover:text-white hover:bg-slate-800'}`}
+              >
+                {rotulo}
+              </button>
+            ))}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export const TIPOS_GAVETA = [
   { id: 'texto_longo', label: '📝 Campo Longo (Texto Aberto)' },
   { id: 'texto_curto', label: '🔤 Texto Pequeno (1 Linha)' },
@@ -763,6 +798,9 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
   // Cálculos dinâmicos da Tela 1
   // Uma aba por PÁGINA do celular: perguntas na mesma página ficam juntas numa aba só
+  // Tela 1 que virou outro tipo de pergunta: a aba dela some e a contagem começa em 1
+  const tela1Convertida = Boolean(config.p1Convertida && config.p1Oculta && (config.telasExtras || []).length > 0);
+  const baseTela = tela1Convertida ? 1 : 2;
   const paginasExtras = [];
   {
     let anterior = null;
@@ -772,13 +810,13 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
       const ativa = t.ativa !== false;
       const base = ativa ? anterior : anteriorOculta;
       const junta = Boolean(base) && (ativa || base.i === i - 1) && continuaNaMesmaPagina(base.tela, t);
-      const pagina = junta ? base.pagina : { membros: [], numero: paginasExtras.length + 2, oculta: !ativa };
+      const pagina = junta ? base.pagina : { membros: [], numero: paginasExtras.length + baseTela, oculta: !ativa };
       if (!junta) paginasExtras.push(pagina);
       pagina.membros.push(i);
       if (ativa) { anterior = { tela: t, pagina }; anteriorOculta = null; } else anteriorOculta = { tela: t, pagina, i };
     });
   }
-  const numeroDaTela = (i) => paginasExtras.find((pg) => pg.membros.includes(i))?.numero ?? i + 2;
+  const numeroDaTela = (i) => paginasExtras.find((pg) => pg.membros.includes(i))?.numero ?? i + baseTela;
   // OLHO: tela oculta não faz parte da pesquisa (o celular pula), mas nada dela é apagado
   const telaOculta = (chave) => {
     if (chave === 'tela_1') return Boolean(config.p1Oculta);
@@ -948,6 +986,81 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
       juntar,
       'Voltar opções'
     );
+  };
+
+  // Trocar o tipo de resposta não apaga nada: título e opções continuam guardados
+  const trocarTipoExtra = (extraIndex, novoTipo) => {
+    const tela = (config.telasExtras || [])[extraIndex];
+    if (!tela) return;
+    handleUpdateTelaProp(extraIndex, 'tipo', novoTipo);
+    if (['cards', 'radio', 'checkbox', 'dropdown', 'grade'].includes(novoTipo) && (!tela.opcoes || tela.opcoes.length === 0)) {
+      handleUpdateTelaProp(extraIndex, 'opcoes', [
+        { id: `opt_${Date.now()}_1`, titulo: 'Opção 1', ativo: true, icone: 'Sparkles', cor: 'emerald' },
+        { id: `opt_${Date.now()}_2`, titulo: 'Opção 2', ativo: true, icone: 'Star', cor: 'amber' }
+      ]);
+    }
+    if (novoTipo === 'texto' || novoTipo === 'texto_curto') {
+      handleUpdateTelaProp(extraIndex, 'multiline', novoTipo === 'texto');
+      handleUpdateTelaProp(extraIndex, 'linhas', novoTipo === 'texto' ? (tela.linhas > 1 ? tela.linhas : 4) : 1);
+      if (!tela.placeholder) handleUpdateTelaProp(extraIndex, 'placeholder', 'Digite aqui...');
+    }
+  };
+
+  // Tela 1 só desenha cards: outro tipo vira uma tela comum no lugar dela (título, opções e estilo vão junto)
+  const trocarTipoTela1 = (tipo) => {
+    if (tipo === 'cards') return;
+    const texto = tipo === 'texto' || tipo === 'texto_curto';
+    const nova = aplicarEstilo({
+      id: `extra_${Date.now()}`,
+      ativa: true,
+      tipo,
+      titulo: [config.pergunta1Titulo, config.pergunta1Titulo2].filter(Boolean).join(' '),
+      titulo1: config.pergunta1Titulo || '',
+      titulo2: config.pergunta1Titulo2 || '',
+      titulo3: config.pergunta1Titulo3 || '',
+      subtitulo: config.pergunta1TextoAbaixo || config.pergunta1Subtitulo || '',
+      cardsPorTela: config.cardsPorTela || 4,
+      obrigatorio: Boolean(config.pergunta1Obrigatoria),
+      botaoTexto: 'Avançar',
+      sliderMin: 0,
+      sliderMax: 10,
+      sliderStep: 1,
+      sliderUnidade: '',
+      ...(texto ? { placeholder: 'Digite aqui...', multiline: tipo === 'texto', linhas: tipo === 'texto' ? 4 : 1 } : {}),
+      opcoes: config.opcoesChegada || []
+    }, extrairEstilo(config, true), false);
+    setConfig((prev) => ({ ...prev, p1Oculta: true, p1Convertida: true, telasExtras: [nova, ...(prev.telasExtras || [])] }));
+    setActiveTab('extra_0');
+    setSubTabExtra('pergunta');
+  };
+
+  // "Nova tela": abre com a pergunta em branco para digitar; o tipo se escolhe depois em "Como responder"
+  const handleNovaPergunta = () => {
+    const totalExtras = (config.telasExtras || []).length;
+    const novaTela = {
+      id: `extra_${Date.now()}`,
+      ativa: true,
+      tipo: 'cards',
+      titulo: '',
+      titulo1: '',
+      titulo2: '',
+      titulo3: '',
+      subtitulo: '',
+      cardsPorTela: 4,
+      obrigatorio: false,
+      botaoTexto: 'Avançar',
+      sliderMin: 0,
+      sliderMax: 10,
+      sliderStep: 1,
+      sliderUnidade: '',
+      opcoes: [
+        { id: `opt_${Date.now()}_1`, titulo: 'Opção 1', ativo: true, icone: 'Sparkles', cor: 'emerald', temGaveta: false, gaveta: null },
+        { id: `opt_${Date.now()}_2`, titulo: 'Opção 2', ativo: true, icone: 'Star', cor: 'amber', temGaveta: false, gaveta: null }
+      ]
+    };
+    setConfig((prev) => ({ ...prev, telasExtras: [...(prev.telasExtras || []), novaTela] }));
+    setActiveTab(`extra_${totalExtras}`);
+    setSubTabExtra('pergunta');
   };
 
   // ============================================================
@@ -1380,9 +1493,9 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               
               <Aba ativa={activeTab === 'inicio'} onClick={() => setActiveTab('inicio')}>Boas-vindas</Aba>
               <Aba ativa={activeTab === 'inicio_comecar'} oculta={telaOculta('inicio_comecar')} onClick={() => setActiveTab('inicio_comecar')} olho={<OlhoTela oculta={telaOculta('inicio_comecar')} rotulo="o Início" onClick={() => alternarTela('inicio_comecar')} />}>Início</Aba>
-              <Aba ativa={activeTab === 'tela_1'} oculta={telaOculta('tela_1')} onClick={() => setActiveTab('tela_1')} olho={<OlhoTela oculta={telaOculta('tela_1')} rotulo="a Tela 1" onClick={() => alternarTela('tela_1')} />}>
+              {!tela1Convertida && <Aba ativa={activeTab === 'tela_1'} oculta={telaOculta('tela_1')} onClick={() => setActiveTab('tela_1')} olho={<OlhoTela oculta={telaOculta('tela_1')} rotulo="a Tela 1" onClick={() => alternarTela('tela_1')} />}>
                 Tela 1 <span className="aba-conta">{cardsAtivosP1.length}</span>
-              </Aba>
+              </Aba>}
               {paginasExtras.map(({ membros, numero: numTela }) => {
                 const tela = config.telasExtras[membros[0]];
                 const chave = `extra_${membros[0]}`;
@@ -1408,7 +1521,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 onClick={() => setActiveTab('acompanhantes')}
                 olho={<OlhoTela oculta={telaOculta('acompanhantes')} rotulo="a tela de acompanhantes" onClick={() => alternarTela('acompanhantes')} />}
               >
-                <Users className="w-4 h-4" /> {telaOculta('acompanhantes') ? 'Acompanhantes' : `Tela ${paginasExtras.length + 2}`}
+                <Users className="w-4 h-4" /> {telaOculta('acompanhantes') ? 'Acompanhantes' : `Tela ${paginasExtras.length + baseTela}`}
               </Aba>
               )}
               <Aba ativa={activeTab === 'fim'} onClick={() => setActiveTab('fim')}>Fim</Aba>
@@ -1416,7 +1529,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               {/* Botão + Add Tab em verde (com apenas um +) */}
               <button
                 type="button"
-                onClick={() => setShowTipoNovaTelaModal(true)}
+                onClick={() => (semAcompanhantes ? setShowTipoNovaTelaModal(true) : handleNovaPergunta())}
                 className="mb-2 px-3 py-1.5 text-xs font-semibold text-slate-200 bg-slate-700/40 hover:bg-slate-700 border border-slate-700 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap shrink-0 active:scale-95 ml-auto sm:ml-2 shadow-sm"
                 title="Adicionar mais uma tela / aba no fluxo de perguntas"
               >
@@ -1670,6 +1783,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               {activeTab === 'tela_1' && (
                 <div className="painel-tela">
                   <TopoPainel titulo="Tela 1" slot={setSlotAcoes} />
+                  <TipoResposta valor="cards" onChange={trocarTipoTela1} />
                   <SubAbas
                     valor={subAtualP1}
                     onChange={setSubTabTela1}
@@ -2214,30 +2328,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                   <div className="painel-tela">
                     {/* Barra Superior da Tela Extra */}
                     <TopoPainel slot={setSlotAcoes} titulo={`Tela ${numTela}`} onExcluir={() => (membros.length > 1 ? excluirPagina(membros, numTela) : handleExcluirTela(extraIndex))}>
-                      {/* Seletor Completo de Tipo da Tela Extra (10 Tipos Mundiais) */}
-                      <div className={membros.length > 1 ? 'hidden' : 'flex items-center gap-2'}>
-                        <select
-                          aria-label="Tipo da tela"
-                          title="Tipo da tela"
-                          value={telaAlvo.tipo || 'cards'}
-                          onChange={(e) => {
-                            const novoTipo = e.target.value;
-                            handleUpdateTelaProp(extraIndex, 'tipo', novoTipo);
-                            if (['cards', 'radio', 'checkbox', 'dropdown'].includes(novoTipo) && (!telaAlvo.opcoes || telaAlvo.opcoes.length === 0)) {
-                              handleUpdateTelaProp(extraIndex, 'opcoes', [
-                                { id: `opt_${Date.now()}_1`, titulo: 'Opção 1', ativo: true, icone: 'Sparkles', cor: 'emerald' },
-                                { id: `opt_${Date.now()}_2`, titulo: 'Opção 2', ativo: true, icone: 'Star', cor: 'amber' }
-                              ]);
-                            }
-                          }}
-                          className="w-[176px] bg-slate-900 border border-slate-700 focus:border-slate-300 rounded-xl px-2 py-1 text-xs font-semibold text-slate-200"
-                        >
-                          {TIPOS_PERGUNTA.map(tp => (
-                            <option key={tp.id} value={tp.id}>{tp.label}</option>
-                          ))}
-                        </select>
-                      </div>
                     </TopoPainel>
+                    {membros.length === 1 && <TipoResposta valor={telaAlvo.tipo || 'cards'} onChange={(v) => trocarTipoExtra(extraIndex, v)} />}
 
                     <SubAbas
                       valor={subAtual}
@@ -2976,7 +3068,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               {/* ====================================================== */}
               {activeTab === 'acompanhantes' && !semAcompanhantes && (
                 <div className="painel-tela">
-                  <TopoPainel slot={setSlotAcoes} titulo={telaOculta('acompanhantes') ? 'Acompanhantes' : `Tela ${paginasExtras.length + 2}`} onExcluir={excluirAcompanhantes} />
+                  <TopoPainel slot={setSlotAcoes} titulo={telaOculta('acompanhantes') ? 'Acompanhantes' : `Tela ${paginasExtras.length + baseTela}`} onExcluir={excluirAcompanhantes} />
                   <SubAbas
                     valor={subTabTela2}
                     onChange={setSubTabTela2}
@@ -3118,7 +3210,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 const telas = [
                   { chave: 'inicio', passo: 'espera', rotulo: 'Espera (pesquisa não liberada)', fixa: true },
                   { chave: 'inicio_comecar', passo: 'comecar', rotulo: 'Início (botão Começar)' },
-                  { chave: 'tela_1', passo: 'tela_1', rotulo: 'Tela 1' },
+                  ...(tela1Convertida ? [] : [{ chave: 'tela_1', passo: 'tela_1', rotulo: 'Tela 1' }]),
                   // Telas que "continuam na mesma página" aparecem dentro do celular anterior (igual ao aparelho)
                   ...paginasExtras.map(({ membros, numero }) => ({
                     chave: `extra_${membros[0]}`,
