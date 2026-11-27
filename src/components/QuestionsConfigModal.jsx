@@ -2597,7 +2597,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         <div className={juntos ? 'bloco-pergunta space-y-2.5' : 'contents'}>
                         <CompTitulo
                           key={activeTab}
-                          cabecalho={unico ? <span className="text-[15.5px] font-bold text-emerald-400">Pergunta {numTela}</span> : <span className="text-xs font-semibold text-sky-200">Título <span className="font-normal text-slate-500">(acima da pergunta)</span></span>}
+                          cabecalho={unico ? <span className="entalhe-pergunta">Pergunta <strong>{numTela}</strong></span> : <span className="text-xs font-semibold text-sky-200">Título <span className="font-normal text-slate-500">(acima da pergunta)</span></span>}
                           topo={(
                             <>
                               <ControleEspacos
