@@ -690,6 +690,28 @@ export default function MobileForm({ preview = false }) {
     window.addEventListener('pointerdown', aoTocar, true);
     return () => window.removeEventListener('pointerdown', aoTocar, true);
   }, []);
+  // Digitando na subpergunta: depois que o teclado abre, centraliza o quadrinho na parte visível da tela
+  const centralizarAoDigitar = useCallback((e) => {
+    const alvo = e.currentTarget;
+    const t = e.target;
+    if (!/^(INPUT|TEXTAREA)$/.test(t.tagName) || ['checkbox', 'radio', 'range'].includes(t.type)) return;
+    const vv = window.visualViewport;
+    const centrar = () => {
+      alvo.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      if (!vv) return;
+      setTimeout(() => {
+        const r = alvo.getBoundingClientRect();
+        const d = (r.top + r.height / 2) - (vv.offsetTop + vv.height / 2);
+        if (Math.abs(d) > 4) window.scrollBy({ top: d, behavior: 'smooth' });
+      }, 250);
+    };
+    if (!vv) { setTimeout(centrar, 350); return; }
+    let feito = false;
+    const uma = () => { if (feito) return; feito = true; vv.removeEventListener('resize', uma); centrar(); };
+    vv.addEventListener('resize', uma);
+    setTimeout(uma, 450);
+  }, []);
+
   const mostrarGaveta = useCallback((el) => {
     if (!el) return;
     const agora = Date.now();
@@ -798,7 +820,7 @@ export default function MobileForm({ preview = false }) {
     const selectedChecks = paraLista(valAtual);
 
     return (
-      <div ref={mostrarGaveta} className="t-gaveta p-4 rounded-2xl bg-slate-900/95 border-2 border-amber-500/50 shadow-xl space-y-3 animate-fade-in text-left">
+      <div ref={mostrarGaveta} onFocus={centralizarAoDigitar} className="t-gaveta p-4 rounded-2xl bg-slate-900/95 border-2 border-amber-500/50 shadow-xl space-y-3 animate-fade-in text-left">
         <div className="flex items-center justify-between gap-2">
           <p className="text-xs sm:text-sm font-black text-amber-300 flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
