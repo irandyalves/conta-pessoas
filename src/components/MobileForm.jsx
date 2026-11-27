@@ -197,7 +197,7 @@ function linhaPropria(tela, p) {
   const comFundo = Boolean(fundo) && fundo !== 'transparente';
   return {
     style: { ...(comFundo ? faixaEstilo(fundo, tela[`${p}Faixa`]) : {}), ...fonteEBorda(tela, p, comFundo) },
-    className: `${tela[`${p}Alinhamento`] ? `${getAlinhamentoClass(tela[`${p}Alinhamento`])} w-full` : ''} ${comFundo ? getFaixaFundoClass(fundo, '-mx-4 px-4 sm:-mx-6 sm:px-6') : ''}`
+    className: `${getAlinhamentoClass(tela[`${p}Alinhamento`] || estiloLinhas(tela).tituloAl)} w-full ${comFundo ? getFaixaFundoClass(fundo, '-mx-4 px-4 sm:-mx-6 sm:px-6') : ''}`
   };
 }
 
@@ -1389,13 +1389,17 @@ export default function MobileForm({ preview = false }) {
           // Página com várias perguntas e sem título próprio: a primeira também é pergunta, não título
           if (!temPagina && continuaNaMesmaPagina(perguntaAtual, telasExtrasAtivas[idx + 1])) return null;
           const tela = temPagina ? paginaDe(perguntaAtual) : perguntaAtual;
+          // Com Título 2/3, cada linha tem fundo, borda e alinhamento próprios; sozinho, o bloco todo é o título
+          const separado = Boolean(tela.titulo2 || tela.titulo3);
+          const estiloT1 = { ...faixaEstilo(estiloLinhas(tela).tituloFundo, tela.tituloFaixa ?? questionsConfig?.faixaPadrao), ...fonteEBorda(tela, 'titulo', estiloLinhas(tela).tituloFundo !== 'transparente') };
+          const classeT1 = `${getAlinhamentoClass(estiloLinhas(tela).tituloAl)} ${getFaixaFundoClass(estiloLinhas(tela).tituloFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')}`;
           const linha1 = tela.titulo1 ?? (temPagina ? '' : tela.titulo || `Pergunta da Tela ${idx + 2}`);
           return (
             <div className="mt-2 pt-2 border-t border-slate-800/60 flex flex-col" style={{ gap: espacos(tela).sub, marginBottom: espacos(tela).cards }}>
               {(linha1 || tela.titulo2 || tela.titulo3 || titulosMaisAtivos(tela.titulosMais).length > 0) && (
-              <div style={{ gap: espacos(tela).tit, ...faixaEstilo(estiloLinhas(tela).tituloFundo, tela.tituloFaixa ?? questionsConfig?.faixaPadrao), ...fonteEBorda(tela, 'titulo', estiloLinhas(tela).tituloFundo !== 'transparente') }} className={`t-titulo flex flex-col ${getAlinhamentoClass(estiloLinhas(tela).tituloAl)} ${getFaixaFundoClass(estiloLinhas(tela).tituloFundo, '-mx-4 px-4 sm:-mx-6 sm:px-6')}`}>
+              <div style={{ gap: espacos(tela).tit, ...(separado ? {} : estiloT1) }} className={`t-titulo flex flex-col ${separado ? '' : classeT1}`}>
               {linha1 && (
-              <h2 style={{ fontSize: `${tela.titulo1Tamanho || 20}px` }} className={`${pesoFonte(tela.tituloBold)} ${caixaAlta(tela.tituloCaixa)} leading-tight ${getCorTextoLinhaClass(tela.titulo1Cor, 'text-white')}`}>
+              <h2 style={{ fontSize: `${tela.titulo1Tamanho || 20}px`, ...(separado ? estiloT1 : {}) }} className={`${pesoFonte(tela.tituloBold)} ${caixaAlta(tela.tituloCaixa)} leading-tight ${separado ? `${classeT1} w-full` : ''} ${getCorTextoLinhaClass(tela.titulo1Cor, 'text-white')}`}>
                 <TituloRico texto={linha1} />
               </h2>
               )}
