@@ -814,7 +814,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
     const i = parseInt(activeTab.split('_')[1], 10);
     const telas = config.telasExtras || [];
     const t = telas[i];
-    if (!t || ['texto', 'texto_curto'].includes(t.tipo)) return;
+    if (!t) return;
     if (continuaNaMesmaPagina(telas[i - 1], t) || continuaNaMesmaPagina(t, telas[i + 1])) return;
     const novo = padraoPergunta(t);
     if (novo !== t) setConfig((c) => ({ ...c, telasExtras: c.telasExtras.map((x, n) => (n === i ? novo : x)) }));
@@ -2323,12 +2323,12 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 while (fimGrupo >= 0 && fimGrupo + 1 < telasLigadas.length && continuaNaMesmaPagina(telasLigadas[fimGrupo], telasLigadas[fimGrupo + 1])) fimGrupo++;
                 const membros = posLigada < 0 ? membrosDaAba(`extra_${extraIndex}`) : telasLigadas.slice(iniGrupo, fimGrupo + 1).map((t) => (config.telasExtras || []).indexOf(t));
                 const ehTexto = ['texto', 'texto_curto'].includes(telaAlvo.tipo);
-                const temLista = emGrupo || ehTexto;
+                const temLista = emGrupo;
                 const propria = telaAlvo.herdarEstilo === false;
                 const temEfeitos = telaAlvo.tipo === 'grade' || propria;
                 const temAparencia = ehCards && cardsAtivos.length > 0 && temLista;
                 // Data, hora e estrelas não têm nada para ajustar no campo
-                const semCampo = ehTexto || ['data', 'hora', 'rating'].includes(telaAlvo.tipo);
+                const semCampo = ['data', 'hora', 'rating'].includes(telaAlvo.tipo);
                 // Pergunta sozinha na página: título e resposta/opções na mesma sub-aba
                 const juntos = !temLista;
                 const CompTitulo = juntos ? LinhasPergunta : EstiloLinhasTitulo;
@@ -2823,6 +2823,21 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                 placeholder={telaAlvo.tipo === 'texto_curto' ? 'Ex: Digite seu nome ou WhatsApp...' : 'Ex: Digite sua sugestão ou comentário...'}
                                 className="w-full bg-slate-900 border border-slate-700 focus:border-slate-300 rounded-xl px-3 py-1.5 text-xs font-bold text-white shadow-inner"
                               />
+                            </div>
+                          )}
+                          {(telaAlvo.tipo === 'texto' || telaAlvo.tipo === 'texto_curto') && (
+                            <div className="flex flex-wrap items-end gap-3">
+                              <div>
+                                <label className="text-[11px] font-bold text-slate-400 block mb-1">Formato da resposta</label>
+                                <select
+                                  value={telaAlvo.formatoCampo || ''}
+                                  onChange={(e) => { const f = e.target.value; handleUpdateTelaProp(extraIndex, 'formatoCampo', f); if (f) trocarTipoExtra(extraIndex, 'texto_curto'); }}
+                                  className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-200"
+                                >
+                                  {FORMATOS_CAMPO.map((f) => <option key={f.id} value={f.id}>{f.label}</option>)}
+                                </select>
+                              </div>
+                              {!['email', 'telefone'].includes(telaAlvo.formatoCampo) && <Chave rotulo="Sempre em MAIÚSCULAS" valor={Boolean(telaAlvo.maiusculas)} onChange={(v) => handleUpdateTelaProp(extraIndex, 'maiusculas', v)} />}
                             </div>
                           )}
 
