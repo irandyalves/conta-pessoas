@@ -844,7 +844,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
   };
 
   const cardsAtivosP1 = (config.opcoesChegada || []).filter(c => c.ativo !== false);
-  const subAtualP1 = subTabTela1 === 'aparencia' && cardsAtivosP1.length === 0 ? 'opcoes' : subTabTela1;
+  const subAtualP1 = subTabTela1 === 'opcoes' || (subTabTela1 === 'aparencia' && cardsAtivosP1.length === 0) ? 'pergunta' : subTabTela1;
   const cardsPorTelaP1 = Number(config.cardsPorTela) || 4;
   const totalPaginasPreviewP1 = Math.max(1, Math.ceil(cardsAtivosP1.length / cardsPorTelaP1));
   const safePreviewPageP1 = Math.min(previewPage, totalPaginasPreviewP1 - 1);
@@ -1789,8 +1789,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     onChange={setSubTabTela1}
                     lateral={<>{cardsAtivosP1.length > 0 && <BotaoObrigatorio valor={config.pergunta1Obrigatoria} onChange={(v) => setCampo('pergunta1Obrigatoria', v)} />}{Heranca('p1')}</>}
                     opcoes={[
-                      { id: 'pergunta', label: 'Títulos' },
-                      { id: 'opcoes', label: rotuloPerguntas(cardsAtivosP1.length) },
+                      { id: 'pergunta', label: <>Pergunta <strong className="font-bold text-amber-300">({cardsAtivosP1.length})</strong></> },
                       ...(cardsAtivosP1.length > 0 ? [{ id: 'aparencia', label: 'Cards' }] : [])
                     ]}
                   />
@@ -1842,7 +1841,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                   )}
 
                   {/* 3. LISTA REFEITA DE OPÇÕES / CARDS DA TELA 1 */}
-                  {subAtualP1 === 'opcoes' && (
+                  {subAtualP1 === 'pergunta' && (
                   <div className="space-y-3 pt-1 animate-fade-in">
                     <div className="flex items-center justify-between">
                       <div>
@@ -2238,8 +2237,10 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 const temAparencia = ehCards && cardsAtivos.length > 0;
                 // Data, hora e estrelas não têm nada para ajustar no campo
                 const semCampo = ehTexto || ['data', 'hora', 'rating'].includes(telaAlvo.tipo);
+                // Pergunta sozinha na página: título e resposta/opções na mesma sub-aba
+                const juntos = !temLista;
                 const subAtual = (() => {
-                  if (subTabExtra === 'opcoes' && semCampo) return temLista ? 'lista' : 'pergunta';
+                  if (subTabExtra === 'opcoes' && (semCampo || juntos)) return temLista ? 'lista' : 'pergunta';
                   if (subTabExtra === 'lista' && !temLista) return semCampo ? 'pergunta' : 'opcoes';
                   if (subTabExtra === 'aparencia' && !temAparencia) return temEfeitos ? 'efeitos' : 'pergunta';
                   if (subTabExtra === 'efeitos' && !temEfeitos) return temAparencia ? 'aparencia' : 'pergunta';
@@ -2336,9 +2337,9 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       onChange={setSubTabExtra}
                       lateral={<>{!temLista && <BotaoObrigatorio valor={telaAlvo.obrigatorio} onChange={(v) => handleUpdateTelaProp(extraIndex, 'obrigatorio', v)} />}{Heranca(membros)}</>}
                       opcoes={[
-                        { id: 'pergunta', label: 'Títulos' },
+                        { id: 'pergunta', label: juntos ? 'Pergunta' : 'Títulos' },
                         ...(temLista ? [{ id: 'lista', label: rotuloPerguntas(membros.length) }] : []),
-                        ...(semCampo ? [] : [{
+                        ...(semCampo || juntos ? [] : [{
                           id: 'opcoes',
                           label: ['texto', 'texto_curto', 'data', 'hora', 'slider', 'rating'].includes(telaAlvo.tipo)
                             ? 'Resposta'
@@ -2556,7 +2557,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       </div>
                     )}
 
-                    {subAtual === 'opcoes' && (
+                    {(subAtual === 'opcoes' || (subAtual === 'pergunta' && juntos && !semCampo)) && (
                       <div className="space-y-3">
                     {/* CONFIGURAÇÃO ESPECÍFICA CONFORME O TIPO DA TELA EXTRA */}
                     {['texto', 'texto_curto', 'data', 'hora', 'slider', 'rating'].includes(telaAlvo.tipo) ? (
