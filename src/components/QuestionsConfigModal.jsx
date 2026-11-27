@@ -3275,52 +3275,11 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               {activeTab === 'acompanhantes' && !semAcompanhantes && (
                 <div className="painel-tela">
                   <TopoPainel slot={setSlotAcoes} titulo={telaOculta('acompanhantes') ? 'Acompanhantes' : `Tela ${paginasExtras.length + baseTela}`} onExcluir={excluirAcompanhantes} />
-                  <SubAbas
-                    valor={subTabTela2}
-                    onChange={setSubTabTela2}
-                    opcoes={[
-                      { id: 'pergunta', label: 'Títulos' },
-                      { id: 'botoes', label: 'Botões de quantidade' },
-                      { id: 'individual', label: 'Botão "Só eu"' }
-                    ]}
-                  />
-
-                  {subTabTela2 === 'pergunta' && (
-                    <Secao titulo="Pergunta">
-                      <Campo rotulo="Título, linha 1" valor={config.pergunta2Titulo} onChange={(v) => setCampo('pergunta2Titulo', v)} placeholder="Você está só ou tem mais" />
-                      <Campo rotulo="Título, linha 2 (opcional)" valor={config.pergunta2Titulo2} onChange={(v) => setCampo('pergunta2Titulo2', v)} placeholder="pessoas te acompanhando?" />
-                      <BarraFormato>
-                        <SeletorFonte rotulo="" valor={config.pergunta2Familia} onChange={(v) => setCampo('pergunta2Familia', v)} />
-                        <MiniSlider rotulo="Tamanho" icone="tamanho" valor={config.pergunta2FonteTamanho || 18} min={14} max={28} onChange={(v) => setCampo('pergunta2FonteTamanho', v)} />
-                        <Alternar rotulo={<em>I</em>} nome="Itálico" valor={config.pergunta2Italico} onChange={(v) => setCampo('pergunta2Italico', v)} />
-                      </BarraFormato>
-                    </Secao>
-                  )}
-
-                  {subTabTela2 === 'botoes' && (
-                    <>
-                      <Secao titulo="Forma">
-                        <Deslizante rotulo="Altura" valor={config.btnQtdAltura || 74} min={44} max={100} onChange={(v) => setCampo('btnQtdAltura', v)} />
-                        <Deslizante rotulo="Largura" valor={config.btnQtdLargura || 100} min={60} max={100} passo={2} unidade="%" onChange={(v) => setCampo('btnQtdLargura', v)} />
-                        <Deslizante rotulo="Borda" valor={config.btnQtdBordaEspessura || 1} min={1} max={6} onChange={(v) => setCampo('btnQtdBordaEspessura', v)} />
-                      </Secao>
-                      <Secao titulo="Cor e efeito">
-                        <BarraFormato><Cores rotulo="Botão" opcoes={CORES_BOTAO_QTD} campo="dot" valor={config.btnQtdCor || 'slate'} onChange={(v) => setCampo('btnQtdCor', v)} /></BarraFormato>
-                        <LinhaEfeito opcoes={EFEITOS_CARDS} valor={config.btnQtdEfeito || 'efeito_3d'} onChange={(v) => setCampo('btnQtdEfeito', v)} intensidade={{ valor: config.btnQtdProfundidade || 5, onChange: (v) => setCampo('btnQtdProfundidade', v) }} />
-                      </Secao>
-                      <Secao titulo="Número e legenda">
-                        <Deslizante rotulo="Número" valor={config.btnQtdFonteNumero || 34} min={18} max={48} onChange={(v) => setCampo('btnQtdFonteNumero', v)} />
-                        <BarraFormato><Cores rotulo="Número" opcoes={CORES_NUMERO_QTD} campo="dot" valor={config.btnQtdCorNumero || 'branco'} onChange={(v) => setCampo('btnQtdCorNumero', v)} /></BarraFormato>
-                        <Deslizante rotulo="Legenda" valor={config.btnQtdFonteDescricao || 11} min={9} max={16} onChange={(v) => setCampo('btnQtdFonteDescricao', v)} />
-                        <Lista rotulo="Cor da legenda" opcoes={CORES_DESCRICAO_QTD} valor={config.btnQtdCorDescricao || 'branco_80'} onChange={(v) => setCampo('btnQtdCorDescricao', v)} />
-                      </Secao>
-                    </>
-                  )}
-
-                  {subTabTela2 === 'individual' && (() => {
+                  {(() => {
+                    // Tela de acompanhantes numa página só, na ordem do celular: pergunta, "Só eu", divisor e botões de quantidade
                     const espaco = (campo, rotulo) => <EspacoAte rotulo={rotulo} max={120} valor={espacoAcomp(config, campo)} onChange={(v) => setCampo(campo, v)} />;
                     const linha = (id, campo, rotulo, placeholder, tamanho, max, caixa, abaixo) => ({
-                      chave: id, rotulo, placeholder,
+                      chave: id, rotulo, placeholder, fixa: true, removivel: false,
                       texto: config[campo] ?? '', onTexto: (v) => setCampo(campo, v),
                       tamanho: config[`${id}Tamanho`] || tamanho, min: 10, max, onTamanho: (v) => setCampo(`${id}Tamanho`, v),
                       familia: config[`${id}Familia`], onFamilia: (v) => setCampo(`${id}Familia`, v),
@@ -3331,28 +3290,71 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       abaixo
                     });
                     return (
-                      <>
-                        <EstiloLinhasTitulo
-                          key={activeTab}
-                          slotAcoes={slotAcoes}
-                          linhas={[
-                            linha('soeuTitulo', 'opcaoIndividualTitulo', 'Botão', 'SÓ EU', 24, 40, false),
-                            linha('soeuCompl', 'opcaoIndividualSubtitulo', 'Ao lado', 'Vazio, não aparece no celular', 14, 30, false),
-                            linha('divisorQtd', 'divisorQtdTexto', 'Divisor', 'Vazio, não aparece no celular', 12, 26, true, <div className="texto-abaixo">{espaco('divisorAntesEspaco', 'Espaço antes')}{espaco('divisorDepoisEspaco', 'Espaço depois')}</div>)
-                          ]}
-                        />
-                        {EfeitosBotao({
-                          titulo: 'Botão "Só eu"',
-                          descricao: 'Vale só para este botão. O botão Avançar e os outros não mudam.',
-                          topo: <div className="linha-efeito">{espaco('soeuAntesEspaco', 'Espaço antes')}{espaco('divisorAntesEspaco', 'Espaço depois')}</div>,
-                          ler: (k) => config[`soeu${k}`] ?? undefined,
-                          gravar: (k, v) => setCampo(`soeu${k}`, v),
-                          alturaPadrao: 96,
-                          alturaMax: 140,
-                          raioPadrao: 24,
-                          comLargura: true
-                        })}
-                      </>
+                      <div className="space-y-3">
+                        <div className="bloco-pergunta space-y-2.5">
+                          <LinhasPergunta
+                            key="acomp_pergunta"
+                            cabecalho={<span className="entalhe-pergunta">Pergunta</span>}
+                            linhas={[
+                              {
+                                chave: 'p2t1', rotulo: 'Título da Pergunta', fixa: true, removivel: false, multilinha: true, placeholder: 'Você está só ou tem mais',
+                                texto: config.pergunta2Titulo ?? '', onTexto: (v) => setCampo('pergunta2Titulo', v),
+                                tamanho: config.pergunta2FonteTamanho || 18, min: 14, max: 28, onTamanho: (v) => setCampo('pergunta2FonteTamanho', v),
+                                familia: config.pergunta2Familia, onFamilia: (v) => setCampo('pergunta2Familia', v),
+                                italico: config.pergunta2Italico, onItalico: (v) => setCampo('pergunta2Italico', v)
+                              },
+                              { chave: 'p2t2', rotulo: 'Continuação', semBarra: true, removivel: false, placeholder: 'pessoas te acompanhando? (opcional)', texto: config.pergunta2Titulo2 ?? '', onTexto: (v) => setCampo('pergunta2Titulo2', v) }
+                            ]}
+                          />
+                        </div>
+
+                        <div className="bloco-pergunta space-y-2.5">
+                          <LinhasPergunta
+                            key="acomp_soeu"
+                            cabecalho={<span className="entalhe-pergunta">Botão <strong>Só eu</strong></span>}
+                            linhas={[
+                              linha('soeuTitulo', 'opcaoIndividualTitulo', 'Texto do botão', 'SÓ EU', 24, 40, false),
+                              linha('soeuCompl', 'opcaoIndividualSubtitulo', 'Ao lado', 'Vazio, não aparece no celular', 14, 30, false)
+                            ]}
+                          />
+                          {EfeitosBotao({
+                            titulo: 'Aparência do botão',
+                            descricao: 'Vale só para este botão.',
+                            topo: <div className="linha-efeito">{espaco('soeuAntesEspaco', 'Espaço antes')}</div>,
+                            ler: (k) => config[`soeu${k}`] ?? undefined,
+                            gravar: (k, v) => setCampo(`soeu${k}`, v),
+                            alturaPadrao: 96,
+                            alturaMax: 140,
+                            raioPadrao: 24,
+                            comLargura: true
+                          })}
+                        </div>
+
+                        <div className="bloco-pergunta space-y-2.5">
+                          <LinhasPergunta
+                            key="acomp_div"
+                            cabecalho={<span className="entalhe-pergunta">Divisor</span>}
+                            linhas={[
+                              linha('divisorQtd', 'divisorQtdTexto', 'Texto', 'Vazio, não aparece no celular', 12, 26, true, <div className="texto-abaixo">{espaco('divisorAntesEspaco', 'Espaço antes')}{espaco('divisorDepoisEspaco', 'Espaço depois')}</div>)
+                            ]}
+                          />
+                        </div>
+
+                        <div className="bloco-pergunta space-y-2.5">
+                          <span className="entalhe-pergunta">Botões de quantidade</span>
+                          <Secao>
+                            <Deslizante rotulo="Altura" valor={config.btnQtdAltura || 74} min={44} max={100} onChange={(v) => setCampo('btnQtdAltura', v)} />
+                            <Deslizante rotulo="Largura" valor={config.btnQtdLargura || 100} min={60} max={100} passo={2} unidade="%" onChange={(v) => setCampo('btnQtdLargura', v)} />
+                            <Deslizante rotulo="Borda" valor={config.btnQtdBordaEspessura || 1} min={1} max={6} onChange={(v) => setCampo('btnQtdBordaEspessura', v)} />
+                            <BarraFormato><Cores rotulo="Cor do botão" opcoes={CORES_BOTAO_QTD} campo="dot" valor={config.btnQtdCor || 'slate'} onChange={(v) => setCampo('btnQtdCor', v)} /></BarraFormato>
+                            <LinhaEfeito opcoes={EFEITOS_CARDS} valor={config.btnQtdEfeito || 'efeito_3d'} onChange={(v) => setCampo('btnQtdEfeito', v)} intensidade={{ valor: config.btnQtdProfundidade || 5, onChange: (v) => setCampo('btnQtdProfundidade', v) }} />
+                            <Deslizante rotulo="Número" valor={config.btnQtdFonteNumero || 34} min={18} max={48} onChange={(v) => setCampo('btnQtdFonteNumero', v)} />
+                            <BarraFormato><Cores rotulo="Cor do número" opcoes={CORES_NUMERO_QTD} campo="dot" valor={config.btnQtdCorNumero || 'branco'} onChange={(v) => setCampo('btnQtdCorNumero', v)} /></BarraFormato>
+                            <Deslizante rotulo="Legenda" valor={config.btnQtdFonteDescricao || 11} min={9} max={16} onChange={(v) => setCampo('btnQtdFonteDescricao', v)} />
+                            <Lista rotulo="Cor da legenda" opcoes={CORES_DESCRICAO_QTD} valor={config.btnQtdCorDescricao || 'branco_80'} onChange={(v) => setCampo('btnQtdCorDescricao', v)} />
+                          </Secao>
+                        </div>
+                      </div>
                     );
                   })()}
 
