@@ -75,3 +75,16 @@ export function aplicarNaPagina(t, aplicar) {
   });
   return out;
 }
+
+// Pergunta sozinha na página: título e pergunta são uma coisa só. Se o texto ficou no título
+// da página e a pergunta está vazia, o título passa a ser a própria pergunta.
+export function tituloParaPergunta(t) {
+  if (!t || !temTituloPagina(t) || limpo(t.titulo1 ?? t.titulo) || limpo(t.titulo2) || limpo(t.titulo3)) return t;
+  const out = { ...t };
+  TEXTOS.forEach((k) => { out[k] = t[`pag_${k}`] ?? ''; out[`pag_${k}`] = ''; });
+  ESTILOS.forEach((k) => { if (t[`pag_${k}`] !== undefined) out[k] = t[`pag_${k}`]; });
+  out.titulosMais = t.pag_titulosMais || [];
+  out.pag_titulosMais = [];
+  out.titulo = limpo(`${out.titulo1} ${out.titulo2}`);
+  return out;
+}

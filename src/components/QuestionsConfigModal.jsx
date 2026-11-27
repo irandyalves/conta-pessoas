@@ -58,7 +58,7 @@ import { corLinhaHex, soComuns, CAPA_LARGURA_MIN, raioCapa, LINHAS_CAPA, ordemCa
 import ImportadorIA from './ImportadorIA';
 import RecuperarVersao from './RecuperarVersao';
 import { juntarComAnterior, telaAnterior } from '../utils/juntarTelas';
-import { aplicarNaPagina, chavePagina, comEstiloPagina, paginaDe, primeiraDaPagina, semPagina, temTituloPagina, transferirPagina } from '../utils/pagina';
+import { aplicarNaPagina, chavePagina, comEstiloPagina, paginaDe, primeiraDaPagina, semPagina, temTituloPagina, transferirPagina, tituloParaPergunta } from '../utils/pagina';
 import LinhasPergunta from './LinhasPergunta';
 import useDesfazer from '../utils/useDesfazer';
 import IconeEspera, { ICONES_ESPERA } from './IconeEspera';
@@ -805,6 +805,19 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
     </>
     );
   };
+
+  // Pergunta sozinha na página com o texto só no título da página: vira a própria pergunta
+  useEffect(() => {
+    if (!String(activeTab).startsWith('extra_')) return;
+    const i = parseInt(activeTab.split('_')[1], 10);
+    const telas = config.telasExtras || [];
+    const t = telas[i];
+    if (!t || ['texto', 'texto_curto'].includes(t.tipo)) return;
+    if (continuaNaMesmaPagina(telas[i - 1], t) || continuaNaMesmaPagina(t, telas[i + 1])) return;
+    const novo = tituloParaPergunta(t);
+    if (novo !== t) setConfig((c) => ({ ...c, telasExtras: c.telasExtras.map((x, n) => (n === i ? novo : x)) }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, config.telasExtras]);
 
   // SALVAMENTO AUTOMÁTICO NO BANCO: 1,5s depois da última alteração
   const [autoSalvo, setAutoSalvo] = useState('');
@@ -2317,6 +2330,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 // Pergunta sozinha na página: título e resposta/opções na mesma sub-aba
                 const juntos = !temLista;
                 const CompTitulo = juntos ? LinhasPergunta : EstiloLinhasTitulo;
+                // Sozinha e sem título de página: um bloco só, ligado à própria pergunta
+                const unico = juntos && !temTituloPagina(config.telasExtras[extraIndex]);
                 const ehEscolha = ["cards", "radio", "checkbox", "dropdown"].includes(telaAlvo.tipo || "cards");
                 const subAtual = (() => {
                   if (subTabExtra === 'opcoes' && (semCampo || juntos)) return temLista ? 'lista' : 'pergunta';
@@ -2580,19 +2595,19 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         <div className={juntos ? 'bloco-pergunta space-y-2.5' : 'contents'}>
                         <CompTitulo
                           key={activeTab}
-                          cabecalho={<span className="text-xs font-semibold text-sky-200">Título <span className="font-normal text-slate-500">(acima da pergunta)</span></span>}
+                          cabecalho={unico ? <span className="text-xs font-semibold text-amber-200">Pergunta</span> : <span className="text-xs font-semibold text-sky-200">Título <span className="font-normal text-slate-500">(acima da pergunta)</span></span>}
                           topo={(
                             <>
                               <ControleEspacos
-                                valores={espacos(alvoTitulo, false)}
-                                titulos={[alvoTitulo.titulo1 || alvoTitulo.titulo, alvoTitulo.titulo2, alvoTitulo.titulo3]}
-                                subtitulo={alvoTitulo.subtitulo}
-                                onChange={(k, v) => gravarTexto(iTitulo, modoTitulo, { tit: 'espacoTitulos', sub: 'espacoSub' }[k], v)}
+                                valores={espacos(unico ? telaAlvo : alvoTitulo, false)}
+                                titulos={unico ? [telaAlvo.titulo1 || telaAlvo.titulo, telaAlvo.titulo2, telaAlvo.titulo3] : [alvoTitulo.titulo1 || alvoTitulo.titulo, alvoTitulo.titulo2, alvoTitulo.titulo3]}
+                                subtitulo={unico ? telaAlvo.subtitulo : alvoTitulo.subtitulo}
+                                onChange={(k, v) => gravarTexto(iTitulo, unico ? 'tela' : modoTitulo, { tit: 'espacoTitulos', sub: 'espacoSub' }[k], v)}
                               />
                               {!juntos && BarraFormatacao({ ehP1: false, extraIndex: iTitulo })}
                             </>
                           )}
-                          espacoResposta={(temLista || juntos) && !temTituloPagina(config.telasExtras[iTitulo]) ? null : <EspacoAte rotulo={juntos ? 'Espaço até a pergunta' : ehCards ? 'Espaço para o primeiro card' : temLista ? 'Espaço para a primeira pergunta' : 'Espaço para a resposta'} valor={espacos(alvoTitulo, false).cards} onChange={(v) => gravarTexto(iTitulo, modoTitulo, 'espacoCards', v)} />}
+                          espacoResposta={unico ? <EspacoAte rotulo={ehCards ? 'Espaço para o primeiro card' : 'Espaço para a resposta'} valor={espacos(telaAlvo, false).cards} onChange={(v) => handleUpdateTelaProp(extraIndex, 'espacoCards', v)} /> : (temLista || juntos) && !temTituloPagina(config.telasExtras[iTitulo]) ? null : <EspacoAte rotulo={juntos ? 'Espaço até a pergunta' : ehCards ? 'Espaço para o primeiro card' : temLista ? 'Espaço para a primeira pergunta' : 'Espaço para a resposta'} valor={espacos(alvoTitulo, false).cards} onChange={(v) => gravarTexto(iTitulo, modoTitulo, 'espacoCards', v)} />}
                           slotAcoes={slotAcoes}
                           onOrdem={(ids) => setConfig((c) => ({
                             ...c,
@@ -2613,10 +2628,12 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                               return { ...novo, titulo: `${novo.titulo1} ${novo.titulo2 || ''}`.trim() };
                             })
                           }))}
-                          linhas={linhasDe(alvoTitulo, iTitulo, modoTitulo)}
+                          linhas={unico
+                            ? linhasDe(telaAlvo, extraIndex, 'tela').map((l) => (l.chave === 'titulo1' ? { ...l, rotulo: 'Título da Pergunta', fixa: true, multilinha: true } : l))
+                            : linhasDe(alvoTitulo, iTitulo, modoTitulo)}
                         />
                         </div>
-                        {juntos && (
+                        {juntos && !unico && (
                           <div className="bloco-pergunta space-y-2.5 ml-[2ch]">
                             <LinhasPergunta
                               key={`perg_${telaAlvo.id || extraIndex}`}
