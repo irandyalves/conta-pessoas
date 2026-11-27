@@ -2897,7 +2897,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                       {optIdx === 0 && telaAnterior(config, extraIndex) && (
                                         <button
                                           type="button"
-                                          onClick={() => handleJuntarComAnterior(extraIndex)}
+                                          onClick={() => window.confirm(`Juntar estas opções no fim da Tela ${extraIndex === 0 ? 1 : numeroDaTela(extraIndex - 1)}? Esta tela deixa de existir.`) && handleJuntarComAnterior(extraIndex)}
                                           title="Estas opções voltam para o fim da tela anterior e esta tela deixa de existir"
                                           className="px-2 py-0.5 rounded-lg bg-slate-700/40 hover:bg-slate-700 border border-slate-700 text-slate-200 text-[11px] font-bold flex items-center gap-1 transition"
                                         >
