@@ -121,7 +121,9 @@ export default function EstiloLinhasTitulo({ linhas, onOrdem, topo = null, slotA
               {l.extra}
             </BarraFormato>}
             <div className="texto-corpo">
-              <span className="texto-nome">{l.rotulo}</span>
+              {l.onNome
+                ? <textarea rows={2} spellCheck={false} aria-label={`Nome de ${l.rotulo}`} title="Clique para renomear" value={l.nome ?? l.rotulo} onChange={(e) => l.onNome(e.target.value)} onBlur={(e) => { if (!e.target.value.trim()) l.onNome(''); }} className="texto-nome texto-nome-editavel" />
+                : <span className="texto-nome">{l.rotulo}</span>}
               {!l.onTexto
                 ? <span className="flex-1 min-w-0 truncate text-[13px] text-slate-300 py-[5px]" title={l.texto}>{l.texto}</span>
                 : l.multilinha

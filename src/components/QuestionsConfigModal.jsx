@@ -2626,9 +2626,16 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                               return { ...novo, titulo: `${novo.titulo1} ${novo.titulo2 || ''}`.trim() };
                             })
                           }))}
-                          linhas={unico
+                          linhas={(unico
                             ? linhasDe(telaAlvo, extraIndex, 'tela').map((l) => (l.chave === 'titulo1' ? { ...l, rotulo: 'Título da Pergunta', fixa: true, multilinha: true } : l))
-                            : linhasDe(alvoTitulo, iTitulo, modoTitulo)}
+                            : linhasDe(alvoTitulo, iTitulo, modoTitulo)
+                          ).map((l) => {
+                            // Nome da linha no editor: o usuário pode renomear (só no editor, não aparece no celular)
+                            if (l.separador || !l.onTexto) return l;
+                            const k = l.chave || l.rotulo;
+                            const nomes = config.telasExtras[iTitulo]?.rotulos || {};
+                            return { ...l, nome: nomes[k] || undefined, onNome: (v) => handleUpdateTelaProp(iTitulo, 'rotulos', { ...nomes, [k]: v }) };
+                          })}
                         />
                         </div>
                         {juntos && !unico && (

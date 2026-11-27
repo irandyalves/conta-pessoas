@@ -311,3 +311,8 @@ button.texto-lixeira:hover { background: rgba(239, 68, 68, .28); color: #fecaca;
 /* Espaço entre textos: o controle fica pousado na linha pontilhada entre os dois */
 .espaco-entre { position: relative; z-index: 3; height: 0; display: flex; justify-content: center; align-items: center; }
 .espaco-entre > * { background: #0f172a; border: 1px dashed #475569; border-radius: 999px; padding: 2px 12px; }
+/* Nome da linha renomeável: parece rótulo, vira campo ao passar o mouse */
+.texto-corpo > .texto-nome-editavel { height: auto; align-self: center; top: 50%; bottom: auto; transform: translateY(-50%); resize: none; overflow: hidden; }
+.texto-nome-editavel { background: transparent; border: 1px dashed transparent; border-radius: 6px; padding: 1px 4px; margin-left: -5px; outline: none; cursor: text; min-width: 0; }
+.texto-nome-editavel:hover { border-color: #475569; }
+.texto-nome-editavel:focus { border-color: #94a3b8; background: #0f172a; color: #fff; }
