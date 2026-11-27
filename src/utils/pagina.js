@@ -10,7 +10,8 @@ const ESTILOS = [
   'titulo1Tamanho', 'titulo1Cor', 'titulo2Tamanho', 'titulo2Cor', 'titulo3Tamanho', 'titulo3Cor',
   'tituloBold', 'tituloCaixa', 'tituloFamilia', 'tituloItalico', 'tituloAlinhamento', 'tituloFundo', 'tituloBorda', 'tituloBordaLargura', 'tituloBordaLado',
   'subtituloTamanho', 'subtituloCor', 'subBold', 'subCaixa', 'subFamilia', 'subItalico', 'subAlinhamento', 'subFundo', 'subBorda', 'subBordaLargura', 'subBordaLado',
-  'espacoTitulos', 'espacoSub', 'espacoCards'
+  'espacoTitulos', 'espacoSub', 'espacoCards', 'tituloFaixa',
+  ...[2, 3].flatMap((n) => ['Bold', 'Caixa', 'Familia', 'Italico', 'Borda', 'BordaLargura', 'BordaLado', 'Alinhamento', 'Fundo', 'Faixa'].map((k) => `titulo${n}${k}`))
 ];
 // titulosMais: títulos além do 3º ({ texto, tamanho, cor }), quantos quiser
 export const chavePagina = (k) => (TEXTOS.includes(k) || ESTILOS.includes(k) || k === 'titulosMais' ? `pag_${k}` : k);

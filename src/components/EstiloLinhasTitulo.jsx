@@ -21,7 +21,7 @@ import { Alinhamento, Alternar, BarraFormato, Cores, MiniSlider, QuestaoArrastav
  * topo (opcional): configuração que vale para a lista, acima dos textos. Todo texto tem a lixeira à direita do campo; removivel: false tira.
  * Linha { separador: true, ligado, onLigado } = linha divisória.
  */
-export default function EstiloLinhasTitulo({ linhas, onOrdem, topo = null, slotAcoes = null, espacoResposta = null }) {
+export default function EstiloLinhasTitulo({ linhas, onOrdem, topo = null, slotAcoes = null, espacoResposta = null, entreTitulos = null, ateTexto = null }) {
   // Só aparecem os textos que estão no celular. Os vazios ficam num botão "adicionar";
   // quem já foi aberto ou editado continua visível mesmo que o texto seja apagado.
   const [mantidas, setMantidas] = useState({});
@@ -64,6 +64,19 @@ export default function EstiloLinhasTitulo({ linhas, onOrdem, topo = null, slotA
       {topo && <div className="texto-topo">{topo}</div>}
       {espacoResposta && !ultimoTitulo && <div className="texto-topo">{espacoResposta}</div>}
       {visiveis.map((l, i) => {
+        const ehTit = (x) => x && !x.separador && /^(Título|Pergunta|Parte)/.test(x.rotulo);
+        const ehTxt = (x) => x && /^(Texto abaixo|Texto de apoio)/.test(x.rotulo);
+        const prev = visiveis[i - 1];
+        // Espaços no celular: o controle fica em cima da linha pontilhada, entre os dois textos
+        const iEntre = visiveis.findIndex((x, k) => k > 0 && ehTit(x) && ehTit(visiveis[k - 1]));
+        const entre = entreTitulos && i === iEntre ? entreTitulos : ateTexto && ehTxt(l) && ehTit(prev) ? ateTexto : null;
+        if (entre) return [<div key={`esp_${idDe(l)}`} className="espaco-entre">{entre}</div>, render(l, i)];
+        return render(l, i);
+      })}
+    </div>
+  );
+
+  function render(l, i) {
         if (l.separador) {
           return Item(l, i, (
             <div className="flex items-center gap-3">
@@ -121,9 +134,7 @@ export default function EstiloLinhasTitulo({ linhas, onOrdem, topo = null, slotA
             {l === ultimoTitulo && <div className="texto-abaixo">{espacoResposta}</div>}
           </>
         ));
-      })}
-    </div>
-  );
+  }
 }
 
 // Distância dos títulos até o que vem embaixo

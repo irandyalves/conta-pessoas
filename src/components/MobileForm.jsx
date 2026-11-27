@@ -191,6 +191,16 @@ function TitulosMais({ lista, bold, caixa }) {
 }
 
 // A pergunta (com texto de apoio) entre os títulos da tela e as opções
+// Título 2 e 3 com ajustes próprios (fonte, fundo, borda, alinhamento); sem ajuste, seguem o Título 1
+function linhaPropria(tela, p) {
+  const fundo = tela[`${p}Fundo`];
+  const comFundo = Boolean(fundo) && fundo !== 'transparente';
+  return {
+    style: { ...(comFundo ? faixaEstilo(fundo, tela[`${p}Faixa`]) : {}), ...fonteEBorda(tela, p, comFundo) },
+    className: `${tela[`${p}Alinhamento`] ? `${getAlinhamentoClass(tela[`${p}Alinhamento`])} w-full` : ''} ${comFundo ? getFaixaFundoClass(fundo, '-mx-4 px-4 sm:-mx-6 sm:px-6') : ''}`
+  };
+}
+
 function BlocoPergunta({ tela }) {
   const texto = [tela.titulo1 ?? tela.titulo, tela.titulo2, tela.titulo3].filter(Boolean).join(' ');
   if (!texto && !tela.subtitulo) return null;
@@ -1390,12 +1400,12 @@ export default function MobileForm({ preview = false }) {
               </h2>
               )}
               {tela.titulo2 && (
-                <h2 style={{ fontSize: `${tela.titulo2Tamanho || 15}px` }} className={`${pesoFonte(tela.tituloBold)} ${caixaAlta(tela.tituloCaixa)} leading-tight ${getCorTextoLinhaClass(tela.titulo2Cor, 'text-amber-300')}`}>
+                <h2 style={{ fontSize: `${tela.titulo2Tamanho || 15}px`, ...linhaPropria(tela, 'titulo2').style }} className={`${pesoFonte(tela.titulo2Bold ?? tela.tituloBold)} ${caixaAlta(tela.titulo2Caixa ?? tela.tituloCaixa)} leading-tight ${linhaPropria(tela, 'titulo2').className} ${getCorTextoLinhaClass(tela.titulo2Cor, 'text-amber-300')}`}>
                   {tela.titulo2}
                 </h2>
               )}
               {tela.titulo3 && (
-                <h2 style={{ fontSize: `${tela.titulo3Tamanho || 14}px` }} className={`${pesoFonte(tela.tituloBold)} ${caixaAlta(tela.tituloCaixa)} leading-tight ${getCorTextoLinhaClass(tela.titulo3Cor, 'text-emerald-400')}`}>
+                <h2 style={{ fontSize: `${tela.titulo3Tamanho || 14}px`, ...linhaPropria(tela, 'titulo3').style }} className={`${pesoFonte(tela.titulo3Bold ?? tela.tituloBold)} ${caixaAlta(tela.titulo3Caixa ?? tela.tituloCaixa)} leading-tight ${linhaPropria(tela, 'titulo3').className} ${getCorTextoLinhaClass(tela.titulo3Cor, 'text-emerald-400')}`}>
                   {tela.titulo3}
                 </h2>
               )}
