@@ -156,6 +156,8 @@ const fonteBordaLinha = (ler, gravar) => ({
   bordaLado: ler('BordaLado'), onBordaLado: (v) => gravar('BordaLado', v)
 });
 
+// Onde fica o botão Começar na tela Início
+const POSICOES_COMECAR = [{ id: 'rodape', label: 'Rodapé' }, { id: 'centro', label: 'Centro' }, { id: 'abaixo', label: 'Abaixo do texto' }];
 const EFEITOS_CAPA = [{ id: 'nenhum', label: 'Nenhum' }, ...EFEITOS_CARDS.filter((e) => e.id !== 'padrao' && e.id !== 'tema')];
 
 // Sub-abas de uma tela (Textos, Opções, Aparência)
@@ -1546,30 +1548,6 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     <Chave rotulo="Travar cabeçalho" descricao="O título fica preso no alto do celular enquanto a pessoa rola a página." valor={config.travarCabecalho !== false} onChange={(v) => setCampo('travarCabecalho', v)} />
                   </Secao>
 
-                  {config.mostrarBotaoComecar === false && (
-                    <Secao titulo="Botão Começar">
-                      <Chave rotulo="Mostrar botão de começar" descricao="Desligado, o participante cai direto na Tela 1." valor={false} onChange={(v) => setCampo('mostrarBotaoComecar', v)} />
-                    </Secao>
-                  )}
-                  {config.mostrarBotaoComecar !== false && EfeitosBotao({
-                    titulo: 'Botão Começar',
-                    topo: (
-                      <>
-                        <Campo valor={config.pergunta1BotaoComecarTexto ?? 'COMEÇAR'} onChange={(v) => setCampo('pergunta1BotaoComecarTexto', v)} placeholder="Texto do botão" />
-                        <Chave rotulo="Mostrar botão de começar" descricao="Desligado, o participante cai direto na Tela 1." valor onChange={(v) => setCampo('mostrarBotaoComecar', v)} />
-                      </>
-                    ),
-                    ler: (k) => config[`comecar${k}`],
-                    gravar: (k, v) => setCampo(`comecar${k}`, v),
-                    alturaPadrao: 56,
-                    alturaMax: 100,
-                    raioPadrao: 16,
-                    espessuraPadrao: 2.5,
-                    fontePadrao: 16,
-                    comLargura: true,
-                    semLado: true // o contorno de luz gira em volta do botão
-                  })}
-
                   {EfeitosBotao({
                     titulo: 'Botão Avançar',
                     topo: <Campo valor={config.botaoAvancarTexto ?? 'Avançar'} onChange={(v) => setCampo('botaoAvancarTexto', v)} placeholder="Texto do botão" />,
@@ -1651,6 +1629,38 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                       });
                     })()}
                   />
+                  {config.mostrarBotaoComecar === false && (
+                    <Secao titulo="Botão Começar">
+                      <Chave rotulo="Mostrar botão de começar" descricao="Desligado, o participante cai direto na Tela 1." valor={false} onChange={(v) => setCampo('mostrarBotaoComecar', v)} />
+                    </Secao>
+                  )}
+                  {config.mostrarBotaoComecar !== false && EfeitosBotao({
+                    titulo: 'Botão Começar',
+                    topo: (
+                      <>
+                        <Campo valor={config.pergunta1BotaoComecarTexto ?? 'COMEÇAR'} onChange={(v) => setCampo('pergunta1BotaoComecarTexto', v)} placeholder="Texto do botão" />
+                        <Chave rotulo="Mostrar botão de começar" descricao="Desligado, o participante cai direto na Tela 1." valor onChange={(v) => setCampo('mostrarBotaoComecar', v)} />
+                        <LinhaEfeito
+                          rotulo="Posição"
+                          opcoes={POSICOES_COMECAR}
+                          valor={config.comecarPosicao || 'rodape'}
+                          onChange={(v) => setCampo('comecarPosicao', v)}
+                        />
+                        {(config.comecarPosicao || 'rodape') !== 'rodape' && (
+                          <Deslizante rotulo="Subir/descer" valor={Number(config.comecarDeslocar) || 0} min={-200} max={200} passo={5} onChange={(v) => setCampo('comecarDeslocar', v)} />
+                        )}
+                      </>
+                    ),
+                    ler: (k) => config[`comecar${k}`],
+                    gravar: (k, v) => setCampo(`comecar${k}`, v),
+                    alturaPadrao: 56,
+                    alturaMax: 100,
+                    raioPadrao: 16,
+                    espessuraPadrao: 2.5,
+                    fontePadrao: 16,
+                    comLargura: true,
+                    semLado: true // o contorno de luz gira em volta do botão
+                  })}
                 </div>
               )}
 

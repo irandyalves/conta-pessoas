@@ -1403,8 +1403,23 @@ export default function MobileForm({ preview = false }) {
             {/* SE O BOTÃO COMEÇAR ESTIVER HABILITADO E O USUÁRIO AINDA NÃO CLICOU NELE: EXIBE APENAS O BOTÃO COMEÇAR */}
             {questionsConfig.mostrarBotaoComecar !== false && !jaClicouComecar ? (
               <>
-              <div className="h-24" />
-              <div className="t-rodape fixed bottom-0 inset-x-0 z-30 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent">
+              {/* Posição do botão: rodapé (padrão), centro da tela ou logo abaixo do texto */}
+              {(questionsConfig?.comecarPosicao || 'rodape') === 'rodape' && <div className="h-24" />}
+              <div
+                className={(() => {
+                  const pos = questionsConfig?.comecarPosicao || 'rodape';
+                  if (pos === 'centro') return 'fixed inset-x-0 top-1/2 z-30 px-4';
+                  if (pos === 'abaixo') return 'relative px-0';
+                  return 't-rodape fixed bottom-0 inset-x-0 z-30 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent';
+                })()}
+                style={(() => {
+                  const pos = questionsConfig?.comecarPosicao || 'rodape';
+                  const desloca = Number(questionsConfig?.comecarDeslocar) || 0;
+                  if (pos === 'centro') return { transform: `translateY(calc(-50% + ${desloca}px))` };
+                  if (pos === 'abaixo') return { marginTop: Math.max(0, 16 + desloca) };
+                  return undefined;
+                })()}
+              >
                 {(() => {
                   const ler = (k) => questionsConfig?.[`comecar${k}`];
                   const st = estiloBotao(ler);
