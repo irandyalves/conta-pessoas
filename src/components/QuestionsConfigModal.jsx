@@ -2762,7 +2762,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         {telaAlvo.tipo === 'slider' && (
                           <div className="space-y-2">
                             <span className="text-[11px] font-semibold text-slate-200 block">Estilo da escala</span>
-                            <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
+                            <div className="grid grid-cols-4 sm:grid-cols-8 gap-1.5">
                               {ESTILOS_ESCALA.map((es) => {
                                 const sel = (telaAlvo.estiloEscala || 'slider') === es.id;
                                 return (
@@ -2772,8 +2772,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                     onClick={() => handleUpdateTelaProp(extraIndex, 'estiloEscala', es.id)}
                                     className={`p-1.5 rounded-lg border text-left transition ${sel ? 'bg-slate-700/40 border-slate-200' : 'bg-slate-950 border-slate-800 hover:border-slate-600'}`}
                                   >
-                                    <div className="pointer-events-none h-[56px] overflow-hidden flex items-center">
-                                      <div className="w-full"><EscalaVisual tela={{ ...telaAlvo, estiloEscala: es.id }} mini escala={0.3} valor={String(Math.round(((telaAlvo.sliderMin ?? 0) + (telaAlvo.sliderMax ?? 10)) * (es.id === 'carinhas' || ['boneco', 'coruja', 'gato', 'robo'].includes(es.id) ? 0.8 : 0.7)))} onChange={() => {}} /></div>
+                                    <div className="pointer-events-none h-[34px] overflow-hidden flex items-center">
+                                      <div className="w-full"><EscalaVisual tela={{ ...telaAlvo, estiloEscala: es.id }} mini escala={0.18} valor={String(Math.round(((telaAlvo.sliderMin ?? 0) + (telaAlvo.sliderMax ?? 10)) * (es.id === 'carinhas' || ['boneco', 'coruja', 'gato', 'robo'].includes(es.id) ? 0.8 : 0.7)))} onChange={() => {}} /></div>
                                     </div>
                                     <span className={`block text-[10px] font-bold mt-0.5 truncate ${sel ? 'text-slate-200' : 'text-slate-400'}`}>{es.label}</span>
                                   </button>
