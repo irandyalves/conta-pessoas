@@ -1029,6 +1029,15 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
       ...(texto ? { placeholder: 'Digite aqui...', multiline: tipo === 'texto', linhas: tipo === 'texto' ? 4 : 1 } : {}),
       opcoes: config.opcoesChegada || []
     }, extrairEstilo(config, true), false);
+    // Pergunta separada dos títulos da tela: os títulos viram título da página
+    if (String(config.pergunta1Pergunta || '').trim()) {
+      Object.assign(nova, {
+        pag_titulo1: nova.titulo1, pag_titulo2: nova.titulo2, pag_titulo3: nova.titulo3, pag_subtitulo: nova.subtitulo,
+        titulo1: config.pergunta1Pergunta, titulo2: '', titulo3: '', titulo: config.pergunta1Pergunta,
+        subtitulo: config.pergunta1Apoio || '',
+        titulo1Tamanho: config.pergunta1PerguntaTamanho || 18, titulo1Cor: config.pergunta1PerguntaCor || 'branco'
+      });
+    }
     setConfig((prev) => ({ ...prev, p1Oculta: true, p1Convertida: true, telasExtras: [nova, ...(prev.telasExtras || [])] }));
     setActiveTab('extra_0');
     setSubTabExtra('pergunta');
@@ -1783,7 +1792,6 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               {activeTab === 'tela_1' && (
                 <div className="painel-tela">
                   <TopoPainel titulo="Tela 1" slot={setSlotAcoes} />
-                  <TipoResposta valor="cards" onChange={trocarTipoTela1} />
                   <SubAbas
                     valor={subAtualP1}
                     onChange={setSubTabTela1}
@@ -1830,6 +1838,18 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                           ];
                         })()}
                       />
+                      {/* A pergunta em si, abaixo dos títulos da tela */}
+                      <div className="bloco-pergunta space-y-2.5">
+                        <LinhasPergunta
+                          key="perg_p1"
+                          cabecalho={<span className="text-xs font-semibold text-amber-200">Pergunta</span>}
+                          linhas={[
+                            { chave: 'pergunta', rotulo: 'Pergunta', fixa: true, removivel: false, multilinha: true, placeholder: 'Ex: Como você ficou sabendo da vigília?', texto: config.pergunta1Pergunta ?? '', onTexto: (v) => setCampo('pergunta1Pergunta', v), tamanho: config.pergunta1PerguntaTamanho || 18, min: 11, max: 36, onTamanho: (v) => setCampo('pergunta1PerguntaTamanho', v), cor: config.pergunta1PerguntaCor || 'branco', onCor: (v) => setCampo('pergunta1PerguntaCor', v), bold: config.pergunta1PerguntaBold !== false, onBold: (v) => setCampo('pergunta1PerguntaBold', v), caixa: config.pergunta1PerguntaCaixa, onCaixa: (v) => setCampo('pergunta1PerguntaCaixa', v), alinhamento: config.pergunta1PerguntaAlinhamento || 'center', onAlinhamento: (v) => setCampo('pergunta1PerguntaAlinhamento', v) },
+                            { chave: 'apoio', rotulo: 'Texto de apoio', multilinha: true, texto: config.pergunta1Apoio ?? '', onTexto: (v) => setCampo('pergunta1Apoio', v), tamanho: config.pergunta1ApoioTamanho || 13, min: 9, max: 26, onTamanho: (v) => setCampo('pergunta1ApoioTamanho', v), cor: config.pergunta1ApoioCor || 'cinza', onCor: (v) => setCampo('pergunta1ApoioCor', v), bold: Boolean(config.pergunta1ApoioBold), onBold: (v) => setCampo('pergunta1ApoioBold', v), alinhamento: config.pergunta1ApoioAlinhamento || 'center', onAlinhamento: (v) => setCampo('pergunta1ApoioAlinhamento', v) }
+                          ]}
+                        />
+                        <TipoResposta valor="cards" onChange={trocarTipoTela1} />
+                      </div>
                     </div>
                   )}
 
@@ -2248,9 +2268,9 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 })();
 
                 // Telas de campo: a aba Títulos cuida só do título da página; cada pergunta fica na aba Perguntas
-                const modoTitulo = temLista ? 'pagina' : 'tela';
+                const modoTitulo = 'pagina';
                 const iTitulo = temLista ? membros[0] : extraIndex;
-                const alvoTitulo = temLista ? paginaDe(config.telasExtras[iTitulo]) : telaAlvo;
+                const alvoTitulo = paginaDe(config.telasExtras[iTitulo]);
                 const gravarTexto = (i, modo, k, v) => {
                   if (modo !== 'pagina') { handleUpdateTelaProp(i, k, v); return; }
                   if (k === 'titulo') return;
@@ -2330,7 +2350,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     {/* Barra Superior da Tela Extra */}
                     <TopoPainel slot={setSlotAcoes} titulo={`Tela ${numTela}`} onExcluir={() => (membros.length > 1 ? excluirPagina(membros, numTela) : handleExcluirTela(extraIndex))}>
                     </TopoPainel>
-                    {membros.length === 1 && <TipoResposta valor={telaAlvo.tipo || 'cards'} onChange={(v) => trocarTipoExtra(extraIndex, v)} />}
+                    {membros.length === 1 && !juntos && <TipoResposta valor={telaAlvo.tipo || 'cards'} onChange={(v) => trocarTipoExtra(extraIndex, v)} />}
 
                     <SubAbas
                       valor={subAtual}
@@ -2530,6 +2550,22 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                           }))}
                           linhas={linhasDe(alvoTitulo, iTitulo, modoTitulo)}
                         />
+                        {juntos && (
+                          <div className="bloco-pergunta space-y-2.5">
+                            <LinhasPergunta
+                              key={`perg_${telaAlvo.id || extraIndex}`}
+                              cabecalho={<span className="text-xs font-semibold text-amber-200">Pergunta</span>}
+                              linhas={linhasDe(telaAlvo, extraIndex, 'pergunta', true)}
+                              espacoResposta={(
+                                <>
+                                  {String(telaAlvo.subtitulo || '').trim() && <MiniSlider rotulo="Até o texto de apoio" valor={espacos(telaAlvo, false).sub} min={0} max={60} onChange={(v) => handleUpdateTelaProp(extraIndex, 'espacoSub', v)} />}
+                                  <EspacoAte rotulo={ehCards ? 'Espaço para o primeiro card' : 'Espaço para a resposta'} valor={espacos(telaAlvo, false).cards} onChange={(v) => handleUpdateTelaProp(extraIndex, 'espacoCards', v)} />
+                                </>
+                              )}
+                            />
+                            <TipoResposta valor={telaAlvo.tipo || 'cards'} onChange={(v) => trocarTipoExtra(extraIndex, v)} />
+                          </div>
+                        )}
                         {extraIndex > 0 && TIPOS_CAMPO_PAGINA.includes(telaAlvo.tipo) && TIPOS_CAMPO_PAGINA.includes((config.telasExtras || [])[extraIndex - 1]?.tipo) && (
                           <Secao>
                             <Chave

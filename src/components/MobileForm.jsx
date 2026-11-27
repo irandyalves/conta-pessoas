@@ -180,6 +180,41 @@ function TituloRico({ texto }) {
 }
 
 // Humor de uma coluna da grade: 0 (menor nota) a 1 (maior). NA e textos não têm rosto.
+// A pergunta (com texto de apoio) entre os títulos da tela e as opções
+function BlocoPergunta({ tela }) {
+  const texto = [tela.titulo1 || tela.titulo, tela.titulo2, tela.titulo3].filter(Boolean).join(' ');
+  if (!texto && !tela.subtitulo) return null;
+  return (
+    <div style={{ gap: espacos(tela).sub, marginBottom: espacos(tela).cards }} className={`flex flex-col ${getAlinhamentoClass(estiloLinhas(tela).tituloAl)}`}>
+      {texto && (
+        <h3 style={{ fontSize: `${tela.titulo1Tamanho || 18}px`, ...fonteEBorda(tela, 'titulo', false) }} className={`t-pergunta ${pesoFonte(tela.tituloBold)} ${caixaAlta(tela.tituloCaixa)} leading-tight whitespace-pre-line ${getCorTextoLinhaClass(tela.titulo1Cor, 'text-white')}`}>
+          <TituloRico texto={texto} />
+        </h3>
+      )}
+      {tela.subtitulo && (
+        <p style={{ fontSize: `${tela.subtituloTamanho || 13}px`, ...fonteEBorda(tela, 'sub', false) }} className={`leading-snug whitespace-pre-line ${getAlinhamentoClass(estiloLinhas(tela).subAl)} ${tela.subBold ? 'font-bold' : ''} ${caixaAlta(tela.subCaixa)} ${getCorTextoLinhaClass(tela.subtituloCor, 'text-slate-300')}`}>
+          {tela.subtitulo}
+        </p>
+      )}
+    </div>
+  );
+}
+
+// Pergunta da Tela 1 no mesmo formato das outras telas
+const perguntaTela1 = (c = {}) => ({
+  titulo1: c.pergunta1Pergunta || '',
+  titulo1Tamanho: c.pergunta1PerguntaTamanho,
+  titulo1Cor: c.pergunta1PerguntaCor,
+  tituloBold: c.pergunta1PerguntaBold,
+  tituloCaixa: c.pergunta1PerguntaCaixa,
+  tituloAlinhamento: c.pergunta1PerguntaAlinhamento || 'center',
+  subtitulo: c.pergunta1Apoio || '',
+  subtituloTamanho: c.pergunta1ApoioTamanho,
+  subtituloCor: c.pergunta1ApoioCor,
+  subBold: c.pergunta1ApoioBold,
+  subAlinhamento: c.pergunta1ApoioAlinhamento || 'center'
+});
+
 const humorColuna = (col, cols) => {
   const nums = cols.filter((c) => /^\d+([.,]\d+)?$/.test(String(c).trim()));
   const i = nums.indexOf(col);
@@ -1473,6 +1508,7 @@ export default function MobileForm({ preview = false }) {
             ) : (
               <>
                 {/* SE DESABILITADO (COMEÇA DIRETO) OU JÁ CLICOU EM COMEÇAR: MOSTRA AS PERGUNTAS/OPÇÕES */}
+                <BlocoPergunta tela={perguntaTela1(questionsConfig)} />
                 {totalSlidesP1 > 1 && (
                   <div className="flex items-center justify-between px-1 text-xs">
                     <span className="font-bold text-amber-300">
@@ -2069,6 +2105,8 @@ export default function MobileForm({ preview = false }) {
 
           return (
             <div className="space-y-3.5 fade-in">
+              {/* Com título de tela próprio, a pergunta vem logo acima dos cards */}
+              {temTituloPagina(tela) && <BlocoPergunta tela={tela} />}
               {totalPaginas > 1 && (
                 <div className="flex items-center justify-between px-1 text-xs">
                   <span className="font-bold text-amber-300">Opções (Página {paginaAtual + 1} de {totalPaginas})</span>
