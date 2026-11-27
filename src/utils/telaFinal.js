@@ -60,6 +60,8 @@ export function estiloLinhaFinal(cfg = {}, l) {
 }
 export const chaveTamanho = (l) => (ehTitulo(l.id) ? `${l.id}Tamanho` : `${l.id}FonteTamanho`);
 
+// Ícone fora do quadro: 'acima' ou 'abaixo' dele; 'dentro' (padrão) segue a ordem das linhas
+export const iconeFora = (cfg = {}) => (['acima', 'abaixo'].includes(cfg.finalIconeLocal) ? cfg.finalIconeLocal : '');
 export const estiloIconeFinal = (cfg = {}) => ({
   id: 'icone', icone: cfg.finalIcone, tamanho: Number(cfg.finalIconeTamanho) || 56, cor: cfg.finalIconeCor || 'tema',
   alinhamento: cfg.finalIconeAlinhamento || 'center', espaco: Number(cfg.finalIconeEspaco ?? 12)
@@ -72,7 +74,7 @@ export function linhasFinais(cfg = {}) {
   ordemFinal(cfg).forEach((id) => {
     if (id === 'divisor') { divisor = out.length > 0 && temDivisor(cfg); return; }
     if (id === 'icone') {
-      if (!cfg.finalIcone) return;
+      if (!cfg.finalIcone || iconeFora(cfg)) return;
       out.push({ ...estiloIconeFinal(cfg), antes: out.length ? out[out.length - 1].espaco : 0, divisor });
       divisor = false;
       return;

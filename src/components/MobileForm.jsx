@@ -46,7 +46,7 @@ import Rosto from './Rosto';
 import BarraProgresso from './BarraProgresso';
 import BotaoSoEu, { DivisorQtd } from './BotaoSoEu';
 import { paginaDe, temTituloPagina } from '../utils/pagina';
-import TelaFinal from './TelaFinal';
+import TelaFinal, { IconeFinalFora } from './TelaFinal';
 import { atributosCampo, erroDeFormato, mascaraTelefone, mensagemFalta, usaMaiusculas, valorGravado } from '../utils/campoTexto';
 import { camposDoTexto, exemploDe, linhasFinais } from '../utils/telaFinal';
 import { carregarFonteTema, classeTema } from '../utils/temas';
@@ -1231,6 +1231,7 @@ export default function MobileForm({ preview = false }) {
   if (isVotadoNesteEvento) {
     return (
       <div className={`min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-6 text-center select-none fade-in t-pagina ${temaCls}`}>
+        <IconeFinalFora config={questionsConfig} onde="acima" />
         <div className="t-painel w-full max-w-sm bg-slate-900/95 border border-slate-800/80 rounded-3xl p-8 shadow-2xl relative overflow-hidden space-y-6">
           <div className="absolute -top-20 -right-20 w-44 h-44 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute -bottom-20 -left-20 w-44 h-44 bg-sky-500/15 rounded-full blur-3xl pointer-events-none" />
@@ -1243,6 +1244,7 @@ export default function MobileForm({ preview = false }) {
             )}
           </TelaFinal>
         </div>
+        <IconeFinalFora config={questionsConfig} onde="abaixo" />
       </div>
     );
   }

@@ -1,8 +1,20 @@
 import React from 'react';
 import { caixaAlta, corTextoHex, faixaEstilo, fonteEBorda, getAlinhamentoClass, getCaptionFundoClass } from '../utils/estilos';
 import { familiaCss } from '../utils/fontes';
-import { chaveCampo, linhasFinais, preencher } from '../utils/telaFinal';
+import { chaveCampo, estiloIconeFinal, iconeFora, linhasFinais, preencher } from '../utils/telaFinal';
 import { componenteIcone } from '../utils/icones';
+
+// Ícone da tela final fora do quadro (acima ou abaixo dele)
+export function IconeFinalFora({ config, onde }) {
+  if (!config?.finalIcone || iconeFora(config) !== onde) return null;
+  const l = estiloIconeFinal(config);
+  const Icone = componenteIcone(l.icone);
+  return (
+    <div className="w-full max-w-sm text-amber-400" aria-hidden="true" style={{ display: 'flex', justifyContent: { left: 'flex-start', right: 'flex-end' }[l.alinhamento] || 'center', color: corTextoHex(l.cor), [onde === 'acima' ? 'marginBottom' : 'marginTop']: l.espaco }}>
+      <Icone style={{ width: l.tamanho, height: l.tamanho }} strokeWidth={1.75} />
+    </div>
+  );
+}
 
 // Textos da tela final (celular e prévia). valorDe(campo) devolve o que a pessoa respondeu.
 export default function TelaFinal({ config, valorDe, children }) {

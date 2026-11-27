@@ -3246,10 +3246,15 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         cor: ic.cor, onCor: (v) => setCampo('finalIconeCor', v),
                         alinhamento: ic.alinhamento, onAlinhamento: (v) => setCampo('finalIconeAlinhamento', v),
                         espaco: ic.espaco, onEspaco: (v) => setCampo('finalIconeEspaco', v),
+                        abaixo: config.finalIcone ? (
+                          <div className="texto-abaixo">
+                            <Segmentos rotulo="Posição" opcoes={[{ id: 'acima', label: 'Fora, acima do quadro' }, { id: 'dentro', label: 'Dentro do quadro' }, { id: 'abaixo', label: 'Fora, abaixo do quadro' }]} valor={config.finalIconeLocal || 'dentro'} onChange={(v) => setCampo('finalIconeLocal', v)} />
+                          </div>
+                        ) : null,
                         corpo: (
                           <>
                             <SeletorIcone compacto opcoes={ICONES_CARDS} atual={config.finalIcone} manual={Boolean(config.finalIcone)} onChange={(v) => setCampo('finalIcone', v || 'Sparkles')} />
-                            <span className="text-[11px] text-slate-400">{config.finalIcone ? 'Clique no ícone para trocar. Arraste a linha para mudar a posição.' : 'Clique para escolher o ícone'}</span>
+                            <span className="text-[11px] text-slate-400">{!config.finalIcone ? 'Clique para escolher o ícone' : config.finalIconeLocal === 'acima' || config.finalIconeLocal === 'abaixo' ? 'Clique no ícone para trocar.' : 'Clique no ícone para trocar. Arraste a linha para mudar a posição dentro do quadro.'}</span>
                           </>
                         )
                       };
