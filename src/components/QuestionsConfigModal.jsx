@@ -58,7 +58,7 @@ import { corLinhaHex, soComuns, CAPA_LARGURA_MIN, raioCapa, LINHAS_CAPA, ordemCa
 import ImportadorIA from './ImportadorIA';
 import RecuperarVersao from './RecuperarVersao';
 import { juntarComAnterior, telaAnterior } from '../utils/juntarTelas';
-import { aplicarNaPagina, chavePagina, comEstiloPagina, paginaDe, primeiraDaPagina, semPagina, temTituloPagina, transferirPagina, tituloParaPergunta } from '../utils/pagina';
+import { aplicarNaPagina, chavePagina, comEstiloPagina, paginaDe, primeiraDaPagina, semPagina, temTituloPagina, transferirPagina, tituloParaPergunta, padraoPergunta, novoTitulo } from '../utils/pagina';
 import LinhasPergunta from './LinhasPergunta';
 import useDesfazer from '../utils/useDesfazer';
 import IconeEspera, { ICONES_ESPERA } from './IconeEspera';
@@ -816,7 +816,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
     const t = telas[i];
     if (!t || ['texto', 'texto_curto'].includes(t.tipo)) return;
     if (continuaNaMesmaPagina(telas[i - 1], t) || continuaNaMesmaPagina(t, telas[i + 1])) return;
-    const novo = tituloParaPergunta(t);
+    const novo = padraoPergunta(t);
     if (novo !== t) setConfig((c) => ({ ...c, telasExtras: c.telasExtras.map((x, n) => (n === i ? novo : x)) }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, config.telasExtras]);
@@ -2334,6 +2334,42 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 const CompTitulo = juntos ? LinhasPergunta : EstiloLinhasTitulo;
                 // Sozinha e sem título de página: um bloco só, ligado à própria pergunta
                 const unico = juntos && !temTituloPagina(config.telasExtras[extraIndex]);
+                // Padrão de pergunta: títulos separados (acima/abaixo, arrastáveis) + a pergunta + respostas
+                const titulosTela = telaAlvo.titulos || [];
+                const gravarTitulos = (fn) => setConfig((c) => ({ ...c, telasExtras: c.telasExtras.map((t, n) => (n === extraIndex ? { ...t, titulos: fn(t.titulos || []) } : t)) }));
+                const updTit = (id, patch) => gravarTitulos((l) => l.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+                const linhaTit = (x) => {
+                  const on = (k) => (v) => updTit(x.id, { [k]: v });
+                  return {
+                    chave: `t_${x.id}`, rotulo: 'Título 1', numerar: true, fixa: true, multilinha: true,
+                    texto: x.texto ?? '', onTexto: on('texto'), placeholder: 'Digite o título',
+                    tamanho: x.tamanho || 18, min: 9, max: 36, onTamanho: on('tamanho'), cor: x.cor || 'branco', onCor: on('cor'),
+                    bold: x.bold !== false, onBold: on('bold'), caixa: x.caixa, onCaixa: on('caixa'),
+                    familia: x.familia, onFamilia: on('familia'), italico: x.italico, onItalico: on('italico'),
+                    borda: x.borda, onBorda: on('borda'), bordaLargura: x.bordaLargura, onBordaLargura: on('bordaLargura'), bordaLado: x.bordaLado, onBordaLado: on('bordaLado'),
+                    alinhamento: x.alinhamento || 'center', onAlinhamento: on('alinhamento'), fundo: x.fundo || 'transparente', onFundo: on('fundo'), faixa: x.faixa, onFaixa: on('faixa'),
+                    espaco: x.espaco ?? 12, onEspaco: on('espaco'),
+                    onRemover: () => gravarTitulos((l) => l.filter((y) => y.id !== x.id))
+                  };
+                };
+                const linhasUnico = () => {
+                  const perg = linhasDe(telaAlvo, extraIndex, 'tela')
+                    .filter((l) => l.chave !== 'titulo2' && l.chave !== 'titulo3')
+                    .map((l) => (l.chave === 'titulo1' ? { ...l, rotulo: 'Título da Pergunta', fixa: true, multilinha: true, removivel: false } : l.rotulo === 'Texto abaixo' ? { ...l, rotulo: 'Texto de apoio' } : l));
+                  return [...titulosTela.filter((x) => !x.abaixo).map(linhaTit), ...perg, ...titulosTela.filter((x) => x.abaixo).map(linhaTit)];
+                };
+                const ordemUnico = (ids) => gravarTitulos((l) => {
+                  const iPerg = ids.indexOf('titulo1');
+                  return ids.filter((id) => id.startsWith('t_')).map((id) => {
+                    const x = l.find((y) => `t_${y.id}` === id);
+                    return x && { ...x, abaixo: ids.indexOf(id) > iPerg };
+                  }).filter(Boolean);
+                });
+                const addTitulo = (
+                  <button type="button" onClick={() => gravarTitulos((l) => [novoTitulo(), ...l])} className="texto-add">
+                    <Plus className="w-4 h-4" strokeWidth={4} /><span>Add Título</span>
+                  </button>
+                );
                 const ehEscolha = ["cards", "radio", "checkbox", "dropdown"].includes(telaAlvo.tipo || "cards");
                 const subAtual = (() => {
                   if (subTabExtra === 'opcoes' && (semCampo || juntos)) return temLista ? 'lista' : 'pergunta';
@@ -2604,10 +2640,10 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             </>
                           )}
                           espacoResposta={unico ? <EspacoAte rotulo={ehCards ? 'Espaço para o primeiro card' : 'Espaço para a resposta'} valor={espacos(telaAlvo, false).cards} onChange={(v) => handleUpdateTelaProp(extraIndex, 'espacoCards', v)} /> : (temLista || juntos) && !temTituloPagina(config.telasExtras[iTitulo]) ? null : <EspacoAte rotulo={juntos ? 'Espaço até a pergunta' : ehCards ? 'Espaço para o primeiro card' : temLista ? 'Espaço para a primeira pergunta' : 'Espaço para a resposta'} valor={espacos(alvoTitulo, false).cards} onChange={(v) => gravarTexto(iTitulo, modoTitulo, 'espacoCards', v)} />}
-                          entreTitulos={<MiniSlider rotulo="Entre títulos" valor={espacos(unico ? telaAlvo : alvoTitulo, false).tit} min={0} max={40} onChange={(v) => gravarTexto(iTitulo, unico ? 'tela' : modoTitulo, 'espacoTitulos', v)} />}
+                          entreTitulos={unico ? null : <MiniSlider rotulo="Entre títulos" valor={espacos(unico ? telaAlvo : alvoTitulo, false).tit} min={0} max={40} onChange={(v) => gravarTexto(iTitulo, unico ? 'tela' : modoTitulo, 'espacoTitulos', v)} />}
                           ateTexto={<MiniSlider rotulo="Até o texto" valor={espacos(unico ? telaAlvo : alvoTitulo, false).sub} min={0} max={60} onChange={(v) => gravarTexto(iTitulo, unico ? 'tela' : modoTitulo, 'espacoSub', v)} />}
                           slotAcoes={slotAcoes}
-                          onOrdem={(ids) => setConfig((c) => ({
+                          onOrdem={unico ? ordemUnico : (ids) => setConfig((c) => ({
                             ...c,
                             telasExtras: c.telasExtras.map((t, i) => {
                               if (i !== iTitulo) return t;
@@ -2626,8 +2662,9 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                               return { ...novo, titulo: `${novo.titulo1} ${novo.titulo2 || ''}`.trim() };
                             })
                           }))}
+                          fim={unico ? addTitulo : null}
                           linhas={(unico
-                            ? linhasDe(telaAlvo, extraIndex, 'tela').map((l) => (l.chave === 'titulo1' ? { ...l, rotulo: 'Título da Pergunta', fixa: true, multilinha: true } : l))
+                            ? linhasUnico()
                             : linhasDe(alvoTitulo, iTitulo, modoTitulo)
                           ).map((l) => {
                             // Nome da linha no editor: o usuário pode renomear (só no editor, não aparece no celular)

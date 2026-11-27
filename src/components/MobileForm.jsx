@@ -201,6 +201,19 @@ function linhaPropria(tela, p) {
   };
 }
 
+// Títulos separados da pergunta (padrão de pergunta): cada um com fonte, fundo, borda, alinhamento e espaço próprios
+function TitulosSoltos({ lista }) {
+  return (lista || []).filter((x) => String(x?.texto || '').trim()).map((x) => {
+    const comFundo = Boolean(x.fundo) && x.fundo !== 'transparente';
+    const st = fonteEBorda({ xFamilia: x.familia, xItalico: x.italico, xBorda: x.borda, xBordaLargura: x.bordaLargura, xBordaLado: x.bordaLado }, 'x', comFundo);
+    return (
+      <h2 key={x.id} style={{ fontSize: `${x.tamanho || 18}px`, marginBottom: Number(x.espaco ?? 12), ...(comFundo ? faixaEstilo(x.fundo, x.faixa) : {}), ...st }} className={`t-titulo-solto ${pesoFonte(x.bold)} ${caixaAlta(x.caixa)} leading-tight w-full ${getAlinhamentoClass(x.alinhamento || 'center')} ${comFundo ? getFaixaFundoClass(x.fundo, '-mx-4 px-4 sm:-mx-6 sm:px-6') : ''} ${getCorTextoLinhaClass(x.cor, 'text-white')}`}>
+        <TituloRico texto={x.texto} />
+      </h2>
+    );
+  });
+}
+
 function BlocoPergunta({ tela }) {
   const texto = [tela.titulo1 ?? tela.titulo, tela.titulo2, tela.titulo3].filter(Boolean).join(' ');
   if (!texto && !tela.subtitulo) return null;
@@ -1396,6 +1409,7 @@ export default function MobileForm({ preview = false }) {
           const linha1 = tela.titulo1 ?? (temPagina ? '' : tela.titulo || `Pergunta da Tela ${idx + 2}`);
           return (
             <div className="mt-2 pt-2 border-t border-slate-800/60 flex flex-col" style={{ gap: espacos(tela).sub, marginBottom: espacos(tela).cards }}>
+              {!temPagina && (perguntaAtual.titulos || []).some((x) => !x.abaixo && String(x.texto || '').trim()) && <div className="flex flex-col"><TitulosSoltos lista={(perguntaAtual.titulos || []).filter((x) => !x.abaixo)} /></div>}
               {(linha1 || tela.titulo2 || tela.titulo3 || titulosMaisAtivos(tela.titulosMais).length > 0) && (
               <div style={{ gap: espacos(tela).tit, ...(separado ? {} : estiloT1) }} className={`t-titulo flex flex-col ${separado ? '' : classeT1}`}>
               {linha1 && (
@@ -1421,6 +1435,7 @@ export default function MobileForm({ preview = false }) {
                   {tela.subtitulo}
                 </p>
               )}
+              {!temPagina && (perguntaAtual.titulos || []).some((x) => x.abaixo && String(x.texto || '').trim()) && <div className="flex flex-col"><TitulosSoltos lista={(perguntaAtual.titulos || []).filter((x) => x.abaixo)} /></div>}
             </div>
           );
         })()}

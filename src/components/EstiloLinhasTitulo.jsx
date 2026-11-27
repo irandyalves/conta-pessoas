@@ -27,7 +27,7 @@ export default function EstiloLinhasTitulo({ linhas, onOrdem, topo = null, slotA
   const [mantidas, setMantidas] = useState({});
   const idDe = (l) => l.chave || l.rotulo;
   const manter = (l) => setMantidas((m) => (m[idDe(l)] ? m : { ...m, [idDe(l)]: true }));
-  const remover = (l) => { setMantidas((m) => ({ ...m, [idDe(l)]: false })); l.onTexto(''); };
+  const remover = (l) => { if (l.onRemover) { l.onRemover(); return; } setMantidas((m) => ({ ...m, [idDe(l)]: false })); l.onTexto(''); };
   const removivel = (l) => Boolean(l.onTexto) && l.removivel !== false;
   const visivel = (l) => l.separador || l.fixa || Boolean(String(l.texto || '').trim()) || Boolean(mantidas[idDe(l)]);
   // numerar: o número segue a posição na tela, não o nome do campo
