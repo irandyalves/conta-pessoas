@@ -35,7 +35,9 @@ import {
   ExternalLink,
   UploadCloud,
   FolderUp,
-  Sparkles
+  Sparkles,
+  Download,
+  RotateCcw,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import QuestionsConfigModal from './QuestionsConfigModal';
@@ -467,11 +469,6 @@ export default function DashboardView({ onChangeView }) {
             
             {/* GRUPO 1: VISÃO & EVENTOS */}
             <div className="space-y-1">
-              {!sidebarCollapsed && (
-                <span className="px-2.5 text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1.5">
-                  Visão & Eventos
-                </span>
-              )}
 
               <button
                 onClick={() => selectMenu('dashboard')}
@@ -483,7 +480,7 @@ export default function DashboardView({ onChangeView }) {
                 }`}
               >
                 <LayoutDashboard className="w-4 h-4 text-amber-400 shrink-0" />
-                {!sidebarCollapsed && <span className="truncate">Painel Principal</span>}
+                {!sidebarCollapsed && <span className="truncate">Painel principal</span>}
               </button>
 
               <button
@@ -497,7 +494,7 @@ export default function DashboardView({ onChangeView }) {
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <Layers className="w-4 h-4 text-sky-400 shrink-0" />
-                  {!sidebarCollapsed && <span className="truncate">Eventos Simultâneos</span>}
+                  {!sidebarCollapsed && <span className="truncate">Eventos</span>}
                 </div>
                 {!sidebarCollapsed && (
                   <span className="px-1.5 py-0.5 text-[10px] font-black rounded-md bg-sky-500/20 text-sky-300 border border-sky-500/30">
@@ -508,12 +505,7 @@ export default function DashboardView({ onChangeView }) {
             </div>
 
             {/* GRUPO 2: PESQUISA & TELÃO */}
-            <div className="space-y-1 pt-2 border-t border-slate-800/80">
-              {!sidebarCollapsed && (
-                <span className="px-2.5 text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1.5">
-                  Pesquisa & Telão
-                </span>
-              )}
+            <div className="space-y-1 pt-3 border-t border-slate-700/80">
 
               <button
                 onClick={() => selectMenu('perguntas')}
@@ -525,7 +517,7 @@ export default function DashboardView({ onChangeView }) {
                 }`}
               >
                 <HelpCircle className="w-4 h-4 text-amber-400 shrink-0" />
-                {!sidebarCollapsed && <span className="truncate">Configurar Perguntas</span>}
+                {!sidebarCollapsed && <span className="truncate">Perguntas</span>}
               </button>
 
               <button
@@ -538,7 +530,7 @@ export default function DashboardView({ onChangeView }) {
                 }`}
               >
                 <QrCode className="w-4 h-4 text-emerald-400 shrink-0" />
-                {!sidebarCollapsed && <span className="truncate">QR Code & Links</span>}
+                {!sidebarCollapsed && <span className="truncate">QR Code e Links</span>}
               </button>
 
               <button
@@ -552,23 +544,18 @@ export default function DashboardView({ onChangeView }) {
             </div>
 
             {/* GRUPO 3: RELATÓRIOS & AÇÕES */}
-            <div className="space-y-1 pt-2 border-t border-slate-800/80">
-              {!sidebarCollapsed && (
-                <span className="px-2.5 text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1.5">
-                  Relatórios & Ações
-                </span>
-              )}
+            <div className="space-y-1 pt-3 border-t border-slate-700/80">
 
               {[
-                { id: 'pdf', nome: 'Baixar PDF', Icone: Printer, cor: 'text-sky-400' },
-                { id: 'xlsx', nome: 'Baixar Excel (.xlsx)', Icone: FileSpreadsheet, cor: 'text-emerald-400' },
-                { id: 'xls', nome: 'Baixar Excel antigo (.xls)', Icone: FileSpreadsheet, cor: 'text-emerald-400' }
+                { id: 'pdf', nome: 'PDF', Icone: Download, cor: 'text-sky-400' },
+                { id: 'xlsx', nome: 'Excel', Icone: Download, cor: 'text-emerald-400' },
+                { id: 'xls', nome: 'Excel antigo', Icone: Download, cor: 'text-emerald-400' }
               ].map(({ id, nome, Icone, cor }) => (
                 <button
                   key={id}
                   onClick={() => { handleExportar(id); closeMobileMenu(); }}
                   disabled={Boolean(exportando)}
-                  title={nome}
+                  title={`Baixar ${nome}`}
                   className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800/70 hover:text-white transition gap-3 border border-transparent disabled:opacity-60`}
                 >
                   <Icone className={`w-4 h-4 ${cor} shrink-0`} />
@@ -581,9 +568,12 @@ export default function DashboardView({ onChangeView }) {
                 title="Baixar CSV"
                 className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800/70 hover:text-white transition gap-3 border border-transparent`}
               >
-                <FileSpreadsheet className="w-4 h-4 text-emerald-400 shrink-0" />
-                {!sidebarCollapsed && <span className="truncate">Baixar CSV</span>}
+                <Download className="w-4 h-4 text-emerald-400 shrink-0" />
+                {!sidebarCollapsed && <span className="truncate">CSV</span>}
               </button>
+            </div>
+
+            <div className="space-y-1 pt-3 border-t border-slate-700/80">
 
               <button
                 onClick={() => selectMenu('zerar')}
@@ -595,8 +585,11 @@ export default function DashboardView({ onChangeView }) {
                     : 'text-rose-400 hover:bg-rose-500/15 hover:text-rose-300 border border-transparent'
                 }`}
               >
-                <Trash2 className="w-4 h-4 text-rose-400 shrink-0" />
-                {!sidebarCollapsed && <span className="truncate">{zerando ? 'Zerando...' : 'Zerar Dados'}</span>}
+                <span className="relative w-4 h-4 shrink-0">
+                  <Trash2 className="w-4 h-4 text-rose-400" />
+                  <RotateCcw className="absolute -right-1.5 -bottom-1 w-2.5 h-2.5 text-rose-300 bg-slate-900 rounded-full" strokeWidth={3} />
+                </span>
+                {!sidebarCollapsed && <span className="truncate">{zerando ? 'Zerando...' : 'Zerar dados'}</span>}
               </button>
             </div>
           </div>
