@@ -914,7 +914,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
   };
 
   const cardsAtivosP1 = (config.opcoesChegada || []).filter(c => c.ativo !== false);
-  const subAtualP1 = subTabTela1 === 'opcoes' || (subTabTela1 === 'aparencia' && cardsAtivosP1.length === 0) ? 'pergunta' : subTabTela1;
+  const subAtualP1 = 'pergunta';
   const cardsPorTelaP1 = Number(config.cardsPorTela) || 4;
   const totalPaginasPreviewP1 = Math.max(1, Math.ceil(cardsAtivosP1.length / cardsPorTelaP1));
   const safePreviewPageP1 = Math.min(previewPage, totalPaginasPreviewP1 - 1);
@@ -950,10 +950,10 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
     const novoCard = {
       id: `card_${Date.now()}`,
       titulo: `Nova Opção ${novoIndex}`,
-      subtitulo: 'Descreva este motivo',
+      subtitulo: '',
       ativo: true,
       icone: 'Tag',
-      cor: 'amber'
+      cor: (() => { const ult = (config.opcoesChegada || []).slice(-1)[0]?.cor; const livres = CORES.map((c) => c.id).filter((id) => id !== ult); return livres[Math.floor(Math.random() * livres.length)]; })()
     };
     setConfig((prev) => ({
       ...prev,
@@ -1891,30 +1891,20 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     valor={subAtualP1}
                     onChange={setSubTabTela1}
                     lateral={<>{cardsAtivosP1.length > 0 && <BotaoObrigatorio valor={config.pergunta1Obrigatoria} onChange={(v) => setCampo('pergunta1Obrigatoria', v)} />}{Heranca('p1')}</>}
-                    opcoes={[
-                      { id: 'pergunta', label: <>Pergunta <strong className="font-bold text-amber-300">({cardsAtivosP1.length})</strong></> },
-                      ...(cardsAtivosP1.length > 0 ? [{ id: 'aparencia', label: 'Cards' }] : [])
-                    ]}
+                    opcoes={[{ id: 'pergunta', label: 'Pergunta' }]}
                   />
 
 
                   {subAtualP1 === 'pergunta' && (
                     <div className="space-y-2.5">
-                      <EstiloLinhasTitulo
+                      {BarraFormatacao({ ehP1: true })}
+                      <div className="bloco-pergunta space-y-2.5">
+                      <LinhasPergunta
                         key={activeTab}
-                        topo={(
-                          <>
-                            <ControleEspacos
-                            valores={espacos(config, true)}
-                            titulos={[config.pergunta1Titulo, config.pergunta1Titulo2, config.pergunta1Titulo3]}
-                            subtitulo={config.pergunta1TextoAbaixo}
-                            onChange={(k, v) => setCampo('pergunta1' + { tit: 'EspacoTitulos', sub: 'EspacoSub' }[k], v)}
-                            />
-                            {BarraFormatacao({ ehP1: true })}
-                          </>
-                        )}
+                        cabecalho={<span className="entalhe-pergunta">Pergunta <strong>1</strong></span>}
+                        entreTitulos={<MiniSlider rotulo="Entre títulos" valor={espacos(config, true).tit} min={0} max={40} onChange={(v) => setCampo('pergunta1EspacoTitulos', v)} />}
+                        ateTexto={<MiniSlider rotulo="Até o texto" valor={espacos(config, true).sub} min={0} max={60} onChange={(v) => setCampo('pergunta1EspacoSub', v)} />}
                         espacoResposta={<EspacoAte rotulo="Espaço para o primeiro card" valor={espacos(config, true).cards} onChange={(v) => setCampo('pergunta1EspacoCards', v)} />}
-                        slotAcoes={slotAcoes}
                         onOrdem={(ids) => setConfig((c) => ({
                           ...c,
                           ...permutar({
@@ -1930,22 +1920,19 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             { chave: 'p1b', rotulo: 'Título 2', texto: config.pergunta1Titulo2 ?? '', onTexto: (v) => setCampo('pergunta1Titulo2', v), tamanho: config.pergunta1Titulo2Tamanho || 16, min: 10, max: 32, onTamanho: (v) => setCampo('pergunta1Titulo2Tamanho', v), cor: config.pergunta1Titulo2Cor || 'dourado', onCor: (v) => setCampo('pergunta1Titulo2Cor', v) },
                             { chave: 'p1c', rotulo: 'Título 3', texto: config.pergunta1Titulo3 ?? '', onTexto: (v) => setCampo('pergunta1Titulo3', v), tamanho: config.pergunta1Titulo3Tamanho || 15, min: 10, max: 30, onTamanho: (v) => setCampo('pergunta1Titulo3Tamanho', v), cor: config.pergunta1Titulo3Cor || 'verde', onCor: (v) => setCampo('pergunta1Titulo3Cor', v) },
                             ...linhasTitulosMais(config.pergunta1TitulosMais, (v) => setCampo('pergunta1TitulosMais', v)),
-                            { rotulo: 'Texto abaixo', texto: config.pergunta1TextoAbaixo ?? '', onTexto: (v) => setCampo('pergunta1TextoAbaixo', v), multilinha: true, tamanho: config.pergunta1TextoAbaixoTamanho || 14, min: 9, max: 26, onTamanho: (v) => setCampo('pergunta1TextoAbaixoTamanho', v), cor: config.pergunta1TextoAbaixoCor || 'cinza', onCor: (v) => setCampo('pergunta1TextoAbaixoCor', v), bold: Boolean(config.pergunta1SubBold), onBold: (v) => setCampo('pergunta1SubBold', v), caixa: config.pergunta1SubCaixa, onCaixa: (v) => setCampo('pergunta1SubCaixa', v), ...fonteBordaLinha((k) => config[`pergunta1Sub${k}`], (k, v) => setCampo(`pergunta1Sub${k}`, v)), alinhamento: e.subAl, onAlinhamento: (v) => setCampo('pergunta1SubAlinhamento', v), fundo: e.subFundo, onFundo: (v) => setCampo('pergunta1SubFundo', v), faixa: config.pergunta1SubFaixa ?? config.faixaPadrao, onFaixa: (v) => gravarEstilo('p1', 'subFaixa', v) }
+                            { rotulo: 'Texto abaixo', texto: config.pergunta1TextoAbaixo ?? '', onTexto: (v) => setCampo('pergunta1TextoAbaixo', v), multilinha: true, tamanho: config.pergunta1TextoAbaixoTamanho || 14, min: 9, max: 26, onTamanho: (v) => setCampo('pergunta1TextoAbaixoTamanho', v), cor: config.pergunta1TextoAbaixoCor || 'cinza', onCor: (v) => setCampo('pergunta1TextoAbaixoCor', v), bold: Boolean(config.pergunta1SubBold), onBold: (v) => setCampo('pergunta1SubBold', v), caixa: config.pergunta1SubCaixa, onCaixa: (v) => setCampo('pergunta1SubCaixa', v), ...fonteBordaLinha((k) => config[`pergunta1Sub${k}`], (k, v) => setCampo(`pergunta1Sub${k}`, v)), alinhamento: e.subAl, onAlinhamento: (v) => setCampo('pergunta1SubAlinhamento', v), fundo: e.subFundo, onFundo: (v) => setCampo('pergunta1SubFundo', v), faixa: config.pergunta1SubFaixa ?? config.faixaPadrao, onFaixa: (v) => gravarEstilo('p1', 'subFaixa', v) },
+                            { rotulo: 'Título da Pergunta', fixa: true, removivel: false, multilinha: true, placeholder: 'Ex: Como você ficou sabendo da vigília?', texto: config.pergunta1Pergunta ?? '', onTexto: (v) => setCampo('pergunta1Pergunta', v), tamanho: config.pergunta1PerguntaTamanho || 18, min: 11, max: 36, onTamanho: (v) => setCampo('pergunta1PerguntaTamanho', v), cor: config.pergunta1PerguntaCor || 'branco', onCor: (v) => setCampo('pergunta1PerguntaCor', v), bold: config.pergunta1PerguntaBold !== false, onBold: (v) => setCampo('pergunta1PerguntaBold', v), caixa: config.pergunta1PerguntaCaixa, onCaixa: (v) => setCampo('pergunta1PerguntaCaixa', v), alinhamento: config.pergunta1PerguntaAlinhamento || 'center', onAlinhamento: (v) => setCampo('pergunta1PerguntaAlinhamento', v) },
+                            { rotulo: 'Texto de apoio', multilinha: true, texto: config.pergunta1Apoio ?? '', onTexto: (v) => setCampo('pergunta1Apoio', v), tamanho: config.pergunta1ApoioTamanho || 13, min: 9, max: 26, onTamanho: (v) => setCampo('pergunta1ApoioTamanho', v), cor: config.pergunta1ApoioCor || 'cinza', onCor: (v) => setCampo('pergunta1ApoioCor', v), bold: Boolean(config.pergunta1ApoioBold), onBold: (v) => setCampo('pergunta1ApoioBold', v), alinhamento: config.pergunta1ApoioAlinhamento || 'center', onAlinhamento: (v) => setCampo('pergunta1ApoioAlinhamento', v) }
                           ];
                         })()}
                       />
-                      {/* A pergunta em si, abaixo dos títulos da tela */}
-                      <div className="bloco-pergunta space-y-2.5">
-                        <LinhasPergunta
-                          key="perg_p1"
-                          cabecalho={<span className="text-xs font-semibold text-amber-200">Título da Pergunta</span>}
-                          linhas={[
-                            { chave: 'pergunta', rotulo: 'Pergunta', fixa: true, removivel: false, multilinha: true, placeholder: 'Ex: Como você ficou sabendo da vigília?', texto: config.pergunta1Pergunta ?? '', onTexto: (v) => setCampo('pergunta1Pergunta', v), tamanho: config.pergunta1PerguntaTamanho || 18, min: 11, max: 36, onTamanho: (v) => setCampo('pergunta1PerguntaTamanho', v), cor: config.pergunta1PerguntaCor || 'branco', onCor: (v) => setCampo('pergunta1PerguntaCor', v), bold: config.pergunta1PerguntaBold !== false, onBold: (v) => setCampo('pergunta1PerguntaBold', v), caixa: config.pergunta1PerguntaCaixa, onCaixa: (v) => setCampo('pergunta1PerguntaCaixa', v), alinhamento: config.pergunta1PerguntaAlinhamento || 'center', onAlinhamento: (v) => setCampo('pergunta1PerguntaAlinhamento', v) },
-                            { chave: 'apoio', rotulo: 'Texto de apoio', multilinha: true, texto: config.pergunta1Apoio ?? '', onTexto: (v) => setCampo('pergunta1Apoio', v), tamanho: config.pergunta1ApoioTamanho || 13, min: 9, max: 26, onTamanho: (v) => setCampo('pergunta1ApoioTamanho', v), cor: config.pergunta1ApoioCor || 'cinza', onCor: (v) => setCampo('pergunta1ApoioCor', v), bold: Boolean(config.pergunta1ApoioBold), onBold: (v) => setCampo('pergunta1ApoioBold', v), alinhamento: config.pergunta1ApoioAlinhamento || 'center', onAlinhamento: (v) => setCampo('pergunta1ApoioAlinhamento', v) }
-                          ]}
-                        />
-                        <TipoResposta valor="cards" onChange={trocarTipoTela1} />
                       </div>
+                      <TipoResposta
+                        preso
+                        valor="cards"
+                        onChange={trocarTipoTela1}
+                        configurar={() => AparenciaCards({ ler: (k) => config[k], gravar: (k, v) => gravarEstilo('p1', k, v), campoIcones: 'mostrarIconesCards', porPagina: cardsPorTelaP1, opcoes: cardsAtivosP1, raios: raiosCard(config, telaP1Cantos(config)), prefixo: 'Aparência dos cards' })}
+                      />
                     </div>
                   )}
 
@@ -1958,11 +1945,11 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
                   {/* 3. LISTA REFEITA DE OPÇÕES / CARDS DA TELA 1 */}
                   {subAtualP1 === 'pergunta' && (
-                  <div className="space-y-3 pt-1 animate-fade-in">
+                  <div className="space-y-3 opcoes-presas">
                     <div className="flex items-center justify-between">
                       <div>
                         <span className="text-xs font-semibold text-slate-200 block">
-                          {rotuloPerguntas(config.opcoesChegada?.length || 0)}
+                          Respostas <strong className="font-bold text-amber-300">({config.opcoesChegada?.length || 0})</strong>
                         </span>
                         <span className="text-[11px] text-slate-400">
                           {cardsAtivosP1.length} de {config.opcoesChegada?.length || 0} visíveis no celular
@@ -1975,18 +1962,18 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         className="px-3 py-1.5 bg-slate-100 hover:bg-white active:scale-95 text-slate-900 font-bold text-xs rounded-xl shadow-md transition flex items-center gap-1.5"
                       >
                         <Plus className="w-4 h-4 text-emerald-600" strokeWidth={4} />
-                        <span>Add Questões</span>
+                        <span>Add opções</span>
                       </button>
                     </div>
 
-                    <div>
+                    <div className="lista-respostas">
                       {(config.opcoesChegada || []).length === 0 && (
                         <div className="py-6 border-t border-slate-800 text-center space-y-2">
                           <p className="text-xs font-bold text-slate-300">
                             Tela 1 em branco (sem opções cadastradas ainda)
                           </p>
                           <p className="text-[11px] text-slate-400">
-                            Clique em <strong>"Add Questões"</strong> acima, use <strong>"+ Inserir Tela"</strong> para montar Tela 2, Tela 3... ou clique em <strong>"Importar IA"</strong>.
+                            Clique em <strong>"Add opções"</strong> acima, use <strong>"+ Inserir Tela"</strong> para montar Tela 2, Tela 3... ou clique em <strong>"Importar IA"</strong>.
                           </p>
                         </div>
                       )}
@@ -2040,74 +2027,6 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                               </div>
 
                               <div className="flex items-center gap-2">
-                                {/* Seletor de Ícone */}
-                                <SeletorIcone
-                                  opcoes={ICONES_CARDS}
-                                  atual={iconesEditorP1[opcao.id]}
-                                  manual={Boolean(opcao.iconeManual)}
-                                  onChange={(id) => {
-                                    if (id) handleUpdateOpcaoP1(idx, 'icone', id);
-                                    handleUpdateOpcaoP1(idx, 'iconeManual', Boolean(id));
-                                  }}
-                                />
-
-                                {/* Seletor de Cor do Ícone */}
-                                <div className="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded-xl px-2 py-1">
-                                  {CORES.map(c => (
-                                    <button
-                                      key={c.id}
-                                      type="button"
-                                      onClick={() => handleUpdateOpcaoP1(idx, 'cor', c.id)}
-                                      className={`w-3.5 h-3.5 rounded-full transition-transform ${c.bg} ${
-                                        (opcao.cor || 'amber') === c.id ? 'ring-2 ring-white scale-110 shadow-sm' : 'opacity-40 hover:opacity-100'
-                                      }`}
-                                      title={c.label}
-                                    />
-                                  ))}
-                                </div>
-
-                                <button
-                                  type="button"
-                                  onClick={() => handleExcluirCardP1(idx)}
-                                  title="Excluir opção"
-                                  className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </div>
-
-                            {/* Inputs de Título e Subtítulo */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                              <div>
-                                <label className="text-[11px] font-bold text-slate-400 block mb-1">
-                                  Título
-                                </label>
-                                <input
-                                  type="text"
-                                  value={opcao.titulo || ''}
-                                  onChange={(e) => handleUpdateOpcaoP1(idx, 'titulo', e.target.value)}
-                                  placeholder="Ex: Vi a faixa na igreja"
-                                  className="w-full bg-slate-900 border border-slate-700/80 focus:border-slate-300 rounded-xl px-3 py-1.5 text-xs font-bold text-white shadow-inner"
-                                />
-                              </div>
-
-                              <div>
-                                <label className="text-[11px] font-bold text-slate-400 block mb-1">
-                                  Descrição (opcional)
-                                </label>
-                                <input
-                                  type="text"
-                                  value={opcao.subtitulo || ''}
-                                  onChange={(e) => handleUpdateOpcaoP1(idx, 'subtitulo', e.target.value)}
-                                  placeholder="Ex: Passei em frente e vi o anúncio"
-                                  className="w-full bg-slate-900 border border-slate-700/80 focus:border-slate-300 rounded-xl px-3 py-1.5 text-xs text-slate-300 shadow-inner"
-                                />
-                              </div>
-                            </div>
-
-                            {/* CONFIGURAÇÃO DE GAVETA CONDICIONAL NA TELA 1 (MULTI-COMPONENTE) */}
-                            <div>
                               <label className="flex items-center gap-2 cursor-pointer select-none">
                                 <input
                                   type="checkbox"
@@ -2138,12 +2057,62 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                                   className="w-4 h-4 rounded border-slate-700 bg-slate-900 text-slate-200 focus:ring-slate-200"
                                 />
                                 <span className={`text-xs font-bold ${opcao.temGaveta ? 'text-slate-200' : 'text-slate-400'}`}>
-                                  Abrir uma subpergunta ao escolher esta opção
+                                  Abrir subpergunta
                                 </span>
                               </label>
+                                <button
+                                  type="button"
+                                  onClick={() => handleExcluirCardP1(idx)}
+                                  title="Excluir opção"
+                                  className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Inputs de Título e Subtítulo */}
+                            <div className="grid grid-cols-1 sm:grid-cols-[3fr_1fr] gap-2">
+                              <div>
+                                <label className="text-[11px] font-bold text-slate-400 block mb-0.5">Resposta {idx + 1}</label>
+                                <div className="flex items-center gap-1.5">
+                                  <SeletorIcone
+                                    compacto
+                                    opcoes={ICONES_CARDS}
+                                    atual={iconesEditorP1[opcao.id]}
+                                    manual={Boolean(opcao.iconeManual)}
+                                    onChange={(id) => {
+                                      if (id) handleUpdateOpcaoP1(idx, 'icone', id);
+                                      handleUpdateOpcaoP1(idx, 'iconeManual', Boolean(id));
+                                    }}
+                                  />
+                                  <input
+                                    type="text"
+                                    value={opcao.titulo || ''}
+                                    onChange={(e) => handleUpdateOpcaoP1(idx, 'titulo', e.target.value)}
+                                    placeholder="Ex: Internet, Amigos..."
+                                    className="w-full bg-slate-900 border border-slate-700 focus:border-slate-300 rounded-lg px-2.5 py-1 text-xs font-bold text-white shadow-inner"
+                                  />
+                                </div>
+                              </div>
+
+                              <div>
+                                <label className="text-[11px] font-bold text-slate-400 block mb-0.5">Descrição (opcional)</label>
+                                <input
+                                  type="text"
+                                  value={opcao.subtitulo || ''}
+                                  onChange={(e) => handleUpdateOpcaoP1(idx, 'subtitulo', e.target.value)}
+                                  placeholder="Ex: Detalhe complementar"
+                                  className="w-full bg-slate-900 border border-slate-700 focus:border-slate-300 rounded-lg px-2.5 py-1 text-xs text-slate-300 shadow-inner"
+                                />
+                              </div>
+                            </div>
+
+                            {/* CONFIGURAÇÃO DE GAVETA CONDICIONAL NA TELA 1 (MULTI-COMPONENTE) */}
+                            <div>
 
                               {opcao.temGaveta && (
-                                <div className="mt-2.5 p-3 rounded-xl bg-slate-900/90 border border-slate-700 space-y-2.5 animate-fade-in">
+                                <div className="ml-[36px] p-3 rounded-xl bg-slate-900/90 border border-slate-700 space-y-2.5 animate-fade-in">
                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     <div>
                                       <label className="text-[11px] font-bold text-slate-200 block mb-1">
