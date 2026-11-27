@@ -1518,6 +1518,30 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 </button>
               ))}
               <BotaoVersoes onClick={() => setShowRecuperar(true)} />
+            <span className={`text-[11px] font-bold ${autoSalvo === 'erro' ? 'text-rose-300' : autoSalvo === 'pendente' ? 'text-slate-200' : 'text-slate-200'}`}>
+              {autoSalvo === 'pendente' ? 'Salvando automaticamente...' : autoSalvo === 'salvo' ? '✓ Salvo no banco' : autoSalvo === 'erro' ? 'Erro ao salvar — verifique o login' : ''}
+            </span>
+            <button
+              type="button"
+              onClick={handleSalvar}
+              disabled={salvando}
+              className="px-4 py-1.5 text-xs font-semibold text-slate-950 bg-slate-100 hover:bg-white rounded-xl shadow-lg  active:scale-95 transition flex items-center gap-1.5 disabled:opacity-50"
+            >
+              {salvo ? (
+                <>
+                  <Check className="w-4 h-4" />
+                  <span>Salvo</span>
+                </>
+              ) : salvando ? (
+                <span>Salvando...</span>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  <span>Salvar</span>
+                </>
+              )}
+            </button>
+
             </div>
 
             {/* Botão Modelos Prontos */}
@@ -3477,29 +3501,6 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               </button>
             )}
 
-            <span className={`text-[11px] font-bold ${autoSalvo === 'erro' ? 'text-rose-300' : autoSalvo === 'pendente' ? 'text-slate-200' : 'text-slate-200'}`}>
-              {autoSalvo === 'pendente' ? 'Salvando automaticamente...' : autoSalvo === 'salvo' ? '✓ Salvo no banco' : autoSalvo === 'erro' ? 'Erro ao salvar — verifique o login' : ''}
-            </span>
-            <button
-              type="button"
-              onClick={handleSalvar}
-              disabled={salvando}
-              className="px-5 py-1.5 text-xs font-semibold text-slate-950 bg-slate-100 hover:bg-white rounded-xl shadow-lg  active:scale-95 transition flex items-center gap-1.5 disabled:opacity-50"
-            >
-              {salvo ? (
-                <>
-                  <Check className="w-4 h-4" />
-                  <span>Salvo</span>
-                </>
-              ) : salvando ? (
-                <span>Salvando...</span>
-              ) : (
-                <>
-                  <Save className="w-4 h-4" />
-                  <span>Salvar</span>
-                </>
-              )}
-            </button>
           </div>
         </div>
 

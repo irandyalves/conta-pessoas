@@ -1090,15 +1090,17 @@ export async function saveQuestionsConfig(config, targetEventId = null) {
   window.dispatchEvent(new CustomEvent('church_questions_changed', { detail: normalized }));
 
   if (isFirebaseReady()) {
+    // O Firestore recusa campos "undefined": a cópia via JSON descarta esses campos
+    const gravavel = JSON.parse(JSON.stringify(normalized));
     try {
       await setDoc(doc(db, 'eventos_perguntas', eventId), {
-        ...normalized,
+        ...gravavel,
         atualizadoEm: serverTimestamp()
       }, { merge: true });
 
       if (eventId === DEFAULT_EVENT_ID) {
         await setDoc(doc(db, 'configuracoes', 'perguntas'), {
-          ...normalized,
+          ...gravavel,
           atualizadoEm: serverTimestamp()
         }, { merge: true });
       }
