@@ -2863,7 +2863,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                             </button>
                           </div>
 
-                          <div>
+                          <div className="lista-respostas">
                             {(telaAlvo.opcoes || []).map((opcao, optIdx) => {
                               const isAtivo = opcao.ativo !== false;
 
