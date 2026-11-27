@@ -301,3 +301,6 @@ button.texto-lixeira:hover { background: rgba(239, 68, 68, .28); color: #fecaca;
 /* Tipos de resposta pendurados na base da pergunta: presos por uma linha pontilhada, com um leve balanço */
 .tipo-preso { margin-top: -0.625rem !important; border-top: 2px dashed rgb(71 85 105); border-radius: 0 0 0.5rem 0.5rem; transform-origin: top center; animation: tipoBalanca 1.4s ease-out; }
 @keyframes tipoBalanca { 0% { transform: rotate(0); } 20% { transform: rotate(1.2deg); } 45% { transform: rotate(-0.8deg); } 70% { transform: rotate(0.4deg); } 100% { transform: rotate(0); } }
+/* Opções de resposta penduradas embaixo dos tipos, 2 caracteres para dentro */
+.tipo-preso { margin-bottom: 0 !important; }
+.opcoes-presas { margin-left: 2ch; margin-top: 0 !important; border-top: 2px dashed rgb(71 85 105); padding-top: 0.625rem; }

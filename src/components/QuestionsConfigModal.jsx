@@ -110,7 +110,7 @@ function linhasTitulosMais(lista, gravar) {
 // "Como responder": os tipos agrupados, na ordem em que se pensa a pergunta
 const GRUPOS_RESPOSTA = [
   { grupo: 'Escolha', tipos: [['cards', 'Cards'], ['radio', 'Uma opção'], ['checkbox', 'Várias opções'], ['dropdown', 'Lista']] },
-  { grupo: 'Texto', tipos: [['texto_curto', 'Curto'], ['texto', 'Longo']] },
+  { grupo: 'Texto', tipos: [['texto_curto', 'Texto curto'], ['texto', 'Texto longo']] },
   { grupo: 'Nota', tipos: [['slider', 'Escala'], ['rating', 'Estrelas'], ['grade', 'Grade']] },
   { grupo: 'Data', tipos: [['data', 'Data'], ['hora', 'Hora']] }
 ];
@@ -131,21 +131,21 @@ function TipoResposta({ valor, onChange, configurar = null, preso = false }) {
   return (
     <section ref={caixaRef} className={`relative bg-slate-800/40 px-3 py-2.5 mb-2.5 ${preso ? 'tipo-preso rounded-b-lg' : 'rounded-lg'}`}>
       {!preso && <h3 className="text-xs font-semibold text-slate-100 mb-2">Como responder</h3>}
-      <div className="flex flex-wrap gap-x-4 gap-y-2">
-        {GRUPOS_RESPOSTA.map(({ grupo, tipos }) => (
+      <div className="flex flex-wrap items-center gap-y-2">
+        {GRUPOS_RESPOSTA.map(({ grupo, tipos }, gi) => (
           <div key={grupo} className="flex items-center gap-1.5">
-            {grupo !== 'Escolha' && <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 w-12">{grupo}</span>}
+            {gi > 0 && <span className="self-stretch w-px bg-slate-600 mx-2.5" aria-hidden="true" />}
             {tipos.map(([id, rotulo]) => {
               const sel = valor === id;
               const comEngrenagem = sel && conteudo;
               return (
-                <span key={id} className={`inline-flex items-center h-7 transition ${sel ? 'bg-slate-100 text-slate-900 rounded-full shadow' : 'rounded-md'} ${comEngrenagem && aberta ? 'ring-2 ring-amber-300' : ''}`}>
+                <span key={id} className={`inline-flex items-center h-7 transition ${sel ? 'bg-slate-100 text-slate-900 rounded-md shadow' : 'rounded'} ${comEngrenagem && aberta ? 'ring-2 ring-amber-300' : ''}`}>
                   <button
                     type="button"
                     aria-pressed={sel}
                     title={TIPOS_PERGUNTA.find((t) => t.id === id)?.desc}
                     onClick={() => (sel ? (conteudo && setAberta((a) => !a)) : onChange(id))}
-                    className={`h-7 text-[11px] font-semibold transition ${sel ? `${comEngrenagem ? 'pl-3 pr-1.5' : 'px-3'}` : 'px-2.5 rounded-md bg-slate-950/60 text-slate-300 hover:text-white hover:bg-slate-800'}`}
+                    className={`h-7 text-[11px] font-semibold transition ${sel ? `${comEngrenagem ? 'pl-3 pr-1.5' : 'px-3'}` : 'px-2.5 rounded bg-slate-950/60 text-slate-300 hover:text-white hover:bg-slate-800'}`}
                   >
                     {rotulo}
                   </button>
@@ -2692,7 +2692,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                     )}
 
                     {(subAtual === 'opcoes' || (subAtual === 'pergunta' && juntos && !semCampo)) && (
-                      <div className="space-y-3">
+                      <div className={`space-y-3 ${subAtual === 'pergunta' ? 'opcoes-presas' : ''}`}>
                     {/* CONFIGURAÇÃO ESPECÍFICA CONFORME O TIPO DA TELA EXTRA */}
                     {['texto', 'texto_curto', 'data', 'hora', 'slider', 'rating'].includes(telaAlvo.tipo) ? (
                       <div className="bg-slate-950 border border-slate-700 rounded-2xl p-4 space-y-3.5 shadow-lg animate-fade-in">
