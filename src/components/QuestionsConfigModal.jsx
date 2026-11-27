@@ -116,7 +116,7 @@ const GRUPOS_RESPOSTA = [
 ];
 
 // configurar(id): conteúdo da gaveta de ajustes do tipo escolhido (null = sem engrenagem)
-function TipoResposta({ valor, onChange, configurar = null }) {
+function TipoResposta({ valor, onChange, configurar = null, preso = false }) {
   const [aberta, setAberta] = useState(false);
   const caixaRef = useRef(null);
   const conteudo = configurar ? configurar(valor) : null;
@@ -129,8 +129,8 @@ function TipoResposta({ valor, onChange, configurar = null }) {
     return () => { document.removeEventListener('mousedown', fora); document.removeEventListener('keydown', esc); };
   }, [aberta]);
   return (
-    <section ref={caixaRef} className="relative rounded-lg bg-slate-800/40 px-3 py-2.5 mb-2.5">
-      <h3 className="text-xs font-semibold text-slate-100 mb-2">Como responder</h3>
+    <section ref={caixaRef} className={`relative bg-slate-800/40 px-3 py-2.5 mb-2.5 ${preso ? 'tipo-preso rounded-b-lg' : 'rounded-lg'}`}>
+      {!preso && <h3 className="text-xs font-semibold text-slate-100 mb-2">Como responder</h3>}
       <div className="flex flex-wrap gap-x-4 gap-y-2">
         {GRUPOS_RESPOSTA.map(({ grupo, tipos }) => (
           <div key={grupo} className="flex items-center gap-1.5">
@@ -2650,6 +2650,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                         )}
                         {juntos && (
                           <TipoResposta
+                            preso
                             valor={telaAlvo.tipo || 'cards'}
                             onChange={(v) => trocarTipoExtra(extraIndex, v)}
                             configurar={(tipo) => (tipo === 'cards' ? AparenciaCards({
