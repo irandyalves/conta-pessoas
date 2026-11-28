@@ -848,7 +848,7 @@ export default function DashboardView({ onChangeView }) {
                   onClick={() => handleToggleSessao(activeEventId)}
                   disabled={alternandoSessao}
                   title={sessaoAtiva ? 'Clique para pausar a pesquisa' : 'Clique para liberar a pesquisa'}
-                  className={`hidden md:flex col-span-1 xl:col-span-2 p-2.5 rounded-2xl border items-center gap-2.5 transition active:scale-95 text-left cursor-pointer disabled:opacity-60 ${
+                  className={`hidden md:flex md:col-span-2 xl:col-span-3 p-2.5 rounded-2xl border items-center gap-2.5 transition active:scale-95 text-left cursor-pointer disabled:opacity-60 ${
                     sessaoAtiva ? 'brilho-verde bg-emerald-950/50 border-emerald-400/70' : 'brilho-ambar bg-amber-950/50 border-amber-400/70'
                   }`}
                 >
@@ -861,52 +861,14 @@ export default function DashboardView({ onChangeView }) {
                   </div>
                 </button>
 
-                {/* 1. Status do Evento (Ao Vivo / Em Espera) */}
-                <div className={`hidden md:flex md:col-span-3 xl:col-span-3 p-3 rounded-2xl border transition-all shadow-md items-center justify-between gap-3 ${
-                  sessaoAtiva 
-                    ? 'bg-gradient-to-r from-emerald-950/80 via-slate-900 to-emerald-950/60 border-emerald-500/40' 
-                    : 'bg-gradient-to-r from-amber-950/80 via-slate-900 to-amber-950/60 border-amber-500/40'
-                }`}>
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border shadow-sm ${
-                      sessaoAtiva 
-                        ? 'bg-emerald-500/20 border-emerald-400/50 text-emerald-400' 
-                        : 'bg-amber-500/20 border-amber-400/50 text-amber-400'
-                    }`}>
-                      {sessaoAtiva ? <Radio className="w-4 h-4 animate-pulse" /> : <Pause className="w-4 h-4 fill-amber-400" />}
-                    </div>
-                    <div className="min-w-0">
-                      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
-                        sessaoAtiva 
-                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' 
-                          : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                      }`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${sessaoAtiva ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'}`} />
-                        {sessaoAtiva ? 'AO VIVO' : 'EM ESPERA'}
-                      </span>
-                      <p className="text-[11px] text-slate-300 truncate mt-0.5" title={eventoTitulo}>
-                        {eventoTitulo}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <button
-                      onClick={() => setActiveSection('qrcode')}
-                      className="p-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-emerald-300 transition"
-                      title="Abrir QR Code & Links"
-                    >
-                      <QrCode className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => onChangeView('telao')}
-                      className="p-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-sky-300 transition"
-                      title="Abrir Telão"
-                    >
-                      <Tv className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-
+                {/* Atalhos QR Code e Telão (fora de seção) */}
+                <div className="hidden md:flex md:col-span-1 xl:col-span-2 gap-2.5">
+                  <button onClick={() => setActiveSection('qrcode')} title="Abrir QR Code & Links" className="flex-1 rounded-2xl bg-slate-900/90 hover:bg-slate-800 border border-slate-800 hover:border-emerald-500/40 text-emerald-300 flex flex-col items-center justify-center gap-1 transition">
+                    <QrCode className="w-4 h-4" /><span className="text-[10px] font-bold text-slate-400">QR Code</span>
+                  </button>
+                  <button onClick={() => onChangeView('telao')} title="Abrir Telão" className="flex-1 rounded-2xl bg-slate-900/90 hover:bg-slate-800 border border-slate-800 hover:border-sky-500/40 text-sky-300 flex flex-col items-center justify-center gap-1 transition">
+                    <Tv className="w-4 h-4" /><span className="text-[10px] font-bold text-slate-400">Telão</span>
+                  </button>
                 </div>
 
                 {/* 2. Total Pessoas */}
@@ -957,7 +919,7 @@ export default function DashboardView({ onChangeView }) {
                 </div>
 
                 {/* 6. Links Rápidos (Celular, Telão, Admin) */}
-                <div className="col-span-3 md:col-span-2 xl:col-span-4 bg-slate-900/90 border border-slate-800 rounded-2xl p-1.5 md:p-2 flex items-center justify-between gap-1.5">
+                <div className="col-span-3 md:col-span-6 xl:col-span-4 bg-slate-900/90 border border-slate-800 rounded-2xl p-1.5 md:p-2 flex items-center justify-between gap-1.5">
                   <button
                     onClick={() => copyToClipboard(linkMobile, 'mobile')}
                     className="flex-1 bg-slate-950/90 hover:bg-slate-950 border border-emerald-900/50 hover:border-emerald-500/50 rounded-xl px-2 py-1.5 flex items-center justify-center gap-1 transition group text-center"
