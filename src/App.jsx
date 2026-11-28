@@ -86,7 +86,7 @@ export default function App() {
         {view === 'admin' && adminAuthed && (
           <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-slate-400 text-sm">Carregando painel...</div>}>
             <div className="fixed bottom-3 right-3 z-40 flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/90 border border-slate-800 text-[11px] text-slate-400 shadow-lg print:hidden">
-              <span className="max-w-[180px] truncate">{usuario?.email}</span>
+              <span className="hidden sm:inline max-w-[180px] truncate">{usuario?.email}</span>
               <button onClick={handleSair} className="flex items-center gap-1 text-rose-300 hover:text-rose-200 font-bold">
                 <LogOut className="w-3 h-3" /> Sair
               </button>

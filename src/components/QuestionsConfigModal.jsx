@@ -477,6 +477,8 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
     }
   });
   const [isDragging, setIsDragging] = useState(false);
+  // Celular: mostra só uma coluna por vez (editar ou prévia)
+  const [vistaCel, setVistaCel] = useState('editar');
   const containerRef = useRef(null);
   const previewColRef = useRef(null);
   const configColRef = useRef(null);
@@ -1488,20 +1490,20 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
 
   return (
     <div className={inline ? "editor w-full" : "editor fixed inset-0 z-50 flex items-start justify-center pt-2 sm:pt-4 p-2 sm:p-4 bg-black/85 backdrop-blur-md overflow-y-auto animate-fade-in"}>
-      <div className={inline ? "relative w-full h-[calc(100vh-1.5rem)] bg-slate-900 border border-slate-800 rounded-r-2xl rounded-l-none border-l-0 shadow-xl flex flex-col overflow-hidden" : "relative w-[96vw] max-w-7xl bg-slate-900 border border-slate-700 rounded-3xl shadow-2xl flex flex-col max-h-[94vh] overflow-hidden shrink-0"}>
+      <div className={inline ? "relative w-full h-[calc(100dvh-7.5rem)] md:h-[calc(100vh-1.5rem)] bg-slate-900 border-y md:border border-slate-800 md:rounded-r-2xl rounded-none md:border-l-0 shadow-xl flex flex-col overflow-hidden" : "relative w-[96vw] max-w-7xl bg-slate-900 border border-slate-700 rounded-3xl shadow-2xl flex flex-col max-h-[94vh] overflow-hidden shrink-0"}>
         
         {/* ============================================================ */}
         {/* CABEÇALHO DO MODAL (FIXO NO TOPO)                            */}
         {/* ============================================================ */}
-        <div className="px-5 py-3 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 bg-slate-950/80 shrink-0">
+        <div className="px-3 sm:px-5 py-2 sm:py-3 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2 sm:gap-3 bg-slate-950/80 shrink-0">
           <div className="flex items-center gap-3 flex-wrap">
             <div className="w-8 h-8 rounded-lg bg-slate-700/40 text-slate-200 border border-slate-700 flex items-center justify-center">
               <Sliders className="w-4 h-4" />
             </div>
-            <h2 className="text-base sm:text-lg font-semibold text-white">Perguntas e telas</h2>
+            <h2 className="hidden sm:block text-base sm:text-lg font-semibold text-white">Perguntas e telas</h2>
 
             {/* Listbox do Modelo de Celular movido para o Topo à Esquerda */}
-            <div className="flex items-center gap-2 ml-1 sm:ml-2 pl-3 border-l border-slate-800">
+            <div className="flex items-center gap-2 sm:ml-2 sm:pl-3 sm:border-l border-slate-800">
               <Smartphone className="w-4 h-4 text-slate-200 shrink-0" />
               <select
                 value={modeloCelularId}
@@ -1525,7 +1527,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
                 </button>
               ))}
               <BotaoVersoes onClick={() => setShowRecuperar(true)} />
-            <span className={`text-[11px] font-bold ${autoSalvo === 'erro' ? 'text-rose-300' : autoSalvo === 'pendente' ? 'text-slate-200' : 'text-slate-200'}`}>
+            <span className={`hidden sm:inline text-[11px] font-bold ${autoSalvo === 'erro' ? 'text-rose-300' : autoSalvo === 'pendente' ? 'text-slate-200' : 'text-slate-200'}`}>
               {autoSalvo === 'pendente' ? 'Salvando automaticamente...' : autoSalvo === 'salvo' ? '✓ Salvo no banco' : autoSalvo === 'erro' ? 'Erro ao salvar — verifique o login' : ''}
             </span>
             <button
@@ -1589,6 +1591,14 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
         {/* ============================================================ */}
         {/* CORPO EM 2 COLUNAS: ESQUERDA (CONFIG) + DIREITA (CELULAR)    */}
         {/* ============================================================ */}
+        {/* Celular/tablet: alterna entre editar e ver a prévia */}
+        <div className="lg:hidden flex gap-1 p-1.5 border-b border-slate-800 bg-slate-950/80 shrink-0">
+          {[['editar', 'Editar'], ['previa', 'Prévia']].map(([id, nome]) => (
+            <button key={id} type="button" onClick={() => setVistaCel(id)} className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition ${vistaCel === id ? 'bg-slate-100 text-slate-950' : 'text-slate-300 hover:bg-slate-800'}`}>
+              {nome}
+            </button>
+          ))}
+        </div>
         <div ref={containerRef} className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden relative">
           
           {/* ========================================================== */}
@@ -1596,7 +1606,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
           {/* ========================================================== */}
           <div 
             style={{ width: typeof window !== 'undefined' && window.innerWidth >= 1024 ? `${splitPercent}%` : '100%' }} 
-            className="flex flex-col min-h-0 max-h-[50%] lg:max-h-none overflow-hidden bg-slate-900/50 shrink-0 border-b lg:border-b-0 border-slate-800"
+            className={`${vistaCel === 'editar' ? 'flex flex-1' : 'hidden'} lg:flex lg:flex-none flex-col min-h-0 overflow-hidden bg-slate-900/50 shrink-0 border-slate-800`}
           >
             
             {/* BARRA DE ABAS: BOAS-VINDAS, INÍCIO, TELA 1..X, FIM + BOTÃO + ADD TAB EM VERDE */}
@@ -3417,7 +3427,7 @@ export default function QuestionsConfigModal({ isOpen, onClose, activeEventId = 
               const topo = card.getBoundingClientRect().top - col.getBoundingClientRect().top + col.scrollTop - 8;
               col.scrollTo({ top: Math.max(0, topo), behavior: 'smooth' });
             }}
-            className="flex-1 min-w-0 min-h-0 bg-slate-950/90 flex flex-col p-2 sm:p-3 relative overflow-y-auto custom-scrollbar"
+            className={`${vistaCel === 'previa' ? 'flex' : 'hidden'} lg:flex flex-1 min-w-0 min-h-0 bg-slate-950/90 flex-col p-2 sm:p-3 relative overflow-y-auto custom-scrollbar`}
           >
             
             {/* GRID DOS CELULARES: 3 POR LINHA FLUIDO E RESPONSIVO */}

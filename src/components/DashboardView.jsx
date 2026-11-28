@@ -629,11 +629,11 @@ export default function DashboardView({ onChangeView }) {
       <div className="flex-1 flex flex-col min-w-0">
         
         {/* TOPBAR FIXA: SELETOR DE EVENTO + CONTROLE DE SESSÃO + FILTRO */}
-        <header className="print:hidden sticky top-0 z-30 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80 px-4 md:px-6 py-3">
-          <div className="w-full flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <header className="print:hidden sticky top-0 z-30 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80 px-3 md:px-6 py-2 md:py-3">
+          <div className="w-full flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-3">
             
             {/* Esquerda: Botão Menu Mobile + Seletor do Evento Ativo */}
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2.5 min-w-0">
               <button
                 onClick={() => setMobileMenuOpen(true)}
                 className="lg:hidden p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white"
@@ -669,11 +669,11 @@ export default function DashboardView({ onChangeView }) {
                   </button>
                 </div>
               ) : (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
                   <select
                     value={activeEventId}
                     onChange={handleSelectEvent}
-                    className="bg-slate-900 border border-slate-700/80 hover:border-amber-400 focus:border-amber-400 rounded-xl px-3 py-1.5 text-sm sm:text-base font-black text-amber-300 cursor-pointer shadow-sm transition max-w-[230px] sm:max-w-md truncate"
+                    className="bg-slate-900 border border-slate-700/80 hover:border-amber-400 focus:border-amber-400 rounded-xl px-3 py-1.5 text-sm sm:text-base font-black text-amber-300 cursor-pointer shadow-sm transition min-w-0 w-full sm:w-auto sm:max-w-md truncate"
                   >
                     {eventosLista.map((ev) => (
                       <option key={ev.id} value={ev.id} className="bg-slate-900 text-white font-bold">
@@ -705,7 +705,7 @@ export default function DashboardView({ onChangeView }) {
             {/* Direita: Status Ao Vivo / Pausa Rápido + Filtro de Período */}
             <div className="flex flex-wrap items-center justify-between md:justify-end gap-2.5">
               {/* Filtro de Período Integrado na Barra Superior */}
-              <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-800 p-1 rounded-xl">
+              <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-800 p-1 rounded-xl w-full md:w-auto overflow-x-auto">
                 <div className="flex items-center gap-1 px-2 text-slate-400">
                   <Filter className="w-3.5 h-3.5 text-amber-400" />
                   <span className="text-[11px] font-bold hidden sm:inline">Período:</span>
