@@ -633,17 +633,17 @@ export default function DashboardView({ onChangeView }) {
           <div className="w-full flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-3">
             
             {/* Esquerda: Botão Menu Mobile + Seletor do Evento Ativo */}
-            <div className="flex items-center gap-2.5 min-w-0">
+            <div className="flex items-center lg:gap-2.5 min-w-0">
               <button
                 onClick={() => setMobileMenuOpen(true)}
-                className="lg:hidden p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white"
+                className="lg:hidden self-stretch px-2 rounded-l-xl rounded-r-none bg-slate-900 border border-r-0 border-slate-700/80 text-slate-300 hover:text-white"
                 title="Abrir Menu"
               >
                 <Menu className="w-5 h-5" />
               </button>
 
               {editandoTitulo ? (
-                <div className="flex items-center gap-2 flex-1">
+                <div className="flex items-center gap-2 flex-1 ml-2 lg:ml-0">
                   <input
                     type="text"
                     value={inputTitulo}
@@ -673,7 +673,7 @@ export default function DashboardView({ onChangeView }) {
                   <select
                     value={activeEventId}
                     onChange={handleSelectEvent}
-                    className="bg-slate-900 border border-slate-700/80 hover:border-amber-400 focus:border-amber-400 rounded-xl px-3 py-1.5 text-sm sm:text-base font-black text-amber-300 cursor-pointer shadow-sm transition min-w-0 w-full sm:w-auto sm:max-w-md truncate"
+                    className="bg-slate-900 border border-slate-700/80 hover:border-amber-400 focus:border-amber-400 rounded-r-xl rounded-l-none lg:rounded-l-xl px-3 py-1.5 text-sm sm:text-base font-black text-amber-300 cursor-pointer shadow-sm transition min-w-0 w-full sm:w-auto sm:max-w-md truncate"
                   >
                     {eventosLista.map((ev) => (
                       <option key={ev.id} value={ev.id} className="bg-slate-900 text-white font-bold">
