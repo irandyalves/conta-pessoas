@@ -217,6 +217,25 @@
   .ac-menu { right: auto; left: 0; }
   .ac-feed { display: none; }
 }
+/* celular: topo em duas linhas firmes, ações só com ícone, índice em pílulas */
+@media (max-width: 767px) {
+  .ac { border-radius: 16px; }
+  .ac-topo { padding: 12px; gap: 10px; }
+  .ac-placar > strong { font-size: 34px; }
+  .ac-ritmo { flex: 1 1 100px; }
+  .ac-acoes { width: 100%; flex-wrap: nowrap; gap: 6px; }
+  .ac-acoes .ac-chave { flex: 1; }
+  .ac-acoes .ac-chave button { flex: 1; justify-content: center; height: 34px; }
+  .ac-botao { height: 40px; width: 40px; padding: 0; justify-content: center; }
+  .ac-rotulo { display: none; }
+  .ac-indice { gap: 6px; padding: 8px 10px; scrollbar-width: none; }
+  .ac-indice button, .ac-indice button.ac-filha { width: auto; max-width: 220px; grid-template-columns: auto 1fr auto; padding: 7px 10px; border-radius: 999px; background: #131e37; }
+  .ac-indice-nome { -webkit-line-clamp: 1; white-space: nowrap; text-overflow: ellipsis; display: block; }
+  .ac-indice-fio { display: none; }
+  .ac-palco-topo { padding: 12px 4px 4px; }
+  .ac-palco-titulo h3 { font-size: 16px; }
+  .ac-vazio { font-size: 13px; padding: 28px 16px; }
+}
 @media (prefers-reduced-motion: reduce) {
   .ac *, .ac *::before { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }

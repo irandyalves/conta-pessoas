@@ -815,11 +815,11 @@ export default function DashboardView({ onChangeView }) {
           {/* ABA 1: PAINEL PRINCIPAL (DASHBOARD)                            */}
           {/* ============================================================== */}
           {activeSection === 'dashboard' && (
-            <div className="space-y-4">
+            <div className="space-y-3 md:space-y-4 -mt-2 md:mt-0">
               {/* TOPO DO DASHBOARD UNIFICADO & ESMAGADO EM UMA LINHA SÓ DE PONTA A PONTA */}
-              <div className="print:hidden grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 xl:grid-cols-12 gap-2.5 items-stretch">
+              <div className="print:hidden grid grid-cols-3 md:grid-cols-6 xl:grid-cols-12 gap-2 md:gap-2.5 items-stretch">
                 {/* 1. Status do Evento (Ao Vivo / Em Espera) */}
-                <div className={`col-span-2 sm:col-span-3 md:col-span-3 xl:col-span-3 p-3 rounded-2xl border transition-all shadow-md flex items-center justify-between gap-3 ${
+                <div className={`col-span-3 md:col-span-3 xl:col-span-3 p-3 rounded-2xl border transition-all shadow-md flex flex-wrap md:flex-nowrap items-center justify-between gap-3 ${
                   sessaoAtiva 
                     ? 'bg-gradient-to-r from-emerald-950/80 via-slate-900 to-emerald-950/60 border-emerald-500/40' 
                     : 'bg-gradient-to-r from-amber-950/80 via-slate-900 to-amber-950/60 border-amber-500/40'
@@ -863,12 +863,25 @@ export default function DashboardView({ onChangeView }) {
                       <Tv className="w-3.5 h-3.5" />
                     </button>
                   </div>
+
+                  {/* Celular: liberar/pausar como ação principal */}
+                  <button
+                    type="button"
+                    onClick={() => handleToggleSessao(activeEventId)}
+                    disabled={alternandoSessao}
+                    className={`md:hidden w-full h-12 rounded-xl flex items-center justify-center gap-2 text-sm font-black transition active:scale-[.98] disabled:opacity-60 ${
+                      sessaoAtiva ? 'bg-slate-900 border border-emerald-500/50 text-emerald-300' : 'bg-amber-400 text-slate-950 shadow-lg shadow-amber-500/20'
+                    }`}
+                  >
+                    {sessaoAtiva ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current" />}
+                    {sessaoAtiva ? 'Pausar pesquisa' : 'Liberar pesquisa'}
+                  </button>
                 </div>
 
                 {/* 2. Total Pessoas */}
-                <div className="col-span-1 sm:col-span-1 md:col-span-1 xl:col-span-1 bg-slate-900/90 border border-slate-800 p-2.5 rounded-2xl flex items-center justify-between gap-2 shadow-sm">
+                <div className="col-span-1 md:col-span-1 xl:col-span-1 bg-slate-900/90 border border-slate-800 px-3 py-2 md:p-2.5 rounded-2xl flex items-center justify-between gap-2 shadow-sm">
                   <div className="flex items-center gap-2 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/25 text-amber-400 flex items-center justify-center shrink-0">
+                    <div className="hidden md:flex w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/25 text-amber-400 items-center justify-center shrink-0">
                       <Users className="w-4 h-4" />
                     </div>
                     <div className="min-w-0">
@@ -879,9 +892,9 @@ export default function DashboardView({ onChangeView }) {
                 </div>
 
                 {/* 3. Respostas */}
-                <div className="col-span-1 sm:col-span-1 md:col-span-1 xl:col-span-1 bg-slate-900/90 border border-slate-800 p-2.5 rounded-2xl flex items-center justify-between gap-2 shadow-sm">
+                <div className="col-span-1 md:col-span-1 xl:col-span-1 bg-slate-900/90 border border-slate-800 px-3 py-2 md:p-2.5 rounded-2xl flex items-center justify-between gap-2 shadow-sm">
                   <div className="flex items-center gap-2 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-blue-500/15 border border-blue-500/25 text-blue-400 flex items-center justify-center shrink-0">
+                    <div className="hidden md:flex w-8 h-8 rounded-lg bg-blue-500/15 border border-blue-500/25 text-blue-400 items-center justify-center shrink-0">
                       <UserCheck className="w-4 h-4" />
                     </div>
                     <div className="min-w-0">
@@ -896,11 +909,11 @@ export default function DashboardView({ onChangeView }) {
                 {/* 4. Cards Ativos */}
                 <div 
                   onClick={() => setActiveSection('perguntas')}
-                  className="col-span-1 sm:col-span-1 md:col-span-1 xl:col-span-1 bg-slate-900/90 hover:bg-slate-800/80 border border-slate-800 hover:border-emerald-500/40 p-2.5 rounded-2xl flex items-center justify-between gap-2 shadow-sm cursor-pointer transition"
+                  className="col-span-1 md:col-span-1 xl:col-span-1 bg-slate-900/90 hover:bg-slate-800/80 border border-slate-800 hover:border-emerald-500/40 px-3 py-2 md:p-2.5 rounded-2xl flex items-center justify-between gap-2 shadow-sm cursor-pointer transition"
                   title="Configurar Perguntas / Telas"
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 flex items-center justify-center shrink-0">
+                    <div className="hidden md:flex w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 items-center justify-center shrink-0">
                       <Sliders className="w-4 h-4" />
                     </div>
                     <div className="min-w-0">
@@ -918,7 +931,7 @@ export default function DashboardView({ onChangeView }) {
                   onClick={() => handleToggleSessao(activeEventId)}
                   disabled={alternandoSessao}
                   title={sessaoAtiva ? 'Clique para pausar a pesquisa' : 'Clique para liberar a pesquisa'}
-                  className={`col-span-1 sm:col-span-1 md:col-span-1 xl:col-span-2 p-2.5 rounded-2xl border flex items-center justify-between gap-2 transition active:scale-95 text-left shadow-sm cursor-pointer ${
+                  className={`hidden md:flex col-span-1 md:col-span-1 xl:col-span-2 p-2.5 rounded-2xl border items-center justify-between gap-2 transition active:scale-95 text-left shadow-sm cursor-pointer ${
                     sessaoAtiva 
                       ? 'bg-emerald-950/40 border-emerald-500/40 hover:border-emerald-400/80' 
                       : 'bg-amber-950/40 border-amber-500/40 hover:border-amber-400/80'
@@ -946,7 +959,7 @@ export default function DashboardView({ onChangeView }) {
                 </button>
 
                 {/* 6. Links Rápidos (Celular, Telão, Admin) */}
-                <div className="col-span-2 sm:col-span-2 md:col-span-2 xl:col-span-4 bg-slate-900/90 border border-slate-800 rounded-2xl p-2 flex items-center justify-between gap-1.5">
+                <div className="col-span-3 md:col-span-2 xl:col-span-4 bg-slate-900/90 border border-slate-800 rounded-2xl p-1.5 md:p-2 flex items-center justify-between gap-1.5">
                   <button
                     onClick={() => copyToClipboard(linkMobile, 'mobile')}
                     className="flex-1 bg-slate-950/90 hover:bg-slate-950 border border-emerald-900/50 hover:border-emerald-500/50 rounded-xl px-2 py-1.5 flex items-center justify-center gap-1 transition group text-center"
@@ -1027,7 +1040,37 @@ export default function DashboardView({ onChangeView }) {
                     </div>
                   </div>
 
-                  <div className="overflow-x-auto">
+                  <ul className="md:hidden print:hidden divide-y divide-slate-800/70">
+                    {presencasFiltradas.length === 0 ? (
+                      <li className="py-8 px-4 text-center text-xs text-slate-400">Nenhuma resposta neste período.</li>
+                    ) : presencasFiltradas.map((item, index) => {
+                      const respostasItem = listarRespostas(item);
+                      return (
+                        <li key={item.id || index} className="px-4 py-3 space-y-1.5">
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className="font-mono text-slate-500">{index + 1}</span>
+                            <span className="font-mono text-slate-200">{item.hora || '--:--'}</span>
+                            <span className="text-slate-500">{item.dataCulto || hoje}</span>
+                            <span className="ml-auto px-2 py-0.5 rounded-full text-[11px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/30 whitespace-nowrap">
+                              {item.qtdPessoas === 1 ? 'Só eu' : `${item.qtdPessoas} pessoas`}
+                            </span>
+                          </div>
+                          {item.comoChegou && <p className="text-sm font-semibold text-white">{item.comoChegou}</p>}
+                          {respostasItem.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {respostasItem.map((r, ri) => (
+                                <span key={ri} className={`text-[11px] px-2 py-0.5 rounded-lg border ${r.tipo === 'gaveta' ? 'bg-amber-500/15 text-amber-300 border-amber-500/30' : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'}`}>
+                                  <strong className="font-bold">{r.pergunta}:</strong> {String(r.resposta)}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+
+                  <div className="hidden md:block print:block overflow-x-auto">
                     <table className="w-full text-left text-xs">
                       <thead className="bg-slate-950/60 print:bg-slate-100 text-slate-400 print:text-slate-700 uppercase font-bold border-b border-slate-800/80 print:border-slate-300">
                         <tr>

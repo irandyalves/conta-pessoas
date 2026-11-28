@@ -141,7 +141,7 @@ function MenuExportar({ entrada, desativado, onAviso }) {
   return (
     <div className="ac-exportar" ref={raiz}>
       <button type="button" className="ac-botao ac-botao-forte" aria-expanded={aberto} disabled={desativado} title={desativado ? 'Ainda não há respostas para exportar' : 'Baixar relatório'} onClick={() => setAberto((v) => !v)}>
-        <Download size={16} /> Exportar
+        <Download size={16} /> <span className="ac-rotulo">Exportar</span>
       </button>
       {aberto && (
         <div className="ac-menu">
@@ -231,7 +231,7 @@ export default function Acompanhamento({ presencas, config, titulo, periodo, ses
             <button type="button" aria-pressed={modoReal === '3d'} disabled={sem3D} title={sem3D ? 'Este navegador não mostra gráficos 3D' : undefined} onClick={() => mudarModo('3d')}><Box size={15} /> 3D</button>
           </div>
           <button type="button" className="ac-botao" aria-pressed={girando} disabled={perguntas.length < 2} title="Passa as perguntas sozinho, a cada 12 segundos" onClick={() => setGirando((g) => !g)}>
-            {girando ? <PauseCircle size={16} /> : <PlayCircle size={16} />} {girando ? 'Parar' : 'Passar sozinho'}
+            {girando ? <PauseCircle size={16} /> : <PlayCircle size={16} />} <span className="ac-rotulo">{girando ? 'Parar' : 'Passar sozinho'}</span>
           </button>
           <button type="button" className="ac-botao" onClick={telaCheia} aria-label={cheia ? 'Sair da tela cheia' : 'Tela cheia'} title={cheia ? 'Sair da tela cheia' : 'Tela cheia'}>
             {cheia ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
