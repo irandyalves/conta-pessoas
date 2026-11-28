@@ -825,7 +825,7 @@ export default function DashboardView({ onChangeView }) {
                     onClick={() => handleToggleSessao(activeEventId)}
                     disabled={alternandoSessao}
                     title={sessaoAtiva ? 'Clique para pausar a pesquisa' : 'Clique para liberar a pesquisa'}
-                    className={`px-3 rounded-xl border flex items-center gap-2 shrink-0 transition active:scale-95 disabled:opacity-60 ${sessaoAtiva ? 'brilho-verde bg-emerald-950/50 border-emerald-400/70 text-emerald-300' : 'brilho-ambar bg-amber-950/50 border-amber-400/70 text-amber-300'}`}
+                    className={`px-3 rounded-xl border flex items-center gap-2 shrink-0 transition active:scale-95 disabled:opacity-60 ${sessaoAtiva ? 'luz-giro luz-verde text-emerald-300' : 'luz-giro luz-ambar text-amber-300'}`}
                   >
                     {sessaoAtiva ? <Play className="w-4 h-4 fill-current" /> : <Pause className="w-4 h-4 fill-current" />}
                     <span className="text-xs font-black">{sessaoAtiva ? 'Rodando' : 'Pausada'}</span>
@@ -849,7 +849,7 @@ export default function DashboardView({ onChangeView }) {
                   disabled={alternandoSessao}
                   title={sessaoAtiva ? 'Clique para pausar a pesquisa' : 'Clique para liberar a pesquisa'}
                   className={`hidden md:flex md:col-span-2 xl:col-span-3 p-2.5 rounded-2xl border items-center gap-2.5 transition active:scale-95 text-left cursor-pointer disabled:opacity-60 ${
-                    sessaoAtiva ? 'brilho-verde bg-emerald-950/50 border-emerald-400/70' : 'brilho-ambar bg-amber-950/50 border-amber-400/70'
+                    sessaoAtiva ? 'luz-giro luz-verde' : 'luz-giro luz-ambar'
                   }`}
                 >
                   <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${sessaoAtiva ? 'bg-emerald-500/25 text-emerald-300' : 'bg-amber-500/25 text-amber-300'}`}>

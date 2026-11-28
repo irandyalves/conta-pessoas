@@ -323,3 +323,17 @@ button.texto-lixeira:hover { background: rgba(239, 68, 68, .28); color: #fecaca;
 .brilho-verde { animation: brilho-verde 2.4s ease-in-out infinite; }
 .brilho-ambar { animation: brilho-ambar 2.4s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .brilho-verde, .brilho-ambar { animation: none; } }
+
+/* Luz girando na borda do botão de sessão (sentido horário) */
+@property --giro-ang { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+@keyframes luz-giro { to { --giro-ang: 360deg; } }
+.luz-giro {
+  border: 1.5px solid transparent !important;
+  background:
+    linear-gradient(var(--luz-fundo), var(--luz-fundo)) padding-box,
+    conic-gradient(from var(--giro-ang), var(--luz-base) 0 55%, var(--luz-cor) 80%, #fff 86%, var(--luz-cor) 90%, var(--luz-base) 100%) border-box;
+  animation: luz-giro 3.2s linear infinite, var(--luz-pulso) 2.4s ease-in-out infinite;
+}
+.luz-verde { --luz-fundo: #052e22; --luz-base: rgba(52,211,153,.25); --luz-cor: #34d399; --luz-pulso: brilho-verde; }
+.luz-ambar { --luz-fundo: #2d1d05; --luz-base: rgba(251,191,36,.25); --luz-cor: #fbbf24; --luz-pulso: brilho-ambar; }
+@media (prefers-reduced-motion: reduce) { .luz-giro { animation: none; } }
