@@ -824,11 +824,11 @@ export default function DashboardView({ onChangeView }) {
                     type="button"
                     onClick={() => handleToggleSessao(activeEventId)}
                     disabled={alternandoSessao}
-                    title={sessaoAtiva ? 'Pausar pesquisa' : 'Liberar pesquisa'}
-                    aria-label={sessaoAtiva ? 'Pausar pesquisa' : 'Liberar pesquisa'}
-                    className={`w-11 rounded-xl flex items-center justify-center shrink-0 transition active:scale-95 disabled:opacity-60 ${sessaoAtiva ? 'bg-slate-900 border border-emerald-500/50 text-emerald-300' : 'bg-amber-400 text-slate-950'}`}
+                    title={sessaoAtiva ? 'Clique para pausar a pesquisa' : 'Clique para liberar a pesquisa'}
+                    className={`px-3 rounded-xl border flex items-center gap-2 shrink-0 transition active:scale-95 disabled:opacity-60 ${sessaoAtiva ? 'brilho-verde bg-emerald-950/50 border-emerald-400/70 text-emerald-300' : 'brilho-ambar bg-amber-950/50 border-amber-400/70 text-amber-300'}`}
                   >
-                    {sessaoAtiva ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current" />}
+                    {sessaoAtiva ? <Play className="w-4 h-4 fill-current" /> : <Pause className="w-4 h-4 fill-current" />}
+                    <span className="text-xs font-black">{sessaoAtiva ? 'Rodando' : 'Pausada'}</span>
                   </button>
                   <div className="flex-1 min-w-0 flex items-center gap-1 px-2 py-1 rounded-xl bg-slate-900/90 border border-slate-800">
                     {[['Pessoas', totalPessoas, 'text-white'], ['Respostas', totalCheckins, 'text-white'], ['Cards', listaOpcoesConfig.filter(c => c.ativo !== false).length, 'text-emerald-300']].map(([nome, valor, cor]) => (
@@ -841,6 +841,25 @@ export default function DashboardView({ onChangeView }) {
                     <button onClick={() => onChangeView('telao')} className="p-1.5 rounded-lg border border-slate-700 text-sky-300 shrink-0" title="Abrir Telão"><Tv className="w-3.5 h-3.5" /></button>
                   </div>
                 </div>
+
+                {/* Sessão: primeiro botão (desktop) */}
+                <button
+                  type="button"
+                  onClick={() => handleToggleSessao(activeEventId)}
+                  disabled={alternandoSessao}
+                  title={sessaoAtiva ? 'Clique para pausar a pesquisa' : 'Clique para liberar a pesquisa'}
+                  className={`hidden md:flex col-span-1 xl:col-span-2 p-2.5 rounded-2xl border items-center gap-2.5 transition active:scale-95 text-left cursor-pointer disabled:opacity-60 ${
+                    sessaoAtiva ? 'brilho-verde bg-emerald-950/50 border-emerald-400/70' : 'brilho-ambar bg-amber-950/50 border-amber-400/70'
+                  }`}
+                >
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${sessaoAtiva ? 'bg-emerald-500/25 text-emerald-300' : 'bg-amber-500/25 text-amber-300'}`}>
+                    {sessaoAtiva ? <Play className="w-4 h-4 fill-current" /> : <Pause className="w-4 h-4 fill-current" />}
+                  </div>
+                  <div className="min-w-0 leading-tight">
+                    <span className={`text-[10px] font-bold block ${sessaoAtiva ? 'text-emerald-400' : 'text-amber-400'}`}>Sessão</span>
+                    <span className={`text-sm font-black ${sessaoAtiva ? 'text-emerald-300' : 'text-amber-300'}`}>{sessaoAtiva ? 'Rodando' : 'Pausada'}</span>
+                  </div>
+                </button>
 
                 {/* 1. Status do Evento (Ao Vivo / Em Espera) */}
                 <div className={`hidden md:flex md:col-span-3 xl:col-span-3 p-3 rounded-2xl border transition-all shadow-md items-center justify-between gap-3 ${
@@ -936,39 +955,6 @@ export default function DashboardView({ onChangeView }) {
                     </div>
                   </div>
                 </div>
-
-                {/* 5. Botão de Status / Liberar / Pausar */}
-                <button
-                  type="button"
-                  onClick={() => handleToggleSessao(activeEventId)}
-                  disabled={alternandoSessao}
-                  title={sessaoAtiva ? 'Clique para pausar a pesquisa' : 'Clique para liberar a pesquisa'}
-                  className={`hidden md:flex col-span-1 md:col-span-1 xl:col-span-2 p-2.5 rounded-2xl border items-center justify-between gap-2 transition active:scale-95 text-left shadow-sm cursor-pointer ${
-                    sessaoAtiva 
-                      ? 'bg-emerald-950/40 border-emerald-500/40 hover:border-emerald-400/80' 
-                      : 'bg-amber-950/40 border-amber-500/40 hover:border-amber-400/80'
-                  }`}
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                      sessaoAtiva ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
-                    }`}>
-                      {sessaoAtiva ? <Pause className="w-4 h-4 fill-emerald-400" /> : <Play className="w-4 h-4 fill-amber-400" />}
-                    </div>
-                    <div className="min-w-0">
-                      <span className={`text-[9px] font-bold uppercase tracking-wider block truncate ${
-                        sessaoAtiva ? 'text-emerald-400' : 'text-amber-400'
-                      }`}>
-                        Sessão
-                      </span>
-                      <span className={`text-xs font-black leading-tight ${
-                        sessaoAtiva ? 'text-emerald-300' : 'text-amber-300'
-                      }`}>
-                        {sessaoAtiva ? 'PAUSAR' : 'LIBERAR'}
-                      </span>
-                    </div>
-                  </div>
-                </button>
 
                 {/* 6. Links Rápidos (Celular, Telão, Admin) */}
                 <div className="col-span-3 md:col-span-2 xl:col-span-4 bg-slate-900/90 border border-slate-800 rounded-2xl p-1.5 md:p-2 flex items-center justify-between gap-1.5">

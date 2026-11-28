@@ -316,3 +316,10 @@ button.texto-lixeira:hover { background: rgba(239, 68, 68, .28); color: #fecaca;
 .texto-nome-editavel { background: transparent; border: 1px dashed transparent; border-radius: 6px; padding: 1px 4px; margin-left: -5px; outline: none; cursor: text; min-width: 0; }
 .texto-nome-editavel:hover { border-color: #475569; }
 .texto-nome-editavel:focus { border-color: #94a3b8; background: #0f172a; color: #fff; }
+
+/* Botão de sessão: brilho pulsante suave (verde rodando, amarelo pausada) */
+@keyframes brilho-verde { 0%,100% { box-shadow: 0 0 6px 0 rgba(52,211,153,.35); } 50% { box-shadow: 0 0 18px 3px rgba(52,211,153,.6); } }
+@keyframes brilho-ambar { 0%,100% { box-shadow: 0 0 6px 0 rgba(251,191,36,.3); } 50% { box-shadow: 0 0 18px 3px rgba(251,191,36,.55); } }
+.brilho-verde { animation: brilho-verde 2.4s ease-in-out infinite; }
+.brilho-ambar { animation: brilho-ambar 2.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .brilho-verde, .brilho-ambar { animation: none; } }
