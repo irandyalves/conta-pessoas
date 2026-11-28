@@ -818,26 +818,28 @@ export default function DashboardView({ onChangeView }) {
             <div className="space-y-3 md:space-y-4 -mt-2 md:mt-0">
               {/* TOPO DO DASHBOARD UNIFICADO & ESMAGADO EM UMA LINHA SÓ DE PONTA A PONTA */}
               <div className="print:hidden grid grid-cols-3 md:grid-cols-6 xl:grid-cols-12 gap-2 md:gap-2.5 items-stretch">
-                {/* Celular: sessão + números + atalhos num bloco só */}
-                <div className={`md:hidden col-span-3 flex items-center gap-2 p-2 rounded-2xl border ${sessaoAtiva ? 'border-emerald-500/40 bg-emerald-950/30' : 'border-amber-500/40 bg-amber-950/30'}`}>
+                {/* Celular: play/pause fora + números e atalhos esmagados */}
+                <div className="md:hidden col-span-3 flex items-stretch gap-2">
                   <button
                     type="button"
                     onClick={() => handleToggleSessao(activeEventId)}
                     disabled={alternandoSessao}
-                    className={`h-9 px-3.5 rounded-xl text-xs font-black shrink-0 transition active:scale-95 disabled:opacity-60 ${sessaoAtiva ? 'bg-slate-900 border border-emerald-500/50 text-emerald-300' : 'bg-amber-400 text-slate-950'}`}
+                    title={sessaoAtiva ? 'Pausar pesquisa' : 'Liberar pesquisa'}
+                    aria-label={sessaoAtiva ? 'Pausar pesquisa' : 'Liberar pesquisa'}
+                    className={`w-11 rounded-xl flex items-center justify-center shrink-0 transition active:scale-95 disabled:opacity-60 ${sessaoAtiva ? 'bg-slate-900 border border-emerald-500/50 text-emerald-300' : 'bg-amber-400 text-slate-950'}`}
                   >
-                    {sessaoAtiva ? 'Pausar' : 'Liberar'}
+                    {sessaoAtiva ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current" />}
                   </button>
-                  <div className="flex-1 grid grid-cols-3 min-w-0 text-center">
+                  <div className="flex-1 min-w-0 flex items-center gap-1 px-2 py-1 rounded-xl bg-slate-900/90 border border-slate-800">
                     {[['Pessoas', totalPessoas, 'text-white'], ['Respostas', totalCheckins, 'text-white'], ['Cards', listaOpcoesConfig.filter(c => c.ativo !== false).length, 'text-emerald-300']].map(([nome, valor, cor]) => (
-                      <div key={nome} className="min-w-0">
-                        <div className={`text-base font-black leading-none ${cor}`}>{valor}</div>
-                        <div className="text-[10px] text-slate-400 truncate mt-0.5">{nome}</div>
+                      <div key={nome} className="flex-1 min-w-0 text-center leading-tight">
+                        <div className={`text-sm font-black ${cor}`}>{valor}</div>
+                        <div className="text-[9px] text-slate-400 truncate">{nome}</div>
                       </div>
                     ))}
+                    <button onClick={() => setActiveSection('qrcode')} className="p-1.5 rounded-lg border border-slate-700 text-emerald-300 shrink-0" title="QR Code e links"><QrCode className="w-3.5 h-3.5" /></button>
+                    <button onClick={() => onChangeView('telao')} className="p-1.5 rounded-lg border border-slate-700 text-sky-300 shrink-0" title="Abrir Telão"><Tv className="w-3.5 h-3.5" /></button>
                   </div>
-                  <button onClick={() => setActiveSection('qrcode')} className="p-2 rounded-xl bg-slate-900/90 border border-slate-700 text-emerald-300 shrink-0" title="QR Code e links"><QrCode className="w-3.5 h-3.5" /></button>
-                  <button onClick={() => onChangeView('telao')} className="p-2 rounded-xl bg-slate-900/90 border border-slate-700 text-sky-300 shrink-0" title="Abrir Telão"><Tv className="w-3.5 h-3.5" /></button>
                 </div>
 
                 {/* 1. Status do Evento (Ao Vivo / Em Espera) */}
